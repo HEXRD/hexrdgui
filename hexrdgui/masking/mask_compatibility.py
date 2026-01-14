@@ -24,13 +24,16 @@ def convert_masks_v1_to_v2(h5py_group):
             }
         else:
             for name, masks in data.items():
-                items.setdefault(name, {
-                    'name': name,
-                    'mtype': 'unknown',
-                    'visible': name in visible,
-                    'border': False,
-                    'data': {},
-                })
+                items.setdefault(
+                    name,
+                    {
+                        'name': name,
+                        'mtype': 'unknown',
+                        'visible': name in visible,
+                        'border': False,
+                        'data': {},
+                    },
+                )
                 for i, mask in enumerate(masks.values()):
                     # Load the numpy array from the hdf5 file
                     items[name]['data'].setdefault(key, {})[i] = mask[()]

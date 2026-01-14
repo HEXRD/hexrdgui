@@ -71,24 +71,15 @@ class PhysicsPackageManagerDialog:
 
     @property
     def material_selectors(self) -> dict[str, QWidget]:
-        return {
-            k: getattr(self.ui, f'{k}_material')
-            for k in self.layer_names
-        }
+        return {k: getattr(self.ui, f'{k}_material') for k in self.layer_names}
 
     @property
     def material_inputs(self) -> dict[str, QWidget]:
-        return {
-            k: getattr(self.ui, f'{k}_material_input')
-            for k in self.layer_names
-        }
+        return {k: getattr(self.ui, f'{k}_material_input') for k in self.layer_names}
 
     @property
     def density_inputs(self):
-        return {
-            k: getattr(self.ui, f'{k}_density')
-            for k in self.layer_names
-        }
+        return {k: getattr(self.ui, f'{k}_density') for k in self.layer_names}
 
     def setup_connections(self):
         for k in self.non_sample_layer_names:
@@ -100,16 +91,15 @@ class PhysicsPackageManagerDialog:
         self.ui.button_box.rejected.connect(self.ui.reject)
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
-                lambda index, k=k: self.material_changed(index, k))
-        HexrdConfig().instrument_config_loaded.connect(
-            self.update_instrument_type)
-        HexrdConfig().detectors_changed.connect(
-            self.initialize_detector_coatings)
+                lambda index, k=k: self.material_changed(index, k)
+            )
+        HexrdConfig().instrument_config_loaded.connect(self.update_instrument_type)
+        HexrdConfig().detectors_changed.connect(self.initialize_detector_coatings)
 
         HexrdConfig().euler_angle_convention_changed.connect(
-            self.on_euler_angle_convention_changed)
-        HexrdConfig().sample_tilt_modified.connect(
-            self.reset_sample_tilt)
+            self.on_euler_angle_convention_changed
+        )
+        HexrdConfig().sample_tilt_modified.connect(self.reset_sample_tilt)
 
         for w in self.sample_tilt_widgets:
             w.valueChanged.connect(self.update_sample_normal)
@@ -163,7 +153,7 @@ class PhysicsPackageManagerDialog:
     def update_sample_normal(self):
         d = HexrdConfig().active_beam['vector']
         bvec = calc_beam_vec(d['azimuth'], d['polar_angle'])
-        sample_normal = np.dot(self.sample_rmat, [0., 0., np.sign(bvec[2])])
+        sample_normal = np.dot(self.sample_rmat, [0.0, 0.0, np.sign(bvec[2])])
         for w, v in zip(self.sample_normal_widgets, sample_normal):
             w.setValue(v)
 
@@ -187,8 +177,9 @@ class PhysicsPackageManagerDialog:
                     mat_names = list(f.keys())
 
                     for name in mat_names:
-                        materials[name] = Material(name, file_path, dmin=dmin,
-                                                   kev=energy)
+                        materials[name] = Material(
+                            name, file_path, dmin=dmin, kev=energy
+                        )
             self.additional_materials[key] = materials
 
     def update_instrument_type(self):
@@ -200,13 +191,11 @@ class PhysicsPackageManagerDialog:
         if new_instr_type == 'TARDIS':
             HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.TARDIS)
             for det in HexrdConfig().detector_names:
-                HexrdConfig().update_detector_filter(
-                    det, **FILTER_DEFAULTS.TARDIS)
+                HexrdConfig().update_detector_filter(det, **FILTER_DEFAULTS.TARDIS)
         elif new_instr_type == 'PXRDIP':
             HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.PXRDIP)
             for det in HexrdConfig().detector_names:
-                HexrdConfig().update_detector_filter(
-                    det, **FILTER_DEFAULTS.PXRDIP)
+                HexrdConfig().update_detector_filter(det, **FILTER_DEFAULTS.PXRDIP)
         else:
             HexrdConfig().create_default_physics_package()
         self.instrument_type = new_instr_type
@@ -334,8 +323,7 @@ class PhysicsPackageManagerDialog:
             self.density_inputs[category].setValue(0.0)
 
         if HexrdConfig().has_physics_package:
-            self.ui.absorption_length.setValue(
-                HexrdConfig().absorption_length())
+            self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
 
     def accept_changes(self):
         materials = {}
@@ -372,28 +360,46 @@ class PhysicsPackageDiagram:
     patches = {
         'laser drive': Polygon(
             [(0.05, 0.2), (0.05, 0.8), (0.2, 0.75), (0.2, 0.25)],
-            facecolor=(0.5, 0, 1, 0.3)),
-        'ablator': Rectangle((0.2, 0.2), 0.07, 0.6, facecolor=(0, 1, 0, 0.5),
-                             edgecolor=(0, 0, 0)),
-        'heatshield': Rectangle((0.27, 0.2), 0.03, 0.6, facecolor=(1, 1, 1),
-                                edgecolor=(0, 0, 0)),
-        'pusher': Rectangle((0.3, 0.2), 0.08, 0.6, facecolor=(0.8, 0, 1, 0.4),
-                            edgecolor=(0, 0, 0)),
-        'sample': Rectangle((0.38, 0.2), 0.03, 0.6, facecolor=(0, 0, 1, 0.4),
-                            edgecolor=(0, 0, 0)),
-        'reflective': Rectangle((0.41, 0.2), 0.03, 0.6,
-                                facecolor=(1, 0.6, 0, 0.4),
-                                edgecolor=(0, 0, 0)),
+            facecolor=(0.5, 0, 1, 0.3),
+        ),
+        'ablator': Rectangle(
+            (0.2, 0.2), 0.07, 0.6, facecolor=(0, 1, 0, 0.5), edgecolor=(0, 0, 0)
+        ),
+        'heatshield': Rectangle(
+            (0.27, 0.2), 0.03, 0.6, facecolor=(1, 1, 1), edgecolor=(0, 0, 0)
+        ),
+        'pusher': Rectangle(
+            (0.3, 0.2), 0.08, 0.6, facecolor=(0.8, 0, 1, 0.4), edgecolor=(0, 0, 0)
+        ),
+        'sample': Rectangle(
+            (0.38, 0.2), 0.03, 0.6, facecolor=(0, 0, 1, 0.4), edgecolor=(0, 0, 0)
+        ),
+        'reflective': Rectangle(
+            (0.41, 0.2), 0.03, 0.6, facecolor=(1, 0.6, 0, 0.4), edgecolor=(0, 0, 0)
+        ),
         'VISAR': Polygon(
             [(0.44, 0.4), (0.44, 0.6), (0.91, 0.65), (0.91, 0.35)],
-            facecolor=(1, 0, 0, 0.3)),
-        'window': Rectangle((0.43, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8),
-                            edgecolor=(0, 0, 0)),
+            facecolor=(1, 0, 0, 0.3),
+        ),
+        'window': Rectangle(
+            (0.43, 0.2), 0.2, 0.6, facecolor=(1, 1, 0, 0.8), edgecolor=(0, 0, 0)
+        ),
         'pinhole': Polygon(
-            [(0.63, 0.2), (0.63, 0.8), (0.83, 0.8), (0.78, 0.6), (0.63, 0.6),
-             (0.63, 0.4), (0.78, 0.4), (0.78, 0.6), (0.78, 0.4), (0.83, 0.2)],
-            facecolor=(0.5, 0.5, 0.5, 0.6), edgecolor=(0, 0, 0))
-
+            [
+                (0.63, 0.2),
+                (0.63, 0.8),
+                (0.83, 0.8),
+                (0.78, 0.6),
+                (0.63, 0.6),
+                (0.63, 0.4),
+                (0.78, 0.4),
+                (0.78, 0.6),
+                (0.78, 0.4),
+                (0.83, 0.2),
+            ],
+            facecolor=(0.5, 0.5, 0.5, 0.6),
+            edgecolor=(0, 0, 0),
+        ),
     }
 
     def __init__(self, canvas):
@@ -418,8 +424,9 @@ class PhysicsPackageDiagram:
                 x = (np.min(xy[:, 0]) + np.max(xy[:, 0])) / 1.5
         else:
             x, y = patch.get_center()
-        self.ax.text(x, y, label, ha='center', va='center',
-                     rotation=90, fontsize='small')
+        self.ax.text(
+            x, y, label, ha='center', va='center', rotation=90, fontsize='small'
+        )
 
     def update_diagram(self, show_dict: dict[str, bool]):
         self.clear()
@@ -443,7 +450,7 @@ class PhysicsPackageDiagram:
 
             # Apply offset, and add some spacing between each layer
             if isinstance(p, Polygon):
-                p.xy[:, 0] += (offset + count * 0.01)
+                p.xy[:, 0] += offset + count * 0.01
             elif isinstance(p, Rectangle):
                 p.set_x(p.xy[0] + offset + count * 0.01)
 

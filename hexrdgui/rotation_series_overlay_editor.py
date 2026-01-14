@@ -41,7 +41,8 @@ class RotationSeriesOverlayEditor:
         self.omega_ranges_editor.data_modified.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
         self.crystal_editor.refinements_modified.connect(
-            self.update_overlay_refinements)
+            self.update_overlay_refinements
+        )
 
         for w in self.widgets:
             if isinstance(w, QDoubleSpinBox):
@@ -295,13 +296,11 @@ class RotationSeriesOverlayEditor:
             'max': 360,
             'decimals': 4,
         }
-        mask, accepted = QInputDialog.getDouble(self.ui, title, label,
-                                                **kwargs)
+        mask, accepted = QInputDialog.getDouble(self.ui, title, label, **kwargs)
         if not accepted:
             return
 
-        self.eta_ranges = np.radians([[-90 + mask, 90 - mask],
-                                      [90 + mask, 270 - mask]])
+        self.eta_ranges = np.radians([[-90 + mask, 90 - mask], [90 + mask, 270 - mask]])
         self.update_config()
 
     def sync_ome_ranges_toggled(self):

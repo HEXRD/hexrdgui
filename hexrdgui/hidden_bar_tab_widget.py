@@ -7,6 +7,7 @@ class HiddenBarTabWidget(QTabWidget):
 
     It also resizes to match the size of the current tab.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_current_index_later(0)

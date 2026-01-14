@@ -18,11 +18,12 @@ class EnterKeyFilter(QObject):
 
     Note that this filter **only** filters QDialog and QPushButton objects.
     """
+
     def eventFilter(self, obj, event):
         block = (
-            event.type() == QEvent.KeyPress and
-            event.key() in (Qt.Key_Return, Qt.Key_Enter) and
-            isinstance(obj, (QDialog, QPushButton))
+            event.type() == QEvent.KeyPress
+            and event.key() in (Qt.Key_Return, Qt.Key_Enter)
+            and isinstance(obj, (QDialog, QPushButton))
         )
 
         if block:

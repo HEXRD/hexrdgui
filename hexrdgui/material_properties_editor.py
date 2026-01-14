@@ -21,8 +21,7 @@ class MaterialPropertiesEditor:
 
         self.null_tensor = np.zeros(self.elastic_tensor_shape)
         self.elastic_tensor_editor = MatrixEditor(self.null_tensor, self.ui)
-        self.ui.elastic_tensor_editor_layout.addWidget(
-            self.elastic_tensor_editor)
+        self.ui.elastic_tensor_editor_layout.addWidget(self.elastic_tensor_editor)
 
         self.setup_connections()
 
@@ -32,9 +31,9 @@ class MaterialPropertiesEditor:
 
     def setup_connections(self):
         self.ui.elastic_tensor_type.currentIndexChanged.connect(
-            self.elastic_tensor_type_changed)
-        self.elastic_tensor_editor.data_modified.connect(
-            self.elastic_tensor_edited)
+            self.elastic_tensor_type_changed
+        )
+        self.elastic_tensor_editor.data_modified.connect(self.elastic_tensor_edited)
         self.ui.show_pt_slider.clicked.connect(self.show_pt_slider)
 
     @property
@@ -69,8 +68,7 @@ class MaterialPropertiesEditor:
 
         tensor_type = self.elastic_tensor_type
         units = units_map[tensor_type]
-        tooltip = (f'The elastic {tensor_type} tensor in Voigt notation. '
-                   f'({units})')
+        tooltip = f'The elastic {tensor_type} tensor in Voigt notation. ' f'({units})'
 
         self.ui.elastic_tensor_group.setToolTip(tooltip)
 

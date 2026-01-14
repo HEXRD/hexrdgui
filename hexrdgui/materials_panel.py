@@ -30,16 +30,17 @@ class MaterialsPanel(QObject):
         self.material_editor_widget = MaterialEditorWidget(m, self.ui)
         self.reflections_table = ReflectionsTable(m, parent=self.ui)
 
-        self.ui.material_editor_layout.addWidget(
-            self.material_editor_widget.ui)
+        self.ui.material_editor_layout.addWidget(self.material_editor_widget.ui)
 
         self.material_structure_editor = MaterialStructureEditor(self.ui)
         self.ui.material_structure_editor_layout.addWidget(
-            self.material_structure_editor.ui)
+            self.material_structure_editor.ui
+        )
 
         self.material_properties_editor = MaterialPropertiesEditor(self.ui)
         self.ui.material_properties_editor_layout.addWidget(
-            self.material_properties_editor.ui)
+            self.material_properties_editor.ui
+        )
 
         # Turn off autocomplete for the QComboBox
         self.ui.materials_combo.setCompleter(None)
@@ -53,31 +54,27 @@ class MaterialsPanel(QObject):
 
     def setup_connections(self):
         self.ui.materials_combo.installEventFilter(self)
-        self.ui.materials_combo.currentIndexChanged.connect(
-            self.set_active_material)
-        self.ui.materials_combo.currentIndexChanged.connect(
-            self.update_enable_states)
+        self.ui.materials_combo.currentIndexChanged.connect(self.set_active_material)
+        self.ui.materials_combo.currentIndexChanged.connect(self.update_enable_states)
         self.ui.materials_combo.currentIndexChanged.connect(self.update_table)
         self.ui.materials_combo.lineEdit().editingFinished.connect(
-            self.modify_material_name)
+            self.modify_material_name
+        )
 
-        self.material_editor_widget.material_modified.connect(
-            self.material_edited)
+        self.material_editor_widget.material_modified.connect(self.material_edited)
 
-        self.ui.show_reflections_table.pressed.connect(
-            self.show_reflections_table)
+        self.ui.show_reflections_table.pressed.connect(self.show_reflections_table)
         self.ui.show_overlay_manager.pressed.connect(self.show_overlay_manager)
 
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
 
-        self.ui.limit_active.toggled.connect(
-            HexrdConfig().set_limit_active_rings)
+        self.ui.limit_active.toggled.connect(HexrdConfig().set_limit_active_rings)
         self.ui.max_tth.valueChanged.connect(self.on_max_tth_changed)
         self.ui.min_d_spacing_displayed.valueChanged.connect(
-            self.on_min_d_spacing_displayed_changed)
+            self.on_min_d_spacing_displayed_changed
+        )
 
-        self.ui.min_d_spacing.valueChanged.connect(
-            self.on_min_d_spacing_changed)
+        self.ui.min_d_spacing.valueChanged.connect(self.on_min_d_spacing_changed)
 
         HexrdConfig().new_plane_data.connect(self.update_gui_from_config)
 
@@ -85,20 +82,17 @@ class MaterialsPanel(QObject):
         self.ui.limit_active.toggled.connect(self.update_material_limits)
         self.ui.limit_active.toggled.connect(self.update_table)
 
-        HexrdConfig().active_material_changed.connect(
-            self.active_material_changed)
-        HexrdConfig().active_material_modified.connect(
-            self.active_material_modified)
-        HexrdConfig().materials_dict_modified.connect(
-            self.update_gui_from_config)
+        HexrdConfig().active_material_changed.connect(self.active_material_changed)
+        HexrdConfig().active_material_modified.connect(self.active_material_modified)
+        HexrdConfig().materials_dict_modified.connect(self.update_gui_from_config)
 
         self.material_structure_editor.material_modified.connect(
-            self.material_structure_edited)
+            self.material_structure_edited
+        )
 
         self.ui.materials_tool_button.clicked.connect(self.tool_button_clicked)
 
-        HexrdConfig().overlay_config_changed.connect(
-            self.update_gui_from_config)
+        HexrdConfig().overlay_config_changed.connect(self.update_gui_from_config)
 
     def tool_button_clicked(self):
         if not hasattr(self, '_material_list_editor'):
@@ -167,7 +161,7 @@ class MaterialsPanel(QObject):
             self.ui.min_d_spacing_displayed,
             self.ui.max_tth,
             self.ui.min_d_spacing,
-            self.ui.limit_active
+            self.ui.limit_active,
         ]
 
         with block_signals(*block_list):
@@ -182,11 +176,11 @@ class MaterialsPanel(QObject):
 
             self.material_editor_widget.material = self.material
             self.ui.materials_combo.setCurrentIndex(
-                materials_keys.index(HexrdConfig().active_material_name))
+                materials_keys.index(HexrdConfig().active_material_name)
+            )
             self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
 
-            self.ui.min_d_spacing.setValue(
-                self.material.dmin.getVal('angstrom'))
+            self.ui.min_d_spacing.setValue(self.material.dmin.getVal('angstrom'))
 
             self.ui.limit_active.setChecked(HexrdConfig().limit_active_rings)
 
@@ -226,12 +220,10 @@ class MaterialsPanel(QObject):
 
         # Bragg's law
         min_d_spacing_displayed = HexrdConfig().beam_wavelength / (
-            2.0 * math.sin(max_bragg))
+            2.0 * math.sin(max_bragg)
+        )
 
-        block_list = [
-            self.ui.min_d_spacing_displayed,
-            self.ui.max_tth
-        ]
+        block_list = [self.ui.min_d_spacing_displayed, self.ui.max_tth]
         block_signals = [item.blockSignals(True) for item in block_list]
         try:
             self.ui.max_tth.setValue(math.degrees(max_tth))

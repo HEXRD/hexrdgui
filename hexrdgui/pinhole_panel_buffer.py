@@ -10,12 +10,12 @@ def generate_pinhole_panel_buffer(instr):
     physics_package = instr.physics_package
 
     # make beam vector the pinhole axis on the instrument
-    instr.beam_vector = np.r_[0., 0., -1.]
+    instr.beam_vector = np.r_[0.0, 0.0, -1.0]
     try:
         for det_key, det in instr.detectors.items():
             crit_angle = np.arctan(
-                2.0 * physics_package.pinhole_radius /
-                physics_package.pinhole_thickness)
+                2.0 * physics_package.pinhole_radius / physics_package.pinhole_thickness
+            )
             ptth, peta = det.pixel_angles()
             ph_buffer[det_key] = ptth < crit_angle
     finally:

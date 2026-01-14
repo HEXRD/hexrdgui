@@ -47,9 +47,11 @@ class H5StateLoader(yaml.SafeLoader):
 H5StateLoader.add_constructor(u'!include', H5StateLoader.include)
 H5StateLoader.add_constructor(
     u'tag:yaml.org,2002:python/object/apply:hexrdgui.constants.OverlayType',
-    H5StateLoader.hexrd_ui_constants_overlaytype)
+    H5StateLoader.hexrd_ui_constants_overlaytype,
+)
 H5StateLoader.add_constructor(
-    u'tag:yaml.org,2002:python/tuple', H5StateLoader.python_tuple)
+    u'tag:yaml.org,2002:python/tuple', H5StateLoader.python_tuple
+)
 
 
 def _dict_path_by_id(d, value, path=()):
@@ -57,7 +59,7 @@ def _dict_path_by_id(d, value, path=()):
         return path
     elif isinstance(d, dict):
         for k, v in d.items():
-            p = _dict_path_by_id(v, value, path + (k, ))
+            p = _dict_path_by_id(v, value, path + (k,))
             if p is not None:
                 return p
     elif isinstance(d, list):
@@ -81,6 +83,7 @@ class H5StateDumper(yaml.Dumper):
     The ndarray would be saved in foo/bar.
 
     """
+
     def __init__(self, stream, h5_file=None, prefix=None, **kwargs):
         super().__init__(stream, **kwargs)
 
@@ -112,15 +115,15 @@ H5StateDumper.add_representer(np.float64, H5StateDumper.numpy_representer)
 
 def _save_config(h5_file, config):
     def _create_dumper(*arg, **kwargs):
-        return H5StateDumper(*arg, **kwargs, h5_file=h5_file,
-                             prefix=CONFIG_PREFIX)
+        return H5StateDumper(*arg, **kwargs, h5_file=h5_file, prefix=CONFIG_PREFIX)
 
     # Dump the YAML, this will write the numpy types to the H5 file
     config_yaml = yaml.dump(config, Dumper=_create_dumper)
 
     # Add the YAML as a string dataset
-    h5_file.create_dataset(CONFIG_YAML_PATH, data=config_yaml,
-                           dtype=h5py.string_dtype())
+    h5_file.create_dataset(
+        CONFIG_YAML_PATH, data=config_yaml, dtype=h5py.string_dtype()
+    )
 
 
 def _load_config(h5_file):
@@ -239,8 +242,9 @@ def load_imageseries_dict(h5_file):
 
     root = 'images'
     for det, ims in list(h5_file[root].items()):
-        imsd[det] = imageseries.open(h5_file, 'hdf5', path=f'{root}/{det}',
-                                     close_when_finished=False)
+        imsd[det] = imageseries.open(
+            h5_file, 'hdf5', path=f'{root}/{det}', close_when_finished=False
+        )
 
     HexrdConfig().reset_unagg_imgs(new_imgs=True)
 

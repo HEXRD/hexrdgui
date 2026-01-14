@@ -19,9 +19,7 @@ class PointPickerDialog(QDialog):
         layout = QVBoxLayout(self)
         self.setLayout(layout)
 
-        label = QLabel(
-            'Left-click to add points, right-click to remove points'
-        )
+        label = QLabel('Left-click to add points, right-click to remove points')
         layout.addWidget(label)
         layout.setAlignment(label, Qt.AlignHCenter)
 
@@ -47,7 +45,8 @@ class PointPickerDialog(QDialog):
 
     def setup_connections(self):
         self.pick_event_id = self.canvas.mpl_connect(
-            'button_press_event', self.point_picked)
+            'button_press_event', self.point_picked
+        )
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -123,10 +122,12 @@ if __name__ == '__main__':
     # Generate 4 sine waves for a test
     length = np.pi * 2 * 4
     num_points = 1000
-    spectrum = np.vstack((
-        np.arange(num_points),
-        np.sin(np.arange(0, length, length / num_points)) * 50 + 50,
-    )).T
+    spectrum = np.vstack(
+        (
+            np.arange(num_points),
+            np.sin(np.arange(0, length, length / num_points)) * 50 + 50,
+        )
+    ).T
 
     fig, ax = plt.subplots()
     ax.plot(*spectrum.T, '-k')

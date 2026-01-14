@@ -5,9 +5,7 @@ from PySide6.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem
 
 from hexrdgui.constants import OverlayType
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.indexing.create_config import (
-    create_indexing_config, OmegasNotFoundError
-)
+from hexrdgui.indexing.create_config import create_indexing_config, OmegasNotFoundError
 from hexrdgui.reflections_table import ReflectionsTable
 from hexrdgui.select_grains_dialog import SelectGrainsDialog
 from hexrdgui.ui_loader import UiLoader
@@ -24,8 +22,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('hedm_calibration_options_dialog.ui',
-                                   parent)
+        self.ui = loader.load_file('hedm_calibration_options_dialog.ui', parent)
 
         add_help_url(self.ui.button_box, 'calibration/rotation_series')
 
@@ -46,9 +43,9 @@ class HEDMCalibrationOptionsDialog(QObject):
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
 
         self.ui.tolerances_selected_grain.currentIndexChanged.connect(
-            self.update_tolerances_table)
-        self.ui.tolerances_table.itemChanged.connect(
-            self.on_tolerances_changed)
+            self.update_tolerances_table
+        )
+        self.ui.tolerances_table.itemChanged.connect(self.on_tolerances_changed)
 
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
@@ -97,10 +94,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         ome_periods = []
         for overlay in self.active_overlays:
             if not overlay.has_widths:
-                msg = (
-                    'All visible rotation series overlays must have widths '
-                    'enabled'
-                )
+                msg = 'All visible rotation series overlays must have widths ' 'enabled'
                 raise Exception(msg)
 
             ome_periods.append(overlay.ome_period)
@@ -115,10 +109,7 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         materials = [overlay.material_name for overlay in self.active_overlays]
         if not all(x == materials[0] for x in materials):
-            msg = (
-                'All visible rotation series overlays must have the same '
-                'material'
-            )
+            msg = 'All visible rotation series overlays must have the same ' 'material'
             raise Exception(msg)
 
         # Make sure the material is updated in the indexing config

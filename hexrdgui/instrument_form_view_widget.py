@@ -1,7 +1,11 @@
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QFocusEvent, QKeyEvent
 from PySide6.QtWidgets import (
-    QComboBox, QInputDialog, QLineEdit, QMessageBox, QPushButton
+    QComboBox,
+    QInputDialog,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
 )
 
 import numpy as np
@@ -24,8 +28,8 @@ from hexrdgui.xray_energy_selection_dialog import XRayEnergySelectionDialog
 
 
 class InstrumentFormViewWidget(QObject):
-
     """Emitted when GUI data has changed"""
+
     gui_data_changed = Signal()
 
     def __init__(self, parent=None):
@@ -55,14 +59,14 @@ class InstrumentFormViewWidget(QObject):
         self.ui.cal_det_current.installEventFilter(self)
         self.ui.cal_energy.valueChanged.connect(self.on_energy_changed)
         self.ui.cal_energy_wavelength.valueChanged.connect(
-            self.on_energy_wavelength_changed)
-        self.ui.xray_energies_table.pressed.connect(
-            self.open_xray_energies_dialog)
+            self.on_energy_wavelength_changed
+        )
+        self.ui.xray_energies_table.pressed.connect(self.open_xray_energies_dialog)
 
-        self.ui.cal_det_current.currentIndexChanged.connect(
-            self.on_detector_changed)
+        self.ui.cal_det_current.currentIndexChanged.connect(self.on_detector_changed)
         self.ui.cal_det_current.lineEdit().editingFinished.connect(
-            self.on_detector_name_edited)
+            self.on_detector_name_edited
+        )
         self.ui.cal_det_remove.clicked.connect(self.on_detector_remove_clicked)
         self.ui.cal_det_add.clicked.connect(self.on_detector_add_clicked)
 
@@ -83,24 +87,28 @@ class InstrumentFormViewWidget(QObject):
                 widget.valueChanged.connect(self.gui_value_changed)
 
         self.ui.cal_det_function.currentIndexChanged.connect(
-            self.update_gui_from_config)
+            self.update_gui_from_config
+        )
         self.ui.cal_det_buffer.clicked.connect(self._on_configure_buffer)
 
         self.ui.beam_vector_input_stacked_widget.currentChanged.connect(
-            self.update_cartesian_beam_vector)
+            self.update_cartesian_beam_vector
+        )
 
         for w in self.cartesian_beam_vector_widgets:
             w.valueChanged.connect(self.cartesian_beam_vector_modified)
 
-        self.ui.beam_vector_is_finite.toggled.connect(
-            self.set_beam_vector_is_finite)
+        self.ui.beam_vector_is_finite.toggled.connect(self.set_beam_vector_is_finite)
         self.ui.beam_vector_magnitude.valueChanged.connect(
-            self.beam_vector_magnitude_value_changed)
+            self.beam_vector_magnitude_value_changed
+        )
         self.ui.cartesian_beam_vector_convention.currentIndexChanged.connect(
-            self.cartesian_beam_vector_convention_changed)
+            self.cartesian_beam_vector_convention_changed
+        )
 
         self.ui.apply_energy_correction.toggled.connect(
-            self.on_apply_energy_correction_toggled)
+            self.on_apply_energy_correction_toggled
+        )
 
     def on_energy_changed(self):
         val = self.ui.cal_energy.value()
@@ -196,7 +204,8 @@ class InstrumentFormViewWidget(QObject):
         # Provide simple dialog for selecting detector to import/copy
         msg = 'Copy current or select template'
         det_name, ok = QInputDialog.getItem(
-            self.ui, 'Add New Detector', msg, list(options), 0, False)
+            self.ui, 'Add New Detector', msg, list(options), 0, False
+        )
 
         if not ok:
             return
@@ -212,8 +221,7 @@ class InstrumentFormViewWidget(QObject):
                 new_det['transform'] = transform
 
         # Ensure it is unique
-        new_detector_name = unique_name(HexrdConfig().detector_names,
-                                        new_detector_name)
+        new_detector_name = unique_name(HexrdConfig().detector_names, new_detector_name)
 
         # Add the imported or copied detector and update current selection
         self.cfg.add_detector(new_detector_name, current_detector, new_det)
@@ -302,8 +310,7 @@ class InstrumentFormViewWidget(QObject):
             if combo_widget.currentText() in detector_names:
                 cur_detector = combo_widget.currentText()
 
-            gui_yaml_paths = self.cfg.get_gui_yaml_paths(['detectors',
-                                                          'detector_name'])
+            gui_yaml_paths = self.cfg.get_gui_yaml_paths(['detectors', 'detector_name'])
 
             tilt_path = ['transform', 'tilt']
             dist_params_path = ['distortion', 'parameters']
@@ -409,7 +416,7 @@ class InstrumentFormViewWidget(QObject):
 
     def update_distortion_params_enable_states(self):
         num_params = self.num_distortion_params
-        label_enabled = (num_params != 0)
+        label_enabled = num_params != 0
 
         self.ui.distortion_parameters_label.setEnabled(label_enabled)
         self.ui.distortion_parameters_label.setVisible(label_enabled)
@@ -421,7 +428,7 @@ class InstrumentFormViewWidget(QObject):
                 break
 
             widget = getattr(self.ui, widget_name)
-            enable = (num_params > i)
+            enable = num_params > i
             widget.setEnabled(enable)
             widget.setVisible(enable)
 
@@ -468,8 +475,7 @@ class InstrumentFormViewWidget(QObject):
         dialog = PanelBufferDialog(detector, self.ui)
         dialog.show()
         # Re-enable button
-        dialog.ui.finished.connect(
-            lambda _: self.ui.cal_det_buffer.setEnabled(True))
+        dialog.ui.finished.connect(lambda _: self.ui.cal_det_buffer.setEnabled(True))
 
     @property
     def active_beam(self):
@@ -505,8 +511,7 @@ class InstrumentFormViewWidget(QObject):
     @property
     def cartesian_beam_vector_widgets(self):
         axes = ('x', 'y', 'z')
-        return [getattr(self.ui, f'beam_vector_cartesian_{ax}')
-                for ax in axes]
+        return [getattr(self.ui, f'beam_vector_cartesian_{ax}') for ax in axes]
 
     def update_cartesian_beam_vector(self):
         self.cartesian_beam_vector = calc_beam_vec(*self.polar_beam_vector)
@@ -560,8 +565,7 @@ class InstrumentFormViewWidget(QObject):
 
     def cartesian_beam_vector_modified(self):
         # Convert to polar
-        self.polar_beam_vector = calc_angles_from_beam_vec(
-            self.cartesian_beam_vector)
+        self.polar_beam_vector = calc_angles_from_beam_vec(self.cartesian_beam_vector)
         self.update_beam_magnitude_from_cartesian()
         self.update_cartesian_beam_vector_normalized_note()
 

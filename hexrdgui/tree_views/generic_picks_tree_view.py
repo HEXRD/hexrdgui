@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 
 from PySide6.QtCore import QModelIndex, Qt, Signal
 from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import (
-    QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
-)
+from PySide6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
 
 from hexrdgui.constants import ViewType
 from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.markers import igor_marker
 from hexrdgui.tree_views.base_dict_tree_item_model import (
-    BaseTreeItemModel, BaseDictTreeItemModel, BaseDictTreeView
+    BaseTreeItemModel,
+    BaseDictTreeItemModel,
+    BaseDictTreeView,
 )
 from hexrdgui.tree_views.tree_item import TreeItem
 from hexrdgui.tree_views.value_column_delegate import ValueColumnDelegate
@@ -88,9 +88,9 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
     def recursive_add_tree_items(self, cur_config, cur_tree_item):
         def is_coords(x):
             return (
-                isinstance(x, (tuple, list)) and
-                len(x) == 2 and
-                all(isinstance(y, (int, float)) for y in x)
+                isinstance(x, (tuple, list))
+                and len(x) == 2
+                and all(isinstance(y, (int, float)) for y in x)
             )
 
         if is_coords(cur_config):
@@ -123,9 +123,15 @@ class GenericPicksTreeView(BaseDictTreeView):
 
     dict_modified = Signal(QModelIndex)
 
-    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
-                 parent=None, model_class=GenericPicksTreeItemModel,
-                 model_class_kwargs=None):
+    def __init__(
+        self,
+        dictionary,
+        coords_type=ViewType.polar,
+        canvas=None,
+        parent=None,
+        model_class=GenericPicksTreeItemModel,
+        model_class_kwargs=None,
+    ):
         super().__init__(parent)
 
         self.canvas = canvas
@@ -141,8 +147,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         if model_class_kwargs is None:
             model_class_kwargs = {}
 
-        self.setModel(model_class(dictionary, coords_type, self,
-                                  **model_class_kwargs))
+        self.setModel(model_class(dictionary, coords_type, self, **model_class_kwargs))
 
         value_cols = [X_COL, Y_COL]
         all_cols = [KEY_COL] + value_cols
@@ -341,7 +346,7 @@ class GenericPicksTreeView(BaseDictTreeView):
             settings['color'] = color
 
             xys = [item.data_list[1:] for item in group]
-            artist, = self.canvas.axis.plot(*list(zip(*xys)), **settings)
+            (artist,) = self.canvas.axis.plot(*list(zip(*xys)), **settings)
             self.all_picks_line_artists.append(artist)
 
         self.canvas.draw_idle()
@@ -376,7 +381,7 @@ class GenericPicksTreeView(BaseDictTreeView):
                 settings['color'] = color
 
             xys = [item.data_list[1:] for item in group]
-            artist, = self.canvas.axis.plot(*list(zip(*xys)), **settings)
+            (artist,) = self.canvas.axis.plot(*list(zip(*xys)), **settings)
             self.selected_picks_line_artists.append(artist)
 
         self.canvas.draw_idle()
@@ -406,7 +411,8 @@ class GenericPicksTreeView(BaseDictTreeView):
         point_clicked = len(path) == self.num_layers_nested + 2
         line_name = (
             str(path[self.num_layers_nested])
-            if len(path) > self.num_layers_nested else 'None'
+            if len(path) > self.num_layers_nested
+            else 'None'
         )
         selected_items = self.selected_items
         num_selected = len(selected_items)
@@ -476,7 +482,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         model = self.model()
 
         if not self.is_hand_pickable:
-            new_item = TreeItem([position, 0., 0.])
+            new_item = TreeItem([position, 0.0, 0.0])
             model.insert_items([new_item], parent_item, position)
 
             # Select the new item
@@ -564,10 +570,10 @@ class GenericPicksTreeView(BaseDictTreeView):
         # Check if the line picker should be accepted
         picker = self._current_picker
         if (
-            picker is not None and
-            picker.ui.isVisible() and
-            picker.line_data and
-            picker.line_data[0].size != 0
+            picker is not None
+            and picker.ui.isVisible()
+            and picker.line_data
+            and picker.line_data[0].size != 0
         ):
             # Accept the line
             self._current_picker.ui.accept()
@@ -596,8 +602,9 @@ class GenericPicksTreeView(BaseDictTreeView):
             # Just accept it
             picker.ui.accept()
 
-        accepted_func = partial(self.finished_appending_new_line,
-                                path=path, name=name, picker=picker)
+        accepted_func = partial(
+            self.finished_appending_new_line, path=path, name=name, picker=picker
+        )
         picker.accepted.connect(accepted_func)
         picker.line_completed.connect(on_line_completed)
 
@@ -625,16 +632,16 @@ class GenericPicksTreeViewDialog(QDialog):
 
     dict_modified = Signal(QModelIndex)
 
-    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
-                 parent=None):
+    def __init__(
+        self, dictionary, coords_type=ViewType.polar, canvas=None, parent=None
+    ):
         super().__init__(parent)
 
         self.setWindowTitle('Edit Picks')
 
         self.setLayout(QVBoxLayout(self))
 
-        self.tree_view = GenericPicksTreeView(dictionary, coords_type, canvas,
-                                              self)
+        self.tree_view = GenericPicksTreeView(dictionary, coords_type, canvas, self)
         self.layout().addWidget(self.tree_view)
 
         # Add a checkbox for showing all

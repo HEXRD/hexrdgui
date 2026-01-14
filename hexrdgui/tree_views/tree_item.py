@@ -44,9 +44,8 @@ class TreeItem:
     def _preprocess_value(self, val):
         # We must convert some values to native python types, or Qt
         # will not know how to display them.
-        get_item = (
-            (isinstance(val, np.ndarray) and val.size == 1) or
-            isinstance(val, np.generic)
+        get_item = (isinstance(val, np.ndarray) and val.size == 1) or isinstance(
+            val, np.generic
         )
         if get_item:
             # Convert to native python type

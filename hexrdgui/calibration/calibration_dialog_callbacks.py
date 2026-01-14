@@ -61,20 +61,26 @@ class CalibrationDialogCallbacks(ABCQObject):
         dialog.ui.draw_picks.setChecked(self.drawing_picks)
         dialog.draw_picks_toggled.connect(self.draw_picks)
         dialog.show_picks_from_all_xray_sources_toggled.connect(
-            self.show_picks_from_all_xray_sources)
+            self.show_picks_from_all_xray_sources
+        )
         dialog.edit_picks_clicked.connect(self.on_edit_picks_clicked)
         dialog.save_picks_clicked.connect(self.on_save_picks_clicked)
         dialog.load_picks_clicked.connect(self.on_load_picks_clicked)
         dialog.relative_constraints_changed.connect(
-            self.on_relative_constraints_changed)
+            self.on_relative_constraints_changed
+        )
         dialog.reset_relative_params_to_zero_clicked.connect(
-            self.on_reset_relative_params_to_zero_clicked)
+            self.on_reset_relative_params_to_zero_clicked
+        )
         dialog.tilt_center_of_rotation_changed.connect(
-            self.on_tilt_center_of_rotation_changed)
+            self.on_tilt_center_of_rotation_changed
+        )
         dialog.engineering_constraints_changed.connect(
-            self.on_engineering_constraints_changed)
+            self.on_engineering_constraints_changed
+        )
         dialog.pinhole_correction_settings_modified.connect(
-            self.on_pinhole_correction_settings_modified)
+            self.on_pinhole_correction_settings_modified
+        )
         dialog.run.connect(self.on_run_clicked)
         dialog.undo_run.connect(self.on_undo_run_clicked)
         dialog.finished.connect(self.on_finished)
@@ -223,8 +229,7 @@ class CalibrationDialogCallbacks(ABCQObject):
             HexrdConfig()._instrument_rigid_body_params.clear()
             return
 
-        HexrdConfig()._instrument_rigid_body_params = copy.deepcopy(
-            constraints.params)
+        HexrdConfig()._instrument_rigid_body_params = copy.deepcopy(constraints.params)
 
     def restore_constraint_params(self):
         constraints = self.calibrator.relative_constraints
@@ -400,11 +405,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         ]
         for param in params_dict.values():
             for attr in attrs:
-                setattr(
-                    param,
-                    attr,
-                    round(getattr(param, attr), ROUND_DECIMALS)
-                )
+                setattr(param, attr, round(getattr(param, attr), ROUND_DECIMALS))
 
     def on_edit_picks_finished(self):
         # Show this again
@@ -415,8 +416,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         title = 'Save Picks'
 
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.dialog.ui, title, HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.dialog.ui, title, HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
+        )
 
         if not selected_file:
             # The user canceled
@@ -428,8 +429,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         title = 'Load Picks'
 
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.dialog.ui, title, HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.dialog.ui, title, HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
+        )
 
         if not selected_file:
             # The user canceled

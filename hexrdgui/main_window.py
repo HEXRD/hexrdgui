@@ -8,18 +8,20 @@ import h5py
 import numpy as np
 from skimage import measure
 
-from PySide6.QtCore import (
-    QEvent, QObject, Qt, QThreadPool, Signal, QTimer, QUrl
-)
+from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QApplication, QDockWidget, QFileDialog,
-    QInputDialog, QMainWindow, QMessageBox
+    QApplication,
+    QDockWidget,
+    QFileDialog,
+    QInputDialog,
+    QMainWindow,
+    QMessageBox,
 )
 
 from hexrdgui.about_dialog import AboutDialog
 from hexrdgui.absorption_correction_options_dialog import (
-    AbsorptionCorrectionOptionsDialog
+    AbsorptionCorrectionOptionsDialog,
 )
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.beam_marker_style_editor import BeamMarkerStyleEditor
@@ -43,13 +45,14 @@ from hexrdgui.calibration.calibration_runner import CalibrationRunner
 from hexrdgui.calibration.auto.powder_runner import PowderRunner
 from hexrdgui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
 from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
-    HKLPicksTreeViewDialog, overlays_to_tree_format, tree_format_to_picks,
+    HKLPicksTreeViewDialog,
+    overlays_to_tree_format,
+    tree_format_to_picks,
 )
 from hexrdgui.calibration.structureless import StructurelessCalibrationRunner
 from hexrdgui.calibration.wppf_runner import WppfRunner
 from hexrdgui.masking.create_polar_mask import rebuild_polar_masks
-from hexrdgui.masking.create_raw_mask import (
-    convert_polar_to_raw, rebuild_raw_masks)
+from hexrdgui.masking.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
 from hexrdgui.constants import ViewType, DOCUMENTATION_URL
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_calculator_dialog import ImageCalculatorDialog
@@ -60,9 +63,7 @@ from hexrdgui.load_images_dialog import LoadImagesDialog
 from hexrdgui.simple_image_series_dialog import SimpleImageSeriesDialog
 from hexrdgui.pinhole_mask_dialog import PinholeMaskDialog
 from hexrdgui.pinhole_panel_buffer import generate_pinhole_panel_buffer
-from hexrdgui.polarization_options_dialog import (
-    PolarizationOptionsDialog
-)
+from hexrdgui.polarization_options_dialog import PolarizationOptionsDialog
 from hexrdgui.masking.mask_manager_dialog import MaskManagerDialog
 from hexrdgui.masking.mask_regions_dialog import MaskRegionsDialog
 from hexrdgui.materials_panel import MaterialsPanel
@@ -71,9 +72,7 @@ from hexrdgui.save_images_dialog import SaveImagesDialog
 from hexrdgui.masking.threshold_mask_dialog import ThresholdMaskDialog
 from hexrdgui.transform_dialog import TransformDialog
 from hexrdgui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
-from hexrdgui.indexing.fit_grains_tree_view_dialog import (
-    FitGrainsTreeViewDialog
-)
+from hexrdgui.indexing.fit_grains_tree_view_dialog import FitGrainsTreeViewDialog
 from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
@@ -117,27 +116,26 @@ class MainWindow(QObject):
         self.ui.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
         self.ui.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
 
-        self.color_map_editor = ColorMapEditor(self.ui.image_tab_widget,
-                                               self.ui.central_widget)
+        self.color_map_editor = ColorMapEditor(
+            self.ui.image_tab_widget, self.ui.central_widget
+        )
         self.color_map_editor.hide_overlays_during_bc_editing = True
-        self.ui.color_map_dock_widgets.layout().addWidget(
-            self.color_map_editor.ui)
+        self.ui.color_map_dock_widgets.layout().addWidget(self.color_map_editor.ui)
 
         self.image_mode_widget = ImageModeWidget(self.ui.central_widget)
-        self.ui.image_mode_dock_widgets.layout().addWidget(
-            self.image_mode_widget.ui)
+        self.ui.image_mode_dock_widgets.layout().addWidget(self.image_mode_widget.ui)
 
         self.add_materials_panel()
 
-        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(
-                                                self.ui)
+        self.physics_package_manager_dialog = PhysicsPackageManagerDialog(self.ui)
 
         self.simple_image_series_dialog = SimpleImageSeriesDialog(self.ui)
         self.llnl_import_tool_dialog = LLNLImportToolDialog(
-                                        self.color_map_editor,
-                                        self.ui)
+            self.color_map_editor, self.ui
+        )
         self.image_stack_dialog = ImageStackDialog(
-                                    self.ui, self.simple_image_series_dialog)
+            self.ui, self.simple_image_series_dialog
+        )
 
         self.cal_tree_view = CalTreeView(self.ui)
         self.instrument_form_view_widget = InstrumentFormViewWidget(self.ui)
@@ -145,12 +143,13 @@ class MainWindow(QObject):
 
         tab_texts = ['Tree View', 'Form View', 'Slider View']
         self.ui.calibration_tab_widget.clear()
-        self.ui.calibration_tab_widget.addTab(self.cal_tree_view,
-                                              tab_texts[0])
+        self.ui.calibration_tab_widget.addTab(self.cal_tree_view, tab_texts[0])
         self.ui.calibration_tab_widget.addTab(
-            self.instrument_form_view_widget.ui, tab_texts[1])
+            self.instrument_form_view_widget.ui, tab_texts[1]
+        )
         self.ui.calibration_tab_widget.addTab(
-            self.calibration_slider_widget.ui, tab_texts[2])
+            self.calibration_slider_widget.ui, tab_texts[2]
+        )
 
         url = 'configuration/instrument/'
         add_help_url(self.ui.config_button_box, url)
@@ -158,7 +157,8 @@ class MainWindow(QObject):
         self.mask_manager_dialog = MaskManagerDialog(self.ui)
 
         self._edit_colormap_list_dialog = EditColormapListDialog(
-            self.ui, self.color_map_editor)
+            self.ui, self.color_map_editor
+        )
 
         self.threshold_mask_dialog = ThresholdMaskDialog(self.ui)
 
@@ -192,117 +192,143 @@ class MainWindow(QObject):
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
         self.ui.action_open_instrument_file.triggered.connect(
-            self.on_action_open_config_file_triggered)
+            self.on_action_open_config_file_triggered
+        )
         self.ui.action_open_grain_fitting_results.triggered.connect(
-            self.open_grain_fitting_results)
+            self.open_grain_fitting_results
+        )
         self.ui.action_save_config_yaml.triggered.connect(
-            self.on_action_save_config_yaml_triggered)
+            self.on_action_save_config_yaml_triggered
+        )
         self.ui.action_save_config_hexrd.triggered.connect(
-            self.on_action_save_config_hexrd_triggered)
+            self.on_action_save_config_hexrd_triggered
+        )
         self.ui.action_open_materials.triggered.connect(
-            self.on_action_open_materials_triggered)
+            self.on_action_open_materials_triggered
+        )
         self.ui.action_save_imageseries.triggered.connect(
-            self.on_action_save_imageseries_triggered)
+            self.on_action_save_imageseries_triggered
+        )
         self.ui.action_save_materials_hdf5.triggered.connect(
-            self.on_action_save_materials_hdf5_triggered)
+            self.on_action_save_materials_hdf5_triggered
+        )
         self.ui.action_save_materials_cif.triggered.connect(
-            self.on_action_save_materials_cif_triggered)
-        self.ui.action_save_state.triggered.connect(
-            self.on_action_save_state_triggered)
-        self.ui.action_open_state.triggered.connect(
-            self.on_action_load_state_triggered)
+            self.on_action_save_materials_cif_triggered
+        )
+        self.ui.action_save_state.triggered.connect(self.on_action_save_state_triggered)
+        self.ui.action_open_state.triggered.connect(self.on_action_load_state_triggered)
         self.ui.action_export_current_plot.triggered.connect(
-            self.on_action_export_current_plot_triggered)
+            self.on_action_export_current_plot_triggered
+        )
         self.ui.action_export_to_maud.triggered.connect(
-            self.on_action_export_to_maud_triggered)
+            self.on_action_export_to_maud_triggered
+        )
         self.ui.action_edit_euler_angle_convention.triggered.connect(
-            self.on_action_edit_euler_angle_convention)
+            self.on_action_edit_euler_angle_convention
+        )
         self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
-            self.on_action_edit_apply_hand_drawn_mask_triggered)
+            self.on_action_edit_apply_hand_drawn_mask_triggered
+        )
         self.ui.action_edit_apply_hand_drawn_mask.triggered.connect(
-            self.ui.image_tab_widget.toggle_off_toolbar)
+            self.ui.image_tab_widget.toggle_off_toolbar
+        )
         self.ui.action_edit_apply_laue_mask_to_polar.triggered.connect(
-            self.on_action_edit_apply_laue_mask_to_polar_triggered)
+            self.on_action_edit_apply_laue_mask_to_polar_triggered
+        )
         self.ui.action_edit_apply_powder_mask_to_polar.triggered.connect(
-            self.action_edit_apply_powder_mask_to_polar)
+            self.action_edit_apply_powder_mask_to_polar
+        )
         self.ui.action_edit_apply_region_mask.triggered.connect(
-            self.on_action_edit_apply_region_mask_triggered)
+            self.on_action_edit_apply_region_mask_triggered
+        )
         self.ui.action_edit_apply_pinhole_mask.triggered.connect(
-            self.show_pinhole_mask_dialog)
+            self.show_pinhole_mask_dialog
+        )
         self.ui.action_edit_reset_instrument_config.triggered.connect(
-            self.on_action_edit_reset_instrument_config)
+            self.on_action_edit_reset_instrument_config
+        )
         self.ui.action_transform_detectors.triggered.connect(
-            self.on_action_transform_detectors_triggered)
-        self.ui.action_image_calculator.triggered.connect(
-            self.open_image_calculator)
+            self.on_action_transform_detectors_triggered
+        )
+        self.ui.action_image_calculator.triggered.connect(self.open_image_calculator)
         self.ui.action_edit_config.triggered.connect(
-            self.on_action_edit_config_triggered)
+            self.on_action_edit_config_triggered
+        )
         self.ui.action_open_mask_manager.triggered.connect(
-            self.on_action_open_mask_manager_triggered)
-        self.ui.action_show_live_updates.toggled.connect(
-            self.set_live_update)
+            self.on_action_open_mask_manager_triggered
+        )
+        self.ui.action_show_live_updates.toggled.connect(self.set_live_update)
         self.ui.action_show_detector_borders.toggled.connect(
-            HexrdConfig().set_show_detector_borders)
-        self.ui.action_show_beam_marker.toggled.connect(
-            self.show_beam_marker_toggled)
-        self.ui.action_view_indexing_config.triggered.connect(
-            self.view_indexing_config)
+            HexrdConfig().set_show_detector_borders
+        )
+        self.ui.action_show_beam_marker.toggled.connect(self.show_beam_marker_toggled)
+        self.ui.action_view_indexing_config.triggered.connect(self.view_indexing_config)
         self.ui.action_view_fit_grains_config.triggered.connect(
-            self.view_fit_grains_config)
-        self.ui.action_view_overlay_picks.triggered.connect(
-            self.view_overlay_picks)
-        self.ui.calibration_tab_widget.currentChanged.connect(
-            self.update_config_gui)
+            self.view_fit_grains_config
+        )
+        self.ui.action_view_overlay_picks.triggered.connect(self.view_overlay_picks)
+        self.ui.calibration_tab_widget.currentChanged.connect(self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.threshold_mask_dialog.mask_applied.connect(self.update_all)
         self.ui.action_run_fast_powder_calibration.triggered.connect(
-            self.start_fast_powder_calibration)
+            self.start_fast_powder_calibration
+        )
         self.ui.action_run_laue_and_powder_calibration.triggered.connect(
-            self.on_action_run_laue_and_powder_calibration_triggered)
+            self.on_action_run_laue_and_powder_calibration_triggered
+        )
         self.ui.action_run_laue_and_powder_calibration.triggered.connect(
-            self.ui.image_tab_widget.toggle_off_toolbar)
+            self.ui.image_tab_widget.toggle_off_toolbar
+        )
         self.ui.action_run_structureless_calibration.triggered.connect(
-            self.run_structureless_calibration)
-        self.ui.action_run_hedm_calibration.triggered.connect(
-            self.run_hedm_calibration)
+            self.run_structureless_calibration
+        )
+        self.ui.action_run_hedm_calibration.triggered.connect(self.run_hedm_calibration)
         self.ui.action_run_indexing.triggered.connect(
-            self.on_action_run_indexing_triggered)
+            self.on_action_run_indexing_triggered
+        )
         self.ui.action_rerun_clustering.triggered.connect(
-            self.on_action_rerun_clustering)
+            self.on_action_rerun_clustering
+        )
         self.ui.action_run_fit_grains.triggered.connect(
-            self.on_action_run_fit_grains_triggered)
+            self.on_action_run_fit_grains_triggered
+        )
         self.ui.action_run_wppf.triggered.connect(self.run_wppf)
         self.ui.image_tab_widget.update_needed.connect(self.update_all)
-        self.ui.image_tab_widget.new_mouse_position.connect(
-            self.new_mouse_position)
+        self.ui.image_tab_widget.new_mouse_position.connect(self.new_mouse_position)
         self.ui.image_tab_widget.clear_mouse_position.connect(
-            self.ui.status_bar.clearMessage)
-        self.llnl_import_tool_dialog.new_config_loaded.connect(
-            self.update_config_gui)
+            self.ui.status_bar.clearMessage
+        )
+        self.llnl_import_tool_dialog.new_config_loaded.connect(self.update_config_gui)
         self.llnl_import_tool_dialog.instrument_was_selected.connect(
-            self.update_action_check_states)
-        self.llnl_import_tool_dialog.cancel_workflow.connect(
-            self.load_dummy_images)
-        self.config_loaded.connect(
-            self.llnl_import_tool_dialog.config_loaded_from_menu)
+            self.update_action_check_states
+        )
+        self.llnl_import_tool_dialog.cancel_workflow.connect(self.load_dummy_images)
+        self.config_loaded.connect(self.llnl_import_tool_dialog.config_loaded_from_menu)
         self.ui.action_show_toolbar.toggled.connect(
-            self.ui.image_tab_widget.toggle_off_toolbar)
+            self.ui.image_tab_widget.toggle_off_toolbar
+        )
         self.ui.action_hedm_import_tool.triggered.connect(
-            self.on_action_hedm_import_tool_triggered)
+            self.on_action_hedm_import_tool_triggered
+        )
         self.ui.action_llnl_import_tool.triggered.connect(
-            self.on_action_llnl_import_tool_triggered)
+            self.on_action_llnl_import_tool_triggered
+        )
         self.ui.action_image_stack.triggered.connect(
-            self.on_action_image_stack_triggered)
+            self.on_action_image_stack_triggered
+        )
         self.ui.action_show_all_colormaps.triggered.connect(
-            self.on_action_show_all_colormaps_toggled)
+            self.on_action_show_all_colormaps_toggled
+        )
         self.ui.action_edit_defaults.triggered.connect(
-            self.on_action_edit_defaults_toggled)
-        self.ui.image_tab_widget.new_active_canvas.connect(
-            self.active_canvas_changed)
+            self.on_action_edit_defaults_toggled
+        )
+        self.ui.image_tab_widget.new_active_canvas.connect(self.active_canvas_changed)
         self.ui.action_edit_apply_threshold.triggered.connect(
-            self.on_action_edit_apply_threshold_triggered)
+            self.on_action_edit_apply_threshold_triggered
+        )
         self.ui.action_open_preconfigured_instrument_file.triggered.connect(
-            self.on_action_open_preconfigured_instrument_file_triggered)
+            self.on_action_open_preconfigured_instrument_file_triggered
+        )
         self.ui.action_edit_physics_package.triggered.connect(
             self.on_action_edit_physics_package_triggered
         )
@@ -311,81 +337,83 @@ class MainWindow(QObject):
         )
 
         self.image_mode_widget.polar_show_snip1d.connect(
-            self.ui.image_tab_widget.polar_show_snip1d)
+            self.ui.image_tab_widget.polar_show_snip1d
+        )
         self.image_mode_widget.raw_show_zoom_dialog.connect(
-            self.on_show_raw_zoom_dialog)
+            self.on_show_raw_zoom_dialog
+        )
         self.image_mode_widget.create_waterfall_plot.connect(
-            self.ui.image_tab_widget.create_waterfall_plot)
+            self.ui.image_tab_widget.create_waterfall_plot
+        )
 
-        self.ui.action_open_images.triggered.connect(
-            self.open_image_files_triggered)
-        HexrdConfig().update_status_bar.connect(
-            self.ui.status_bar.showMessage)
-        HexrdConfig().detectors_changed.connect(
-            self.on_detectors_changed)
-        HexrdConfig().detector_shape_changed.connect(
-            self.on_detector_shape_changed)
+        self.ui.action_open_images.triggered.connect(self.open_image_files_triggered)
+        HexrdConfig().update_status_bar.connect(self.ui.status_bar.showMessage)
+        HexrdConfig().detectors_changed.connect(self.on_detectors_changed)
+        HexrdConfig().detector_shape_changed.connect(self.on_detector_shape_changed)
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
         MaskManager().raw_masks_changed.connect(self.update_all)
-        HexrdConfig().enable_canvas_toolbar.connect(
-            self.on_enable_canvas_toolbar)
+        HexrdConfig().enable_canvas_toolbar.connect(self.on_enable_canvas_toolbar)
         HexrdConfig().tab_images_changed.connect(
-            self.update_drawn_mask_line_picker_canvas)
-        HexrdConfig().tab_images_changed.connect(
-            self.update_mask_region_canvas)
-        HexrdConfig().update_instrument_toolbox.connect(
-            self.update_config_gui)
-        HexrdConfig().physics_package_modified.connect(
-            self.on_physics_package_modified)
+            self.update_drawn_mask_line_picker_canvas
+        )
+        HexrdConfig().tab_images_changed.connect(self.update_mask_region_canvas)
+        HexrdConfig().update_instrument_toolbox.connect(self.update_config_gui)
+        HexrdConfig().physics_package_modified.connect(self.on_physics_package_modified)
 
         ImageLoadManager().update_needed.connect(self.update_all)
         ImageLoadManager().new_images_loaded.connect(self.images_loaded)
         ImageLoadManager().images_transformed.connect(self.update_config_gui)
         ImageLoadManager().live_update_status.connect(self.set_live_update)
         ImageLoadManager().state_updated.connect(
-            self.simple_image_series_dialog.setup_gui)
+            self.simple_image_series_dialog.setup_gui
+        )
 
         self.new_mask_added.connect(self.mask_manager_dialog.update_tree)
+        self.image_mode_widget.tab_changed.connect(MaskManager().view_mode_changed)
         self.image_mode_widget.tab_changed.connect(
-            MaskManager().view_mode_changed)
-        self.image_mode_widget.tab_changed.connect(
-            self.mask_manager_dialog.update_collapsed)
+            self.mask_manager_dialog.update_collapsed
+        )
 
         self.ui.action_apply_pixel_solid_angle_correction.toggled.connect(
-            HexrdConfig().set_apply_pixel_solid_angle_correction)
+            HexrdConfig().set_apply_pixel_solid_angle_correction
+        )
         self.ui.action_apply_polarization_correction.toggled.connect(
-            self.apply_polarization_correction_toggled)
+            self.apply_polarization_correction_toggled
+        )
         self.ui.action_apply_lorentz_correction.toggled.connect(
-            self.apply_lorentz_correction_toggled)
+            self.apply_lorentz_correction_toggled
+        )
         self.ui.action_subtract_minimum.toggled.connect(
-            HexrdConfig().set_intensity_subtract_minimum)
+            HexrdConfig().set_intensity_subtract_minimum
+        )
         self.ui.action_apply_absorption_correction.toggled.connect(
-            self.action_apply_absorption_correction_toggled)
+            self.action_apply_absorption_correction_toggled
+        )
         self.ui.action_apply_median_filter.toggled.connect(
-            self.action_apply_median_filter_toggled)
-        HexrdConfig().instrument_config_loaded.connect(
-            self.on_instrument_config_loaded)
+            self.action_apply_median_filter_toggled
+        )
+        HexrdConfig().instrument_config_loaded.connect(self.on_instrument_config_loaded)
         HexrdConfig().active_beam_switched.connect(self.update_config_gui)
         HexrdConfig().state_loaded.connect(self.on_state_loaded)
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
-        HexrdConfig().polar_masks_reapplied.connect(
-            self.on_polar_masks_reapplied)
+        HexrdConfig().polar_masks_reapplied.connect(self.on_polar_masks_reapplied)
 
         self.ui.action_about.triggered.connect(self.on_action_about_triggered)
         self.ui.action_documentation.triggered.connect(
-            self.on_action_documentation_triggered)
+            self.on_action_documentation_triggered
+        )
 
         # Update menu item tooltips when their enable state changes
         for widget_name in self._menu_item_tooltips:
             w = getattr(self.ui, widget_name)
             w.changed.connect(self._update_menu_item_tooltip_for_sender)
 
-        HexrdConfig().enable_canvas_focus_mode.connect(
-            self.enable_canvas_focus_mode)
+        HexrdConfig().enable_canvas_focus_mode.connect(self.enable_canvas_focus_mode)
 
         self.llnl_import_tool_dialog.complete_workflow.connect(
-            self.on_llnl_import_completed)
+            self.on_llnl_import_completed
+        )
 
     def on_state_loaded(self):
         self.update_action_check_states()
@@ -394,18 +422,15 @@ class MainWindow(QObject):
 
     def update_action_check_states(self):
         checkbox_to_hexrd_config_mappings = {
-            'action_apply_pixel_solid_angle_correction':
-                'apply_pixel_solid_angle_correction',
-            'action_apply_polarization_correction':
-                'apply_polarization_correction',
+            'action_apply_pixel_solid_angle_correction': 'apply_pixel_solid_angle_correction',
+            'action_apply_polarization_correction': 'apply_polarization_correction',
             'action_apply_lorentz_correction': 'apply_lorentz_correction',
             'action_subtract_minimum': 'intensity_subtract_minimum',
             'action_show_live_updates': 'live_update',
             'action_show_detector_borders': 'show_detector_borders',
             'action_show_beam_marker': 'show_beam_marker',
             'action_show_all_colormaps': 'show_all_colormaps',
-            'action_apply_absorption_correction':
-                'apply_absorption_correction',
+            'action_apply_absorption_correction': 'apply_absorption_correction',
             'action_include_physics_package': 'has_physics_package',
             'action_apply_median_filter': 'apply_median_filter_correction',
         }
@@ -444,9 +469,9 @@ class MainWindow(QObject):
 
         self.ui.config_tool_box.removeItem(materials_panel_index)
         self.materials_panel = MaterialsPanel(self.ui)
-        self.ui.config_tool_box.insertItem(materials_panel_index,
-                                           self.materials_panel.ui,
-                                           'Materials')
+        self.ui.config_tool_box.insertItem(
+            materials_panel_index, self.materials_panel.ui, 'Materials'
+        )
 
     def enable_canvas_focus_mode(self, b):
         # Disable these widgets when focus mode is set
@@ -468,8 +493,11 @@ class MainWindow(QObject):
 
     def on_action_open_config_file_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Configuration', HexrdConfig().working_dir,
-            'HEXRD files (*.hexrd *.yaml *.yml)')
+            self.ui,
+            'Load Configuration',
+            HexrdConfig().working_dir,
+            'HEXRD files (*.hexrd *.yaml *.yml)',
+        )
 
         if selected_file:
             path = Path(selected_file)
@@ -479,7 +507,8 @@ class MainWindow(QObject):
 
     def _save_config(self, extension, filter):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Configuration', HexrdConfig().working_dir, filter)
+            self.ui, 'Save Configuration', HexrdConfig().working_dir, filter
+        )
 
         if selected_file:
             if Path(selected_file).suffix != extension:
@@ -496,8 +525,11 @@ class MainWindow(QObject):
 
     def open_grain_fitting_results(self):
         selected_file, _ = QFileDialog.getOpenFileName(
-            self.ui, 'Open Grain Fitting File', HexrdConfig().working_dir,
-            'Grain fitting output files (*.out)')
+            self.ui,
+            'Open Grain Fitting File',
+            HexrdConfig().working_dir,
+            'Grain fitting output files (*.out)',
+        )
 
         if selected_file:
             path = Path(selected_file)
@@ -505,7 +537,8 @@ class MainWindow(QObject):
 
             data = np.loadtxt(selected_file, ndmin=2)
             dialog = FitGrainsResultsDialog(
-                data, parent=self.ui, allow_export_workflow=False)
+                data, parent=self.ui, allow_export_workflow=False
+            )
             dialog.show()
             self._fit_grains_results_dialog = dialog
 
@@ -538,10 +571,11 @@ class MainWindow(QObject):
         images_dir = HexrdConfig().images_dir
 
         selected_file, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, dir=images_dir)
+            self.ui, dir=images_dir
+        )
 
         if len(selected_file) > 1:
-            msg = ('Please select only one file.')
+            msg = 'Please select only one file.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
@@ -560,7 +594,8 @@ class MainWindow(QObject):
             images_dir = HexrdConfig().images_dir
 
             selected_files, selected_filter = QFileDialog.getOpenFileNames(
-                self.ui, dir=images_dir)
+                self.ui, dir=images_dir
+            )
 
         if selected_files:
             # Save the chosen dir
@@ -570,16 +605,19 @@ class MainWindow(QObject):
             if not files:
                 return
 
-            if (any(len(f) != 1 for f in files)
-                    or len(files) < len(HexrdConfig().detector_names)):
-                msg = ('Number of files must match number of detectors: ' +
-                       str(len(HexrdConfig().detector_names)))
+            if any(len(f) != 1 for f in files) or len(files) < len(
+                HexrdConfig().detector_names
+            ):
+                msg = 'Number of files must match number of detectors: ' + str(
+                    len(HexrdConfig().detector_names)
+                )
                 raise Exception(msg)
 
             # If it is a hdf5 file allow the user to select the path
             ext = os.path.splitext(selected_files[0])[1]
-            if (ImageFileManager().is_hdf(ext) and not
-                    ImageFileManager().hdf_path_exists(selected_files[0])):
+            if ImageFileManager().is_hdf(
+                ext
+            ) and not ImageFileManager().hdf_path_exists(selected_files[0]):
 
                 selection = ImageFileManager().path_prompt(selected_files[0])
                 if not selection:
@@ -605,8 +643,11 @@ class MainWindow(QObject):
 
     def on_action_open_materials_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Materials File', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5), CIF (*.cif)')
+            self.ui,
+            'Load Materials File',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5), CIF (*.cif)',
+        )
         if not selected_file:
             return
 
@@ -618,7 +659,7 @@ class MainWindow(QObject):
 
     def on_action_save_imageseries_triggered(self):
         if not HexrdConfig().has_images:
-            msg = ('No ImageSeries available for saving.')
+            msg = 'No ImageSeries available for saving.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
@@ -626,8 +667,11 @@ class MainWindow(QObject):
 
     def on_action_save_materials_hdf5_triggered(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Materials', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Save Materials',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -642,7 +686,8 @@ class MainWindow(QObject):
     def on_action_save_materials_cif_triggered(self):
         caption = 'Select directory to save CIF files to'
         selected_dir = QFileDialog.getExistingDirectory(
-            self.ui, caption, dir=HexrdConfig().working_dir)
+            self.ui, caption, dir=HexrdConfig().working_dir
+        )
         if not selected_dir:
             return
 
@@ -659,7 +704,8 @@ class MainWindow(QObject):
         default_name = f'{self.image_mode}_view.h5'
         default_path = os.path.join(HexrdConfig().working_dir, default_name)
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Current View', default_path, filters)
+            self.ui, 'Save Current View', default_path, filters
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -670,7 +716,8 @@ class MainWindow(QObject):
 
         default_path = os.path.join(HexrdConfig().working_dir, "maud.esg")
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export to Maud', default_path, filters)
+            self.ui, 'Export to Maud', default_path, filters
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -709,8 +756,7 @@ class MainWindow(QObject):
 
         canvas = self.ui.image_tab_widget.image_canvases[0]
         runner = StructurelessCalibrationRunner(canvas, async_runner, self.ui)
-        runner.instrument_updated.connect(
-            self.structureless_calibration_updated)
+        runner.instrument_updated.connect(self.structureless_calibration_updated)
 
         try:
             runner.run()
@@ -747,7 +793,8 @@ class MainWindow(QObject):
         self.ui.action_rerun_clustering.setEnabled(False)
         self._indexing_runner = IndexingRunner(self.ui)
         self._indexing_runner.clustering_ran.connect(
-            self.ui.action_rerun_clustering.setEnabled)
+            self.ui.action_rerun_clustering.setEnabled
+        )
         self._indexing_runner.run()
 
     def on_action_rerun_clustering(self):
@@ -775,30 +822,25 @@ class MainWindow(QObject):
         self.color_map_editor.update_bounds(HexrdConfig().masked_images_dict)
 
     def on_action_edit_euler_angle_convention(self):
-        allowed_conventions = [
-            'None',
-            'Extrinsic XYZ',
-            'Intrinsic ZXZ'
-        ]
+        allowed_conventions = ['None', 'Extrinsic XYZ', 'Intrinsic ZXZ']
         corresponding_values = [
             None,
-            {
-                'axes_order': 'xyz',
-                'extrinsic': True
-            },
-            {
-                'axes_order': 'zxz',
-                'extrinsic': False
-            }
+            {'axes_order': 'xyz', 'extrinsic': True},
+            {'axes_order': 'zxz', 'extrinsic': False},
         ]
         current = HexrdConfig().euler_angle_convention
         ind = corresponding_values.index(current)
 
         help_url = 'configuration/instrument/#euler-angle-convention'
-        name, ok = InputDialog.getItem(self.ui, 'HEXRD',
-                                       'Select Euler Angle Convention',
-                                       allowed_conventions, ind, False,
-                                       help_url=help_url)
+        name, ok = InputDialog.getItem(
+            self.ui,
+            'HEXRD',
+            'Select Euler Angle Convention',
+            allowed_conventions,
+            ind,
+            False,
+            help_url=help_url,
+        )
 
         if not ok:
             # User canceled...
@@ -822,17 +864,17 @@ class MainWindow(QObject):
 
     def update_drawn_mask_line_picker_canvas(self):
         if hasattr(self, '_apply_drawn_mask_line_picker'):
-            self._apply_drawn_mask_line_picker.canvas_changed(
-                self.active_canvas
-            )
+            self._apply_drawn_mask_line_picker.canvas_changed(self.active_canvas)
 
     def on_action_edit_apply_hand_drawn_mask_triggered(self):
         # Make the dialog
-        self._apply_drawn_mask_line_picker = (
-            HandDrawnMaskDialog(self.active_canvas, self.ui))
+        self._apply_drawn_mask_line_picker = HandDrawnMaskDialog(
+            self.active_canvas, self.ui
+        )
         self._apply_drawn_mask_line_picker.start()
         self._apply_drawn_mask_line_picker.finished.connect(
-            self.run_apply_hand_drawn_mask)
+            self.run_apply_hand_drawn_mask
+        )
 
     def run_apply_hand_drawn_mask(self, dets, line_data):
         if self.image_mode == ViewType.polar:
@@ -935,8 +977,7 @@ class MainWindow(QObject):
 
     def on_action_edit_apply_region_mask_triggered(self):
         self._masks_regions_dialog = MaskRegionsDialog(self.ui)
-        self._masks_regions_dialog.new_mask_added.connect(
-            self.new_mask_added.emit)
+        self._masks_regions_dialog.new_mask_added.connect(self.new_mask_added.emit)
         self._masks_regions_dialog.show()
 
         self.ui.image_tab_widget.toggle_off_toolbar()
@@ -948,8 +989,7 @@ class MainWindow(QObject):
 
         if not hasattr(self, '_pinhole_mask_dialog'):
             self._pinhole_mask_dialog = PinholeMaskDialog(self.ui)
-            self._pinhole_mask_dialog.apply_clicked.connect(
-                self.apply_pinhole_mask)
+            self._pinhole_mask_dialog.apply_clicked.connect(self.apply_pinhole_mask)
 
         self._pinhole_mask_dialog.show()
 
@@ -1031,13 +1071,15 @@ class MainWindow(QObject):
         has_images = HexrdConfig().has_images
 
         self.ui.action_export_current_plot.setEnabled(
-            (is_polar or is_cartesian or is_stereo) and has_images)
+            (is_polar or is_cartesian or is_stereo) and has_images
+        )
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
-            is_polar and has_images)
-        self.ui.action_run_structureless_calibration.setEnabled(
-            is_polar and has_images)
+            is_polar and has_images
+        )
+        self.ui.action_run_structureless_calibration.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_hand_drawn_mask.setEnabled(
-            (is_polar or is_raw) and has_images)
+            (is_polar or is_raw) and has_images
+        )
         self.ui.action_run_wppf.setEnabled(is_polar and has_images)
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
@@ -1045,7 +1087,7 @@ class MainWindow(QObject):
 
     def start_fast_powder_calibration(self):
         if not HexrdConfig().has_images:
-            msg = ('No images available for calibration.')
+            msg = 'No images available for calibration.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
@@ -1193,8 +1235,7 @@ class MainWindow(QObject):
         # other views.
         if self.image_mode != ViewType.polar:
             msg = (
-                'Overlay picks may currently only be viewed in the polar '
-                'image mode'
+                'Overlay picks may currently only be viewed in the polar ' 'image mode'
             )
             print(msg)
             QMessageBox.critical(self.ui, 'HEXRD', msg)
@@ -1378,8 +1419,10 @@ class MainWindow(QObject):
             },
             'action_export_current_plot': {
                 True: '',
-                False: ('Cartesian/polar/stereo view must be active '
-                        'with image data loaded'),
+                False: (
+                    'Cartesian/polar/stereo view must be active '
+                    'with image data loaded'
+                ),
             },
             'action_export_to_maud': {
                 True: '',
@@ -1387,8 +1430,9 @@ class MainWindow(QObject):
             },
             'action_image_calculator': {
                 True: '',
-                False: ('Image data must be loaded (and must not be an image '
-                        'stack)'),
+                False: (
+                    'Image data must be loaded (and must not be an image ' 'stack)'
+                ),
             },
             'action_run_laue_and_powder_calibration': {
                 True: '',
@@ -1449,8 +1493,11 @@ class MainWindow(QObject):
     def on_action_save_state_triggered(self):
 
         selected_file, _ = QFileDialog.getSaveFileName(
-            self.ui, 'Save Current State', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Save Current State',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if not selected_file:
             return
@@ -1510,8 +1557,8 @@ class MainWindow(QObject):
 
     def on_action_load_state_triggered(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load State', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui, 'Load State', HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
+        )
 
         if not selected_file:
             return
@@ -1644,8 +1691,7 @@ class MainWindow(QObject):
         for idx in range(len(recent_state_files)):
             recent = recent_state_files[idx]
             action = recents_menu.addAction(Path(recent).name)
-            action.triggered.connect(partial(self.load_recent_state_file,
-                                             recent))
+            action.triggered.connect(partial(self.load_recent_state_file, recent))
 
     def load_recent_state_file(self, path):
         if not Path(path).exists():
@@ -1688,7 +1734,8 @@ class MainWindow(QObject):
         # Provide simple dialog for selecting instrument to import
         msg = 'Select pre-configured instrument to load'
         instr_name, ok = QInputDialog.getItem(
-            self.ui, 'Load Instrument', msg, list(options), 0, False)
+            self.ui, 'Load Instrument', msg, list(options), 0, False
+        )
 
         if not ok:
             return

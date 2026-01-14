@@ -65,102 +65,122 @@ class ImageModeWidget(QObject):
         self.ui.installEventFilter(self)
         self.ui.raw_tabbed_view.toggled.connect(HexrdConfig().set_tab_images)
         self.ui.raw_show_saturation.toggled.connect(
-            HexrdConfig().set_show_saturation_level)
+            HexrdConfig().set_show_saturation_level
+        )
         self.ui.raw_stitch_roi_images.toggled.connect(
-            HexrdConfig().set_stitch_raw_roi_images)
-        self.ui.raw_show_zoom_dialog.clicked.connect(
-            self.raw_show_zoom_dialog)
+            HexrdConfig().set_stitch_raw_roi_images
+        )
+        self.ui.raw_show_zoom_dialog.clicked.connect(self.raw_show_zoom_dialog)
         self.ui.eiger_stream_v2_setting.currentIndexChanged.connect(
-            self.on_eiger_stream_v2_settings_modified)
+            self.on_eiger_stream_v2_settings_modified
+        )
         self.ui.eiger_stream_v2_multiplier.valueChanged.connect(
-            self.on_eiger_stream_v2_settings_modified)
+            self.on_eiger_stream_v2_settings_modified
+        )
         self.ui.cartesian_pixel_size.valueChanged.connect(
-            HexrdConfig()._set_cartesian_pixel_size)
+            HexrdConfig()._set_cartesian_pixel_size
+        )
         self.ui.cartesian_virtual_plane_distance.valueChanged.connect(
-            HexrdConfig().set_cartesian_virtual_plane_distance)
+            HexrdConfig().set_cartesian_virtual_plane_distance
+        )
         self.ui.cartesian_plane_normal_rotate_x.valueChanged.connect(
-            HexrdConfig().set_cartesian_plane_normal_rotate_x)
+            HexrdConfig().set_cartesian_plane_normal_rotate_x
+        )
         self.ui.cartesian_plane_normal_rotate_y.valueChanged.connect(
-            HexrdConfig().set_cartesian_plane_normal_rotate_y)
+            HexrdConfig().set_cartesian_plane_normal_rotate_y
+        )
         self.ui.polar_pixel_size_tth.valueChanged.connect(
-            HexrdConfig()._set_polar_pixel_size_tth)
+            HexrdConfig()._set_polar_pixel_size_tth
+        )
         self.ui.polar_pixel_size_eta.valueChanged.connect(
-            HexrdConfig()._set_polar_pixel_size_eta)
+            HexrdConfig()._set_polar_pixel_size_eta
+        )
         self.ui.polar_res_tth_min.valueChanged.connect(
-            HexrdConfig().set_polar_res_tth_min)
+            HexrdConfig().set_polar_res_tth_min
+        )
         self.ui.polar_res_tth_max.valueChanged.connect(
-            HexrdConfig().set_polar_res_tth_max)
-        self.ui.polar_res_eta_min.valueChanged.connect(
-            self.on_eta_min_changed)
-        self.ui.polar_res_eta_max.valueChanged.connect(
-            self.on_eta_max_changed)
+            HexrdConfig().set_polar_res_tth_max
+        )
+        self.ui.polar_res_eta_min.valueChanged.connect(self.on_eta_min_changed)
+        self.ui.polar_res_eta_max.valueChanged.connect(self.on_eta_max_changed)
         self.ui.polar_apply_snip1d.toggled.connect(self.update_enable_states)
-        self.ui.polar_apply_snip1d.toggled.connect(
-            HexrdConfig().set_polar_apply_snip1d)
+        self.ui.polar_apply_snip1d.toggled.connect(HexrdConfig().set_polar_apply_snip1d)
         self.ui.polar_snip1d_algorithm.currentIndexChanged.connect(
-            HexrdConfig().set_polar_snip1d_algorithm)
+            HexrdConfig().set_polar_snip1d_algorithm
+        )
         self.ui.polar_snip1d_width.valueChanged.connect(
-            HexrdConfig().set_polar_snip1d_width)
+            HexrdConfig().set_polar_snip1d_width
+        )
         self.ui.polar_snip1d_numiter.valueChanged.connect(
-            HexrdConfig().set_polar_snip1d_numiter)
+            HexrdConfig().set_polar_snip1d_numiter
+        )
         self.ui.polar_apply_erosion.toggled.connect(
-            HexrdConfig().set_polar_apply_erosion)
+            HexrdConfig().set_polar_apply_erosion
+        )
         self.ui.polar_apply_scaling_to_lineout.toggled.connect(
-            HexrdConfig().set_polar_apply_scaling_to_lineout)
+            HexrdConfig().set_polar_apply_scaling_to_lineout
+        )
         self.ui.polar_x_axis_type.currentTextChanged.connect(
-            self.on_polar_x_axis_type_changed)
+            self.on_polar_x_axis_type_changed
+        )
         self.ui.polar_active_beam.currentIndexChanged.connect(
-            self.on_active_beam_changed)
+            self.on_active_beam_changed
+        )
         self.ui.create_waterfall_plot.clicked.connect(
-            self.on_create_waterfall_plot_clicked)
+            self.on_create_waterfall_plot_clicked
+        )
         self.ui.select_detectors_for_lineout.clicked.connect(
-            self.on_select_detectors_for_lineout_clicked)
+            self.on_select_detectors_for_lineout_clicked
+        )
 
-        HexrdConfig().instrument_config_loaded.connect(
-            self.on_instrument_config_load)
+        HexrdConfig().instrument_config_loaded.connect(self.on_instrument_config_load)
         HexrdConfig().active_beam_switched.connect(
             # We might need to update the eta range as well (for TARDIS),
             # so just update everything.
-            self.update_gui_from_config)
+            self.update_gui_from_config
+        )
 
-        HexrdConfig().enable_image_mode_widget.connect(
-            self.enable_image_mode_widget)
-        HexrdConfig().set_image_mode_widget_tab.connect(
-            self.set_image_mode_widget_tab)
+        HexrdConfig().enable_image_mode_widget.connect(self.enable_image_mode_widget)
+        HexrdConfig().set_image_mode_widget_tab.connect(self.set_image_mode_widget_tab)
 
         self.ui.polar_show_snip1d.clicked.connect(self.polar_show_snip1d.emit)
 
         self.ui.tab_widget.currentChanged.connect(self.currentChanged)
 
         self.ui.polar_azimuthal_overlays.pressed.connect(
-            self.show_polar_overlay_manager)
-        self.ui.azimuthal_offset.valueChanged.connect(
-            self.update_azimuthal_offset)
+            self.show_polar_overlay_manager
+        )
+        self.ui.azimuthal_offset.valueChanged.connect(self.update_azimuthal_offset)
 
         HexrdConfig().state_loaded.connect(self.update_gui_from_config)
 
         HexrdConfig().overlay_distortions_modified.connect(
-            self.overlay_distortions_modified)
+            self.overlay_distortions_modified
+        )
         HexrdConfig().overlay_renamed.connect(
-            self.update_polar_tth_distortion_overlay_options)
+            self.update_polar_tth_distortion_overlay_options
+        )
         HexrdConfig().overlay_list_modified.connect(
-            self.update_polar_tth_distortion_overlay_options)
+            self.update_polar_tth_distortion_overlay_options
+        )
         HexrdConfig().polar_tth_distortion_overlay_changed.connect(
-            self.on_polar_tth_distortion_overlay_changed)
+            self.on_polar_tth_distortion_overlay_changed
+        )
 
         self.ui.polar_apply_tth_distortion.toggled.connect(
-            self.polar_tth_distortion_overlay_changed)
+            self.polar_tth_distortion_overlay_changed
+        )
         self.ui.polar_tth_distortion_overlay.currentIndexChanged.connect(
-            self.polar_tth_distortion_overlay_changed)
+            self.polar_tth_distortion_overlay_changed
+        )
 
         self.ui.stereo_size.valueChanged.connect(HexrdConfig().set_stereo_size)
-        self.ui.stereo_show_border.toggled.connect(
-            HexrdConfig().set_stereo_show_border)
+        self.ui.stereo_show_border.toggled.connect(HexrdConfig().set_stereo_show_border)
         self.ui.stereo_project_from_polar.toggled.connect(
-            HexrdConfig().set_stereo_project_from_polar)
+            HexrdConfig().set_stereo_project_from_polar
+        )
 
-        ImageLoadManager().new_images_loaded.connect(
-            self.on_new_images_loaded)
+        ImageLoadManager().new_images_loaded.connect(self.on_new_images_loaded)
 
     def setup_eiger_stream_v2_options(self):
         combo = self.ui.eiger_stream_v2_setting
@@ -215,10 +235,7 @@ class ImageModeWidget(QObject):
     def on_eiger_stream_v2_settings_modified(self):
         ims_dict = HexrdConfig().imageseries_dict
 
-        if (
-            not ims_dict or
-            not _is_eiger_stream_v2(next(iter(ims_dict.values())))
-        ):
+        if not ims_dict or not _is_eiger_stream_v2(next(iter(ims_dict.values()))):
             # This shouldn't have been triggered. Let's ignore it.
             self.update_eiger_stream_v2_settings()
             return
@@ -303,47 +320,41 @@ class ImageModeWidget(QObject):
     def update_gui_from_config(self):
         with block_signals(*self.all_widgets()):
             self.ui.raw_stitch_roi_images.setChecked(
-                HexrdConfig().stitch_raw_roi_images)
-            self.ui.cartesian_pixel_size.setValue(
-                HexrdConfig().cartesian_pixel_size)
+                HexrdConfig().stitch_raw_roi_images
+            )
+            self.ui.cartesian_pixel_size.setValue(HexrdConfig().cartesian_pixel_size)
             self.ui.cartesian_virtual_plane_distance.setValue(
-                HexrdConfig().cartesian_virtual_plane_distance)
+                HexrdConfig().cartesian_virtual_plane_distance
+            )
             self.ui.cartesian_plane_normal_rotate_x.setValue(
-                HexrdConfig().cartesian_plane_normal_rotate_x)
+                HexrdConfig().cartesian_plane_normal_rotate_x
+            )
             self.ui.cartesian_plane_normal_rotate_y.setValue(
-                HexrdConfig().cartesian_plane_normal_rotate_y)
-            self.ui.polar_pixel_size_tth.setValue(
-                HexrdConfig().polar_pixel_size_tth)
-            self.ui.polar_pixel_size_eta.setValue(
-                HexrdConfig().polar_pixel_size_eta)
-            self.ui.polar_res_tth_min.setValue(
-                HexrdConfig().polar_res_tth_min)
-            self.ui.polar_res_tth_max.setValue(
-                HexrdConfig().polar_res_tth_max)
-            self.ui.polar_res_eta_min.setValue(
-                HexrdConfig().polar_res_eta_min)
-            self.ui.polar_res_eta_max.setValue(
-                HexrdConfig().polar_res_eta_max)
+                HexrdConfig().cartesian_plane_normal_rotate_y
+            )
+            self.ui.polar_pixel_size_tth.setValue(HexrdConfig().polar_pixel_size_tth)
+            self.ui.polar_pixel_size_eta.setValue(HexrdConfig().polar_pixel_size_eta)
+            self.ui.polar_res_tth_min.setValue(HexrdConfig().polar_res_tth_min)
+            self.ui.polar_res_tth_max.setValue(HexrdConfig().polar_res_tth_max)
+            self.ui.polar_res_eta_min.setValue(HexrdConfig().polar_res_eta_min)
+            self.ui.polar_res_eta_max.setValue(HexrdConfig().polar_res_eta_max)
             self.ui.polar_snip1d_algorithm.setCurrentIndex(
-                HexrdConfig().polar_snip1d_algorithm)
-            self.ui.polar_apply_snip1d.setChecked(
-                HexrdConfig().polar_apply_snip1d)
-            self.ui.polar_snip1d_width.setValue(
-                HexrdConfig().polar_snip1d_width)
-            self.ui.polar_snip1d_numiter.setValue(
-                HexrdConfig().polar_snip1d_numiter)
-            self.ui.polar_apply_erosion.setChecked(
-                HexrdConfig().polar_apply_erosion)
+                HexrdConfig().polar_snip1d_algorithm
+            )
+            self.ui.polar_apply_snip1d.setChecked(HexrdConfig().polar_apply_snip1d)
+            self.ui.polar_snip1d_width.setValue(HexrdConfig().polar_snip1d_width)
+            self.ui.polar_snip1d_numiter.setValue(HexrdConfig().polar_snip1d_numiter)
+            self.ui.polar_apply_erosion.setChecked(HexrdConfig().polar_apply_erosion)
             self.ui.polar_apply_scaling_to_lineout.setChecked(
-                HexrdConfig().polar_apply_scaling_to_lineout)
+                HexrdConfig().polar_apply_scaling_to_lineout
+            )
             self.polar_x_axis_type = HexrdConfig().polar_x_axis_type
-            self.ui.polar_active_beam.setCurrentText(
-                HexrdConfig().active_beam_name)
+            self.ui.polar_active_beam.setCurrentText(HexrdConfig().active_beam_name)
             self.ui.stereo_size.setValue(HexrdConfig().stereo_size)
-            self.ui.stereo_show_border.setChecked(
-                HexrdConfig().stereo_show_border)
+            self.ui.stereo_show_border.setChecked(HexrdConfig().stereo_show_border)
             self.ui.stereo_project_from_polar.setChecked(
-                HexrdConfig().stereo_project_from_polar)
+                HexrdConfig().stereo_project_from_polar
+            )
 
             self.update_polar_tth_distortion_overlay_options()
             self.update_enable_states()
@@ -376,9 +387,7 @@ class ImageModeWidget(QObject):
         # If there are more than 20, that's too many, and let's just ignore
         # it as well. All of the cases we know of currently should have
         # no more than 15 frames in the imageseries.
-        can_make_waterfall_plot = (
-            1 < HexrdConfig().imageseries_length <= 20
-        )
+        can_make_waterfall_plot = 1 < HexrdConfig().imageseries_length <= 20
         self.ui.create_waterfall_plot.setVisible(can_make_waterfall_plot)
 
     def auto_generate_cartesian_params(self):
@@ -392,9 +401,7 @@ class ImageModeWidget(QObject):
         # values in the instrument config.
         # This function does not invoke a re-render.
         detectors = list(HexrdConfig().detectors.values())
-        distances = [
-            x['transform']['translation'][2] for x in detectors
-        ]
+        distances = [x['transform']['translation'][2] for x in detectors]
         sizes = [x['pixels']['size'] for x in detectors]
 
         average_dist = sum(distances) / len(distances)
@@ -432,7 +439,7 @@ class ImageModeWidget(QObject):
             'pixel_size_tth': max(results['max_tth_ps']),
             'pixel_size_eta': max(results['max_eta_ps']),
             'tth_min': min(results['min_tth']),
-            'tth_max': max(results['max_tth'])
+            'tth_max': max(results['max_tth']),
         }
 
         # Sometimes, this is too big. Bring it down if it is.
@@ -462,8 +469,10 @@ class ImageModeWidget(QObject):
 
     @property
     def polar_tth_distortion_overlay(self):
-        if (not self.polar_apply_tth_distortion or
-                self.ui.polar_tth_distortion_overlay.currentIndex() == -1):
+        if (
+            not self.polar_apply_tth_distortion
+            or self.ui.polar_tth_distortion_overlay.currentIndex() == -1
+        ):
             return None
 
         return self.ui.polar_tth_distortion_overlay.currentText()
@@ -482,9 +491,7 @@ class ImageModeWidget(QObject):
             w.setCurrentText(name)
 
     def on_polar_tth_distortion_overlay_changed(self):
-        self.polar_tth_distortion_overlay = (
-            HexrdConfig().polar_tth_distortion_object
-        )
+        self.polar_tth_distortion_overlay = HexrdConfig().polar_tth_distortion_object
 
     def overlay_distortions_modified(self, name):
         if name == self.polar_tth_distortion_overlay:
@@ -598,8 +605,7 @@ class ImageModeWidget(QObject):
         with block_signals(self.ui.polar_active_beam):
             self.ui.polar_active_beam.clear()
             self.ui.polar_active_beam.addItems(HexrdConfig().beam_names)
-            self.ui.polar_active_beam.setCurrentText(
-                HexrdConfig().active_beam_name)
+            self.ui.polar_active_beam.setCurrentText(HexrdConfig().active_beam_name)
 
     def on_active_beam_changed(self):
         HexrdConfig().active_beam_name = self.ui.polar_active_beam.currentText()
@@ -630,9 +636,8 @@ POLAR_X_AXIS_LABELS_TO_VALUES = {
     '2θ': PolarXAxisType.tth,
     'Q': PolarXAxisType.q,
 }
-POLAR_X_AXIS_VALUES_TO_LABELS = {
-    v: k for k, v in POLAR_X_AXIS_LABELS_TO_VALUES.items()
-}
+POLAR_X_AXIS_VALUES_TO_LABELS = {v: k for k, v in POLAR_X_AXIS_LABELS_TO_VALUES.items()}
+
 
 def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     # Other than panel, all arguments are lists for appending results
@@ -643,25 +648,13 @@ def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
     max_tth_ps.append(
         np.power(
             10,
-            np.round(
-                np.log10(
-                    10*np.degrees(
-                        np.median(panel.pixel_tth_gradient())
-                    )
-                )
-            )
+            np.round(np.log10(10 * np.degrees(np.median(panel.pixel_tth_gradient())))),
         )
     )
     max_eta_ps.append(
         np.power(
             10,
-            np.round(
-                np.log10(
-                    10*np.degrees(
-                        np.median(panel.pixel_eta_gradient())
-                    )
-                )
-            )
+            np.round(np.log10(10 * np.degrees(np.median(panel.pixel_eta_gradient())))),
         )
     )
 

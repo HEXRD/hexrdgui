@@ -92,8 +92,7 @@ class ImageCalculatorDialog(QObject):
         w.addItems(list(IMAGE_CALCULATOR_OPERATIONS))
 
     def select_operand_file(self):
-        selected_file, _ = QFileDialog.getOpenFileName(
-            self.ui, 'Select Operand File')
+        selected_file, _ = QFileDialog.getOpenFileName(self.ui, 'Select Operand File')
 
         if selected_file:
             self.operand_file = selected_file
@@ -165,12 +164,10 @@ class ImageCalculatorDialog(QObject):
             'Average': imageseries.stats.average_iter,
         }
 
-        msg = (
-            f'Image Series is length {len(ims)}\n\nSelect aggregation '
-            'method'
+        msg = f'Image Series is length {len(ims)}\n\nSelect aggregation ' 'method'
+        method, ok = QInputDialog.getItem(
+            self.ui, 'Image Calculator', msg, list(aggregation_methods), 0, False
         )
-        method, ok = QInputDialog.getItem(self.ui, 'Image Calculator', msg,
-                                          list(aggregation_methods), 0, False)
         if not ok:
             return
 

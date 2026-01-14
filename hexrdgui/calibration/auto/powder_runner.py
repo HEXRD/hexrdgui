@@ -143,7 +143,8 @@ class PowderRunner(QObject):
             self.async_runner,
         )
         self._dialog_callback_handler.instrument_updated.connect(
-            self.on_calibration_finished)
+            self.on_calibration_finished
+        )
         dialog.show()
 
         self._calibration_dialog = dialog
@@ -152,8 +153,7 @@ class PowderRunner(QObject):
 
     def on_calibration_finished(self):
         material_modified = any(
-            self.ic.params[param_name].vary
-            for param_name in self.pc.param_names
+            self.ic.params[param_name].vary for param_name in self.pc.param_names
         )
 
         if material_modified:
@@ -199,9 +199,9 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
     def data_xys(self):
         ret = {}
         if (
-            HexrdConfig().has_multi_xrs and
-            not self.showing_picks_from_all_xray_sources and
-            self.overlays[0].xray_source != HexrdConfig().active_beam_name
+            HexrdConfig().has_multi_xrs
+            and not self.showing_picks_from_all_xray_sources
+            and self.overlays[0].xray_source != HexrdConfig().active_beam_name
         ):
             # Just don't show anything
             return {k: [] for k in self.overlays[0].calibration_picks}

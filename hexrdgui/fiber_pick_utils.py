@@ -5,8 +5,15 @@ from hexrd.rotations import discreteFiber
 from hexrd.transforms import xfcapi
 
 
-def _pick_to_fiber(pick_coords, eta_ome_maps, map_index, step=0.5,
-                   beam_vec=None, chi=0., as_expmap=True):
+def _pick_to_fiber(
+    pick_coords,
+    eta_ome_maps,
+    map_index,
+    step=0.5,
+    beam_vec=None,
+    chi=0.0,
+    as_expmap=True,
+):
     """
     Returns the orientations for the specified fiber parameters.
 
@@ -44,7 +51,7 @@ def _pick_to_fiber(pick_coords, eta_ome_maps, map_index, step=0.5,
     if beam_vec is None:
         beam_vec = cnst.beam_vec
 
-    ndiv = int(np.round(360./float(step)))
+    ndiv = int(np.round(360.0 / float(step)))
 
     # grab the planeData instance from the maps
     # !!! this should have a copy of planeData that has hkls consistent with
@@ -58,22 +65,17 @@ def _pick_to_fiber(pick_coords, eta_ome_maps, map_index, step=0.5,
     # the sample direction
     tth = pd.getTTh()[map_index]  # !!! in radians
     angs = np.atleast_2d(np.hstack([tth, np.radians(pick_coords)]))
-    samp_dir = xfcapi.anglesToGVec(
-        angs, bHat_l=beam_vec, chi=chi
-    ).reshape(3, 1)
+    samp_dir = xfcapi.anglesToGVec(angs, bHat_l=beam_vec, chi=chi).reshape(3, 1)
 
     # make the fiber
     qfib = discreteFiber(
-        crys_dir, samp_dir,
-        B=bmat, ndiv=ndiv,
-        invert=False,
-        csym=pd.q_sym, ssym=None
+        crys_dir, samp_dir, B=bmat, ndiv=ndiv, invert=False, csym=pd.q_sym, ssym=None
     )[0]
 
     if as_expmap:
-        phis = 2.*np.arccos(qfib[0, :])
+        phis = 2.0 * np.arccos(qfib[0, :])
         ns = xfcapi.unitRowVector(qfib[1:, :].T)
-        expmaps = phis*ns.T
+        expmaps = phis * ns.T
         return expmaps.T  # (3, ndiv)
     else:
         return qfib.T  # (4, ndiv)
@@ -115,7 +117,7 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
     # angle ranges from maps
     eta_range = (eta_ome_maps.etaEdges[0], eta_ome_maps.etaEdges[-1])
     ome_range = (eta_ome_maps.omeEdges[0], eta_ome_maps.omeEdges[-1])
-    ome_period = eta_ome_maps.omeEdges[0] + np.r_[0., 2*np.pi]
+    ome_period = eta_ome_maps.omeEdges[0] + np.r_[0.0, 2 * np.pi]
 
     # need the hklids
     hklids = [i['hklID'] for i in hklDataList_reduced]
@@ -123,19 +125,26 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
     expmap = np.atleast_1d(orientation).flatten()
     if len(expmap) == 4:
         # have a quat; convert here
-        phi = 2.*np.arccos(expmap[0])
+        phi = 2.0 * np.arccos(expmap[0])
         n = xfcapi.unitRowVector(expmap[1:])
-        expmap = phi*n
+        expmap = phi * n
     elif len(expmap) > 4:
-        raise RuntimeError(
-            "orientation must be a single exponential map or quaternion"
-        )
+        raise RuntimeError("orientation must be a single exponential map or quaternion")
 
-    grain_param_list = [np.hstack([expmap, cnst.zeros_3, cnst.identity_6x1]), ]
+    grain_param_list = [
+        np.hstack([expmap, cnst.zeros_3, cnst.identity_6x1]),
+    ]
     sim_dict = instr.simulate_rotation_series(
-        plane_data, grain_param_list,
-        eta_ranges=[eta_range, ], ome_ranges=[ome_range, ],
-        ome_period=ome_period, wavelength=None
+        plane_data,
+        grain_param_list,
+        eta_ranges=[
+            eta_range,
+        ],
+        ome_ranges=[
+            ome_range,
+        ],
+        ome_period=ome_period,
+        wavelength=None,
     )
 
     rids = []
@@ -150,9 +159,7 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
     for rid in hklids:
         this_idx = rids == rid
         if np.any(this_idx):
-            simulated_angles.append(
-                np.degrees(np.atleast_2d(angs[this_idx, 1:]))
-            )
+            simulated_angles.append(np.degrees(np.atleast_2d(angs[this_idx, 1:])))
         else:
             simulated_angles.append(np.empty((0,)))
 

@@ -31,10 +31,7 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
     else:
         eta_period = HexrdConfig().polar_res_eta_period
 
-    kwargs = {
-        'eta_period': eta_period,
-        'tvec_s': instr.tvec
-    }
+    kwargs = {'eta_period': eta_period, 'tvec_s': instr.tvec}
     line = cart_to_angles(xys, panel, **kwargs)
 
     if apply_tth_distortion:
@@ -46,14 +43,17 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
 def create_polar_mask(line_data):
     from hexrdgui.calibration.polarview import PolarView
     from hexrdgui.masking.mask_manager import MaskManager
+
     # Calculate current image dimensions
     # If we pass `None` to the polar view, it is a dummy polar view
     kwargs = {'instrument': None}
     if MaskManager().view_mode == ViewType.stereo:
-        kwargs.update({
-            'eta_min': 0,
-            'eta_max': np.pi * 2,
-        })
+        kwargs.update(
+            {
+                'eta_min': 0,
+                'eta_max': np.pi * 2,
+            }
+        )
     pv = PolarView(**kwargs)
     shape = pv.shape
     num_pix_eta = shape[0]
@@ -74,12 +74,12 @@ def create_polar_mask(line_data):
         j_col = np.floor((tth - np.degrees(pv.tth_min)) / pv.tth_pixel_size)
         i_row = np.floor((eta - np.degrees(pv.eta_min)) / pv.eta_pixel_size)
 
-        gaps, = np.nonzero(np.abs(np.diff(i_row)) > eta_max_pix_diff)
+        (gaps,) = np.nonzero(np.abs(np.diff(i_row)) > eta_max_pix_diff)
 
         if gaps.size == 1:
             # Add an extra gap at the second biggest gap
             idx = eta.shape[0] - 3
-            second_biggest_gap, = np.where(np.argsort(np.diff(eta)) == idx)
+            (second_biggest_gap,) = np.where(np.argsort(np.diff(eta)) == idx)
             gaps = np.sort(np.hstack((gaps, second_biggest_gap)))
 
         if gaps.size == 2:
@@ -194,6 +194,7 @@ def create_polar_mask_from_raw(value, instr=None, apply_tth_distortion=True):
 
 def rebuild_polar_masks():
     from hexrdgui.masking.mask_manager import MaskManager
+
     for mask in MaskManager().masks.values():
         if mask.type == MaskType.threshold:
             continue

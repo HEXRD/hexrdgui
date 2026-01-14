@@ -1,4 +1,5 @@
 from importlib import import_module
+
 try:
     import importlib.resources as importlib_resources
 except ImportError:

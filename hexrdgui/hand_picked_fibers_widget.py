@@ -41,16 +41,15 @@ class HandPickedFibersWidget(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.current_slider.valueChanged.connect(
-            self.current_slider_value_changed)
+        self.ui.current_slider.valueChanged.connect(self.current_slider_value_changed)
 
-        self.ui.current_angle.valueChanged.connect(
-            self.current_angle_value_changed)
+        self.ui.current_angle.valueChanged.connect(self.current_angle_value_changed)
 
         self.ui.add_button.clicked.connect(self.add_current)
 
         self.ui.picked_table.selectionModel().selectionChanged.connect(
-            self.picked_table_selection_changed)
+            self.picked_table_selection_changed
+        )
 
         self.ui.delete_selected.clicked.connect(self.deleted_selected_rows)
 

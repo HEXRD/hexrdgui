@@ -39,9 +39,15 @@ class LinePickerDialog(QObject):
     # Emitted when "Picks Table" was clicked
     view_picks = Signal()
 
-    def __init__(self, canvas, parent, single_line_mode=False,
-                 single_pick_mode=False, cycle_cursor_colors=False,
-                 line_settings=None):
+    def __init__(
+        self,
+        canvas,
+        parent,
+        single_line_mode=False,
+        single_pick_mode=False,
+        cycle_cursor_colors=False,
+        line_settings=None,
+    ):
         super().__init__(parent)
 
         self.canvas = canvas
@@ -102,9 +108,9 @@ class LinePickerDialog(QObject):
         self.last_point_removed.connect(self.update_enable_states)
         self.ui.two_click_mode.toggled.connect(self.two_click_mode_changed)
         self.ui.display_sums_in_subplots.toggled.connect(
-            self.display_sums_in_subplots_toggled)
-        self.bp_id = self.canvas.mpl_connect('button_press_event',
-                                             self.button_pressed)
+            self.display_sums_in_subplots_toggled
+        )
+        self.bp_id = self.canvas.mpl_connect('button_press_event', self.button_pressed)
         self.zoom_canvas.point_picked.connect(self.zoom_point_picked)
         self.ui.view_picks.clicked.connect(self.view_picks.emit)
 
@@ -113,12 +119,9 @@ class LinePickerDialog(QObject):
 
     def update_enable_states(self):
         linebuilder = self.linebuilder
-        enable_back_button = (
-            linebuilder is not None and
-            (
-                all(z for z in [linebuilder.xs, linebuilder.ys]) or
-                bool(self.previous_linebuilders)
-            )
+        enable_back_button = linebuilder is not None and (
+            all(z for z in [linebuilder.xs, linebuilder.ys])
+            or bool(self.previous_linebuilders)
         )
         self.ui.back_button.setEnabled(enable_back_button)
 
@@ -232,7 +235,7 @@ class LinePickerDialog(QObject):
             self.previous_linebuilders.append(self.linebuilder)
 
         # empty line
-        line, = ax.plot([], [], color=color, **self.line_settings)
+        (line,) = ax.plot([], [], color=color, **self.line_settings)
         self.linebuilder = LineBuilder(line)
 
         self.linebuilder.point_picked.connect(self.point_picked.emit)

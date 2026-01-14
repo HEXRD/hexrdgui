@@ -14,7 +14,7 @@ class MaskBorderStylePicker(QObject):
         original_width,
         original_highlight,
         original_highlight_opacity,
-        parent=None
+        parent=None,
     ):
         super().__init__(parent)
 
@@ -31,11 +31,15 @@ class MaskBorderStylePicker(QObject):
 
     def reset_ui(self):
         self.ui.border_color.setText(self.original_color)
-        self.ui.border_color.setStyleSheet('QPushButton {background-color: %s}' % self.original_color)
+        self.ui.border_color.setStyleSheet(
+            'QPushButton {background-color: %s}' % self.original_color
+        )
         self.ui.border_style.setCurrentText(self.original_style)
         self.ui.border_size.setValue(self.original_width)
         self.ui.highlight_color.setText(self.original_highlight)
-        self.ui.highlight_color.setStyleSheet('QPushButton {background-color: %s}' % self.original_highlight)
+        self.ui.highlight_color.setStyleSheet(
+            'QPushButton {background-color: %s}' % self.original_highlight
+        )
         self.ui.opacity.setValue(self.original_highlight_opacity)
 
     def exec(self):
@@ -72,13 +76,15 @@ class MaskBorderStylePicker(QObject):
             'border': self.original_color,
             'highlight': self.original_highlight,
             'border_ui': self.ui.border_color,
-            'highlight_ui': self.ui.highlight_color
+            'highlight_ui': self.ui.highlight_color,
         }
         dialog = QColorDialog(QColor(options[type]), self.ui)
         if dialog.exec():
             color = dialog.selectedColor().name()
             options[f'{type}_ui'].setText(color)
-            options[f'{type}_ui'].setStyleSheet('QPushButton {background-color: %s}' % color)
+            options[f'{type}_ui'].setStyleSheet(
+                'QPushButton {background-color: %s}' % color
+            )
 
     def reject(self):
         self.reset_ui()

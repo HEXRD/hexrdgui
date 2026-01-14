@@ -62,17 +62,16 @@ class HEDMCalibrationDialog(CalibrationDialog):
         # Connecting to "toggled" instead of "clicked" causes a render
         # flash of the refinements tree view for some reason. I have
         # no idea why. But let's use "clicked" instead to avoid that.
-        self.extra_ui.fix_strain.clicked.connect(
-            self.apply_refinement_selections)
+        self.extra_ui.fix_strain.clicked.connect(self.apply_refinement_selections)
         self.extra_ui.refinement_choice.currentIndexChanged.connect(
-            self.apply_refinement_selections)
+            self.apply_refinement_selections
+        )
 
-        self.extra_ui.do_refit.toggled.connect(
-            self.save_refit_settings)
-        self.extra_ui.refit_pixel_scale.valueChanged.connect(
-            self.save_refit_settings)
+        self.extra_ui.do_refit.toggled.connect(self.save_refit_settings)
+        self.extra_ui.refit_pixel_scale.valueChanged.connect(self.save_refit_settings)
         self.extra_ui.refit_ome_step_scale.valueChanged.connect(
-            self.save_refit_settings)
+            self.save_refit_settings
+        )
 
     def show_refinements(self, b):
         self.tree_view.setVisible(b)
@@ -87,8 +86,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
         self.show_refinements(self.extra_ui.show_refinements.isChecked())
         self.apply_refinement_selections()
 
-        self.tree_view.dict_modified.connect(
-            self.on_refinements_editor_modified)
+        self.tree_view.dict_modified.connect(self.on_refinements_editor_modified)
 
     def setup_refinement_options(self):
         w = self.extra_ui.refinement_choice
@@ -232,15 +230,12 @@ class HEDMCalibrationDialog(CalibrationDialog):
         config = self.tree_view.model().config
         if 'energy correction' in config['beam']:
             if any(
-                d['_param'].vary for d in
-                config['beam']['energy correction'].values()
+                d['_param'].vary for d in config['beam']['energy correction'].values()
             ):
                 # We are varying energy correction parameters.
                 # Verify we have at least two grains, or this wouldn't
                 # make sense to do.
-                num_grains = sum(
-                    s.endswith('grain_param_0') for s in self.params_dict
-                )
+                num_grains = sum(s.endswith('grain_param_0') for s in self.params_dict)
                 if num_grains < 2:
                     raise Exception(
                         'Cannot vary beam energy correction parameters with '
@@ -266,7 +261,8 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         super().setup_connections()
 
         self.dialog.apply_refinement_selections_needed.connect(
-            self.apply_refinement_selections)
+            self.apply_refinement_selections
+        )
 
     @property
     def grain_ids(self):
@@ -445,20 +441,21 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         # load imageseries dict
         ims_dict = cfg.image_series
-        ims = next(iter(ims_dict.values()))    # grab first member
+        ims = next(iter(ims_dict.values()))  # grab first member
         delta_ome = ims.metadata['omega'][:, 1] - ims.metadata['omega'][:, 0]
         # In the spirit of Joel, I'm leaving his comment here...
-        assert np.max(np.abs(np.diff(delta_ome))) < cnst.sqrt_epsf, \
-            "something funky going one with your omegas"
-        delta_ome = delta_ome[0]   # any one member will do
+        assert (
+            np.max(np.abs(np.diff(delta_ome))) < cnst.sqrt_epsf
+        ), "something funky going one with your omegas"
+        delta_ome = delta_ome[0]  # any one member will do
 
         # refit tolerances
         if cfg.fit_grains.refit is not None:
             n_pixels_tol = cfg.fit_grains.refit[0]
-            ome_tol = cfg.fit_grains.refit[1]*delta_ome
+            ome_tol = cfg.fit_grains.refit[1] * delta_ome
         else:
             n_pixels_tol = 2
-            ome_tol = 2.*delta_ome
+            ome_tol = 2.0 * delta_ome
 
         spots_data = self.spots_data
         instr = self.instr
@@ -483,29 +480,29 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         # define difference vectors for spot fits
         for det_key, panel in instr.detectors.items():
             for ig in range(ngrains):
-                x_diff = abs(xyo_det[det_key][ig][:, 0] -
-                             xyo_f[det_key][ig][:, 0])
-                y_diff = abs(xyo_det[det_key][ig][:, 1] -
-                             xyo_f[det_key][ig][:, 1])
+                x_diff = abs(xyo_det[det_key][ig][:, 0] - xyo_f[det_key][ig][:, 0])
+                y_diff = abs(xyo_det[det_key][ig][:, 1] - xyo_f[det_key][ig][:, 1])
                 ome_diff = np.degrees(
                     xfcapi.angularDifference(
-                        xyo_det[det_key][ig][:, 2],
-                        xyo_f[det_key][ig][:, 2])
+                        xyo_det[det_key][ig][:, 2], xyo_f[det_key][ig][:, 2]
+                    )
                 )
 
                 # filter out reflections with centroids more than
                 # a pixel and delta omega away from predicted value
                 idx_1 = np.logical_and(
-                    x_diff <= n_pixels_tol*panel.pixel_size_col,
+                    x_diff <= n_pixels_tol * panel.pixel_size_col,
                     np.logical_and(
-                        y_diff <= n_pixels_tol*panel.pixel_size_row,
-                        ome_diff <= ome_tol
-                    )
+                        y_diff <= n_pixels_tol * panel.pixel_size_row,
+                        ome_diff <= ome_tol,
+                    ),
                 )
 
-                print("INFO: Will keep %d of %d input reflections "
-                      % (sum(idx_1), sum(idx_0[det_key][ig]))
-                      + "on panel %s for re-fit" % det_key)
+                print(
+                    "INFO: Will keep %d of %d input reflections "
+                    % (sum(idx_1), sum(idx_0[det_key][ig]))
+                    + "on panel %s for re-fit" % det_key
+                )
 
                 idx_new = np.zeros_like(idx_0[det_key][ig], dtype=bool)
                 idx_new[np.where(idx_0[det_key][ig])[0][idx_1]] = True
@@ -596,8 +593,7 @@ def compute_xyo(calibrators: list[Calibrator]) -> dict[str, list]:
     return xyo
 
 
-def parse_spots_data(spots_data, instr, grain_ids, ome_period=None,
-                     refit_idx=None):
+def parse_spots_data(spots_data, instr, grain_ids, ome_period=None, refit_idx=None):
     hkls = {}
     xyo_det = {}
     idx_0 = {}

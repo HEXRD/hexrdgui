@@ -37,8 +37,7 @@ class OmeMapsSelectDialog(QObject):
         HexrdConfig().materials_dict_modified.connect(self.update_materials)
         self.ui.select_file_button.pressed.connect(self.select_file)
         self.ui.method.currentIndexChanged.connect(self.update_method_tab)
-        self.ui.material.currentIndexChanged.connect(
-            self.selected_material_changed)
+        self.ui.material.currentIndexChanged.connect(self.selected_material_changed)
         self.ui.choose_hkls.pressed.connect(self.choose_hkls)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
@@ -46,10 +45,7 @@ class OmeMapsSelectDialog(QObject):
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
 
     def setup_combo_box_data(self):
-        item_data = [
-            'load',
-            'generate'
-        ]
+        item_data = ['load', 'generate']
         for i, data in enumerate(item_data):
             self.ui.method.setItemData(i, data)
 
@@ -88,8 +84,11 @@ class OmeMapsSelectDialog(QObject):
 
     def select_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Eta Omega Maps', HexrdConfig().working_dir,
-            'NPZ files (*.npz)')
+            self.ui,
+            'Load Eta Omega Maps',
+            HexrdConfig().working_dir,
+            'NPZ files (*.npz)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)

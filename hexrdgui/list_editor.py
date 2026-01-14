@@ -146,8 +146,7 @@ class ListEditor(QObject):
         for i in selected_rows:
             deleted.append(self.items.pop(i - len(deleted)))
 
-        new_selection = min(selected_rows[-1] - len(deleted) + 1,
-                            self.num_items - 1)
+        new_selection = min(selected_rows[-1] - len(deleted) + 1, self.num_items - 1)
 
         self.update_table()
         self.select_row(new_selection)

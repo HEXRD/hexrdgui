@@ -12,21 +12,20 @@ class OverlayEditor:
         self.ui = loader.load_file('overlay_editor.ui', parent)
 
         self.powder_overlay_editor = PowderOverlayEditor(self.ui)
-        self.ui.powder_overlay_editor_layout.addWidget(
-            self.powder_overlay_editor.ui)
+        self.ui.powder_overlay_editor_layout.addWidget(self.powder_overlay_editor.ui)
 
         self.laue_overlay_editor = LaueOverlayEditor(self.ui)
-        self.ui.laue_overlay_editor_layout.addWidget(
-            self.laue_overlay_editor.ui)
+        self.ui.laue_overlay_editor_layout.addWidget(self.laue_overlay_editor.ui)
 
-        self.rotation_series_overlay_editor = (
-            RotationSeriesOverlayEditor(self.ui))
+        self.rotation_series_overlay_editor = RotationSeriesOverlayEditor(self.ui)
         self.ui.rotation_series_overlay_editor_layout.addWidget(
-            self.rotation_series_overlay_editor.ui)
+            self.rotation_series_overlay_editor.ui
+        )
 
         self.const_chi_overlay_editor = ConstChiOverlayEditor(self.ui)
         self.ui.const_chi_overlay_editor_layout.addWidget(
-            self.const_chi_overlay_editor.ui)
+            self.const_chi_overlay_editor.ui
+        )
 
         self.ui.tab_widget.tabBar().hide()
 

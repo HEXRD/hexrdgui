@@ -1,13 +1,19 @@
 from PySide6.QtCore import Signal, QModelIndex, Qt, QTimer
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
-    QCheckBox, QDialog, QItemEditorFactory, QMenu, QStyledItemDelegate,
-    QVBoxLayout
+    QCheckBox,
+    QDialog,
+    QItemEditorFactory,
+    QMenu,
+    QStyledItemDelegate,
+    QVBoxLayout,
 )
 
 from hexrdgui.scientificspinbox import ScientificDoubleSpinBox
 from hexrdgui.tree_views.base_dict_tree_item_model import (
-    BaseDictTreeItemModel, BaseTreeItemModel, BaseDictTreeView
+    BaseDictTreeItemModel,
+    BaseTreeItemModel,
+    BaseDictTreeView,
 )
 from hexrdgui.tree_views.tree_item import TreeItem
 
@@ -117,8 +123,9 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
     dict_modified = Signal(QModelIndex)
 
-    def __init__(self, dictionary, columns, parent=None,
-                 model_class=MultiColumnDictTreeItemModel):
+    def __init__(
+        self, dictionary, columns, parent=None, model_class=MultiColumnDictTreeItemModel
+    ):
         super().__init__(parent)
 
         # Set this to the needed check/uncheck index to allow for context
@@ -180,17 +187,21 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
         # Action logic
         if key_col_with_children:
-            add_actions({
-                'Collapse All': collapse_selection,
-                'Expand All': expand_selection,
-            })
+            add_actions(
+                {
+                    'Collapse All': collapse_selection,
+                    'Expand All': expand_selection,
+                }
+            )
 
         if key_col_with_children and check_index_set:
             add_separator()
-            add_actions({
-                'Check All': check_selection,
-                'Uncheck All': uncheck_selection,
-            })
+            add_actions(
+                {
+                    'Check All': check_selection,
+                    'Uncheck All': uncheck_selection,
+                }
+            )
 
         if not actions:
             # No context menu
@@ -232,9 +243,7 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
     def open_persistent_editors(self, parent=QModelIndex()):
         # If the data type is one of these, open the persistent editor
-        persistent_editor_data_types = (
-            bool,
-        )
+        persistent_editor_data_types = (bool,)
 
         rows = self.model().rowCount(parent)
         cols = self.model().columnCount(parent)
@@ -292,8 +301,7 @@ class MultiColumnDictTreeViewDialog(QDialog):
 
         self.setLayout(QVBoxLayout(self))
 
-        self.tree_view = MultiColumnDictTreeView(dictionary, columns,
-                                                 parent=self)
+        self.tree_view = MultiColumnDictTreeView(dictionary, columns, parent=self)
         self.layout().addWidget(self.tree_view)
 
         self.resize(500, 500)
@@ -396,7 +404,7 @@ if __name__ == '__main__':
                 '_value': 3,
                 '_status': False,
                 '_constrained': True,
-            }
+            },
         },
         'root_key2': {
             '_value': 4.2,
@@ -416,7 +424,7 @@ if __name__ == '__main__':
                 '_status': True,
                 '_constrained': True,
             },
-        }
+        },
     }
 
     dialog = MultiColumnDictTreeViewDialog(config, columns)

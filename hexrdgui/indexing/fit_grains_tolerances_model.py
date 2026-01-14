@@ -87,7 +87,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         first = rows[0]
         last = rows[-1]
         self.beginRemoveRows(QModelIndex(), first, last)
-        for row in range(last, first-1, -1):
+        for row in range(last, first - 1, -1):
             del self.tth_tolerances[row]
             del self.eta_tolerances[row]
             del self.omega_tolerances[row]
@@ -104,11 +104,12 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         destination = first + delta
         # Qt's destination depends on the direction of the move
         offset = 1 if delta > 0 else 0
-        self.beginMoveRows(QModelIndex(), first, last,
-                           QModelIndex(), destination + offset)
+        self.beginMoveRows(
+            QModelIndex(), first, last, QModelIndex(), destination + offset
+        )
         for data in self.data_columns:
-            moving_section = data[first:last+1]
-            remaining_list = data[:first] + data[last+1:]
+            moving_section = data[first : last + 1]
+            remaining_list = data[:first] + data[last + 1 :]
             first_section = remaining_list[:destination]
             last_section = remaining_list[destination:]
             data[:] = first_section + moving_section + last_section

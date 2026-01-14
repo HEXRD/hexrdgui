@@ -9,7 +9,7 @@ from hexrd import instrument, matrixutil
 
 from hexrdgui.calibration_crystal_slider_widget import (
     CalibrationCrystalSliderWidget,
-    WidgetMode as SliderWidgetMode
+    WidgetMode as SliderWidgetMode,
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays.constants import crystal_refinement_labels
@@ -39,8 +39,7 @@ class CalibrationCrystalEditor(QObject):
 
         defaults = [(x, False) for x in crystal_refinement_labels()]
         self.refinements_selector = SelectItemsWidget(defaults, self.ui)
-        self.ui.refinements_selector_layout.addWidget(
-            self.refinements_selector.ui)
+        self.ui.refinements_selector_layout.addWidget(self.refinements_selector.ui)
 
         self.params = params
 
@@ -51,17 +50,16 @@ class CalibrationCrystalEditor(QObject):
 
     def setup_connections(self):
         HexrdConfig().euler_angle_convention_changed.connect(
-            self.euler_angle_convention_changed)
+            self.euler_angle_convention_changed
+        )
 
-        self.ui.tab_widget.currentChanged.connect(
-            self.update_tab_gui)
+        self.ui.tab_widget.currentChanged.connect(self.update_tab_gui)
 
         for w in self.all_widgets:
             w.valueChanged.connect(self.value_changed)
 
         self.slider_widget.changed.connect(self.slider_widget_changed)
-        self.refinements_selector.selection_changed.connect(
-            self.refinements_edited)
+        self.refinements_selector.selection_changed.connect(self.refinements_edited)
 
         self.ui.load.clicked.connect(self.load)
         self.ui.save.clicked.connect(self.save)
@@ -84,8 +82,7 @@ class CalibrationCrystalEditor(QObject):
     def refinements(self, v):
         if len(v) != len(self.refinements_selector.items):
             msg = (
-                f'Mismatch in {len(v)=} and '
-                f'{len(self.refinements_selector.items)=}'
+                f'Mismatch in {len(v)=} and ' f'{len(self.refinements_selector.items)=}'
             )
             raise Exception(msg)
 
@@ -120,8 +117,7 @@ class CalibrationCrystalEditor(QObject):
         self.params_modified.emit()
 
     def slider_widget_changed(self, mode, index, value):
-        prefix = 'orientation' if mode == SliderWidgetMode.ORIENTATION \
-            else 'position'
+        prefix = 'orientation' if mode == SliderWidgetMode.ORIENTATION else 'position'
         name = f'{prefix}_{index}'
         w = getattr(self.ui, name)
         w.setValue(value)
@@ -157,14 +153,7 @@ class CalibrationCrystalEditor(QObject):
 
     @property
     def stretch_matrix_duplicates(self):
-        return {
-            1: 3,
-            2: 6,
-            5: 7,
-            7: 5,
-            6: 2,
-            3: 1
-        }
+        return {1: 3, 2: 6, 5: 7, 7: 5, 6: 2, 3: 1}
 
     def update_duplicate(self, w):
         ind = int(w.objectName().replace('stretch_matrix_', ''))
@@ -266,9 +255,9 @@ class CalibrationCrystalEditor(QObject):
     @property
     def all_widgets(self):
         return (
-            self.orientation_widgets +
-            self.position_widgets +
-            self.stretch_matrix_widgets
+            self.orientation_widgets
+            + self.position_widgets
+            + self.stretch_matrix_widgets
         )
 
     def update_tab_gui(self):
@@ -292,8 +281,11 @@ class CalibrationCrystalEditor(QObject):
 
     def save(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Save Crystal Parameters', HexrdConfig().working_dir,
-            'Grains.out files (*.out)')
+            self.ui,
+            'Save Crystal Parameters',
+            HexrdConfig().working_dir,
+            'Grains.out files (*.out)',
+        )
 
         if not selected_file:
             return

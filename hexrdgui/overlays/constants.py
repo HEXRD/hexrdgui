@@ -4,8 +4,7 @@ from hexrd import constants
 
 
 def default_crystal_params():
-    return np.hstack(
-        [constants.zeros_3, constants.zeros_3, constants.identity_6x1])
+    return np.hstack([constants.zeros_3, constants.zeros_3, constants.identity_6x1])
 
 
 def default_crystal_refinements():
@@ -14,14 +13,7 @@ def default_crystal_refinements():
 
 
 def crystal_refinement_labels():
-    inverse_matrix_strings = [
-        '0_0',
-        '1_1',
-        '2_2',
-        '1_2',
-        '0_2',
-        '0_1'
-    ]
+    inverse_matrix_strings = ['0_0', '1_1', '2_2', '1_2', '0_2', '0_1']
 
     items = [f'orientation_{i}' for i in range(3)]
     items += [f'position_{i}' for i in range(3)]

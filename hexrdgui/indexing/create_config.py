@@ -79,8 +79,10 @@ def validate_config(config):
         config.working_dir
     except IOError:
         # This working directory does not exist. Set it to the cwd.
-        print(f'Warning: {config.get("working_dir")} does not exist.',
-              f'Changing working directory to {os.getcwd()}')
+        print(
+            f'Warning: {config.get("working_dir")} does not exist.',
+            f'Changing working directory to {os.getcwd()}',
+        )
         config.set('working_dir', os.getcwd())
 
         # Make sure future configs use the new working dir as well...

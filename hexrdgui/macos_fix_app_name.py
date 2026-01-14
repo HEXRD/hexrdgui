@@ -18,10 +18,7 @@ def macos_fix_app_name():
     if not bundle:
         return
 
-    app_info = (
-        bundle.localizedInfoDictionary() or
-        bundle.infoDictionary()
-    )
+    app_info = bundle.localizedInfoDictionary() or bundle.infoDictionary()
     if app_info is None:
         return
 

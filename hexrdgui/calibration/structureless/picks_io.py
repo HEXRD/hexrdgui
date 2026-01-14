@@ -29,7 +29,6 @@ def load_picks_from_file(instr, selected_file):
             return _load_picks_from_file_v2(rf)
 
 
-
 def save_picks_to_file(calibration_lines, selected_file):
     with h5py.File(selected_file, 'w') as wf:
         wf.attrs[VERSION_KEY] = VERSION_NUMBER

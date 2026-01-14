@@ -45,7 +45,7 @@ class ThermalFactorEditor:
             self.is_tensor = False
             self.ui.scalar_value.setValue(v)
         elif isinstance(v, np.ndarray):
-            if v.shape != (6, ):
+            if v.shape != (6,):
                 raise Exception(f'Invalid shape: {v.shape}')
             self.is_tensor = True
             self.tensor_editor.data = expand_symmetric_tensor(v)

@@ -334,7 +334,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self._recent_images = {}
         self.max_cpus = None
         self.azimuthal_overlays = []
-        self.azimuthal_offset = 0.
+        self.azimuthal_offset = 0.0
         self._active_beam_name = None
         self.show_azimuthal_legend = True
         self.show_all_colormaps = False
@@ -364,8 +364,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         # Load default configuration settings
         self.load_default_config()
 
-        self.config['materials'] = copy.deepcopy(
-            self.default_config['materials'])
+        self.config['materials'] = copy.deepcopy(self.default_config['materials'])
 
         # We can't use the parsed args yet for this since this is in the
         # __init__ method. So just check for this flag manually.
@@ -411,8 +410,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         self.overlay_renamed.connect(self.on_overlay_renamed)
         self.material_modified.connect(self.check_active_material_changed)
-        self.beam_energy_modified.connect(
-            self.update_visible_material_energies)
+        self.beam_energy_modified.connect(self.update_visible_material_energies)
 
         self.detectors_changed.connect(self.on_detectors_changed)
 
@@ -432,8 +430,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             ('working_dir', '.'),
             ('hdf5_path', []),
             ('live_update', True),
-            ('euler_angle_convention',
-                constants.DEFAULT_EULER_ANGLE_CONVENTION),
+            ('euler_angle_convention', constants.DEFAULT_EULER_ANGLE_CONVENTION),
             ('collapsed_state', []),
             ('load_panel_state', {}),
             ('stack_state', {}),
@@ -471,7 +468,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'active_material_name': 'active_material',
             'overlays_dictified': 'overlays',
             'physics_package_dictified': 'physics_package',
-            'detector_coatings_dictified': '_detector_coatings'
+            'detector_coatings_dictified': '_detector_coatings',
         }
 
         if attribute_name in exceptions:
@@ -508,8 +505,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if name in skip:
                 continue
 
-            state[name] = settings.value(
-                self._attribute_to_settings_key(name), default)
+            state[name] = settings.value(self._attribute_to_settings_key(name), default)
 
         return state
 
@@ -563,9 +559,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Never allow WPPF difference curve to be set `True` from state
         disable_wppf_difference = (
-            state.get('config_calibration',
-                      {}).get('wppf',
-                              {}).get('show_difference_axis')
+            state.get('config_calibration', {})
+            .get('wppf', {})
+            .get('show_difference_axis')
         )
         if disable_wppf_difference:
             state['config_calibration']['wppf']['show_difference_axis'] = False
@@ -589,7 +585,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # We used to allow this to be negative, but now must be positive.
             # Taking the absolute value should correct this adequately.
             self.cartesian_virtual_plane_distance = abs(
-                self.cartesian_virtual_plane_distance)
+                self.cartesian_virtual_plane_distance
+            )
 
         # All QSettings come back as strings. So check that we are dealing with
         # a boolean and convert if necessary
@@ -600,9 +597,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if not isinstance(self.show_all_colormaps, bool):
             self.show_all_colormaps = self.show_all_colormaps == 'true'
         if not isinstance(self.apply_absorption_correction, bool):
-            self.apply_absorption_correction = self.apply_absorption_correction == 'true'
+            self.apply_absorption_correction = (
+                self.apply_absorption_correction == 'true'
+            )
         if not isinstance(self.apply_median_filter_correction, bool):
-            self.apply_median_filter_correction = self.apply_median_filter_correction == 'true'
+            self.apply_median_filter_correction = (
+                self.apply_median_filter_correction == 'true'
+            )
 
         # This is None sometimes. Make sure it is an empty list instead.
         if self.recent_state_files is None:
@@ -763,24 +764,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         return self.config_instrument
 
     def backup_instrument_config(self):
-        self.instrument_config_backup = copy.deepcopy(
-            self.config['instrument'])
-        self.instrument_config_backup_eac = copy.deepcopy(
-            self.euler_angle_convention)
+        self.instrument_config_backup = copy.deepcopy(self.config['instrument'])
+        self.instrument_config_backup_eac = copy.deepcopy(self.euler_angle_convention)
         self._instrument_rigid_body_params_backup = copy.deepcopy(
-            self._instrument_rigid_body_params)
+            self._instrument_rigid_body_params
+        )
 
     def restore_instrument_config_backup(self):
         old_detectors = self.detector_names
-        self.config['instrument'] = copy.deepcopy(
-            self.instrument_config_backup)
+        self.config['instrument'] = copy.deepcopy(self.instrument_config_backup)
 
         old_eac = self.instrument_config_backup_eac
         new_eac = self.euler_angle_convention
         if old_eac != new_eac:
             # Convert it to whatever convention we are using
-            utils.convert_tilt_convention(self.config['instrument'], old_eac,
-                                          new_eac)
+            utils.convert_tilt_convention(self.config['instrument'], old_eac, new_eac)
 
         # Because it is a time-consuming process, don't emit
         # instrument_config_loaded, which will re-generate Cartesian and
@@ -797,40 +795,43 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.update_visible_material_energies()
 
         self._instrument_rigid_body_params = copy.deepcopy(
-            self._instrument_rigid_body_params_backup)
+            self._instrument_rigid_body_params_backup
+        )
 
     def set_images_dir(self, images_dir):
         self.images_dir = images_dir
 
     def load_gui_yaml_dict(self):
-        text = resource_loader.load_resource(hexrdgui.resources.calibration,
-                                             'yaml_to_gui.yml')
+        text = resource_loader.load_resource(
+            hexrdgui.resources.calibration, 'yaml_to_gui.yml'
+        )
         self.gui_yaml_dict = yaml.load(text, Loader=yaml.FullLoader)
 
     def load_default_config(self):
-        text = resource_loader.load_resource(hexrdgui.resources.calibration,
-                                             'default_instrument_config.yml')
-        self.default_config['instrument'] = yaml.load(text,
-                                                      Loader=yaml.FullLoader)
+        text = resource_loader.load_resource(
+            hexrdgui.resources.calibration, 'default_instrument_config.yml'
+        )
+        self.default_config['instrument'] = yaml.load(text, Loader=yaml.FullLoader)
 
-        text = resource_loader.load_resource(hexrdgui.resources.indexing,
-                                             'default_indexing_config.yml')
-        self.default_config['indexing'] = yaml.load(text,
-                                                    Loader=yaml.FullLoader)
+        text = resource_loader.load_resource(
+            hexrdgui.resources.indexing, 'default_indexing_config.yml'
+        )
+        self.default_config['indexing'] = yaml.load(text, Loader=yaml.FullLoader)
 
-        yml = resource_loader.load_resource(hexrdgui.resources.materials,
-                                            'materials_panel_defaults.yml')
-        self.default_config['materials'] = yaml.load(yml,
-                                                     Loader=yaml.FullLoader)
+        yml = resource_loader.load_resource(
+            hexrdgui.resources.materials, 'materials_panel_defaults.yml'
+        )
+        self.default_config['materials'] = yaml.load(yml, Loader=yaml.FullLoader)
 
-        text = resource_loader.load_resource(hexrdgui.resources.calibration,
-                                             'default_image_config.yml')
+        text = resource_loader.load_resource(
+            hexrdgui.resources.calibration, 'default_image_config.yml'
+        )
         self.default_config['image'] = yaml.load(text, Loader=yaml.FullLoader)
 
-        text = resource_loader.load_resource(hexrdgui.resources.calibration,
-                                             'default_calibration_config.yml')
-        self.default_config['calibration'] = yaml.load(text,
-                                                       Loader=yaml.FullLoader)
+        text = resource_loader.load_resource(
+            hexrdgui.resources.calibration, 'default_calibration_config.yml'
+        )
+        self.default_config['calibration'] = yaml.load(text, Loader=yaml.FullLoader)
 
     def set_defaults_if_missing(self):
         # Find missing required keys and set defaults for them.
@@ -840,8 +841,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 self.config[key] = copy.deepcopy(self.default_config[key])
                 continue
 
-            self._recursive_set_defaults(self.config[key],
-                                         self.default_config[key])
+            self._recursive_set_defaults(self.config[key], self.default_config[key])
 
         self.set_beam_defaults_if_missing()
         self.set_detector_defaults_if_missing()
@@ -924,8 +924,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return False
 
         return all(
-            getattr(ims, 'is_dummy', False)
-            for ims in self.imageseries_dict.values()
+            getattr(ims, 'is_dummy', False) for ims in self.imageseries_dict.values()
         )
 
     @property
@@ -990,18 +989,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 # Since this is memoized, make a copy so we won't modify
                 # the original.
                 images_dict[name] = medfilt2d_memoized(
-                    img,
-                    kernel_size=HexrdConfig().median_filter_kernel_size
+                    img, kernel_size=HexrdConfig().median_filter_kernel_size
                 ).copy()
 
         # Create this corrections dict, even if we don't use it, because
         # it updates the `intensity_corrections_dict` that may be used
         # elsewhere.
         corrections_dict = self.create_intensity_corrections_dict()
-        if (
-            self.image_mode not in
-            (constants.ViewType.polar, constants.ViewType.stereo)
-        ):
+        if self.image_mode not in (constants.ViewType.polar, constants.ViewType.stereo):
             # If it's not polar or stereo, go ahead and apply the
             # corrections
             for name, img in images_dict.items():
@@ -1027,6 +1022,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Some methods require an instrument. Go ahead and create one.
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
+
         instr = create_hedm_instrument()
 
         # Initialize the intensity corrections dict as ones
@@ -1038,7 +1034,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if self.apply_pixel_solid_angle_correction:
             sangle = dict.fromkeys(instr.detectors)
-            mi = np.finfo(np.float64).max # largest floating point number
+            mi = np.finfo(np.float64).max  # largest floating point number
             # normalize by minimum of the entire instrument
             # not each detector individually
             for name, panel in instr.detectors.items():
@@ -1067,8 +1063,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if self.apply_absorption_correction:
             transmissions = instr.calc_transmission()
-            max_transmission = max(
-                [np.nanmax(v) for v in transmissions.values()])
+            max_transmission = max([np.nanmax(v) for v in transmissions.values()])
 
             for name, transmission in transmissions.items():
                 # normalize by maximum of the entire instrument
@@ -1089,6 +1084,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def create_raw_masks_dict(self, images_dict, display=False):
         """Get a masks dict"""
         from hexrdgui.masking.mask_manager import MaskManager
+
         masks_dict = {}
         for name, img in images_dict.items():
             final_mask = np.ones(img.shape, dtype=bool)
@@ -1124,8 +1120,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         instr = create_hedm_instrument()
 
-        has_panel_buffers = any(panel.panel_buffer is not None
-                                for panel in instr.detectors.values())
+        has_panel_buffers = any(
+            panel.panel_buffer is not None for panel in instr.detectors.values()
+        )
         if not has_panel_buffers:
             return images_dict
 
@@ -1133,8 +1130,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             # First, ensure the panel buffer is a 2D array
             utils.convert_panel_buffer_to_2d_array(panel)
             img = images_dict[det_key]
-            if (np.issubdtype(type(fill_value), np.floating) and
-                    not np.issubdtype(img.dtype, np.floating)):
+            if np.issubdtype(type(fill_value), np.floating) and not np.issubdtype(
+                img.dtype, np.floating
+            ):
                 # Convert to float. This is especially important
                 # for nan, since it is a float...
                 img = img.astype(float)
@@ -1157,24 +1155,25 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         instr = create_hedm_instrument()
 
         has_masks = bool(MaskManager().visible_masks)
-        has_panel_buffers = any(panel.panel_buffer is not None
-                                for panel in instr.detectors.values())
+        has_panel_buffers = any(
+            panel.panel_buffer is not None for panel in instr.detectors.values()
+        )
 
         if not has_masks and not has_panel_buffers:
             # Force a fill_value of 0 if there are no visible masks
             # and no panel buffers.
             fill_value = 0
 
-        raw_masks_dict = self.create_raw_masks_dict(images_dict,
-                                                    display=display)
+        raw_masks_dict = self.create_raw_masks_dict(images_dict, display=display)
         for det, mask in raw_masks_dict.items():
             img = images_dict[det]
             if has_panel_buffers:
                 panel = instr.detectors[det]
                 utils.convert_panel_buffer_to_2d_array(panel)
 
-            if (np.issubdtype(type(fill_value), np.floating) and
-                    not np.issubdtype(img.dtype, np.floating)):
+            if np.issubdtype(type(fill_value), np.floating) and not np.issubdtype(
+                img.dtype, np.floating
+            ):
                 img = img.astype(float)
                 images_dict[det] = img
             elif not img.flags.writeable:
@@ -1189,10 +1188,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return images_dict
 
-    def save_imageseries(self, ims, name, write_file, selected_format,
-                         **kwargs):
-        hexrd.imageseries.save.write(ims, write_file, selected_format,
-                                     **kwargs)
+    def save_imageseries(self, ims, name, write_file, selected_format, **kwargs):
+        hexrd.imageseries.save.write(ims, write_file, selected_format, **kwargs)
 
     def load_instrument_config(self, path, import_raw=False):
         old_detectors = self.detector_names
@@ -1368,20 +1365,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         data = []
         for det in self.detector_names:
-            data.append({
-                'file': f'{det}.npz',
-                'args': {'path': 'imageseries'},
-                'panel': det
-            })
+            data.append(
+                {'file': f'{det}.npz', 'args': {'path': 'imageseries'}, 'panel': det}
+            )
 
-        image_series = {
-            'format': 'frame-cache',
-            'data': data
-        }
+        image_series = {'format': 'frame-cache', 'data': data}
 
         # Find out which quaternion method was used
         quaternion_method = self.indexing_config['find_orientations'].get(
-            '_quaternion_method')
+            '_quaternion_method'
+        )
 
         omaps = cfg['find_orientations']['orientation_maps']
 
@@ -1515,9 +1508,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             elif value != 'None':
                 cur_val['distortion'] = {
                     'function_name': value,
-                    'parameters': (
-                        [0.] * self.num_distortion_parameters(value)
-                    )
+                    'parameters': ([0.0] * self.num_distortion_parameters(value)),
                 }
 
             self.panel_distortion_modified.emit(path[1])
@@ -1530,8 +1521,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             old_val = cur_val[path[-1]]
             cur_val[path[-1]] = value
         except KeyError:
-            msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
-                   str(self.config['instrument']))
+            msg = (
+                'Path: '
+                + str(path)
+                + '\nwas not found in dict: '
+                + str(self.config['instrument'])
+            )
             raise Exception(msg)
 
         if old_val == value:
@@ -1563,8 +1558,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.detector_transforms_modified.emit([det])
             return
 
-        if (path[0] == 'detectors' and path[2] == 'pixels'
-                and path[3] in ('columns', 'rows')):
+        if (
+            path[0] == 'detectors'
+            and path[2] == 'pixels'
+            and path[3] in ('columns', 'rows')
+        ):
             # If the detector shape changes, we need to indicate so.
             # Whatever images that were previously loaded need to be removed,
             # since the shapes will no longer match, and new dummy
@@ -1604,8 +1602,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 path.insert(1, self.active_beam_name)
 
         if (
-            path[:2] == ['beam', 'energy_correction'] and
-            cur_val.get('beam', {}).get('energy_correction') is None
+            path[:2] == ['beam', 'energy_correction']
+            and cur_val.get('beam', {}).get('energy_correction') is None
         ):
             defaults = HEDMInstrument.create_default_energy_correction()
             return defaults[path[2]]
@@ -1624,8 +1622,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             for val in path:
                 cur_val = cur_val[val]
         except KeyError:
-            msg = ('Path: ' + str(path) + '\nwas not found in dict: ' +
-                   str(self.config['instrument']))
+            msg = (
+                'Path: '
+                + str(path)
+                + '\nwas not found in dict: '
+                + str(self.config['instrument'])
+            )
             raise KeyError(msg)
 
         return cur_val
@@ -1660,11 +1662,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def get_detector_widgets(self):
         # These ones won't be found in the gui yaml dict
-        res = [
-            ('cal_det_current',),
-            ('cal_det_add',),
-            ('cal_det_remove',)
-        ]
+        res = [('cal_det_current',), ('cal_det_add',), ('cal_det_remove',)]
         res += self.get_gui_yaml_paths(['detectors'])
         return [x[0] for x in res]
 
@@ -1682,7 +1680,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def default_detector(self):
         return copy.deepcopy(
-            self.default_config['instrument']['detectors']['detector_1'])
+            self.default_config['instrument']['detectors']['detector_1']
+        )
 
     @property
     def instrument_has_roi(self):
@@ -1737,8 +1736,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def rename_detector(self, old_name, new_name):
         if old_name != new_name:
-            self.config['instrument']['detectors'][new_name] = (
-                self.config['instrument']['detectors'][old_name])
+            self.config['instrument']['detectors'][new_name] = self.config[
+                'instrument'
+            ]['detectors'][old_name]
             self.remove_detector(old_name)
 
     @property
@@ -1770,8 +1770,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if material in names:
                 names[names.index(material)] = f'{material}_1'
                 HexrdConfig().logger.warning(
-                    f'Material {material} already exists, '
-                    f'renaming to {material}_1'
+                    f'Material {material} already exists, ' f'renaming to {material}_1'
                 )
 
         if len(names) != len(materials):
@@ -1789,10 +1788,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def copy_materials(self, from_names, to_names):
         mats = self.materials
         cannot_copy = (
-            any(x in from_names for x in to_names) or
-            any(x in mats for x in to_names) or
-            any(x not in mats for x in from_names) or
-            len(from_names) != len(to_names)
+            any(x in from_names for x in to_names)
+            or any(x in mats for x in to_names)
+            or any(x not in mats for x in from_names)
+            or len(from_names) != len(to_names)
         )
         if cannot_copy:
             mat_names = list(mats.keys())
@@ -1909,8 +1908,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def _set_active_material(self, name):
         if name not in self.materials and name is not None:
-            raise Exception(name + ' was not found in materials list: ' +
-                            str(self.materials))
+            raise Exception(
+                name + ' was not found in materials list: ' + str(self.materials)
+            )
 
         self.config['materials']['active_material'] = name
         self.update_active_material_energy()
@@ -2095,8 +2095,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.flag_overlay_updates_for_active_material()
             self.overlay_config_changed.emit()
 
-    active_material_tth_max = property(_active_material_tth_max,
-                                       _set_active_material_tth_max)
+    active_material_tth_max = property(
+        _active_material_tth_max, _set_active_material_tth_max
+    )
 
     def _backup_tth_max(self):
         return self.backup_tth_maxes.setdefault(self.active_material_name, 1.0)
@@ -2117,8 +2118,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             else:
                 self.active_material_tth_max = None
 
-    limit_active_rings = property(_limit_active_rings,
-                                  set_limit_active_rings)
+    limit_active_rings = property(_limit_active_rings, set_limit_active_rings)
 
     def _show_overlays(self):
         return self.config['materials'].get('show_overlays')
@@ -2139,8 +2139,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.overlay_list_modified.emit()
             self.overlay_config_changed.emit()
 
-        pruned_overlays = [x for x in self.azimuthal_overlays
-                           if x['material'] in mats]
+        pruned_overlays = [x for x in self.azimuthal_overlays if x['material'] in mats]
         if len(self.azimuthal_overlays) != len(pruned_overlays):
             self.azimuthal_overlays = pruned_overlays
             HexrdConfig().azimuthal_options_modified.emit()
@@ -2219,7 +2218,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     @property
     def sample_normal(self) -> np.ndarray:
         bvec = self.beam_vector
-        return np.dot(self.sample_rmat, [0., 0., np.sign(bvec[2])])
+        return np.dot(self.sample_rmat, [0.0, 0.0, np.sign(bvec[2])])
 
     @property
     def beam_vector(self) -> np.ndarray:
@@ -2233,8 +2232,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['pixel_size_tth'] = v
         self.rerender_needed.emit()
 
-    polar_pixel_size_tth = property(_polar_pixel_size_tth,
-                                    _set_polar_pixel_size_tth)
+    polar_pixel_size_tth = property(_polar_pixel_size_tth, _set_polar_pixel_size_tth)
 
     def _polar_pixel_size_eta(self):
         return self.config['image']['polar']['pixel_size_eta']
@@ -2243,8 +2241,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['pixel_size_eta'] = v
         self.rerender_needed.emit()
 
-    polar_pixel_size_eta = property(_polar_pixel_size_eta,
-                                    _set_polar_pixel_size_eta)
+    polar_pixel_size_eta = property(_polar_pixel_size_eta, _set_polar_pixel_size_eta)
 
     def _polar_res_tth_min(self):
         return self.config['image']['polar']['tth_min']
@@ -2253,8 +2250,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['tth_min'] = v
         self.rerender_needed.emit()
 
-    polar_res_tth_min = property(_polar_res_tth_min,
-                                 set_polar_res_tth_min)
+    polar_res_tth_min = property(_polar_res_tth_min, set_polar_res_tth_min)
 
     def _polar_res_tth_max(self):
         return self.config['image']['polar']['tth_max']
@@ -2263,8 +2259,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['tth_max'] = v
         self.rerender_needed.emit()
 
-    polar_res_tth_max = property(_polar_res_tth_max,
-                                 set_polar_res_tth_max)
+    polar_res_tth_max = property(_polar_res_tth_max, set_polar_res_tth_max)
 
     def _polar_res_eta_min(self):
         return self.config['image']['polar']['eta_min']
@@ -2282,8 +2277,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.rerender_needed.emit()
         self.overlay_config_changed.emit()
 
-    polar_res_eta_min = property(_polar_res_eta_min,
-                                 set_polar_res_eta_min)
+    polar_res_eta_min = property(_polar_res_eta_min, set_polar_res_eta_min)
 
     def _polar_res_eta_max(self):
         return self.config['image']['polar']['eta_max']
@@ -2298,12 +2292,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.flag_overlay_updates_for_all_materials()
             self.overlay_config_changed.emit()
 
-    polar_res_eta_max = property(_polar_res_eta_max,
-                                 set_polar_res_eta_max)
+    polar_res_eta_max = property(_polar_res_eta_max, set_polar_res_eta_max)
 
     @property
     def polar_res_eta_period(self):
-        return self.polar_res_eta_min + np.r_[0., 360.]
+        return self.polar_res_eta_min + np.r_[0.0, 360.0]
 
     def _polar_apply_snip1d(self):
         return self.config['image']['polar']['apply_snip1d']
@@ -2312,8 +2305,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['apply_snip1d'] = v
         self.rerender_needed.emit()
 
-    polar_apply_snip1d = property(_polar_apply_snip1d,
-                                  set_polar_apply_snip1d)
+    polar_apply_snip1d = property(_polar_apply_snip1d, set_polar_apply_snip1d)
 
     def _polar_apply_erosion(self):
         return self.config['image']['polar']['apply_erosion']
@@ -2322,8 +2314,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['apply_erosion'] = v
         self.rerender_needed.emit()
 
-    polar_apply_erosion = property(_polar_apply_erosion,
-                                   set_polar_apply_erosion)
+    polar_apply_erosion = property(_polar_apply_erosion, set_polar_apply_erosion)
 
     def _polar_snip1d_algorithm(self):
         return self.config['image']['polar']['snip1d_algorithm']
@@ -2332,8 +2323,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['snip1d_algorithm'] = v
         self.rerender_needed.emit()
 
-    polar_snip1d_algorithm = property(_polar_snip1d_algorithm,
-                                      set_polar_snip1d_algorithm)
+    polar_snip1d_algorithm = property(
+        _polar_snip1d_algorithm, set_polar_snip1d_algorithm
+    )
 
     def _polar_snip1d_width(self):
         return self.config['image']['polar']['snip1d_width']
@@ -2342,8 +2334,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['snip1d_width'] = v
         self.rerender_needed.emit()
 
-    polar_snip1d_width = property(_polar_snip1d_width,
-                                  set_polar_snip1d_width)
+    polar_snip1d_width = property(_polar_snip1d_width, set_polar_snip1d_width)
 
     def _polar_snip1d_numiter(self):
         return self.config['image']['polar']['snip1d_numiter']
@@ -2352,8 +2343,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.config['image']['polar']['snip1d_numiter'] = v
         self.rerender_needed.emit()
 
-    polar_snip1d_numiter = property(_polar_snip1d_numiter,
-                                    set_polar_snip1d_numiter)
+    polar_snip1d_numiter = property(_polar_snip1d_numiter, set_polar_snip1d_numiter)
 
     @property
     def polar_tth_distortion(self):
@@ -2436,6 +2426,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     d['pinhole_distortion_kwargs']['pinhole_radius'] = radius * 1e-3
 
             from hexrdgui.polar_distortion_object import PolarDistortionObject
+
             obj = PolarDistortionObject.deserialize(d)
 
         if obj and active:
@@ -2510,8 +2501,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if self.image_mode == constants.ViewType.cartesian:
                 self.rerender_needed.emit()
 
-    cartesian_pixel_size = property(_cartesian_pixel_size,
-                                    _set_cartesian_pixel_size)
+    cartesian_pixel_size = property(_cartesian_pixel_size, _set_cartesian_pixel_size)
 
     def _cartesian_virtual_plane_distance(self):
         return self.config['image']['cartesian']['virtual_plane_distance']
@@ -2526,8 +2516,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 self.rerender_needed.emit()
 
     cartesian_virtual_plane_distance = property(
-        _cartesian_virtual_plane_distance,
-        set_cartesian_virtual_plane_distance)
+        _cartesian_virtual_plane_distance, set_cartesian_virtual_plane_distance
+    )
 
     def _cartesian_plane_normal_rotate_x(self):
         return self.config['image']['cartesian']['plane_normal_rotate_x']
@@ -2539,8 +2529,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_x = property(
-        _cartesian_plane_normal_rotate_x,
-        set_cartesian_plane_normal_rotate_x)
+        _cartesian_plane_normal_rotate_x, set_cartesian_plane_normal_rotate_x
+    )
 
     def _cartesian_plane_normal_rotate_y(self):
         return self.config['image']['cartesian']['plane_normal_rotate_y']
@@ -2552,8 +2542,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 self.rerender_needed.emit()
 
     cartesian_plane_normal_rotate_y = property(
-        _cartesian_plane_normal_rotate_y,
-        set_cartesian_plane_normal_rotate_y)
+        _cartesian_plane_normal_rotate_y, set_cartesian_plane_normal_rotate_y
+    )
 
     def _stereo_size(self):
         return self.config['image']['stereo']['stereo_size']
@@ -2580,8 +2570,10 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def set_stereo_project_from_polar(self, b):
         if not b:
-            print('Warning: projecting from raw is currently disabled\n',
-                  'Setting stereo mode to project from polar...')
+            print(
+                'Warning: projecting from raw is currently disabled\n',
+                'Setting stereo mode to project from polar...',
+            )
             b = True
 
         if b != self.stereo_project_from_polar:
@@ -2589,8 +2581,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.rerender_needed.emit()
 
     stereo_project_from_polar = property(
-        _stereo_project_from_polar,
-        set_stereo_project_from_polar)
+        _stereo_project_from_polar, set_stereo_project_from_polar
+    )
 
     def _apply_pixel_solid_angle_correction(self):
         return self.config['image']['apply_pixel_solid_angle_correction']
@@ -2601,8 +2593,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.deep_rerender_needed.emit()
 
     apply_pixel_solid_angle_correction = property(
-        _apply_pixel_solid_angle_correction,
-        set_apply_pixel_solid_angle_correction)
+        _apply_pixel_solid_angle_correction, set_apply_pixel_solid_angle_correction
+    )
 
     @property
     def apply_polarization_correction(self):
@@ -2633,8 +2625,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.deep_rerender_needed.emit()
 
     intensity_subtract_minimum = property(
-        _intensity_subtract_minimum,
-        set_intensity_subtract_minimum)
+        _intensity_subtract_minimum, set_intensity_subtract_minimum
+    )
 
     @property
     def _intensity_correction_names(self) -> list[str]:
@@ -2673,8 +2665,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._show_saturation_level = v
             self.show_saturation_level_changed.emit()
 
-    show_saturation_level = property(get_show_saturation_level,
-                                     set_show_saturation_level)
+    show_saturation_level = property(
+        get_show_saturation_level, set_show_saturation_level
+    )
 
     def get_stitch_raw_roi_images(self):
         return self._stitch_raw_roi_images and self.instrument_has_roi
@@ -2684,8 +2677,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self._stitch_raw_roi_images = v
             self.deep_rerender_needed.emit()
 
-    stitch_raw_roi_images = property(get_stitch_raw_roi_images,
-                                     set_stitch_raw_roi_images)
+    stitch_raw_roi_images = property(
+        get_stitch_raw_roi_images, set_stitch_raw_roi_images
+    )
 
     def tab_images(self):
         return self._tab_images
@@ -2719,15 +2713,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def set_euler_angle_convention(self, new_conv, convert_config=True):
 
         allowed_conventions = [
-            {
-                'axes_order': 'xyz',
-                'extrinsic': True
-            },
-            {
-                'axes_order': 'zxz',
-                'extrinsic': False
-            },
-            None
+            {'axes_order': 'xyz', 'extrinsic': True},
+            {'axes_order': 'zxz', 'extrinsic': False},
+            None,
         ]
 
         if new_conv not in allowed_conventions:
@@ -2739,8 +2727,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if convert_config:
             # First, convert all the tilt angles
             old_conv = self._euler_angle_convention
-            utils.convert_tilt_convention(self.config['instrument'], old_conv,
-                                          new_conv)
+            utils.convert_tilt_convention(self.config['instrument'], old_conv, new_conv)
 
         # Set the variable
         self._euler_angle_convention = copy.deepcopy(new_conv)
@@ -2902,9 +2889,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def wppf_background_style(self):
         settings = self.wppf_settings.setdefault('background_style', {})
         if not settings:
-            settings.update(
-                copy.deepcopy(constants.DEFAULT_WPPF_BACKGROUND_STYLE)
-            )
+            settings.update(copy.deepcopy(constants.DEFAULT_WPPF_BACKGROUND_STYLE))
         return settings
 
     @wppf_background_style.setter
@@ -2917,9 +2902,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def wppf_amorphous_style(self):
         settings = self.wppf_settings.setdefault('amorphous_style', {})
         if not settings:
-            settings.update(
-                copy.deepcopy(constants.DEFAULT_WPPF_AMORPHOUS_STYLE)
-            )
+            settings.update(copy.deepcopy(constants.DEFAULT_WPPF_AMORPHOUS_STYLE))
         return settings
 
     @wppf_amorphous_style.setter
@@ -2938,8 +2921,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.rerender_auto_picked_data.emit()
 
     def boundary_position(self, instrument, detector):
-        det_bounds = self.llnl_boundary_positions.get(
-            instrument, {}).get(detector, None)
+        det_bounds = self.llnl_boundary_positions.get(instrument, {}).get(
+            detector, None
+        )
         if not isinstance(det_bounds, dict):
             return None
         return det_bounds
@@ -3112,7 +3096,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                     f'does not match detector shape {det_shape}. '
                     'Clearing panel buffer.'
                 )
-                det_info['buffer'] =  [0., 0.]
+                det_info['buffer'] = [0.0, 0.0]
 
     def add_recent_state_file(self, new_file):
         self.recent_state_files.insert(0, str(new_file))
@@ -3182,9 +3166,9 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def absorption_length(self):
         if not self.has_physics_package:
             raise ValueError(
-                f'Cannot calculate absorption length without physics package')
-        return self.physics_package.pinhole_absorption_length(
-            HexrdConfig().beam_energy)
+                f'Cannot calculate absorption length without physics package'
+            )
+        return self.physics_package.pinhole_absorption_length(HexrdConfig().beam_energy)
 
     @property
     def detector_coatings_dictified(self):
@@ -3224,6 +3208,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return
 
         from hexrdgui.create_hedm_instrument import create_hedm_instrument
+
         instr = create_hedm_instrument()
         for name, det in instr.detectors.items():
             if key not in self._detector_coatings[name]:

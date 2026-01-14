@@ -10,13 +10,12 @@ from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.constants import (
-    crystal_refinement_labels, default_crystal_params,
-    default_crystal_refinements
+    crystal_refinement_labels,
+    default_crystal_params,
+    default_crystal_refinements,
 )
 from hexrdgui.overlays.overlay import Overlay
-from hexrdgui.utils.conversions import (
-    angles_to_cart, angles_to_stereo, cart_to_angles
-)
+from hexrdgui.utils.conversions import angles_to_cart, angles_to_stereo, cart_to_angles
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
@@ -26,10 +25,19 @@ class LaueOverlay(Overlay):
     data_key = 'spots'
     ranges_key = 'ranges'
 
-    def __init__(self, material_name, crystal_params=None,
-                 min_energy=5, max_energy=35, tth_width=None, eta_width=None,
-                 width_shape=None, label_type=None, label_offsets=None,
-                 **overlay_kwargs):
+    def __init__(
+        self,
+        material_name,
+        crystal_params=None,
+        min_energy=5,
+        max_energy=35,
+        tth_width=None,
+        eta_width=None,
+        width_shape=None,
+        label_type=None,
+        label_offsets=None,
+        **overlay_kwargs,
+    ):
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -68,6 +76,7 @@ class LaueOverlay(Overlay):
     @property
     def xray_source(self):
         from hexrdgui.hexrd_config import HexrdConfig
+
         if self._xray_source is None and HexrdConfig().has_multi_xrs:
             # Force the x-ray source to be locked into a specific one.
             self._xray_source = HexrdConfig().beam_names[0]
@@ -77,6 +86,7 @@ class LaueOverlay(Overlay):
     @xray_source.setter
     def xray_source(self, v):
         from hexrdgui.hexrd_config import HexrdConfig
+
         if v is None and HexrdConfig().has_multi_xrs:
             # Force the x-ray source to be locked into a specific one.
             self._xray_source = HexrdConfig().beam_names[0]
@@ -172,7 +182,8 @@ class LaueOverlay(Overlay):
                         eta_period,
                     )
                     picks[det_key][hkl_str] = apply_tth_distortion_if_needed(
-                        angles, in_degrees=True).tolist()[0]
+                        angles, in_degrees=True
+                    ).tolist()[0]
 
         return picks
 
@@ -190,9 +201,9 @@ class LaueOverlay(Overlay):
                     picks[det_key][hkl_str] = [np.nan, np.nan]
                 else:
                     angles = apply_tth_distortion_if_needed(
-                        [hkl_picks], in_degrees=True, reverse=True)
-                    picks[det_key][hkl_str] = angles_to_cart(angles,
-                                                             panel)[0].tolist()
+                        [hkl_picks], in_degrees=True, reverse=True
+                    )
+                    picks[det_key][hkl_str] = angles_to_cart(angles, panel)[0].tolist()
 
         self.calibration_picks = picks
 
@@ -220,7 +231,10 @@ class LaueOverlay(Overlay):
                 minEnergy=self.min_energy,
                 maxEnergy=self.max_energy,
                 rmat_s=HexrdConfig().sample_rmat,
-                grain_params=[self.crystal_params, ])
+                grain_params=[
+                    self.crystal_params,
+                ],
+            )
 
         for det_key, psim in sim_data.items():
             # grab panel and split out simulation results
@@ -304,10 +318,12 @@ class LaueOverlay(Overlay):
             else:
                 labels = []
 
-            point_groups[det_key].update({
-                'labels': labels,
-                'label_offsets': self.label_offsets,
-            })
+            point_groups[det_key].update(
+                {
+                    'labels': labels,
+                    'label_offsets': self.label_offsets,
+                }
+            )
 
         return point_groups
 
@@ -319,15 +335,11 @@ class LaueOverlay(Overlay):
         widths = (self.tth_width, self.eta_width)
         # Put the first point at the end to complete the square
         tol_box = np.array(
-            [[0.5, 0.5],
-             [0.5, -0.5],
-             [-0.5, -0.5],
-             [-0.5, 0.5],
-             [0.5, 0.5]]
+            [[0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5], [0.5, 0.5]]
         )
         ranges = []
         for spot in spots:
-            corners = np.tile(spot, (5, 1)) + tol_box*np.tile(widths, (5, 1))
+            corners = np.tile(spot, (5, 1)) + tol_box * np.tile(widths, (5, 1))
             ranges.append(corners)
 
         return ranges
@@ -366,12 +378,16 @@ class LaueOverlay(Overlay):
 
         if display_mode == ViewType.stereo:
             from hexrdgui.hexrd_config import HexrdConfig
+
             # Convert the angles to stereo ij
-            return [angles_to_stereo(
-                corners,
-                self.instrument,
-                HexrdConfig().stereo_size,
-            ) for corners in range_corners]
+            return [
+                angles_to_stereo(
+                    corners,
+                    self.instrument,
+                    HexrdConfig().stereo_size,
+                )
+                for corners in range_corners
+            ]
 
         # The range data is curved for raw and cartesian.
         # Get more intermediate points so the data reflects this.
@@ -409,11 +425,14 @@ class LaueOverlay(Overlay):
 
         if display_mode == ViewType.stereo:
             # Convert the angles to stereo ij
-            return [angles_to_stereo(
-                angles,
-                self.instrument,
-                HexrdConfig().stereo_size,
-            ) for angles in results]
+            return [
+                angles_to_stereo(
+                    angles,
+                    self.instrument,
+                    HexrdConfig().stereo_size,
+                )
+                for angles in results
+            ]
 
         # Must be cartesian or raw
         if display_mode not in (ViewType.raw, ViewType.cartesian):
@@ -434,41 +453,25 @@ class LaueOverlay(Overlay):
     @property
     def default_style(self):
         return {
-            'data': {
-                'c': '#00ffff',  # Cyan
-                'marker': 'o',
-                's': 2.0
-            },
-            'ranges': {
-                'c': '#00ff00',  # Green
-                'ls': 'dotted',
-                'lw': 1.0
-            },
+            'data': {'c': '#00ffff', 'marker': 'o', 's': 2.0},  # Cyan
+            'ranges': {'c': '#00ff00', 'ls': 'dotted', 'lw': 1.0},  # Green
             'labels': {
                 'c': '#000000',  # Black
                 'size': 10,
                 'weight': 'bold',
-            }
+            },
         }
 
     @property
     def default_highlight_style(self):
         return {
-            'data': {
-                'c': '#ff00ff',  # Magenta
-                'marker': 'o',
-                's': 4.0
-            },
-            'ranges': {
-                'c': '#ff00ff',  # Magenta
-                'ls': 'dotted',
-                'lw': 3.0
-            },
+            'data': {'c': '#ff00ff', 'marker': 'o', 's': 4.0},  # Magenta
+            'ranges': {'c': '#ff00ff', 'ls': 'dotted', 'lw': 3.0},  # Magenta
             'labels': {
                 'c': '#ff00ff',  # Magenta
                 'size': 10,
                 'weight': 'bold',
-            }
+            },
         }
 
 
@@ -479,7 +482,7 @@ def ellipse_points(h, k, a, b, num_points=30):
     # We'll just do our own here using float values and sorting...
     # (x - h)**2 / a**2 + (y - k)**2 / b**2 == 1
     x = np.linspace(h + a, h - a, num_points // 2 + 1)[1:-1]
-    y_upper = b * np.sqrt(1 - (x - h)**2 / a**2) + k
+    y_upper = b * np.sqrt(1 - (x - h) ** 2 / a**2) + k
     upper = np.vstack((x, y_upper)).T
     lower = np.vstack((x[::-1], 2 * k - y_upper)).T
     right = np.array(((h + a, k),))

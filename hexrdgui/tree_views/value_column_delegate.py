@@ -77,9 +77,7 @@ class ValueColumnEditorFactory(QItemEditorFactory):
         # with the user_type integer. However, QVariant is not available in
         # PySide6, making us use roundabout methods to get the integer like
         # below.
-        float_type = (
-            ScientificDoubleSpinBox.staticMetaObject.userProperty().userType()
-        )
+        float_type = ScientificDoubleSpinBox.staticMetaObject.userProperty().userType()
         if user_type == float_type:
             return ScientificDoubleSpinBox(parent)
 

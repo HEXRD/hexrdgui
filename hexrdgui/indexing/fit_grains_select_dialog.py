@@ -34,10 +34,10 @@ class FitGrainsSelectDialog(QObject):
         self.setup_connections()
 
     def setup_connections(self):
-        self.ui.select_estimate_file_button.pressed.connect(
-            self.select_estimate_file)
+        self.ui.select_estimate_file_button.pressed.connect(self.select_estimate_file)
         self.ui.select_orientations_file_button.pressed.connect(
-            self.select_orientations_file)
+            self.select_orientations_file
+        )
         self.ui.method.currentIndexChanged.connect(self.update_method_tab)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
@@ -80,12 +80,14 @@ class FitGrainsSelectDialog(QObject):
         self.select_file('Load grains.out file', 'grains.out files (*.out)')
 
     def select_orientations_file(self):
-        self.select_file('Load orientations file',
-                         'Accepted orientations files (*.dat)')
+        self.select_file(
+            'Load orientations file', 'Accepted orientations files (*.dat)'
+        )
 
     def select_file(self, title, filters):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, title, HexrdConfig().working_dir, filters)
+            self.ui, title, HexrdConfig().working_dir, filters
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)

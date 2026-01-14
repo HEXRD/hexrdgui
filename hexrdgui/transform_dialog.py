@@ -4,6 +4,7 @@ from hexrdgui.ui_loader import UiLoader
 
 from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpacerItem
 
+
 class TransformDialog:
 
     def __init__(self, parent=None):
@@ -17,8 +18,14 @@ class TransformDialog:
 
     def update_gui(self):
         options = [
-            '(None)', 'Mirror about Vertical', 'Mirror about Horizontal',
-            'Transpose', 'Rotate 90°', 'Rotate 180°', 'Rotate 270°']
+            '(None)',
+            'Mirror about Vertical',
+            'Mirror about Horizontal',
+            'Transpose',
+            'Rotate 90°',
+            'Rotate 180°',
+            'Rotate 270°',
+        ]
         for i, det in enumerate(HexrdConfig().detector_names):
             hbox = QHBoxLayout()
             # Add label

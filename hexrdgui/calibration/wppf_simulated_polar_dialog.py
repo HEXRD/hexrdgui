@@ -12,10 +12,14 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class WppfSimulatedPolarDialog:
-    def __init__(self, pv_bin: np.ndarray, pv_sim: np.ndarray | None,
-                 extent: list[float] | None = None, parent=None):
-        self.ui = UiLoader().load_file('wppf_simulated_polar_dialog.ui',
-                                       parent)
+    def __init__(
+        self,
+        pv_bin: np.ndarray,
+        pv_sim: np.ndarray | None,
+        extent: list[float] | None = None,
+        parent=None,
+    ):
+        self.ui = UiLoader().load_file('wppf_simulated_polar_dialog.ui', parent)
 
         if pv_sim is None:
             pv_sim = np.zeros_like(pv_bin)
@@ -61,12 +65,14 @@ class WppfSimulatedPolarDialog:
 
         axes_images = []
         for i, ax in enumerate(axes):
-            axes_images.append(ax.imshow(
-                self.get_scaled_image_data(i),
-                extent=self.extent,
-                cmap=self.cmap,
-                norm=self.norm,
-            ))
+            axes_images.append(
+                ax.imshow(
+                    self.get_scaled_image_data(i),
+                    extent=self.extent,
+                    cmap=self.cmap,
+                    norm=self.norm,
+                )
+            )
 
         for ax in axes:
             ax.relim()

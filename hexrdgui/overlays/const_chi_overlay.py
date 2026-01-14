@@ -7,9 +7,7 @@ from hexrd import constants
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.overlay import Overlay
 from hexrdgui.utils.const_chi import generate_ring_points_chi
-from hexrdgui.utils.conversions import (
-    angles_to_stereo, cart_to_angles, cart_to_pixels
-)
+from hexrdgui.utils.conversions import angles_to_stereo, cart_to_angles, cart_to_pixels
 
 
 class ConstChiOverlay(Overlay):
@@ -18,8 +16,14 @@ class ConstChiOverlay(Overlay):
     data_key = 'data'
     ranges_key = None
 
-    def __init__(self, material_name, chi_values=None, tvec=None,
-                 chi_values_serialized=None, **overlay_kwargs):
+    def __init__(
+        self,
+        material_name,
+        chi_values=None,
+        tvec=None,
+        chi_values_serialized=None,
+        **overlay_kwargs
+    ):
         # chi_values_serialized is only used if chi_values is None.
         # It is used for state loading.
         Overlay.__init__(self, material_name, **overlay_kwargs)
@@ -40,8 +44,8 @@ class ConstChiOverlay(Overlay):
 
     def setup_connections(self):
         from hexrdgui.hexrd_config import HexrdConfig
-        HexrdConfig().sample_tilt_modified.connect(
-            self.on_sample_tilt_modified)
+
+        HexrdConfig().sample_tilt_modified.connect(self.on_sample_tilt_modified)
 
     @property
     def child_attributes_to_save(self):
@@ -94,11 +98,13 @@ class ConstChiOverlay(Overlay):
     @property
     def sample_tilt(self):
         from hexrdgui.hexrd_config import HexrdConfig
+
         return HexrdConfig().sample_tilt
 
     @sample_tilt.setter
     def sample_tilt(self, v):
         from hexrdgui.hexrd_config import HexrdConfig
+
         HexrdConfig().sample_tilt = v
 
     def on_sample_tilt_modified(self):
@@ -107,10 +113,7 @@ class ConstChiOverlay(Overlay):
     def generate_overlay(self):
         instr = self.instrument
 
-        data = {
-            det_key: {'data': [], 'chi': []}
-            for det_key in instr.detectors
-        }
+        data = {det_key: {'data': [], 'chi': []} for det_key in instr.detectors}
         for chi_value in self.chi_values:
             if not chi_value.visible:
                 continue
@@ -136,9 +139,9 @@ class ConstChiOverlay(Overlay):
         if self.display_mode in (ViewType.raw, ViewType.cartesian):
             # Find the distances between all points, and insert nans between
             # any points that are very far apart (10x the median)
-            distances = np.sqrt(np.sum(np.diff(xys, axis=0)**2, axis=1))
+            distances = np.sqrt(np.sum(np.diff(xys, axis=0) ** 2, axis=1))
             tolerance = np.nanmedian(distances) * 10
-            gaps, = np.nonzero(np.abs(distances) > np.abs(tolerance))
+            (gaps,) = np.nonzero(np.abs(distances) > np.abs(tolerance))
             xys = np.insert(xys, gaps + 1, np.nan, axis=0)
 
             if self.display_mode == ViewType.cartesian:
@@ -149,6 +152,7 @@ class ConstChiOverlay(Overlay):
 
         # Must be polar or stereo
         from hexrdgui.hexrd_config import HexrdConfig
+
         kwargs = {
             'xys': xys,
             'panel': panel,
@@ -164,7 +168,7 @@ class ConstChiOverlay(Overlay):
         # # FIXME: is this a reasonable tolerance?
         delta_eta_est = np.nanmedian(diff)
         tolerance = delta_eta_est * 2
-        gaps, = np.nonzero(np.abs(diff) > np.abs(tolerance))
+        (gaps,) = np.nonzero(np.abs(diff) > np.abs(tolerance))
         angs = np.insert(angs, gaps + 1, np.nan, axis=0)
 
         if self.display_mode == ViewType.polar:

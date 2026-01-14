@@ -110,10 +110,10 @@ class GrainsTableView(QTableView):
     @property
     def can_run_pull_spots(self):
         return (
-            self.pull_spots_allowed and
-            self.selected_grain_ids and
-            self.material is not None and
-            self.grains_table is not None
+            self.pull_spots_allowed
+            and self.selected_grain_ids
+            and self.material is not None
+            and self.grains_table is not None
         )
 
     @property
@@ -125,11 +125,13 @@ class GrainsTableView(QTableView):
         tolerance = cfg.fit_grains.tolerance
         res = []
         for i in range(len(tolerance.tth)):
-            res.append({
-                'tth': tolerance.tth[i],
-                'eta': tolerance.eta[i],
-                'ome': tolerance.omega[i],
-            })
+            res.append(
+                {
+                    'tth': tolerance.tth[i],
+                    'eta': tolerance.eta[i],
+                    'ome': tolerance.omega[i],
+                }
+            )
         return res
 
     @tolerances.setter
@@ -230,7 +232,7 @@ class GrainsTableView(QTableView):
 
         # Omega period
         oims = next(iter(imsd.values()))
-        ome_period = np.radians(oims.omega[0, 0] + np.r_[0., 360.])
+        ome_period = np.radians(oims.omega[0, 0] + np.r_[0.0, 360.0])
 
         kwargs = {
             'plane_data': plane_data,
@@ -266,8 +268,7 @@ class GrainsTableView(QTableView):
         self.setup_proxy()
 
         # A new selection model is created each time a new data model is set.
-        self.selectionModel().selectionChanged.connect(
-            self.on_selection_changed)
+        self.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
     def setup_proxy(self):
 
@@ -286,7 +287,8 @@ class GrainsTableView(QTableView):
 
         self.setSortingEnabled(True)
         self.horizontalHeader().sortIndicatorChanged.connect(
-            self.on_sort_indicator_changed)
+            self.on_sort_indicator_changed
+        )
         self.sortByColumn(0, Qt.AscendingOrder)
         self.horizontalHeader().setSortIndicatorShown(False)
 

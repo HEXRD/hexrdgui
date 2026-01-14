@@ -7,7 +7,8 @@ from hexrd.rotations import mapAngle
 
 from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import (
-    create_hedm_instrument, create_view_hedm_instrument
+    create_hedm_instrument,
+    create_view_hedm_instrument,
 )
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays import update_overlay_data
@@ -74,19 +75,20 @@ class InstrumentViewer:
             [[x, y_start] for x in col_vec],
             [[x, y_stop] for x in col_vec],
             [[x_start, y] for y in row_vec],
-            [[x_stop, y] for y in row_vec]
+            [[x_stop, y] for y in row_vec],
         ]
 
         # Convert each border to angles, then stereo
         for i, border in enumerate(borders):
-            angles = np.radians(cart_to_angles(
-                border,
-                panel,
-                self.eta_period,
-                tvec_s=self.instr_pv.tvec,
-            ))
-            borders[i] = angles_to_stereo(angles, self.instr_pv,
-                                          self.stereo_size).T
+            angles = np.radians(
+                cart_to_angles(
+                    border,
+                    panel,
+                    self.eta_period,
+                    tvec_s=self.instr_pv.tvec,
+                )
+            )
+            borders[i] = angles_to_stereo(angles, self.instr_pv, self.stereo_size).T
 
         return borders
 
@@ -107,11 +109,13 @@ class InstrumentViewer:
         self.fill_image_with_nans()
 
     def draw_stereo_from_raw(self):
-        self.img = stereo_project(**{
-            'instr': self.instr_pv,
-            'raw': self.raw_img_dict,
-            'stereo_size': self.stereo_size,
-        })
+        self.img = stereo_project(
+            **{
+                'instr': self.instr_pv,
+                'raw': self.raw_img_dict,
+                'stereo_size': self.stereo_size,
+            }
+        )
 
     def prep_eta_grid(self, eta_grid):
         """
@@ -187,13 +191,15 @@ class InstrumentViewer:
 
         eta_grid, polar_img = self.pad_etas_pvarray(eta_grid, polar_img)
 
-        self.img = stereo_projection_of_polar_view(**{
-            'pvarray': polar_img,
-            'tth_grid': tth_grid,
-            'eta_grid': eta_grid,
-            'instr': self.instr_pv,
-            'stereo_size': self.stereo_size,
-        })
+        self.img = stereo_projection_of_polar_view(
+            **{
+                'pvarray': polar_img,
+                'tth_grid': tth_grid,
+                'eta_grid': eta_grid,
+                'instr': self.instr_pv,
+                'stereo_size': self.stereo_size,
+            }
+        )
 
     def draw_polar(self):
         self.pv = PolarView(

@@ -27,14 +27,23 @@ plt.rcParams.update(params)
 """
 
 
-def montage(X, colormap=plt.cm.inferno, show_borders=True,
-            title=None, xlabel=None, ylabel=None,
-            threshold=None, filename=None, fig_ax=None,
-            ome_centers=None, frame_indices=None):
+def montage(
+    X,
+    colormap=plt.cm.inferno,
+    show_borders=True,
+    title=None,
+    xlabel=None,
+    ylabel=None,
+    threshold=None,
+    filename=None,
+    fig_ax=None,
+    ome_centers=None,
+    frame_indices=None,
+):
     m, n, count = np.shape(X)
     img_data = np.log(X - np.min(X) + 1)
     if threshold is None:
-        threshold = 0.
+        threshold = 0.0
     else:
         threshold = np.log(threshold - np.min(X) + 1)
     mm = int(np.ceil(np.sqrt(count)))
@@ -57,11 +66,11 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
         ax.plot()
         for k in range(nn):
             if image_id >= count:
-                img = np.nan*np.ones((m, n))
+                img = np.nan * np.ones((m, n))
             else:
                 img = img_data[:, :, image_id]
             sliceN = k * n
-            M[sliceM:sliceM + m, sliceN:sliceN + n] = img
+            M[sliceM : sliceM + m, sliceN : sliceN + n] = img
             if ome_centers is not None and image_id < len(ome_centers):
                 center = ome_centers[image_id]
                 kwargs = {
@@ -87,12 +96,16 @@ def montage(X, colormap=plt.cm.inferno, show_borders=True,
     im = ax.imshow(M, cmap=colormap, vmin=threshold, interpolation='nearest')
     if show_borders:
         xs = np.vstack(
-            [np.vstack([[n*i, n*i] for i in range(nn+1)]),
-             np.tile([0, nn*n], (mm+1, 1))]
+            [
+                np.vstack([[n * i, n * i] for i in range(nn + 1)]),
+                np.tile([0, nn * n], (mm + 1, 1)),
+            ]
         )
         ys = np.vstack(
-            [np.tile([0, mm*m], (nn+1, 1)),
-             np.vstack([[m*i, m*i] for i in range(mm+1)])]
+            [
+                np.tile([0, mm * m], (nn + 1, 1)),
+                np.vstack([[m * i, m * i] for i in range(mm + 1)]),
+            ]
         )
         for xp, yp in zip(xs, ys):
             ax.plot(xp, yp, 'c:')
@@ -166,7 +179,7 @@ def extract_hkls_from_spots_data(all_spots, grain_id=None, detector_key=None):
     return hkls
 
 
-def plot_gvec_from_spots_data(all_spots, gvec_id, threshold=0.):
+def plot_gvec_from_spots_data(all_spots, gvec_id, threshold=0.0):
     data_map = SPOTS_DATA_MAP
 
     for grain_id, spots in all_spots.items():
@@ -187,18 +200,14 @@ def plot_gvec_from_spots_data(all_spots, gvec_id, threshold=0.):
                 }
                 labels = create_labels(**kwargs)
 
-                intensities = np.transpose(
-                    data[data_map['patch_data']],
-                    (1, 2, 0)
-                )
+                intensities = np.transpose(data[data_map['patch_data']], (1, 2, 0))
 
                 # make montage
                 montage(intensities, threshold=threshold, **labels)
 
 
-def plot_gvec_from_hdf5(fname, gvec_id, threshold=0.):
-    """
-    """
+def plot_gvec_from_hdf5(fname, gvec_id, threshold=0.0):
+    """ """
     with h5py.File(fname, 'r') as f:
         for det_key, panel_data in f['reflection_data'].items():
             for spot_id, spot_data in panel_data.items():
@@ -216,8 +225,7 @@ def plot_gvec_from_hdf5(fname, gvec_id, threshold=0.):
                 labels = create_labels(**kwargs)
 
                 intensities = np.transpose(
-                        np.array(spot_data['intensities']),
-                        (1, 2, 0)
+                    np.array(spot_data['intensities']), (1, 2, 0)
                 )
 
                 # make montage
@@ -254,18 +262,15 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Montage of spot data for a specifed G-vector family")
+        description="Montage of spot data for a specifed G-vector family"
+    )
 
-    parser.add_argument('hdf5_archive',
-                        help="hdf5 archive filename",
-                        type=str)
-    parser.add_argument('gvec_id',
-                        help="unique G-vector ID from PlaneData",
-                        type=int)
+    parser.add_argument('hdf5_archive', help="hdf5 archive filename", type=str)
+    parser.add_argument('gvec_id', help="unique G-vector ID from PlaneData", type=int)
 
-    parser.add_argument('-t', '--threshold',
-                        help="intensity threshold",
-                        type=float, default=0.)
+    parser.add_argument(
+        '-t', '--threshold', help="intensity threshold", type=float, default=0.0
+    )
 
     args = parser.parse_args()
 

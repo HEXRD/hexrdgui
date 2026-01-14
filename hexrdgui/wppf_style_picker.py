@@ -39,34 +39,20 @@ class WppfStylePicker(QObject):
         self.ui.face_color.pressed.connect(self.pick_color)
 
         self.ui.background_color.clicked.connect(self.pick_color)
-        self.ui.background_line_style.currentIndexChanged.connect(
-            self.update_config)
+        self.ui.background_line_style.currentIndexChanged.connect(self.update_config)
         self.ui.background_line_width.valueChanged.connect(self.update_config)
 
         self.ui.amorphous_color.clicked.connect(self.pick_color)
-        self.ui.amorphous_line_style.currentIndexChanged.connect(
-            self.update_config)
+        self.ui.amorphous_line_style.currentIndexChanged.connect(self.update_config)
         self.ui.amorphous_line_width.valueChanged.connect(self.update_config)
 
         # Reset the style if the dialog is rejected
         self.ui.rejected.connect(self.reset_style)
 
     def setup_combo_boxes(self):
-        line_styles = [
-            'solid',
-            'dotted',
-            'dashed',
-            'dashdot'
-        ]
+        line_styles = ['solid', 'dotted', 'dashed', 'dashdot']
 
-        marker_styles = [
-            '.',
-            'o',
-            '^',
-            's',
-            'x',
-            'D'
-        ]
+        marker_styles = ['.', 'o', '^', 's', 'x', 'D']
 
         w = self.ui.marker
         for s in marker_styles:

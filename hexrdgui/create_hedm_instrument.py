@@ -24,12 +24,9 @@ def create_hedm_instrument():
         iconfig['physics_package'] = HexrdConfig().physics_package
     if HexrdConfig().apply_absorption_correction:
         for det in HexrdConfig().detector_names:
-            iconfig['detectors'][det]['filter'] = (
-                HexrdConfig().detector_filter(det))
-            iconfig['detectors'][det]['coating'] = (
-                HexrdConfig().detector_coating(det))
-            iconfig['detectors'][det]['phosphor'] = (
-                HexrdConfig().detector_phosphor(det))
+            iconfig['detectors'][det]['filter'] = HexrdConfig().detector_filter(det)
+            iconfig['detectors'][det]['coating'] = HexrdConfig().detector_coating(det)
+            iconfig['detectors'][det]['phosphor'] = HexrdConfig().detector_phosphor(det)
 
     kwargs = {
         'instrument_config': iconfig,

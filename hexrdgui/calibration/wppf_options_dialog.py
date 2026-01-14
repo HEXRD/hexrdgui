@@ -117,9 +117,7 @@ class WppfOptionsDialog(QObject):
         self.ui.method.currentIndexChanged.connect(self.on_method_changed)
         self.ui.select_materials_button.pressed.connect(self.select_materials)
         self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
-        self.ui.delta_boundaries.toggled.connect(
-            self.on_delta_boundaries_toggled
-        )
+        self.ui.delta_boundaries.toggled.connect(self.on_delta_boundaries_toggled)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file
         )
@@ -128,9 +126,7 @@ class WppfOptionsDialog(QObject):
             self.update_background_parameters
         )
 
-        self.ui.display_wppf_plot.toggled.connect(
-            self.display_wppf_plot_toggled
-        )
+        self.ui.display_wppf_plot.toggled.connect(self.display_wppf_plot_toggled)
         self.ui.plot_background.toggled.connect(self.plot_background_toggled)
         self.ui.plot_amorphous.toggled.connect(self.plot_amorphous_toggled)
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
@@ -142,9 +138,7 @@ class WppfOptionsDialog(QObject):
             self.on_show_difference_as_percent_toggled
         )
 
-        self.ui.include_amorphous.toggled.connect(
-            self.on_include_amorphous_toggled
-        )
+        self.ui.include_amorphous.toggled.connect(self.on_include_amorphous_toggled)
         self.ui.amorphous_model.currentIndexChanged.connect(
             self.on_amorphous_model_changed
         )
@@ -233,9 +227,7 @@ class WppfOptionsDialog(QObject):
             # Also set the value to 1
             self.ui.refinement_steps.setValue(1)
 
-        self.ui.show_difference_as_percent.setVisible(
-            self.show_difference_curve
-        )
+        self.ui.show_difference_as_percent.setVisible(self.show_difference_curve)
 
         self.update_texture_model_enable_states()
 
@@ -361,9 +353,7 @@ class WppfOptionsDialog(QObject):
         # Pick experiment files for amorphous if needed
         if self.include_amorphous and self.amorphous_model_is_experimental:
             files = self.amorphous_experiment_files
-            if len(files) < self.num_amorphous_peaks or any(
-                not x for x in files
-            ):
+            if len(files) < self.num_amorphous_peaks or any(not x for x in files):
                 self.select_amorphous_experiment_files()
 
         try:
@@ -490,10 +480,7 @@ class WppfOptionsDialog(QObject):
         items = [(name, name in selected) for name in materials]
         dialog = SelectItemsDialog(items, 'Select Materials', self.ui)
         while True:
-            if (
-                dialog.exec()
-                and self.selected_materials != dialog.selected_items
-            ):
+            if dialog.exec() and self.selected_materials != dialog.selected_items:
                 if not dialog.selected_items:
                     msg = 'At least one material must be selected'
                     QMessageBox.critical(self.ui, 'Material Required', msg)
@@ -718,9 +705,7 @@ class WppfOptionsDialog(QObject):
         if self.amorphous_model_is_experimental:
             kwargs['model_data'] = {
                 key: np.loadtxt(path)
-                for key, path in zip(
-                    key_names, self.amorphous_experiment_files
-                )
+                for key, path in zip(key_names, self.amorphous_experiment_files)
             }
             kwargs['smoothing'] = self.amorphous_expt_smoothing
 
@@ -739,9 +724,7 @@ class WppfOptionsDialog(QObject):
         ax.set_xlabel(r'2$\theta$')
         ax.set_ylabel(r'intensity (a.u.)')
 
-        dialog = PointPickerDialog(
-            fig.canvas, 'Pick Background Points', parent=self.ui
-        )
+        dialog = PointPickerDialog(fig.canvas, 'Pick Background Points', parent=self.ui)
         if not dialog.exec():
             # User canceled.
             return
@@ -960,9 +943,7 @@ class WppfOptionsDialog(QObject):
             self.plot_background = HexrdConfig().display_wppf_background
             self.plot_amorphous = HexrdConfig().display_wppf_amorphous
 
-            self.show_difference_curve = (
-                HexrdConfig().show_wppf_difference_axis
-            )
+            self.show_difference_curve = HexrdConfig().show_wppf_difference_axis
             self.show_difference_as_percent = (
                 HexrdConfig().show_wppf_difference_as_percent
             )
@@ -982,9 +963,7 @@ class WppfOptionsDialog(QObject):
         self._prev_background_method = self.background_method
 
         # Update the visibility of this button
-        self.ui.pick_spline_points.setVisible(
-            self.background_method == 'spline'
-        )
+        self.ui.pick_spline_points.setVisible(self.background_method == 'spline')
 
         main_layout = self.ui.background_method_parameters_layout
         clear_layout(main_layout)
@@ -1066,9 +1045,7 @@ class WppfOptionsDialog(QObject):
         self.on_amorphous_model_changed()
 
     def on_num_amorphous_peaks_value_changed(self):
-        is_experiment = (
-            self.include_amorphous and self.amorphous_model_is_experimental
-        )
+        is_experiment = self.include_amorphous and self.amorphous_model_is_experimental
         files = self.amorphous_experiment_files
         if is_experiment:
             # Trim off extra experiment files
@@ -1078,9 +1055,7 @@ class WppfOptionsDialog(QObject):
         self.on_amorphous_model_changed()
 
     def on_amorphous_model_changed(self):
-        is_experiment = (
-            self.include_amorphous and self.amorphous_model_is_experimental
-        )
+        is_experiment = self.include_amorphous and self.amorphous_model_is_experimental
         require_expt = [
             self.ui.amorphous_select_experiment_files,
             self.ui.amorphous_expt_smoothing,
@@ -1341,9 +1316,7 @@ class WppfOptionsDialog(QObject):
         # Now generate the materials
         materials_template = template_dict['Materials'].pop('{mat}')
 
-        def recursively_format_site_id(
-            mat, site_id, this_config, this_template
-        ):
+        def recursively_format_site_id(mat, site_id, this_config, this_template):
             sanitized_mat = mat.replace('-', '_')
             for k, v in this_template.items():
                 if isinstance(v, dict):
@@ -1602,9 +1575,7 @@ class WppfOptionsDialog(QObject):
         if res is None:
             return {}
 
-        return {
-            k: v.stderr for k, v in res.params.items() if v.vary and v.stderr
-        }
+        return {k: v.stderr for k, v in res.params.items() if v.vary and v.stderr}
 
     def on_param_vary_modified(self, param):
         # If it is a texture parameter, mark all other texture
@@ -1622,9 +1593,7 @@ class WppfOptionsDialog(QObject):
         self.update_enable_states()
 
     def on_show_difference_as_percent_toggled(self):
-        HexrdConfig().show_wppf_difference_as_percent = (
-            self.show_difference_as_percent
-        )
+        HexrdConfig().show_wppf_difference_as_percent = self.show_difference_as_percent
 
     @property
     def all_widgets(self):
@@ -1670,9 +1639,7 @@ class WppfOptionsDialog(QObject):
 
     @property
     def wppf_object_kwargs(self):
-        wavelength = {
-            'synchrotron': [_angstroms(HexrdConfig().beam_wavelength), 1.0]
-        }
+        wavelength = {'synchrotron': [_angstroms(HexrdConfig().beam_wavelength), 1.0]}
 
         if self.use_experiment_file:
             expt_spectrum = np.loadtxt(self.experiment_file)
@@ -1993,9 +1960,7 @@ class WppfOptionsDialog(QObject):
         self.ui.spectrum_binning_group.setEnabled(is_rietveld)
 
         # Now figure out if we should enable pole figure plotting
-        self.ui.texture_plot_pole_figures.setEnabled(
-            self.can_plot_pole_figures
-        )
+        self.ui.texture_plot_pole_figures.setEnabled(self.can_plot_pole_figures)
 
     def on_texture_material_setting_changed(self):
         mat_name = self.ui.selected_texture_material.currentText()
@@ -2142,9 +2107,7 @@ class WppfOptionsDialog(QObject):
         if not self.varying_texture_params:
             return False
 
-        prefixes = [
-            f'{mat_name}_c_' for mat_name in self.textured_materials_sanitized
-        ]
+        prefixes = [f'{mat_name}_c_' for mat_name in self.textured_materials_sanitized]
         for name, param in self.params.items():
             if param.vary and not any(name.startswith(x) for x in prefixes):
                 return True
@@ -2418,10 +2381,7 @@ class WppfOptionsDialog(QObject):
         mat_name = self.ui.selected_texture_material.currentText()
         w = self.ui.texture_index_label
 
-        if (
-            not isinstance(obj, Rietveld)
-            or obj.texture_model.get(mat_name) is None
-        ):
+        if not isinstance(obj, Rietveld) or obj.texture_model.get(mat_name) is None:
             v = 'None'
         else:
             j = obj.texture_model[mat_name].J(self.params)

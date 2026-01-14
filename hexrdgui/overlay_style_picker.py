@@ -58,21 +58,9 @@ class OverlayStylePicker(QObject):
             w.setText(v)
 
     def setup_combo_boxes(self):
-        line_styles = [
-            'solid',
-            'dotted',
-            'dashed',
-            'dashdot'
-        ]
+        line_styles = ['solid', 'dotted', 'dashed', 'dashdot']
 
-        marker_styles = [
-            '.',
-            'o',
-            '^',
-            's',
-            'x',
-            'D'
-        ]
+        marker_styles = ['.', 'o', '^', 's', 'x', 'D']
 
         if self.overlay.is_laue or self.overlay.is_rotation_series:
             data_styles = marker_styles
@@ -138,8 +126,7 @@ class OverlayStylePicker(QObject):
                 labels = self.style['labels']
                 self.ui.label_color.setText(labels[keys['label_color']])
                 self.ui.label_size.setValue(labels[keys['label_size']])
-                self.ui.label_weight.setCurrentText(
-                    labels[keys['label_weight']])
+                self.ui.label_weight.setCurrentText(labels[keys['label_weight']])
 
         self.update_button_colors()
 
@@ -264,10 +251,7 @@ class OverlayStylePicker(QObject):
 
     @property
     def laue_labels(self):
-        return {
-            'data_style': 'Marker Style:',
-            'data_size': 'Marker Size:'
-        }
+        return {'data_style': 'Marker Style:', 'data_size': 'Marker Size:'}
 
     @property
     def rotation_series_labels(self):

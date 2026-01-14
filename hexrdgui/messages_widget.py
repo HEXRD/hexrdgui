@@ -112,10 +112,9 @@ class MessagesWidget(QObject):
         # Handle \r if present
         while '\r' in text:
             ind = text.find('\r')
-            first, rest = text[:ind], text[ind + 1:]
+            first, rest = text[:ind], text[ind + 1 :]
             self.ui.text.insertPlainText(first)
-            self.ui.text.moveCursor(QTextCursor.StartOfLine,
-                                    QTextCursor.KeepAnchor)
+            self.ui.text.moveCursor(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
             text = rest
 
         self.ui.text.insertPlainText(text)

@@ -1,10 +1,7 @@
 from pathlib import Path
 
-from PySide6.QtCore import (
-    QItemSelectionModel, QModelIndex, QObject, Qt, Signal)
-from PySide6.QtWidgets import (
-    QDialogButtonBox, QFileDialog, QHeaderView, QMessageBox
-)
+from PySide6.QtCore import QItemSelectionModel, QModelIndex, QObject, Qt, Signal
+from PySide6.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView, QMessageBox
 
 import numpy as np
 
@@ -16,8 +13,7 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
 
-from hexrdgui.indexing.fit_grains_tolerances_model import (
-    FitGrainsToleranceModel)
+from hexrdgui.indexing.fit_grains_tolerances_model import FitGrainsToleranceModel
 from hexrdgui.indexing.utils import hkls_missing_in_list
 
 
@@ -26,8 +22,7 @@ class FitGrainsOptionsDialog(QObject):
     rejected = Signal()
     grains_table_modified = Signal()
 
-    def __init__(self, grains_table, ensure_active_hkls_not_excluded=True,
-                 parent=None):
+    def __init__(self, grains_table, ensure_active_hkls_not_excluded=True, parent=None):
         super().__init__(parent)
 
         self.grains_table = grains_table
@@ -69,7 +64,8 @@ class FitGrainsOptionsDialog(QObject):
         num_cols = self.tolerances_model.columnCount()
         for i in range(num_cols):
             self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(
-                i, QHeaderView.Stretch)
+                i, QHeaderView.Stretch
+            )
 
         self.setup_connections()
 
@@ -77,14 +73,14 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.rejected)
         self.ui.tolerances_view.selectionModel().selectionChanged.connect(
-            self.on_tolerances_select)
+            self.on_tolerances_select
+        )
         self.ui.add_row.clicked.connect(self.on_tolerances_add_row)
         self.ui.delete_row.clicked.connect(self.on_tolerances_delete_row)
         self.ui.move_up.clicked.connect(self.on_tolerances_move_up)
         self.ui.move_down.clicked.connect(self.on_tolerances_move_down)
 
-        self.ui.material.currentIndexChanged.connect(
-            self.selected_material_changed)
+        self.ui.material.currentIndexChanged.connect(self.selected_material_changed)
         self.ui.choose_hkls.pressed.connect(self.choose_hkls)
 
         self.ui.apply_min_sfac.clicked.connect(self.apply_min_sfac_to_hkls)
@@ -93,14 +89,12 @@ class FitGrainsOptionsDialog(QObject):
 
         HexrdConfig().overlay_config_changed.connect(self.update_num_hkls)
 
-        self.tolerances_model.data_modified.connect(
-            self.tolerance_data_modified)
+        self.tolerances_model.data_modified.connect(self.tolerance_data_modified)
 
         HexrdConfig().materials_dict_modified.connect(self.update_materials)
 
         self.ui.plot_grains.clicked.connect(self.plot_grains)
-        self.data_model.grains_table_modified.connect(
-            self.on_grains_table_modified)
+        self.data_model.grains_table_modified.connect(self.on_grains_table_modified)
 
     def all_widgets(self):
         """Only includes widgets directly related to config parameters"""
@@ -165,8 +159,7 @@ class FitGrainsOptionsDialog(QObject):
 
                 pd.exclusions = new_exclusions
 
-                HexrdConfig().flag_overlay_updates_for_material(
-                    self.material.name)
+                HexrdConfig().flag_overlay_updates_for_material(self.material.name)
                 HexrdConfig().overlay_config_changed.emit()
 
         return True
@@ -180,7 +173,8 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.tolerances_view.selectionModel().clear()
         model_index = self.tolerances_model.index(new_row_num, 0)
         self.ui.tolerances_view.selectionModel().setCurrentIndex(
-            model_index, QItemSelectionModel.Select)
+            model_index, QItemSelectionModel.Select
+        )
         # Have to repaint - is that because we are in a modal dialog?
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
@@ -233,11 +227,13 @@ class FitGrainsOptionsDialog(QObject):
         all_tolerances = self.tolerances_model.data_columns
         tolerances = []
         for tth, eta, ome in zip(*all_tolerances):
-            tolerances.append({
-                'tth': tth,
-                'eta': eta,
-                'ome': ome,
-            })
+            tolerances.append(
+                {
+                    'tth': tth,
+                    'eta': eta,
+                    'ome': ome,
+                }
+            )
 
         self.ui.grains_table_view.tolerances = tolerances
 
@@ -274,9 +270,11 @@ class FitGrainsOptionsDialog(QObject):
             indexing_config = HexrdConfig().indexing_config
             self.selected_material = indexing_config.get('_selected_material')
             working_dir = indexing_config.get(
-                'working_dir', str(Path(HexrdConfig().working_dir).parent))
+                'working_dir', str(Path(HexrdConfig().working_dir).parent)
+            )
             analysis_name = indexing_config.get(
-                'analysis_name', Path(HexrdConfig().working_dir).stem)
+                'analysis_name', Path(HexrdConfig().working_dir).stem
+            )
             self.spots_path = str(Path(working_dir) / analysis_name)
             write_spots = indexing_config.get('_write_spots', False)
             self.ui.write_out_spots.setChecked(write_spots)
@@ -324,9 +322,9 @@ class FitGrainsOptionsDialog(QObject):
     @selected_material.setter
     def selected_material(self, name):
         if (
-            name is None or
-            name not in self.material_options or
-            name == self.selected_material
+            name is None
+            or name not in self.material_options
+            or name == self.selected_material
         ):
             return
 
@@ -381,8 +379,7 @@ class FitGrainsOptionsDialog(QObject):
 
     def set_working_dir(self):
         caption = 'Select directory to write spots files to'
-        d = QFileDialog.getExistingDirectory(
-            self.ui, caption, dir=self.spots_path)
+        d = QFileDialog.getExistingDirectory(self.ui, caption, dir=self.spots_path)
 
         if d:
             self.spots_path = d

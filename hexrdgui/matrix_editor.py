@@ -63,8 +63,10 @@ class MatrixEditor(QWidget):
     def data(self, v):
         if not np.array_equal(self._data, v):
             if self._data.shape != v.shape:
-                msg = (f'Shape {v.shape} does not match original shape '
-                       f'{self._data.shape}')
+                msg = (
+                    f'Shape {v.shape} does not match original shape '
+                    f'{self._data.shape}'
+                )
                 raise AttributeError(msg)
 
             self._data = v

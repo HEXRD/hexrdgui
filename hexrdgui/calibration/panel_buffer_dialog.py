@@ -42,8 +42,7 @@ class PanelBufferDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/instrument/#panel-buffer')
+        add_help_url(self.ui.button_box, 'configuration/instrument/#panel-buffer')
 
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()
@@ -99,8 +98,8 @@ class PanelBufferDialog(QObject):
 
     def select_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Panel Buffer', HexrdConfig().working_dir,
-            'NPY files (*.npy)')
+            self.ui, 'Load Panel Buffer', HexrdConfig().working_dir, 'NPY files (*.npy)'
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -265,7 +264,7 @@ class PanelBufferDialog(QObject):
 
     @property
     def default_buffer(self):
-        return [0., 0.]
+        return [0.0, 0.0]
 
     def show_panel_buffer(self):
         buffer = self.current_editing_buffer_value

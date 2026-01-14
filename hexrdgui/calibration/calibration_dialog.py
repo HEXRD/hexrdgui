@@ -24,9 +24,7 @@ from hexrdgui.calibration.tree_item_models import (
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
-from hexrdgui.tree_views.multi_column_dict_tree_view import (
-    MultiColumnDictTreeView
-)
+from hexrdgui.tree_views.multi_column_dict_tree_view import MultiColumnDictTreeView
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
@@ -54,16 +52,21 @@ class CalibrationDialog(QObject):
     undo_run = Signal()
     finished = Signal()
 
-    def __init__(self, instr, params_dict, format_extra_params_func=None,
-                 parent=None, relative_constraints=None,
-                 engineering_constraints=None,
-                 window_title='Calibration Dialog',
-                 help_url='calibration/'):
+    def __init__(
+        self,
+        instr,
+        params_dict,
+        format_extra_params_func=None,
+        parent=None,
+        relative_constraints=None,
+        engineering_constraints=None,
+        window_title='Calibration Dialog',
+        help_url='calibration/',
+    ):
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('calibration_dialog.ui',
-                                   parent)
+        self.ui = loader.load_file('calibration_dialog.ui', parent)
 
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
         add_help_url(self.ui.button_box, help_url)
@@ -75,10 +78,10 @@ class CalibrationDialog(QObject):
         editor.update_gui_from_polar_distortion_object()
         self.ui.pinhole_distortion_layout.addWidget(editor.ui)
         editor.apply_panel_buffer_visible = False
-        editor.settings_modified.connect(
-            self.on_pinhole_correction_settings_modified)
+        editor.settings_modified.connect(self.on_pinhole_correction_settings_modified)
         HexrdConfig().physics_package_modified.connect(
-            self.on_pinhole_correction_settings_modified)
+            self.on_pinhole_correction_settings_modified
+        )
 
         self.populate_relative_constraint_options()
         self.populate_tilt_rotation_center_options()
@@ -107,36 +110,37 @@ class CalibrationDialog(QObject):
 
     def setup_connections(self):
         self.ui.draw_picks.toggled.connect(self.on_draw_picks_toggled)
-        self.ui.active_beam.currentIndexChanged.connect(
-            self.on_active_beam_changed)
+        self.ui.active_beam.currentIndexChanged.connect(self.on_active_beam_changed)
         self.ui.show_picks_from_all_xray_sources.toggled.connect(
-            self.show_picks_from_all_xray_sources_toggled)
+            self.show_picks_from_all_xray_sources_toggled
+        )
         self.ui.reset_relative_params_to_zero.clicked.connect(
-            self.on_reset_relative_params_to_zero_clicked)
+            self.on_reset_relative_params_to_zero_clicked
+        )
         self.ui.relative_constraints.currentIndexChanged.connect(
-            self.on_relative_constraints_changed)
+            self.on_relative_constraints_changed
+        )
         self.ui.tilt_center_of_rotation.currentIndexChanged.connect(
-            self.on_tilt_center_of_rotation_changed)
+            self.on_tilt_center_of_rotation_changed
+        )
         self.ui.engineering_constraints.currentIndexChanged.connect(
-            self.on_engineering_constraints_changed)
-        self.ui.delta_boundaries.toggled.connect(
-            self.on_delta_boundaries_toggled)
+            self.on_engineering_constraints_changed
+        )
+        self.ui.delta_boundaries.toggled.connect(self.on_delta_boundaries_toggled)
         self.ui.mirror_constraints_from_first_detector.clicked.connect(
-            self.mirror_constraints_from_first_detector)
+            self.mirror_constraints_from_first_detector
+        )
         self.ui.edit_picks_button.clicked.connect(self.on_edit_picks_clicked)
         self.ui.save_picks_button.clicked.connect(self.on_save_picks_clicked)
         self.ui.load_picks_button.clicked.connect(self.on_load_picks_clicked)
         self.ui.run_button.clicked.connect(self.on_run_button_clicked)
-        self.ui.undo_run_button.clicked.connect(
-            self.on_undo_run_button_clicked)
+        self.ui.undo_run_button.clicked.connect(self.on_undo_run_button_clicked)
         self.ui.finished.connect(self.finish)
 
         # Picks editing is currently only supported in the polar mode
-        HexrdConfig().image_mode_changed.connect(
-            self.update_edit_picks_enable_state)
+        HexrdConfig().image_mode_changed.connect(self.update_edit_picks_enable_state)
 
-        HexrdConfig().active_beam_switched.connect(
-            self.on_active_beam_switched)
+        HexrdConfig().active_beam_switched.connect(self.on_active_beam_switched)
 
     def show(self):
         self.update_visibility_states()
@@ -197,7 +201,8 @@ class CalibrationDialog(QObject):
 
     def initialize_advanced_options(self):
         self.ui.advanced_options_group.setVisible(
-            self.ui.show_advanced_options.isChecked())
+            self.ui.show_advanced_options.isChecked()
+        )
 
         self.advanced_options = self.default_advanced_options
 
@@ -284,8 +289,7 @@ class CalibrationDialog(QObject):
         with block_signals(self.ui.active_beam):
             self.ui.active_beam.clear()
             self.ui.active_beam.addItems(HexrdConfig().beam_names)
-            self.ui.active_beam.setCurrentText(
-                HexrdConfig().active_beam_name)
+            self.ui.active_beam.setCurrentText(HexrdConfig().active_beam_name)
 
     def on_active_beam_changed(self):
         HexrdConfig().active_beam_name = self.ui.active_beam.currentText()
@@ -357,10 +361,7 @@ class CalibrationDialog(QObject):
                         # from raising an exception.
                         param.min -= 1e-8
                         param.max += 1e-8
-                    elif (
-                        has_tardis_constraints and
-                        tuple(path) == tardis_ip4_y_path
-                    ):
+                    elif has_tardis_constraints and tuple(path) == tardis_ip4_y_path:
                         # Don't allow the min/max to invalidate the value,
                         # because the value is computed, not set.
                         msg = (
@@ -550,18 +551,14 @@ class CalibrationDialog(QObject):
 
         statuses = {
             'tilt': {k: v['_param'].vary for k, v in tilts.items()},
-            'translation': {
-                k: v['_param'].vary for k, v in translations.items()
-            },
+            'translation': {k: v['_param'].vary for k, v in translations.items()},
         }
 
         if self.delta_boundaries:
             # Mirror the delta values too
             deltas = {
                 'tilt': {k: v['_delta'] for k, v in tilts.items()},
-                'translation': {
-                    k: v['_delta'] for k, v in translations.items()
-                },
+                'translation': {k: v['_delta'] for k, v in translations.items()},
             }
 
         # Now loop through all other detectors and update them
@@ -590,12 +587,9 @@ class CalibrationDialog(QObject):
             # Check if we should copy distortion parameters too
             distortion = detector.get('distortion parameters')
             distortion_obj = instr.detectors[det_name].distortion
-            distortion_type = (
-                distortion_obj.maptype if distortion else None
-            )
+            distortion_type = distortion_obj.maptype if distortion else None
             copy_distortion = (
-                distortion_type and
-                distortion_type == first_distortion_type
+                distortion_type and distortion_type == first_distortion_type
             )
             if copy_distortion:
                 # Copy all parameters if the distortion function matches
@@ -618,9 +612,7 @@ class CalibrationDialog(QObject):
         is_structureless = not hasattr(calibrator, 'calibrators')
 
         self.relative_constraints = calibrator.relative_constraints_type
-        self.tilt_center_of_rotation = (
-            calibrator.relative_constraints.rotation_center
-        )
+        self.tilt_center_of_rotation = calibrator.relative_constraints.rotation_center
         self.engineering_constraints = calibrator.engineering_constraints
 
         if is_structureless:
@@ -663,10 +655,12 @@ class CalibrationDialog(QObject):
 
                 d['_delta'] = param.delta
             else:
-                d.update(**{
-                    '_min': param.min,
-                    '_max': param.max,
-                })
+                d.update(
+                    **{
+                        '_min': param.min,
+                        '_max': param.max,
+                    }
+                )
             return d
 
         # Treat these root keys specially
@@ -770,8 +764,7 @@ class CalibrationDialog(QObject):
                 f'{prefix}_tvec_y',
                 f'{prefix}_tvec_z',
             ]
-            tilt_names = param_names_euler_convention(
-                prefix, euler_convention)
+            tilt_names = param_names_euler_convention(prefix, euler_convention)
 
             this_config = this_dict.setdefault('translation', {})
             tvec_keys = ['X', 'Y', 'Z']
@@ -806,8 +799,7 @@ class CalibrationDialog(QObject):
             raise NotImplementedError(self.relative_constraints)
 
         if self.format_extra_params_func is not None:
-            self.format_extra_params_func(params_dict, tree_dict,
-                                          create_param_item)
+            self.format_extra_params_func(params_dict, tree_dict, create_param_item)
 
         # Now all keys should have been used. Verify this is true.
         if sorted(used_params) != sorted(list(params_dict)):
@@ -872,9 +864,7 @@ class CalibrationDialog(QObject):
         editor = self.pinhole_correction_editor
         if editor.apply_to_polar_view:
             if show_warning:
-                msg = (
-                    'Polar view correction will be disabled for this operation'
-                )
+                msg = 'Polar view correction will be disabled for this operation'
                 QMessageBox.information(self.parent(), 'HEXRD', msg)
             editor.apply_to_polar_view = False
 

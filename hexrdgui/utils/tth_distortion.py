@@ -18,9 +18,9 @@ def apply_tth_distortion_if_needed(ang_crds, in_degrees=False, reverse=False):
     polar_angular_grid = HexrdConfig().polar_angular_grid
 
     skip = (
-        distortion_object is None or
-        polar_corr_field is None or
-        polar_angular_grid is None
+        distortion_object is None
+        or polar_corr_field is None
+        or polar_angular_grid is None
     )
     if skip:
         # We are not applying tth distortion. Just return.
@@ -38,11 +38,11 @@ def apply_tth_distortion_if_needed(ang_crds, in_degrees=False, reverse=False):
         # FIXME: we need a better way to do this.
         tth_pixel_size = HexrdConfig().polar_pixel_size_tth
         nr, nc = polar_corr_field.shape
-        row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),
-                                             indexing='ij')
+        row_coords, col_coords = np.meshgrid(
+            np.arange(nr), np.arange(nc), indexing='ij'
+        )
         displ_field = np.array(
-            [row_coords,
-             col_coords - np.degrees(polar_corr_field) / tth_pixel_size]
+            [row_coords, col_coords - np.degrees(polar_corr_field) / tth_pixel_size]
         )
 
         polar_corr_field = warp(polar_corr_field, displ_field, mode='edge')
@@ -54,7 +54,7 @@ def apply_tth_distortion_if_needed(ang_crds, in_degrees=False, reverse=False):
     for ic, ang_crd in enumerate(ang_crds):
         i = np.argmin(np.abs(ang_crd[0] - first_tth_row))
         j = np.argmin(np.abs(ang_crd[1] - first_eta_col))
-        ang_crds[ic, 0] += (polar_field[j, i] * multiplier)
+        ang_crds[ic, 0] += polar_field[j, i] * multiplier
 
     if in_degrees:
         ang_crds = np.degrees(ang_crds)

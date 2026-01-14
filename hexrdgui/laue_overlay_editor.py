@@ -7,9 +7,7 @@ from hexrdgui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays.laue_overlay import LaueLabelType, LaueRangeShape
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import (
-    block_signals, euler_angles_to_rmat, rmat_to_euler_angles
-)
+from hexrdgui.utils import block_signals, euler_angles_to_rmat, rmat_to_euler_angles
 
 
 class LaueOverlayEditor:
@@ -37,16 +35,16 @@ class LaueOverlayEditor:
                 w.currentIndexChanged.connect(self.update_config)
 
         self.ui.enable_widths.toggled.connect(self.update_enable_states)
-        self.ui.label_type.currentIndexChanged.connect(
-            self.update_enable_states)
+        self.ui.label_type.currentIndexChanged.connect(self.update_enable_states)
         self.crystal_editor.params_modified.connect(self.update_config)
         self.crystal_editor.refinements_modified.connect(
-            self.update_overlay_refinements)
+            self.update_overlay_refinements
+        )
 
         HexrdConfig().euler_angle_convention_changed.connect(
-            self.euler_angle_convention_changed)
-        HexrdConfig().instrument_config_loaded.connect(
-            self.update_visibility_states)
+            self.euler_angle_convention_changed
+        )
+        HexrdConfig().instrument_config_loaded.connect(self.update_visibility_states)
         HexrdConfig().sample_tilt_modified.connect(self.update_gui)
 
     def setup_combo_boxes(self):

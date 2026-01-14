@@ -54,7 +54,8 @@ class HtmlDelegate(QStyledItemDelegate):
         # If text is too long, elide it.
         if text_width > available_width:
             elided_text = font_metrics.elidedText(
-                plain_text, Qt.ElideRight, available_width)
+                plain_text, Qt.ElideRight, available_width
+            )
             # Re-wrap the elided text in a simple HTML structure to preserve
             # formatting.
             html_content = f'<span>{elided_text}</span>'

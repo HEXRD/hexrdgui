@@ -1,5 +1,9 @@
 from PySide6.QtWidgets import (
-    QDialog, QDialogButtonBox, QMessageBox, QPushButton, QVBoxLayout
+    QDialog,
+    QDialogButtonBox,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
 )
 
 from silx.gui.widgets.PeriodicTable import PeriodicTable

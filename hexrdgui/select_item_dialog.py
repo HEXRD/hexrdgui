@@ -9,8 +9,7 @@ class SelectItemDialog(QObject):
     accepted = Signal(str)
     rejected = Signal()
 
-    def __init__(self, options, disable_list=None, window_title=None,
-                 parent=None):
+    def __init__(self, options, disable_list=None, window_title=None, parent=None):
         super().__init__(parent)
 
         self.ui = UiLoader().load_file('select_item_dialog.ui', parent)

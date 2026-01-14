@@ -91,9 +91,8 @@ class InstrumentViewer:
         ret = {}
         for det_key in self.roi_groups[stitched_key]:
             panel = self.instr.detectors[det_key]
-            on_panel_rows = (
-                in_range(ij[:, 0], panel.roi[0]) &
-                in_range(ij[:, 1], panel.roi[1])
+            on_panel_rows = in_range(ij[:, 0], panel.roi[0]) & in_range(
+                ij[:, 1], panel.roi[1]
             )
             if np.any(on_panel_rows):
                 new_ij = ij[on_panel_rows]

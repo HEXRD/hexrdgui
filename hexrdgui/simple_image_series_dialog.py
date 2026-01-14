@@ -8,8 +8,13 @@ from PySide6.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
 from PySide6.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
 
 from hexrdgui.constants import (
-    MAXIMUM_OMEGA_RANGE, UI_DARK_INDEX_FILE, UI_DARK_INDEX_NONE,
-    UI_AGG_INDEX_NONE, UI_TRANS_INDEX_NONE, YAML_EXTS)
+    MAXIMUM_OMEGA_RANGE,
+    UI_DARK_INDEX_FILE,
+    UI_DARK_INDEX_NONE,
+    UI_AGG_INDEX_NONE,
+    UI_TRANS_INDEX_NONE,
+    YAML_EXTS,
+)
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
@@ -70,12 +75,13 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
         self.ui.aggregation.setCurrentIndex(self.state['agg'])
         self.ui.transform.setCurrentIndex(
-            self.state['trans'][self.ui.detector.currentIndex()])
+            self.state['trans'][self.ui.detector.currentIndex()]
+        )
         self.ui.dark_mode.setCurrentIndex(
-            self.state['dark'][self.ui.detector.currentIndex()])
+            self.state['dark'][self.ui.detector.currentIndex()]
+        )
         self.dark_files = self.state['dark_files']
-        self.ui.reverse_frames.setChecked(
-            self.state.get('frames_reversed', False))
+        self.ui.reverse_frames.setChecked(self.state.get('frames_reversed', False))
 
         self.dark_mode_changed()
         if not self.parent_dir:
@@ -102,8 +108,7 @@ class SimpleImageSeriesDialog(QObject):
         self.ui.transform.currentIndexChanged.connect(self.trans_changed)
         self.ui.all_detectors.toggled.connect(self.apply_to_all_changed)
 
-        self.ui.file_options.customContextMenuRequested.connect(
-            self.contextMenuEvent)
+        self.ui.file_options.customContextMenuRequested.connect(self.contextMenuEvent)
         self.ui.file_options.cellChanged.connect(self.omega_data_changed)
         self.ui.file_options.cellChanged.connect(self.enable_aggregations)
         self.ui.update_image_data.clicked.connect(self.update_image_data)
@@ -157,7 +162,8 @@ class SimpleImageSeriesDialog(QObject):
         else:
             self.ui.select_dark.setEnabled(False)
             self.ui.dark_file.setText(
-                '(Using ' + str(self.ui.dark_mode.currentText()) + ')')
+                '(Using ' + str(self.ui.dark_mode.currentText()) + ')'
+            )
             self.enable_read()
             self.state['dark_files'][self.idx] = None
         self.enable_read()
@@ -210,7 +216,8 @@ class SimpleImageSeriesDialog(QObject):
             # This takes one image to use for dark subtraction.
             caption = 'Select image file'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
-                self.ui, caption, dir=self.parent_dir)
+                self.ui, caption, dir=self.parent_dir
+            )
 
         if selected_file:
             if self.ui.all_detectors.isChecked():
@@ -227,7 +234,8 @@ class SimpleImageSeriesDialog(QObject):
                         f'Unable to match files - using the same dark file'
                         f'for each detector.\nIf this is incorrect please '
                         f'de-select \"Apply Selections to All Detectors\" and '
-                        f'select the dark file manually for each detector.')
+                        f'select the dark file manually for each detector.'
+                    )
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
             else:
                 self.dark_files[self.idx] = selected_file
@@ -240,7 +248,8 @@ class SimpleImageSeriesDialog(QObject):
         # This takes one or more images for a single detector.
         caption = 'Select image file(s)'
         selected_files, _ = QFileDialog.getOpenFileNames(
-            self.ui, caption, dir=self.parent_dir)
+            self.ui, caption, dir=self.parent_dir
+        )
 
         if selected_files:
             self.update_allowed = False
@@ -294,8 +303,7 @@ class SimpleImageSeriesDialog(QObject):
             # Update dark mode settings
             if self.ui.dark_mode.currentIndex() != UI_DARK_INDEX_FILE:
                 num_dets = len(HexrdConfig().detector_names)
-                self.state['dark'] = (
-                    [UI_DARK_INDEX_NONE for x in range(num_dets)])
+                self.state['dark'] = [UI_DARK_INDEX_NONE for x in range(num_dets)]
                 self.ui.dark_mode.setCurrentIndex(UI_DARK_INDEX_NONE)
             # Update aggregation settings
             self.state['agg'] = UI_AGG_INDEX_NONE
@@ -306,8 +314,9 @@ class SimpleImageSeriesDialog(QObject):
         self.has_omega = False
 
         # Select the path if the file(s) are HDF5
-        if (ImageFileManager().is_hdf(self.ext) and not
-                ImageFileManager().hdf_path_exists(selected_files[0])):
+        if ImageFileManager().is_hdf(
+            self.ext
+        ) and not ImageFileManager().hdf_path_exists(selected_files[0]):
             if ImageFileManager().path_prompt(selected_files[0]) is None:
                 return
 
@@ -348,7 +357,7 @@ class SimpleImageSeriesDialog(QObject):
                 if isinstance(options, dict):
                     empty = options.get('empty-frames', 0)
                     self.empty_frames = empty
-                    self.total_frames = [f-empty for f in self.total_frames]
+                    self.total_frames = [f - empty for f in self.total_frames]
         else:
             for ims in tmp_ims:
                 self.has_omega = 'omega' in ims.metadata
@@ -409,9 +418,8 @@ class SimpleImageSeriesDialog(QObject):
         self.files, manual = ImageLoadManager().load_images(fnames)
         using_roi = HexrdConfig().instrument_has_roi
 
-        if (not using_roi and
-                len(self.files) % len(HexrdConfig().detector_names) != 0):
-            msg = ('Please select at least one file for each detector.')
+        if not using_roi and len(self.files) % len(HexrdConfig().detector_names) != 0:
+            msg = 'Please select at least one file for each detector.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             self.files = []
             return
@@ -450,8 +458,10 @@ class SimpleImageSeriesDialog(QObject):
         files = self.yml_files if self.ext in YAML_EXTS else self.files
         enabled = len(files) > 0
         if len(files) and all(len(f) for f in files):
-            if (self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
-                    and self.dark_files[self.idx] is None):
+            if (
+                self.state['dark'][self.idx] == UI_DARK_INDEX_FILE
+                and self.dark_files[self.idx] is None
+            ):
                 enabled = False
         self.ui.read.setEnabled(enabled)
 
@@ -467,8 +477,7 @@ class SimpleImageSeriesDialog(QObject):
         else:
             table_files = self.files
 
-        self.ui.file_options.setRowCount(
-            len(table_files[self.idx]))
+        self.ui.file_options.setRowCount(len(table_files[self.idx]))
 
         # Create the rows
         for row in range(self.ui.file_options.rowCount()):
@@ -554,14 +563,12 @@ class SimpleImageSeriesDialog(QObject):
                             'metadata. Continue?'
                         )
                         response = QMessageBox.question(
-                            self.ui,
-                            'HEXRD',
-                            msg,
-                            (QMessageBox.Yes | QMessageBox.No)
+                            self.ui, 'HEXRD', msg, (QMessageBox.Yes | QMessageBox.No)
                         )
                         if response == QMessageBox.No:
                             self.ui.file_options.item(row, column).setText(
-                                str(options[column][row]))
+                                str(options[column][row])
+                            )
                             return
                         else:
                             self.override_omegas = True
@@ -576,7 +583,8 @@ class SimpleImageSeriesDialog(QObject):
         if not within_range:
             msg = (
                 f'All omegas must be set and the '
-                f'range must be no greater than 360°.')
+                f'range must be no greater than 360°.'
+            )
             QMessageBox.warning(self.ui, 'HEXRD', msg)
         return within_range
 
@@ -631,8 +639,7 @@ class SimpleImageSeriesDialog(QObject):
             'nsteps': self.nsteps,
             'override_omegas': self.override_omegas,
         }
-        ImageLoadManager().add_omega_metadata(
-            HexrdConfig().imageseries_dict, data)
+        ImageLoadManager().add_omega_metadata(HexrdConfig().imageseries_dict, data)
         ImageLoadManager().omegas_updated.emit()
 
     def show(self):

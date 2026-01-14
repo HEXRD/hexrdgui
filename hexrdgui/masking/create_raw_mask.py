@@ -15,6 +15,7 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 def recompute_raw_threshold_mask():
     from hexrdgui.masking.mask_manager import MaskManager
+
     results = {}
     if tm := MaskManager().threshold_mask:
         for det in HexrdConfig().detector_names:
@@ -49,8 +50,7 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
             orig = line
             # If we are applying tth distortion in the polar view, we need to
             # convert back to polar coordinates without tth distortion applied
-            line = apply_tth_distortion_if_needed(line, in_degrees=True,
-                                                  reverse=True)
+            line = apply_tth_distortion_if_needed(line, in_degrees=True, reverse=True)
 
             # Any points past the critical beta will end up with nan in their
             # two theta values. Howver, it is essential that we keep points
@@ -104,14 +104,8 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
                 # This helps ensure that the corresponding warped
                 # polar pixels will always be masked out.
                 contour[np.isclose(contour, -0.5)] -= 0.5
-                contour[np.isclose(
-                    contour[:, 1],
-                    panel.shape[0] - 0.5
-                ), 1] += 0.5
-                contour[np.isclose(
-                    contour[:, 0],
-                    panel.shape[1] - 0.5
-                ), 0] += 0.5
+                contour[np.isclose(contour[:, 1], panel.shape[0] - 0.5), 1] += 0.5
+                contour[np.isclose(contour[:, 0], panel.shape[1] - 0.5), 0] += 0.5
 
                 raw_line_data.append((key, contour))
 
@@ -133,5 +127,6 @@ def create_raw_mask(line_data):
 
 def rebuild_raw_masks():
     from hexrdgui.masking.mask_manager import MaskManager
+
     for mask in MaskManager().masks.values():
         mask.invalidate_masked_arrays()

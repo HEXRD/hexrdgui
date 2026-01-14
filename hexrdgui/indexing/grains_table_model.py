@@ -14,15 +14,27 @@ class GrainsTableModel(QAbstractTableModel):
         super().__init__(parent)
         self.full_grains_table = grains_table
         self.full_headers = [
-            'grain ID', 'completeness', 'chi^2',
-            'exp_map_c[0]', 'exp_map_c[1]', 'exp_map_c[2]',
-            't_vec_c[0]', 't_vec_c[1]', 't_vec_c[2]',
-            'inv(V_s)[0,0]', 'inv(V_s)[1,1]', 'inv(V_s)[2,2]',
+            'grain ID',
+            'completeness',
+            'chi^2',
+            'exp_map_c[0]',
+            'exp_map_c[1]',
+            'exp_map_c[2]',
+            't_vec_c[0]',
+            't_vec_c[1]',
+            't_vec_c[2]',
+            'inv(V_s)[0,0]',
+            'inv(V_s)[1,1]',
+            'inv(V_s)[2,2]',
             'inv(V_s)[1,2]*sqrt(2)',
             'inv(V_s)[0,2]*sqrt(2)',
             'inv(V_s)[0,2]*sqrt(2)',
-            'ln(V_s)[0,0]', 'ln(V_s)[1,1]', 'ln(V_s)[2,2]',
-            'ln(V_s)[1,2]', 'ln(V_s)[0,2]', 'ln(V_s)[0,1]'
+            'ln(V_s)[0,0]',
+            'ln(V_s)[1,1]',
+            'ln(V_s)[2,2]',
+            'ln(V_s)[1,2]',
+            'ln(V_s)[0,2]',
+            'ln(V_s)[0,1]',
         ]
 
         self.excluded_columns = excluded_columns if excluded_columns else []
@@ -60,8 +72,7 @@ class GrainsTableModel(QAbstractTableModel):
 
     def removeRows(self, row, count, parent):
         while count > 0:
-            self.full_grains_table = np.delete(self.full_grains_table, row,
-                                               axis=0)
+            self.full_grains_table = np.delete(self.full_grains_table, row, axis=0)
             count -= 1
 
         self.regenerate_grains_table()
@@ -101,8 +112,9 @@ class GrainsTableModel(QAbstractTableModel):
 
     @property
     def included_columns(self):
-        return [i for i in range(len(self.full_headers))
-                if i not in self.excluded_columns]
+        return [
+            i for i in range(len(self.full_headers)) if i not in self.excluded_columns
+        ]
 
     def save(self, path):
         write_grains_txt(self.full_grains_table, path)

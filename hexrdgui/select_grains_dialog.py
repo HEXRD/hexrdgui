@@ -105,8 +105,8 @@ class SelectGrainsDialog(QObject):
 
     def select_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'grains.out', HexrdConfig().working_dir,
-            'Grains.out files (*.out)')
+            self.ui, 'grains.out', HexrdConfig().working_dir, 'Grains.out files (*.out)'
+        )
 
         if selected_file:
             HexrdConfig().working_dir = os.path.dirname(selected_file)
@@ -172,8 +172,8 @@ class SelectGrainsDialog(QObject):
         # If the number of rows is equal to the number of requested grains,
         # select all rows automatically for convenience.
         if (
-            self.num_requested_grains is not None and
-            len(v) == self.num_requested_grains
+            self.num_requested_grains is not None
+            and len(v) == self.num_requested_grains
         ):
             selection_model = view.selectionModel()
             command = QItemSelectionModel.Select | QItemSelectionModel.Rows
@@ -238,8 +238,8 @@ class SelectGrainsDialog(QObject):
         ok_button = button_box.button(QDialogButtonBox.Ok)
         if ok_button:
             enable = (
-                self.num_requested_grains is None or
-                self.num_selected_grains == self.num_requested_grains
+                self.num_requested_grains is None
+                or self.num_selected_grains == self.num_requested_grains
             )
             ok_button.setEnabled(enable)
 

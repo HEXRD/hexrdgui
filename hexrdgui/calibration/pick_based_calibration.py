@@ -9,8 +9,9 @@ from hexrdgui.calibration.calibration_dialog import (
 from hexrdgui.hexrd_config import HexrdConfig
 
 
-def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
-                                euler_convention):
+def make_calibrators_from_picks(
+    instr, processed_picks, materials, img_dict, euler_convention
+):
     calibrators = []
     for pick_data in processed_picks:
         if pick_data['type'] == 'powder':
@@ -45,8 +46,9 @@ def make_calibrators_from_picks(instr, processed_picks, materials, img_dict,
 def create_instrument_calibrator(picks, instr, img_dict, materials):
     euler_convention = HexrdConfig().euler_angle_convention
     engineering_constraints = guess_engineering_constraints(instr)
-    calibrators = make_calibrators_from_picks(instr, picks, materials,
-                                              img_dict, euler_convention)
+    calibrators = make_calibrators_from_picks(
+        instr, picks, materials, img_dict, euler_convention
+    )
 
     return InstrumentCalibrator(
         *calibrators,

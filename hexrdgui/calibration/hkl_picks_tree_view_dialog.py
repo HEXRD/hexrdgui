@@ -21,12 +21,12 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 class HKLPicksTreeViewDialog:
 
-    def __init__(self, dictionary, coords_type=ViewType.polar, canvas=None,
-                 parent=None):
+    def __init__(
+        self, dictionary, coords_type=ViewType.polar, canvas=None, parent=None
+    ):
         self.ui = UiLoader().load_file('hkl_picks_tree_view_dialog.ui', parent)
 
-        self.tree_view = HKLPicksTreeView(dictionary, coords_type, canvas,
-                                          self.ui)
+        self.tree_view = HKLPicksTreeView(dictionary, coords_type, canvas, self.ui)
         self.ui.tree_view_layout.addWidget(self.tree_view)
 
         # Default to a hidden button box
@@ -85,26 +85,35 @@ class HKLPicksTreeViewDialog:
 
     def export_picks_clicked(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
-            self.ui, 'Export Picks', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Export Picks',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
             return self.export_picks(selected_file)
 
     def export_picks(self, filename):
-        return self._export_dict_to_file(filename, {
-            'angular': self.dictionary,
-            'cartesian': self.dict_with_cart_coords,
-        })
+        return self._export_dict_to_file(
+            filename,
+            {
+                'angular': self.dictionary,
+                'cartesian': self.dict_with_cart_coords,
+            },
+        )
 
     def export_picks_from_overlays(self, filename, overlays):
         # Export picks from overlays using the same export logic as
         # the regular dictionary.
-        return self._export_dict_to_file(filename, {
-            'angular': overlays_to_tree_format(overlays, polar=True),
-            'cartesian': overlays_to_tree_format(overlays, polar=False),
-        })
+        return self._export_dict_to_file(
+            filename,
+            {
+                'angular': overlays_to_tree_format(overlays, polar=True),
+                'cartesian': overlays_to_tree_format(overlays, polar=False),
+            },
+        )
 
     def _export_dict_to_file(self, filename: str, export_data: dict):
         filename = Path(filename)
@@ -120,8 +129,11 @@ class HKLPicksTreeViewDialog:
 
     def import_picks_clicked(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Import Picks', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Import Picks',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if selected_file:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
@@ -265,15 +277,17 @@ def generate_picks_results(overlays, polar=True):
         else:
             picks = overlay.calibration_picks
 
-        pick_results.append({
-            'name': overlay.name,
-            'material': overlay.material_name,
-            'type': overlay.type.value,
-            'options': options,
-            'default_refinements': overlay.refinements,
-            'picks': picks,
-            **extras,
-        })
+        pick_results.append(
+            {
+                'name': overlay.name,
+                'material': overlay.material_name,
+                'type': overlay.type.value,
+                'options': options,
+                'default_refinements': overlay.refinements,
+                'picks': picks,
+                **extras,
+            }
+        )
 
     return pick_results
 

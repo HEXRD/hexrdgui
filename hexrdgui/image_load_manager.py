@@ -69,9 +69,11 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         options = self.naming_options
         # Make sure there are the same number of files for each detector
         # and at least one file per detector
-        if (not files[0]
-                or len(files) != len(dets)
-                or any(len(files[0]) != len(elem) for elem in files)):
+        if (
+            not files[0]
+            or len(files) != len(dets)
+            or any(len(files[0]) != len(elem) for elem in files)
+        ):
             return False
         # If the files do not contain detector or group names they will need
         # to be manually matched
@@ -194,14 +196,15 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             options = {
                 'empty-frames': self.data.get('empty_frames', 0),
                 'max-file-frames': self.data.get('max_file_frames', 0),
-                'max-total-frames': self.data.get(
-                    'max_total_frames', 0),
+                'max-total-frames': self.data.get('max_total_frames', 0),
             }
 
             if len(self.files[0]) > 1:
                 for i, det in enumerate(det_names):
                     dirs = os.path.dirname(self.files[i][0])
-                    ims = ImageFileManager().open_directory(dirs, self.files[i], options)
+                    ims = ImageFileManager().open_directory(
+                        dirs, self.files[i], options
+                    )
                     HexrdConfig().imageseries_dict[det] = ims
             else:
                 ImageFileManager().load_images(det_names, self.files, options)
@@ -278,10 +281,14 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             if self.data:
                 idx = self.data['idx'] if 'idx' in self.data else i
                 if self.state['dark'][idx] != UI_DARK_INDEX_NONE:
-                    if (self.state['dark'][idx] == UI_DARK_INDEX_EMPTY_FRAMES
-                            and self.empty_frames == 0):
-                        msg = ('ERROR: \n No empty frames set. '
-                               + 'No dark subtracion will be performed.')
+                    if (
+                        self.state['dark'][idx] == UI_DARK_INDEX_EMPTY_FRAMES
+                        and self.empty_frames == 0
+                    ):
+                        msg = (
+                            'ERROR: \n No empty frames set. '
+                            + 'No dark subtracion will be performed.'
+                        )
                         QMessageBox.warning(None, 'HEXRD', msg)
                     else:
                         op = self.get_dark_aggr_op(ims_dict[key], i)
@@ -322,7 +329,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             if self.state.get('frames_reversed', False):
                 frames = frames[::-1]
             ims_dict[key] = imageseries.process.ProcessedImageSeries(
-                ims_dict[key], ops, frame_list=frames)
+                ims_dict[key], ops, frame_list=frames
+            )
 
             # Set these directly so no signals get emitted
             det_conf = HexrdConfig().config['instrument']['detectors'][key]
@@ -348,7 +356,9 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         f = functools.partial(self.aggregate_images, agg_func=agg_func)
 
-        for (key, aggr_img) in zip(ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)):
+        for key, aggr_img in zip(
+            ims_dict.keys(), self.aggregate_images_multithread(f, ims_dict)
+        ):
             ims_dict[key] = ImageFileManager().open_file(aggr_img)
 
     def add_omega_metadata(self, ims_dict, data=None):
@@ -358,9 +368,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         for key, ims in ims_dict.items():
             # Only override existing omega metadata if the user has explicitly
             # requested it
-            if (
-                not len(ims.metadata.get('omega', [])) or
-                data.get('override_omegas', False)
+            if not len(ims.metadata.get('omega', [])) or data.get(
+                'override_omegas', False
             ):
                 nframes = data.get('nframes', 0)
                 # If number of frames is 0 we assume that no value was provided
@@ -430,8 +439,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             if self.data and 'idx' in self.data:
                 idx = self.data['idx']
 
-            if ('dark' in self.state and
-                    self.state['dark'][idx] != UI_DARK_INDEX_NONE):
+            if 'dark' in self.state and self.state['dark'][idx] != UI_DARK_INDEX_NONE:
                 progress_macro_steps += 1
 
         if 'agg' in self.state and self.state['agg']:
@@ -496,7 +504,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         futures = []
         progress_dict = {key: 0.0 for key in ims_dict.keys()}
         with ThreadPoolExecutor(max_workers=max_workers) as tp:
-            for (key, ims) in ims_dict.items():
+            for key, ims in ims_dict.items():
                 futures.append(tp.submit(f, key, ims, progress_dict=progress_dict))
 
             self.wait_with_progress(futures, progress_dict)
@@ -535,9 +543,10 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         futures = []
         progress_dict = {key: 0.0 for key in aggr_op_dict.keys()}
         with ThreadPoolExecutor(max_workers=max_workers) as tp:
-            for (key, (op, frames, ims)) in aggr_op_dict.items():
-                futures.append(tp.submit(
-                    self.aggregate_dark, key, op, ims, frames, progress_dict))
+            for key, (op, frames, ims) in aggr_op_dict.items():
+                futures.append(
+                    tp.submit(self.aggregate_dark, key, op, ims, frames, progress_dict)
+                )
 
             self.wait_with_progress(futures, progress_dict)
 

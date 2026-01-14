@@ -8,8 +8,14 @@ import re
 
 from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QFileDialog, QMenu,
-    QMessageBox, QTreeWidgetItem, QVBoxLayout
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QMenu,
+    QMessageBox,
+    QTreeWidgetItem,
+    QVBoxLayout,
 )
 from PySide6.QtGui import QCursor, QFont
 
@@ -39,8 +45,7 @@ class MaskManagerDialog(QObject):
         self.mask_tree_items = {}
         self.selected_masks = []
 
-        add_help_url(self.ui.button_box,
-                     'configuration/masking/#managing-masks')
+        add_help_url(self.ui.button_box, 'configuration/masking/#managing-masks')
 
         self.create_tree()
         self.setup_connections()
@@ -51,8 +56,7 @@ class MaskManagerDialog(QObject):
 
     def setup_connections(self):
         self.ui.masks_tree.itemChanged.connect(self.update_mask_name)
-        self.ui.masks_tree.customContextMenuRequested.connect(
-            self.context_menu_event)
+        self.ui.masks_tree.customContextMenuRequested.connect(self.context_menu_event)
         self.ui.export_masks.clicked.connect(MaskManager().write_masks)
         self.ui.import_masks.clicked.connect(self.import_masks)
         self.ui.panel_buffer.clicked.connect(self.masks_to_panel_buffer)
@@ -67,7 +71,8 @@ class MaskManagerDialog(QObject):
         HexrdConfig().active_beam_switched.connect(self.update_collapsed)
         self.ui.masks_tree.itemSelectionChanged.connect(self.selected_changed)
         self.ui.presentation_selector.currentTextChanged.connect(
-            self.change_presentation_for_selected)
+            self.change_presentation_for_selected
+        )
         self.ui.export_selected.clicked.connect(self.export_selected)
         self.ui.remove_selected.clicked.connect(self.remove_selected_masks)
         self.ui.finished.connect(self.ui.masks_tree.clearSelection)
@@ -84,9 +89,11 @@ class MaskManagerDialog(QObject):
         status = []
         if mask.name in MaskManager().visible_masks:
             status.append('Visible')
-        if (mask_type == MaskType.region or
-                mask_type == MaskType.polygon or
-                mask_type == MaskType.pinhole):
+        if (
+            mask_type == MaskType.region
+            or mask_type == MaskType.polygon
+            or mask_type == MaskType.pinhole
+        ):
             if mask.name in MaskManager().visible_boundaries:
                 status.append('Boundary')
         status_str = ' + '.join(status) if status else 'None'
@@ -97,11 +104,12 @@ class MaskManagerDialog(QObject):
         text = self.create_mode_source_string(mode, source)
         mode_item = QTreeWidgetItem([text])
         mode_item.setFlags(Qt.ItemIsEnabled)
-        mode_item.setFont(0, QFont(
-            mode_item.font(0).family(),
-            mode_item.font(0).pointSize(),
-            QFont.Bold
-        ))
+        mode_item.setFont(
+            0,
+            QFont(
+                mode_item.font(0).family(), mode_item.font(0).pointSize(), QFont.Bold
+            ),
+        )
         self.ui.masks_tree.addTopLevelItem(mode_item)
         self.mask_tree_items[mode_item.text(0)] = mode_item
         self.ui.masks_tree.expandItem(mode_item)
@@ -109,8 +117,7 @@ class MaskManagerDialog(QObject):
 
     def create_mask_item(self, parent_item, mask):
         mask_item = QTreeWidgetItem([mask.name])
-        mask_item.setFlags(
-            Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
+        mask_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
         # Store the original mask name in the item's data
         mask_item.setData(0, Qt.UserRole, mask.name)
         parent_item.addChild(mask_item)
@@ -138,7 +145,8 @@ class MaskManagerDialog(QObject):
         # If parent has no more children, remove it too
         if parent.childCount() == 0:
             self.ui.masks_tree.takeTopLevelItem(
-                self.ui.masks_tree.indexOfTopLevelItem(parent))
+                self.ui.masks_tree.indexOfTopLevelItem(parent)
+            )
             self.mask_tree_items.pop(parent.text(0))
         MaskManager().masks_changed()
         self.ui.masks_tree.verticalScrollBar().setValue(scroll_value)
@@ -184,22 +192,22 @@ class MaskManagerDialog(QObject):
                 MaskManager().masks.values(),
                 key=lambda mask: (
                     mask.creation_view_mode or '',
-                    mask.xray_source or ''
-                )
+                    mask.xray_source or '',
+                ),
             )
 
             # Group masks by creation view mode and xray source
             grouped = groupby(
-                sorted_masks,
-                key=attrgetter('creation_view_mode', 'xray_source')
+                sorted_masks, key=attrgetter('creation_view_mode', 'xray_source')
             )
             for (mode, source), masks in grouped:
                 # Create mode item
                 mode_item = self.create_mode_item(mode, source)
 
                 # Create items for each mask, sorted naturally by name
-                for mask in sorted(masks,
-                                   key=lambda x: self._alphanumeric_sort(x.name)):
+                for mask in sorted(
+                    masks, key=lambda x: self._alphanumeric_sort(x.name)
+                ):
                     self.create_mask_item(mode_item, mask)
 
         self.ui.masks_tree.expandAll()
@@ -278,8 +286,8 @@ class MaskManagerDialog(QObject):
 
     def export_masks_to_file(self, data):
         output_file, _ = QFileDialog.getSaveFileName(
-            self.ui, 'Save Mask', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui, 'Save Mask', HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
+        )
 
         if not output_file:
             return
@@ -292,8 +300,11 @@ class MaskManagerDialog(QObject):
 
     def import_masks(self):
         selected_file, _ = QFileDialog.getOpenFileName(
-            self.ui, 'Import Masks', HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5)')
+            self.ui,
+            'Import Masks',
+            HexrdConfig().working_dir,
+            'HDF5 files (*.h5 *.hdf5)',
+        )
 
         if not selected_file:
             return
@@ -308,11 +319,8 @@ class MaskManagerDialog(QObject):
         selection = 'Replace buffer'
         for det in HexrdConfig().detectors.values():
             buff_val = det.get('buffer', None)
-            if (
-                isinstance(buff_val, str) or (
-                    isinstance(buff_val, np.ndarray) and
-                    buff_val.ndim == 2
-                )
+            if isinstance(buff_val, str) or (
+                isinstance(buff_val, np.ndarray) and buff_val.ndim == 2
             ):
                 show_dialog = True
                 break
@@ -407,7 +415,7 @@ class MaskManagerDialog(QObject):
             MaskManager().boundary_style,
             MaskManager().boundary_width,
             MaskManager().highlight_color,
-            MaskManager().highlight_opacity
+            MaskManager().highlight_opacity,
         )
         if dialog.exec():
             color, style, width, highlight, opacity = dialog.result()
@@ -426,7 +434,9 @@ class MaskManagerDialog(QObject):
             self.ui.remove_selected.setEnabled(len(selected) >= 1)
 
             # Update highlight states for masks
-            masks_from_names = [MaskManager().get_mask_by_name(i.text(0)) for i in selected]
+            masks_from_names = [
+                MaskManager().get_mask_by_name(i.text(0)) for i in selected
+            ]
             for mask in self.selected_masks:
                 mask.highlight = False
             for mask in masks_from_names:

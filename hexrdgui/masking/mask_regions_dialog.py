@@ -38,8 +38,7 @@ class MaskRegionsDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.Tool)
 
-        add_help_url(self.ui.button_box,
-                     'configuration/masking/#ellipse-and-rectangle')
+        add_help_url(self.ui.button_box, 'configuration/masking/#ellipse-and-rectangle')
 
         self.setup_canvas_connections()
         self.setup_ui_connections()
@@ -56,16 +55,21 @@ class MaskRegionsDialog(QObject):
     def setup_canvas_connections(self):
         self.disconnect()
 
-        self.canvas_ids.append(self.canvas.mpl_connect(
-            'button_press_event', self.button_pressed))
-        self.canvas_ids.append(self.canvas.mpl_connect(
-            'motion_notify_event', self.drag_motion))
-        self.canvas_ids.append(self.canvas.mpl_connect(
-            'button_release_event', self.button_released))
-        self.canvas_ids.append(self.canvas.mpl_connect(
-            'axes_enter_event', self.axes_entered))
-        self.canvas_ids.append(self.canvas.mpl_connect(
-            'axes_leave_event', self.axes_exited))
+        self.canvas_ids.append(
+            self.canvas.mpl_connect('button_press_event', self.button_pressed)
+        )
+        self.canvas_ids.append(
+            self.canvas.mpl_connect('motion_notify_event', self.drag_motion)
+        )
+        self.canvas_ids.append(
+            self.canvas.mpl_connect('button_release_event', self.button_released)
+        )
+        self.canvas_ids.append(
+            self.canvas.mpl_connect('axes_enter_event', self.axes_entered)
+        )
+        self.canvas_ids.append(
+            self.canvas.mpl_connect('axes_leave_event', self.axes_exited)
+        )
 
     def setup_ui_connections(self):
         self.ui.button_box.accepted.connect(self.apply_masks)
@@ -88,7 +92,8 @@ class MaskRegionsDialog(QObject):
             'animated': True,
         }
         self.interactive_template = InteractiveTemplate(
-            self.canvas, self.det, axes=self.axes)
+            self.canvas, self.det, axes=self.axes
+        )
         self.interactive_template.create_polygon([[0, 0]], **kwargs)
         self.interactive_template.update_style(color='red')
         self.interactive_template.key_rotation_angle = KEY_ROTATE_ANGLE_COARSE
@@ -106,8 +111,7 @@ class MaskRegionsDialog(QObject):
         verts = shape.get_verts()
         verts = add_sample_points(verts, 300)
         self.interactive_template.template.set_xy(verts)
-        self.interactive_template.center = (
-            self.interactive_template.get_midpoint())
+        self.interactive_template.center = self.interactive_template.get_midpoint()
 
     def discard_interactive_template(self):
         det = self.added_templates.pop()
@@ -187,11 +191,16 @@ class MaskRegionsDialog(QObject):
             for it in templates:
                 it.static_mode = True
                 transformed_click = it.template.get_transform().transform(
-                    (event.xdata, event.ydata))
-                if (not pick_found and
-                        it.template.contains_point(transformed_click) and
-                        (self.image_mode == ViewType.polar or
-                         event.inaxes.get_title() == it.detector)):
+                    (event.xdata, event.ydata)
+                )
+                if (
+                    not pick_found
+                    and it.template.contains_point(transformed_click)
+                    and (
+                        self.image_mode == ViewType.polar
+                        or event.inaxes.get_title() == it.detector
+                    )
+                ):
                     if self.interactive_template:
                         self.interactive_template.disconnect()
                     self.interactive_template = it
@@ -205,13 +214,12 @@ class MaskRegionsDialog(QObject):
             print('Masking must be done in raw or polar view')
             return
 
-        if (
-            self.image_mode == ViewType.raw and
-            HexrdConfig().stitch_raw_roi_images
-        ):
-            print('Ellipse/rectangle masks do not yet support drawing on a '
-                  'stitched raw view. Please switch to an unstitched view to '
-                  'draw the masks.')
+        if self.image_mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
+            print(
+                'Ellipse/rectangle masks do not yet support drawing on a '
+                'stitched raw view. Please switch to an unstitched view to '
+                'draw the masks.'
+            )
             return
 
         if not self.axes:
@@ -221,9 +229,11 @@ class MaskRegionsDialog(QObject):
             # Determine if selecting an existing template or drawing a new one
             pick_found = self.check_pick(event)
 
-            if (pick_found or
-                    self.interactive_template and
-                    not self.interactive_template.static_mode):
+            if (
+                pick_found
+                or self.interactive_template
+                and not self.interactive_template.static_mode
+            ):
                 return
 
             self.press = [event.xdata, event.ydata]
@@ -239,11 +249,7 @@ class MaskRegionsDialog(QObject):
             self.drawing_axes = self.axes
 
     def drag_motion(self, event):
-        if (
-            not self.axes or
-            not self.press or
-            self.axes is not self.drawing_axes
-        ):
+        if not self.axes or not self.press or self.axes is not self.drawing_axes:
             return
 
         if not self.interactive_template.static_mode:
@@ -260,7 +266,8 @@ class MaskRegionsDialog(QObject):
         for det, its in self.interactive_templates.items():
             for it in its:
                 data_coords = it.template.get_patch_transform().transform(
-                    it.template.get_path().vertices[:-1])
+                    it.template.get_path().vertices[:-1]
+                )
 
                 # So that this gets converted between raw and polar correctly,
                 # make sure there are at least 300 points.
@@ -281,7 +288,7 @@ class MaskRegionsDialog(QObject):
 
         masks_changed_signal = {
             'raw': MaskManager().raw_masks_changed,
-            'polar': MaskManager().polar_masks_changed
+            'polar': MaskManager().polar_masks_changed,
         }
         masks_changed_signal[self.image_mode].emit()
 
@@ -292,7 +299,8 @@ class MaskRegionsDialog(QObject):
         # Save it
         self.interactive_template.update_style(color='black')
         self.interactive_templates.setdefault(self.det, []).append(
-            self.interactive_template)
+            self.interactive_template
+        )
 
         # Turn off animation so the patch will stay
         self.interactive_template.template.set_animated(False)

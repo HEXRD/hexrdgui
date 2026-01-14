@@ -9,9 +9,7 @@ from hexrd.utils.decorators import memoize
 from hexrd.utils.warnings import ignore_warnings
 
 from hexrd import constants as ct
-from hexrd.xrdutil import (
-    _project_on_detector_plane, _project_on_detector_cylinder
-)
+from hexrd.xrdutil import _project_on_detector_plane, _project_on_detector_cylinder
 from hexrd import instrument
 
 from hexrdgui.constants import ViewType
@@ -31,7 +29,7 @@ def sqrt_scale_img(img):
 
 def log_scale_img(img):
     fimg = np.array(img, dtype=float)
-    fimg = fimg - np.min(fimg) + 1.
+    fimg = fimg - np.min(fimg) + 1.0
     return np.log(fimg)
 
 
@@ -45,11 +43,12 @@ class PolarView:
     HexrdConfig() are used.
     """
 
-    def __init__(self,
-                 instrument,
-                 distortion_instrument=None,
-                 eta_min: float | None = None,
-                 eta_max: float | None = None,
+    def __init__(
+        self,
+        instrument,
+        distortion_instrument=None,
+        eta_min: float | None = None,
+        eta_max: float | None = None,
     ):
 
         if distortion_instrument is None:
@@ -96,9 +95,11 @@ class PolarView:
         self.update_angular_grid()
 
         HexrdConfig().overlay_distortions_modified.connect(
-            self.invalidate_corr_field_polar_cache)
+            self.invalidate_corr_field_polar_cache
+        )
         HexrdConfig().polar_tth_distortion_overlay_changed.connect(
-            self.invalidate_corr_field_polar_cache)
+            self.invalidate_corr_field_polar_cache
+        )
 
     @property
     def detectors(self):
@@ -161,10 +162,16 @@ class PolarView:
         return (self.neta, self.ntth)
 
     def update_angular_grid(self):
-        tth_vec = np.radians(self.tth_pixel_size * (np.arange(self.ntth)))\
-            + self.tth_min + 0.5 * np.radians(self.tth_pixel_size)
-        eta_vec = np.radians(self.eta_pixel_size * (np.arange(self.neta)))\
-            + self.eta_min + 0.5 * np.radians(self.eta_pixel_size)
+        tth_vec = (
+            np.radians(self.tth_pixel_size * (np.arange(self.ntth)))
+            + self.tth_min
+            + 0.5 * np.radians(self.tth_pixel_size)
+        )
+        eta_vec = (
+            np.radians(self.eta_pixel_size * (np.arange(self.neta)))
+            + self.eta_min
+            + 0.5 * np.radians(self.eta_pixel_size)
+        )
         self._angular_grid = np.meshgrid(eta_vec, tth_vec, indexing='ij')
 
     @property
@@ -174,10 +181,14 @@ class PolarView:
     @property
     def extent(self):
         ev, tv = self.angular_grid
-        heps = np.radians(0.5*self.eta_pixel_size)
-        htps = np.radians(0.5*self.tth_pixel_size)
-        return [np.min(tv) - htps, np.max(tv) + htps,
-                np.max(ev) + heps, np.min(ev) - heps]
+        heps = np.radians(0.5 * self.eta_pixel_size)
+        htps = np.radians(0.5 * self.tth_pixel_size)
+        return [
+            np.min(tv) - htps,
+            np.max(tv) + htps,
+            np.max(ev) + heps,
+            np.min(ev) - heps,
+        ]
 
     @property
     def eta_period(self):
@@ -241,18 +252,15 @@ class PolarView:
             border_y = border[1]
 
             # Remove any points out of bounds
-            in_range_x = np.logical_and(x_range[0] <= border_x,
-                                        border_x <= x_range[1])
-            in_range_y = np.logical_and(y_range[0] <= border_y,
-                                        border_y <= y_range[1])
+            in_range_x = np.logical_and(x_range[0] <= border_x, border_x <= x_range[1])
+            in_range_y = np.logical_and(y_range[0] <= border_y, border_y <= y_range[1])
             in_range = np.logical_and(in_range_x, in_range_y)
 
             # Insert nans for points far apart
             border = np.asarray(border).T[in_range].T
             big_diff = np.argwhere(np.abs(np.diff(border[1])) > max_y_distance)
             if big_diff.size != 0:
-                border = np.insert(border.T, big_diff.squeeze() + 1, np.nan,
-                                   axis=0).T
+                border = np.insert(border.T, big_diff.squeeze() + 1, np.nan, axis=0).T
 
             borders[i] = border
 
@@ -289,26 +297,32 @@ class PolarView:
         mapping to plane or cylinder
         """
         kwargs = {'beamVec': detector.bvec}
-        arg = (detector.rmat,
-               ct.identity_3x3,
-               self.chi,
-               detector.tvec,
-               tvec_c,
-               self.tvec_s,
-               detector.distortion)
+        arg = (
+            detector.rmat,
+            ct.identity_3x3,
+            self.chi,
+            detector.tvec,
+            tvec_c,
+            self.tvec_s,
+            detector.distortion,
+        )
         if isinstance(detector, instrument.CylindricalDetector):
-            arg = (self.chi,
-                   detector.tvec,
-                   detector.caxis,
-                   detector.paxis,
-                   detector.radius,
-                   detector.physical_size,
-                   detector.angle_extent,
-                   detector.distortion)
-            kwargs = {'beamVec': detector.bvec,
-                      'tVec_s': self.tvec_s,
-                      'tVec_c': tvec_c,
-                      'rmat_s': ct.identity_3x3}
+            arg = (
+                self.chi,
+                detector.tvec,
+                detector.caxis,
+                detector.paxis,
+                detector.radius,
+                detector.physical_size,
+                detector.angle_extent,
+                detector.distortion,
+            )
+            kwargs = {
+                'beamVec': detector.bvec,
+                'tVec_s': self.tvec_s,
+                'tVec_c': tvec_c,
+                'rmat_s': ct.identity_3x3,
+            }
 
         return arg, kwargs
 
@@ -320,21 +334,17 @@ class PolarView:
         func_projection = self.func_project_on_detector(panel)
 
         xypts = project_on_detector(
-                    self.angular_grid,
-                    self.ntth,
-                    self.neta,
-                    func_projection,
-                    *args,
-                    **kwargs)
+            self.angular_grid, self.ntth, self.neta, func_projection, *args, **kwargs
+        )
 
         wimg = panel.interpolate_bilinear(
-            xypts, img, pad_with_nans=True,
+            xypts,
+            img,
+            pad_with_nans=True,
         ).reshape(self.shape)
         nan_mask = np.isnan(wimg)
         # Store as masked array
-        return np.ma.masked_array(
-            data=wimg, mask=nan_mask, fill_value=0.
-        )
+        return np.ma.masked_array(data=wimg, mask=nan_mask, fill_value=0.0)
 
     def invalidate_corr_field_polar_cache(self):
         self._corr_field_polar_cached = None
@@ -363,11 +373,11 @@ class PolarView:
             corr_field_polar_dict = {}
             for key in corr_field:
                 panel = self.detectors[key]
-                corr_field_polar_dict[key] = self.warp_image(corr_field[key],
-                                                             panel)
+                corr_field_polar_dict[key] = self.warp_image(corr_field[key], panel)
 
-            corr_field_polar = np.ma.sum(np.ma.stack(
-                corr_field_polar_dict.values()), axis=0)
+            corr_field_polar = np.ma.sum(
+                np.ma.stack(corr_field_polar_dict.values()), axis=0
+            )
 
         self._corr_field_polar_cached = corr_field_polar
         return corr_field_polar
@@ -384,11 +394,14 @@ class PolarView:
         HexrdConfig().polar_angular_grid = self.angular_grid
 
         nr, nc = pimg.shape
-        row_coords, col_coords = np.meshgrid(np.arange(nr), np.arange(nc),
-                                             indexing='ij')
+        row_coords, col_coords = np.meshgrid(
+            np.arange(nr), np.arange(nc), indexing='ij'
+        )
         displ_field = np.array(
-            [row_coords,
-             col_coords - np.degrees(corr_field_polar) / self.tth_pixel_size]
+            [
+                row_coords,
+                col_coords - np.degrees(corr_field_polar) / self.tth_pixel_size,
+            ]
         )
 
         # mask_warp = warp(pimg.mask, displ_field, mode='edge')
@@ -457,10 +470,9 @@ class PolarView:
             #        NOT done inside snip computation!
             if HexrdConfig().polar_apply_erosion:
                 niter = HexrdConfig().polar_snip1d_numiter
-                structure = footprint_rectangle((
-                    1,
-                    int(np.ceil(2.25*niter*snip_width_pixels()))
-                ))
+                structure = footprint_rectangle(
+                    (1, int(np.ceil(2.25 * niter * snip_width_pixels())))
+                )
                 mask = binary_erosion(~self.raw_img.mask, structure)
                 img[~mask] = np.nan
                 self.erosion_mask = mask
@@ -626,24 +638,19 @@ class PolarView:
 # longest when generating the polar view.
 # Memoize this so we can regenerate the polar view faster
 @memoize(maxsize=16)
-def project_on_detector(angular_grid,
-                        ntth, neta,
-                        func_projection,
-                        *args, **kwargs):
+def project_on_detector(angular_grid, ntth, neta, func_projection, *args, **kwargs):
     # This will take `angular_grid`, `ntth`, and `neta`, and make the
     # `gvec_angs` argument with them. Then, the `gvec_args` will be passed
     # first to `_project_on_detector_plane`, along with any extra args and
     # kwargs.
     dummy_ome = np.zeros((ntth * neta))
 
-    gvec_angs = np.vstack([
-            angular_grid[1].flatten(),
-            angular_grid[0].flatten(),
-            dummy_ome]).T
+    gvec_angs = np.vstack(
+        [angular_grid[1].flatten(), angular_grid[0].flatten(), dummy_ome]
+    ).T
 
     xypts = np.nan * np.ones((len(gvec_angs), 2))
-    valid_xys, rmats_s, on_plane = func_projection(
-        gvec_angs, *args, **kwargs)
+    valid_xys, rmats_s, on_plane = func_projection(gvec_angs, *args, **kwargs)
     xypts[on_plane] = valid_xys
 
     return xypts

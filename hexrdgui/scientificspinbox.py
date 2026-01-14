@@ -4,6 +4,7 @@ import math
 
 from PySide6.QtGui import QValidator
 from PySide6.QtWidgets import QDoubleSpinBox
+
 #
 # Derived from https://gist.github.com/jdreaver/0be2e44981159d0854f5
 #
@@ -32,7 +33,7 @@ class FloatValidator(QValidator):
         if FloatValidator.valid_float_string(string):
             return self.State.Acceptable
 
-        if string == "" or string[position-1] in 'e.-+':
+        if string == "" or string[position - 1] in 'e.-+':
             return self.State.Intermediate
 
         return self.State.Invalid
@@ -56,12 +57,14 @@ def clean_text(func):
 
     This removes the prefix, suffix, and leading/trailing white space.
     """
+
     @wraps(func)
     def wrapped(self, text, *args, **kwargs):
         text = text.removeprefix(self.prefix())
         text = text.removesuffix(self.suffix())
         text = text.strip()
         return func(self, text, *args, **kwargs)
+
     return wrapped
 
 

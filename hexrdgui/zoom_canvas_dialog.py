@@ -10,8 +10,9 @@ class ZoomCanvasDialog:
 
         display_sums_in_subplots = self.ui.display_sums_in_subplots.isChecked()
 
-        self.zoom_canvas = ZoomCanvas(main_canvas, draw_crosshairs,
-                                      display_sums_in_subplots)
+        self.zoom_canvas = ZoomCanvas(
+            main_canvas, draw_crosshairs, display_sums_in_subplots
+        )
         self.ui.zoom_canvas_layout.addWidget(self.zoom_canvas)
         self.zoom_dimensions_changed(rerender=False)
 
@@ -23,11 +24,13 @@ class ZoomCanvasDialog:
         self.ui.zoom_width.valueChanged.connect(self.zoom_dimensions_changed)
         self.ui.zoom_height.valueChanged.connect(self.zoom_dimensions_changed)
         self.ui.display_sums_in_subplots.toggled.connect(
-            self.on_display_sums_in_subplots_toggled)
+            self.on_display_sums_in_subplots_toggled
+        )
         self.ui.finished.connect(self.on_finished)
 
-        self.bpe_id = self.main_canvas.mpl_connect('button_press_event',
-                                                   self.on_button_pressed)
+        self.bpe_id = self.main_canvas.mpl_connect(
+            'button_press_event', self.on_button_pressed
+        )
 
     def show(self):
         self.set_focus_mode(True)

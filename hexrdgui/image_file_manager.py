@@ -62,10 +62,7 @@ class ImageFileManager(metaclass=Singleton):
         # First, remove any images that no longer belong,
         # or whose shape does not match.
         for det_key, ims in list(ims_dict.items()):
-            keep = (
-                det_key in detector_names and
-                ims.shape == get_shape(det_key)
-            )
+            keep = det_key in detector_names and ims.shape == get_shape(det_key)
             if keep:
                 # Record the imageseries length and unagg length
                 ims_length = len(ims)
@@ -141,6 +138,7 @@ class ImageFileManager(metaclass=Singleton):
             ims = imageseries.open(None, 'array', data=f)
         elif ext in self.HDF4_FILE_EXTS:
             from pyhdf.SD import SD, SDC
+
             hdf = SD(f, SDC.READ)
             dset = hdf.select(self.path[1])
             ims = imageseries.open(None, 'array', data=dset)
@@ -154,9 +152,7 @@ class ImageFileManager(metaclass=Singleton):
                     eiger_stream_format = 'eiger-stream-v2'
 
                 if eiger_stream_format is not None:
-                    registry = (
-                        imageseries.load.registry.Registry.adapter_registry
-                    )
+                    registry = imageseries.load.registry.Registry.adapter_registry
                     if eiger_stream_format not in registry:
                         msg = (
                             '"dectris-compression" must be installed to load '
@@ -176,7 +172,8 @@ class ImageFileManager(metaclass=Singleton):
 
             if regular_hdf5 and ndim >= 3:
                 ims = imageseries.open(
-                    f, 'hdf5', path=self.path[0], dataname=self.path[1])
+                    f, 'hdf5', path=self.path[0], dataname=self.path[1]
+                )
         elif ext == '.npz':
             ims = imageseries.open(f, 'frame-cache', style='npz')
         elif ext == '.fch5':
@@ -187,9 +184,7 @@ class ImageFileManager(metaclass=Singleton):
             ims = imageseries.open(f, form)
         else:
             # elif ext in self.IMAGE_FILE_EXTS:
-            input_dict = {
-                'image-files': {}
-            }
+            input_dict = {'image-files': {}}
             input_dict['image-files']['directory'] = os.path.dirname(f)
             input_dict['image-files']['files'] = glob.escape(os.path.basename(f))
             input_dict['options'] = {} if options is None else options
@@ -211,9 +206,7 @@ class ImageFileManager(metaclass=Singleton):
         if files is None:
             files = os.listdir(d)
 
-        input_dict = {
-            'image-files': {}
-        }
+        input_dict = {'image-files': {}}
         input_dict['image-files']['directory'] = d
         file_str = ''
         for i, f in enumerate(files):

@@ -51,8 +51,9 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             try:
                 value = type(old_value)(value)
             except ValueError:
-                msg = (f'Could not convert {value} to type '
-                       f'{type(old_value).__name__}')
+                msg = (
+                    f'Could not convert {value} to type ' f'{type(old_value).__name__}'
+                )
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return False
 
@@ -110,20 +111,24 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         # Items are selectable if they have no children
         # and none of the data values in the row are `None`.
-        is_selectable = all((
-            item.child_count() == 0,
-            not any(x is None for x in item.data_list),
-        ))
+        is_selectable = all(
+            (
+                item.child_count() == 0,
+                not any(x is None for x in item.data_list),
+            )
+        )
         if is_selectable:
             flags = flags | Qt.ItemIsSelectable
         else:
             flags = flags & ~Qt.ItemIsSelectable
 
-        is_editable = all((
-            index.column() != KEY_COL,
-            item.child_count() == 0,
-            self.editable,
-        ))
+        is_editable = all(
+            (
+                index.column() != KEY_COL,
+                item.child_count() == 0,
+                self.editable,
+            )
+        )
 
         if is_editable:
             # All columns after the first with no children are editable
@@ -260,7 +265,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
     def is_disabled_path(self, path: list[str] | tuple[str]) -> bool:
         path = tuple(path)
         for disabled_path in self.disabled_paths:
-            if path[:len(disabled_path)] == disabled_path:
+            if path[: len(disabled_path)] == disabled_path:
                 return True
 
         return False
@@ -334,12 +339,12 @@ class BaseDictTreeView(QTreeView):
     @combo_keys.setter
     def combo_keys(self, v):
         """Should have the following structure:
-            {
-                ('path', 'to', 'parent'): {
-                    'option1': option1_defaults,
-                    'option2': option2_defaults,
-                }
+        {
+            ('path', 'to', 'parent'): {
+                'option1': option1_defaults,
+                'option2': option2_defaults,
             }
+        }
         """
 
         self._combo_keys = v

@@ -39,7 +39,8 @@ class RerunClusteringDialog(QDialog):
         self.ui.load_file.clicked.connect(self.load_file)
         self.ui.button_box.accepted.connect(self.accept)
         self.ui.algorithms.currentIndexChanged.connect(
-            self.update_min_samples_enable_state)
+            self.update_min_samples_enable_state
+        )
 
     def update_min_samples_enable_state(self):
         indexing_config = HexrdConfig().indexing_config
@@ -53,8 +54,11 @@ class RerunClusteringDialog(QDialog):
 
     def load_file(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Scored Orientations File',
-            HexrdConfig().working_dir, 'NPZ files (*.npz)')
+            self.ui,
+            'Load Scored Orientations File',
+            HexrdConfig().working_dir,
+            'NPZ files (*.npz)',
+        )
 
         if selected_file:
             self.ui.file_name.setText(Path(selected_file).name)

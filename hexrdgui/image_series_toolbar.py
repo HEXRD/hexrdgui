@@ -1,7 +1,12 @@
 from pathlib import Path
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
-    QGridLayout, QLabel, QLineEdit, QPushButton, QSlider, QWidget
+    QGridLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSlider,
+    QWidget,
 )
 from PySide6.QtGui import QFontMetrics, QPixmap
 from hexrdgui import resource_loader
@@ -25,14 +30,14 @@ class ImageSeriesInfoToolbar(QWidget):
         self.setup_connections()
 
     def setup_connections(self):
-        HexrdConfig().recent_images_changed.connect(
-            self.update_file_tooltip)
+        HexrdConfig().recent_images_changed.connect(self.update_file_tooltip)
 
     def create_widget(self):
         self.widget = QWidget(self.parent())
 
-        data = resource_loader.load_resource(hexrdgui.resources.icons,
-                                             'file.svg', binary=True)
+        data = resource_loader.load_resource(
+            hexrdgui.resources.icons, 'file.svg', binary=True
+        )
         pixmap = QPixmap()
         pixmap.loadFromData(data, 'svg')
         self.file_label = QLabel(self.parent())
@@ -51,9 +56,7 @@ class ImageSeriesInfoToolbar(QWidget):
         tips = []
         for det, images in HexrdConfig().recent_images.items():
             fnames = [Path(img).name for img in images]
-            tips.append(
-                f'{det}: {", ".join(fnames)}'
-            )
+            tips.append(f'{det}: {", ".join(fnames)}')
         self.file_label.setToolTip('\n'.join(tips))
 
 
@@ -135,7 +138,7 @@ class ImageSeriesToolbar(QWidget):
                 self.show = True
             self.widget.setVisible(self.show)
             if not self.slider.minimumWidth():
-                self.slider.setMinimumWidth(self.parent().width()//2)
+                self.slider.setMinimumWidth(self.parent().width() // 2)
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setToolTip(f'Max: {size}')
@@ -159,7 +162,7 @@ class ImageSeriesToolbar(QWidget):
         self.ims = ims
 
     def set_visible(self, b=False):
-        self.widget.setVisible(b and len(self.ims)>1)
+        self.widget.setVisible(b and len(self.ims) > 1)
         self.update_omega_label_text()
 
     def setEnabled(self, b):
@@ -209,6 +212,7 @@ class ImageSeriesToolbar(QWidget):
 
         # Set the slider position to the new value
         self.slider.setSliderPosition(val)
+
 
 def omega_label_text(ome_min, ome_max):
     # We will display 6 digits at most, because omegas go up to 360

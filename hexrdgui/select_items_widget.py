@@ -6,10 +6,7 @@ from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QTableWidgetItem, QWidget
 from hexrdgui.ui_loader import UiLoader
 
 
-COLUMNS = {
-    'name': 0,
-    'checkbox': 1
-}
+COLUMNS = {'name': 0, 'checkbox': 1}
 
 
 class SelectItemsWidget(QObject):

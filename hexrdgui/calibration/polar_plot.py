@@ -96,9 +96,7 @@ class InstrumentViewer:
     def write_image(self, filename='polar_image.npz'):
         filename = Path(filename)
 
-        tth, intensities = (
-            HexrdConfig().last_unscaled_azimuthal_integral_data
-        )
+        tth, intensities = HexrdConfig().last_unscaled_azimuthal_integral_data
 
         # Remove any nan values
         mask = intensities.mask
@@ -108,8 +106,9 @@ class InstrumentViewer:
 
         if HexrdConfig().polar_x_axis_type == PolarXAxisType.q:
             # Convert to Q
-            azimuthal_integration[0] = tth_to_q(azimuthal_integration[0],
-                                                self.instr.beam_energy)
+            azimuthal_integration[0] = tth_to_q(
+                azimuthal_integration[0], self.instr.beam_energy
+            )
 
         # Re-format the data so that it is in 2 columns
         azimuthal_integration = azimuthal_integration.T
@@ -184,8 +183,8 @@ class InstrumentViewer:
 
         keep_detectors = HexrdConfig().azimuthal_lineout_detectors
         if (
-            keep_detectors is not None and
-            keep_detectors != HexrdConfig().detector_names
+            keep_detectors is not None
+            and keep_detectors != HexrdConfig().detector_names
         ):
             keep_str = '; '.join(keep_detectors)
             data['detectors_used_in_azimuthal_integration'] = keep_str

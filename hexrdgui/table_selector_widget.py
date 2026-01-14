@@ -2,7 +2,11 @@ import numpy as np
 
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtWidgets import (
-    QDialog, QDialogButtonBox, QTableWidget, QTableWidgetItem, QVBoxLayout
+    QDialog,
+    QDialogButtonBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
 )
 
 from hexrdgui.ui_loader import UiLoader
@@ -21,7 +25,8 @@ class TableSelectorWidget(QTableWidget):
 
     def setup_connections(self):
         self.selectionModel().selectionChanged.connect(
-            lambda: self.selection_changed.emit())
+            lambda: self.selection_changed.emit()
+        )
 
     @property
     def selected_rows(self):

@@ -3,9 +3,7 @@ import copy
 import numpy as np
 
 from PySide6.QtCore import QItemSelectionModel, QObject, Signal
-from PySide6.QtWidgets import (
-    QComboBox, QLineEdit, QSizePolicy, QTableWidgetItem
-)
+from PySide6.QtWidgets import QComboBox, QLineEdit, QSizePolicy, QTableWidgetItem
 
 from hexrd.constants import chargestate
 from hexrd.material import Material
@@ -17,12 +15,7 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 
 
-COLUMNS = {
-    'symbol': 0,
-    'charge': 1,
-    'occupancy': 2,
-    'thermal_factor': 3
-}
+COLUMNS = {'symbol': 0, 'charge': 1, 'occupancy': 2, 'thermal_factor': 3}
 
 DEFAULT_CHARGE = '0'
 DEFAULT_U = Material.DFLT_U[0]
@@ -30,10 +23,10 @@ DEFAULT_U = Material.DFLT_U[0]
 OCCUPATION_MIN = 0
 OCCUPATION_MAX = 1
 
-THERMAL_FACTOR_MIN = -1.e7
-THERMAL_FACTOR_MAX = 1.e7
+THERMAL_FACTOR_MIN = -1.0e7
+THERMAL_FACTOR_MAX = 1.0e7
 
-U_TO_B = 8 * np.pi ** 2
+U_TO_B = 8 * np.pi**2
 B_TO_U = 1 / U_TO_B
 
 
@@ -60,11 +53,11 @@ class MaterialSiteEditor(QObject):
     def setup_connections(self):
         self.ui.select_atom_types.pressed.connect(self.select_atom_types)
         self.ui.thermal_factor_type.currentIndexChanged.connect(
-            self.thermal_factor_type_changed)
+            self.thermal_factor_type_changed
+        )
         for w in self.site_settings_widgets:
             w.valueChanged.connect(self.update_config)
-        self.ui.table.selectionModel().selectionChanged.connect(
-            self.selection_changed)
+        self.ui.table.selectionModel().selectionChanged.connect(self.selection_changed)
         self.ui.remove_atom_type.pressed.connect(self.remove_selected_atom)
         self.ui.convert_u_to_tensors.toggled.connect(self.convert_u_to_tensors)
 
@@ -267,8 +260,9 @@ class MaterialSiteEditor(QObject):
             self.reset_scalar_tensor_toggle()
 
     def reset_scalar_tensor_toggle(self):
-        any_scalars = any(not isinstance(w.value(), np.ndarray)
-                          for w in self.thermal_factor_spinboxes)
+        any_scalars = any(
+            not isinstance(w.value(), np.ndarray) for w in self.thermal_factor_spinboxes
+        )
 
         with block_signals(self.ui.convert_u_to_tensors):
             self.ui.convert_u_to_tensors.setChecked(not any_scalars)
@@ -276,10 +270,7 @@ class MaterialSiteEditor(QObject):
     def update_table(self):
         prev_selected = self.selected_row
 
-        block_list = [
-            self.ui.table,
-            self.ui.table.selectionModel()
-        ]
+        block_list = [self.ui.table, self.ui.table.selectionModel()]
         with block_signals(*block_list):
             atoms = self.site['atoms']
             self.clear_table()
@@ -301,8 +292,11 @@ class MaterialSiteEditor(QObject):
             self.update_occupancy_validity()
 
             if prev_selected is not None:
-                select_row = (prev_selected if prev_selected < self.num_rows
-                              else self.num_rows - 1)
+                select_row = (
+                    prev_selected
+                    if prev_selected < self.num_rows
+                    else self.num_rows - 1
+                )
                 self.select_row(select_row)
 
             # Just in case the selection actually changed...
@@ -375,11 +369,7 @@ class MaterialSiteEditor(QObject):
 
     @property
     def fractional_coords_widgets(self):
-        return [
-            self.ui.coords_x,
-            self.ui.coords_y,
-            self.ui.coords_z
-        ]
+        return [self.ui.coords_x, self.ui.coords_y, self.ui.coords_z]
 
     @property
     def site_settings_widgets(self):
@@ -404,8 +394,11 @@ class MaterialSiteEditor(QObject):
 
             # Use the previous spinbox value if available
             scalar = spinbox.editor.ui.scalar_value.value()
-            if (np.isclose(scalar, 0) and np.allclose(value[:3], value[0]) and
-                    np.allclose(value[3:], 0)):
+            if (
+                np.isclose(scalar, 0)
+                and np.allclose(value[:3], value[0])
+                and np.allclose(value[3:], 0)
+            ):
                 # If the previous value is zero, and the tensor is diagonal,
                 # use the diagonal value
                 scalar = value[0]

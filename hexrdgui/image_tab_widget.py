@@ -10,9 +10,7 @@ from hexrdgui.image_series_toolbar import ImageSeriesToolbar, ImageSeriesInfoToo
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.navigation_toolbar import NavigationToolbar
-from hexrdgui.utils.conversions import (
-    angles_to_chi, stereo_to_angles, tth_to_q
-)
+from hexrdgui.utils.conversions import angles_to_chi, stereo_to_angles, tth_to_q
 from hexrdgui import utils
 
 
@@ -38,8 +36,8 @@ class ImageTabWidget(QTabWidget):
 
         # Set up a mouse move connection to use with the status bar
         cid = self.image_canvases[0].mpl_connect(
-            'motion_notify_event',
-            self.on_motion_notify_event)
+            'motion_notify_event', self.on_motion_notify_event
+        )
         self.mpl_connections = [cid]
 
         self.image_names = []
@@ -80,8 +78,8 @@ class ImageTabWidget(QTabWidget):
         while len(self.mpl_connections) < len(self.image_canvases):
             ind = len(self.mpl_connections)
             cid = self.image_canvases[ind].mpl_connect(
-                'motion_notify_event',
-                self.on_motion_notify_event)
+                'motion_notify_event', self.on_motion_notify_event
+            )
 
             self.mpl_connections.append(cid)
 
@@ -100,8 +98,7 @@ class ImageTabWidget(QTabWidget):
 
     def load_images_untabbed(self):
         self.clear()
-        self.image_canvases[0].load_images(
-            image_names=self.image_names)
+        self.image_canvases[0].load_images(image_names=self.image_names)
         self.allocate_toolbars()
         self.addTab(self.image_canvases[0], '')
 
@@ -112,8 +109,8 @@ class ImageTabWidget(QTabWidget):
     @property
     def using_stitched_images(self):
         return (
-            HexrdConfig().image_mode == ViewType.raw and
-            HexrdConfig().stitch_raw_roi_images
+            HexrdConfig().image_mode == ViewType.raw
+            and HexrdConfig().stitch_raw_roi_images
         )
 
     def update_image_names(self):
@@ -288,7 +285,7 @@ class ImageTabWidget(QTabWidget):
         if not HexrdConfig().tab_images:
             return [self.image_canvases[0]]
 
-        return self.image_canvases[:len(self.image_names)]
+        return self.image_canvases[: len(self.image_names)]
 
     def update_canvas_cmaps(self):
         if self.cmap is not None:
@@ -343,16 +340,16 @@ class ImageTabWidget(QTabWidget):
             'y': event.y,
             'x_data': event.xdata,
             'y_data': event.ydata,
-            'mode': mode
+            'mode': mode,
         }
 
         # These get modified when we perform stitching, so keep
         # the raw versions around.
         raw_xy_data = [event.xdata, event.ydata]
         stitched = (
-            mode == ViewType.raw and
-            event.inaxes.get_images() and
-            HexrdConfig().stitch_raw_roi_images
+            mode == ViewType.raw
+            and event.inaxes.get_images()
+            and HexrdConfig().stitch_raw_roi_images
         )
         if stitched:
             # Convert the xdata and ydata to subpanel coordinates
@@ -438,14 +435,14 @@ class ImageTabWidget(QTabWidget):
             material = HexrdConfig().active_material
             plane_data = material.planeData
             dsp = 0.5 * plane_data.wavelength / np.sin(0.5 * tth)
-            hkl = str(plane_data.getHKLs(asStr=True, allHKLs=True,
-                                         thisTTh=tth))
+            hkl = str(plane_data.getHKLs(asStr=True, allHKLs=True, thisTTh=tth))
 
             chi = angles_to_chi(
                 [[tth, eta]],
                 HexrdConfig().sample_tilt,
                 bvec=instr.beam_vector,
-                evec=instr.eta_vector)[0]
+                evec=instr.eta_vector,
+            )[0]
 
             info['tth'] = np.degrees(tth)
             info['eta'] = np.degrees(eta)
@@ -465,14 +462,13 @@ class ImageTabWidget(QTabWidget):
 
         hovered_masks = []
         if (
-            intensity is not None and
-            mode in (ViewType.raw, ViewType.polar) and
-            not stitched
+            intensity is not None
+            and mode in (ViewType.raw, ViewType.polar)
+            and not stitched
         ):
             for mask in MaskManager().masks.values():
-                if (
-                    mask.type == MaskType.threshold or
-                    (not mask.visible and not mask.show_border and not mask.highlight)
+                if mask.type == MaskType.threshold or (
+                    not mask.visible and not mask.show_border and not mask.highlight
                 ):
                     continue
 
@@ -498,9 +494,9 @@ class ImageTabWidget(QTabWidget):
             info['masks_str'] = label
 
         display_detector = (
-            intensity is not None and
-            (mode != ViewType.raw or stitched) and
-            len(instr.detectors) > 1
+            intensity is not None
+            and (mode != ViewType.raw or stitched)
+            and len(instr.detectors) > 1
         )
         if display_detector:
             # If we are not in the raw view and there is more than one

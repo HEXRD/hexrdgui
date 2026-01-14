@@ -40,12 +40,7 @@ if __name__ == '__main__':
 
     app = QApplication()
 
-    items = [
-        ('Item1', True),
-        ('Item2', False),
-        ('Item3', True),
-        ('Item4', True)
-    ]
+    items = [('Item1', True), ('Item2', False), ('Item3', True), ('Item4', True)]
 
     dialog = SelectItemsDialog(items)
 

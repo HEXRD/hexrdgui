@@ -39,26 +39,24 @@ class PTSliderDialog:
             w.valueChanged.connect(self.on_pt_param_widget_changed)
 
         self.ui.pressure_slider_range.valueChanged.connect(
-            self.update_pressure_slider_range)
-        self.ui.pressure_slider.valueChanged.connect(
-            self.on_pressure_slider_move)
-        self.ui.pressure.editingFinished.connect(
-            self.update_pressure_slider_range)
+            self.update_pressure_slider_range
+        )
+        self.ui.pressure_slider.valueChanged.connect(self.on_pressure_slider_move)
+        self.ui.pressure.editingFinished.connect(self.update_pressure_slider_range)
         self.ui.pressure.valueChanged.connect(self.on_pt_change)
 
         self.ui.temperature_slider_range.valueChanged.connect(
-            self.update_temperature_slider_range)
-        self.ui.temperature_slider.valueChanged.connect(
-            self.on_temperature_slider_move)
+            self.update_temperature_slider_range
+        )
+        self.ui.temperature_slider.valueChanged.connect(self.on_temperature_slider_move)
         self.ui.temperature.editingFinished.connect(
-            self.update_temperature_slider_range)
+            self.update_temperature_slider_range
+        )
         self.ui.temperature.valueChanged.connect(self.on_pt_change)
 
-        self.ui.read_from_jcpds_button.clicked.connect(
-            self.open_jcpds)
+        self.ui.read_from_jcpds_button.clicked.connect(self.open_jcpds)
 
-        self.ui.set_ambient_structure_button.clicked.connect(
-            self.set_ambient_structure)
+        self.ui.set_ambient_structure_button.clicked.connect(self.set_ambient_structure)
 
         HexrdConfig().material_renamed.connect(self.update_window_title)
 
@@ -128,7 +126,7 @@ class PTSliderDialog:
         max_val = v + r / 2
 
         if min_val < self.MIN_PRESSURE:
-            max_val += (self.MIN_PRESSURE - min_val)
+            max_val += self.MIN_PRESSURE - min_val
             min_val = self.MIN_PRESSURE
 
         self.ui.pressure_slider.setRange(min_val, max_val)
@@ -153,7 +151,7 @@ class PTSliderDialog:
         max_val = v + r / 2
 
         if min_val < self.MIN_TEMPERATURE:
-            max_val += (self.MIN_TEMPERATURE - min_val)
+            max_val += self.MIN_TEMPERATURE - min_val
             min_val = self.MIN_TEMPERATURE
 
         self.ui.temperature_slider.setRange(min_val, max_val)
@@ -239,8 +237,11 @@ class PTSliderDialog:
 
     def open_jcpds(self):
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select JCPDS File', HexrdConfig().working_dir,
-            'JCPDS files (*.jcpds)')
+            self.ui,
+            'Select JCPDS File',
+            HexrdConfig().working_dir,
+            'JCPDS files (*.jcpds)',
+        )
 
         if selected_file:
             self.read_jcpds(selected_file)

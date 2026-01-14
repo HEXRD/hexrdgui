@@ -21,8 +21,8 @@ def ij2xy(ij, stereo_size):
         size is same as ij. Values outside
         stereographic circle are nans
     """
-    r = 0.5*(stereo_size-1)
-    res = (ij -r)/r
+    r = 0.5 * (stereo_size - 1)
+    res = (ij - r) / r
     mask = np.sum(res**2, axis=1) > 1.0
     res[mask, :] = np.nan
     return res
@@ -47,8 +47,8 @@ def xy2ij(xy, stereo_size):
      numpy.ndarray
         size is same as xy.
     """
-    r = 0.5*(stereo_size-1)
-    return (xy + 1.0)*r
+    r = 0.5 * (stereo_size - 1)
+    return (xy + 1.0) * r
 
 
 def xy2v3d(xy):
@@ -72,9 +72,9 @@ def xy2v3d(xy):
     xy2 = np.sum(xy**2, axis=1)
     den = 1 + xy2
 
-    vx = 2.0*xy[:,0]/den
-    vy = 2.0*xy[:,1]/den
-    vz = -(1.0-xy2)/den
+    vx = 2.0 * xy[:, 0] / den
+    vy = 2.0 * xy[:, 1] / den
+    vz = -(1.0 - xy2) / den
     return np.array([vx, vy, vz]).T
 
 
@@ -95,13 +95,11 @@ def v3d2xy(vec):
         stereographic coordinates
         size is (nx2)
     """
-    den = np.tile(1 + np.abs(vec[:,2]),[2,1]).T
-    return vec[:,0:2]/den
+    den = np.tile(1 + np.abs(vec[:, 2]), [2, 1]).T
+    return vec[:, 0:2] / den
 
 
-def ij2ang(ij,
-           stereo_size,
-           bvec):
+def ij2ang(ij, stereo_size, bvec):
     """
     simple routine to convert pixel
     coordinates to angles in the beam
@@ -135,17 +133,15 @@ def ij2ang(ij,
 
     rm = makeEtaFrameRotMat(bvec, Xl)
 
-    vx, vy = np.dot(rm[:,0:2].T, vhat_l.T)
+    vx, vy = np.dot(rm[:, 0:2].T, vhat_l.T)
     # vx = np.dot(rm[:,0], vhat_l.T)
     # vy = np.dot(rm[:,1], vhat_l.T)
-    eta = np.mod(np.squeeze(np.arctan2(vy, vx)), 2*np.pi)
+    eta = np.mod(np.squeeze(np.arctan2(vy, vx)), 2 * np.pi)
 
     return np.array([tth, eta]).T
 
 
-def ang2ij(angs,
-           stereo_size,
-           bvec):
+def ang2ij(angs, stereo_size, bvec):
     """
     simple routine to convert angle in beam
     frame to the pixel coordinates in the
@@ -169,9 +165,8 @@ def ang2ij(angs,
         size is (nx2)
     """
     angs_cp = np.atleast_2d(angs)
-    zrs = np.zeros((angs_cp.shape[0],1))
-    vhat_l = anglesToDVec(np.hstack((angs_cp,zrs)),
-             bHat_l=bvec)
+    zrs = np.zeros((angs_cp.shape[0], 1))
+    vhat_l = anglesToDVec(np.hstack((angs_cp, zrs)), bHat_l=bvec)
     return xy2ij(v3d2xy(vhat_l), stereo_size)
 
 
@@ -186,23 +181,21 @@ if __name__ == '__main__':
     # this variable is available in
     # HEDMInstrument.beam_vector
 
-    bvec = np.atleast_2d(np.array(
-           [ 4.84809620e-01, 0.0, -8.74619707e-01]
-           ))
+    bvec = np.atleast_2d(np.array([4.84809620e-01, 0.0, -8.74619707e-01]))
 
-    i = np.linspace(0,1000,1001)
-    X,Y = np.meshgrid(i,i)
+    i = np.linspace(0, 1000, 1001)
+    X, Y = np.meshgrid(i, i)
 
     X = np.reshape(X, (np.prod(X.shape),))
     Y = np.reshape(Y, (np.prod(Y.shape),))
 
-    ij = np.vstack((X,Y)).T
+    ij = np.vstack((X, Y)).T
 
     # very fast code
     ang = np.degrees(ij2ang(ij, stereo_size, bvec))
 
-    tth = np.reshape(ang[:,0],[stereo_size, stereo_size])
-    eta = np.reshape(ang[:,1],[stereo_size, stereo_size])
+    tth = np.reshape(ang[:, 0], [stereo_size, stereo_size])
+    eta = np.reshape(ang[:, 1], [stereo_size, stereo_size])
 
     plt.figure()
     plt.imshow(tth)
