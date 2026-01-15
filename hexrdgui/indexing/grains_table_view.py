@@ -248,7 +248,6 @@ class GrainsTableView(QTableView):
             'dirname': cfg.analysis_dir,
             'filename': None,
             'return_spot_list': True,
-            'quiet': True,
             'check_only': False,
             'interp': 'nearest',
         }
