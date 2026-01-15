@@ -587,7 +587,16 @@ class FitGrainsRunner(Runner):
             return
 
         for result in self.fit_grains_results:
-            print(result)
+            # Convert to basic types before printing, so the print will look nice
+            basic_types_result = tuple(
+                (
+                    x.item()
+                    if isinstance(x, (np.generic, np.ndarray)) and x.ndim == 0
+                    else (x.tolist() if isinstance(x, np.ndarray) else x)
+                )
+                for x in result
+            )
+            print(basic_types_result)
 
         self.view_fit_grains_results()
 
