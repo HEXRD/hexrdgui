@@ -505,7 +505,8 @@ class FloatTableItem(QTableWidgetItem):
         return self.data(self.DATA_ROLE)
 
     def __lt__(self, other):
-        return self.sort_value < other.sort_value
+        # Make sure this is converted to a Python bool. Numpy bool won't work.
+        return bool(self.sort_value < other.sort_value)
 
 
 class IntTableItem(QTableWidgetItem):
@@ -523,7 +524,8 @@ class IntTableItem(QTableWidgetItem):
         return self.data(self.DATA_ROLE)
 
     def __lt__(self, other):
-        return self.sort_value < other.sort_value
+        # Make sure this is converted to a Python bool. Numpy bool won't work.
+        return bool(self.sort_value < other.sort_value)
 
 
 @contextmanager
