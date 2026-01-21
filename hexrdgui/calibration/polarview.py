@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from skimage.filters.edges import binary_erosion
@@ -6,7 +8,6 @@ from skimage.transform import warp
 
 from hexrd.transforms.xfcapi import mapAngle
 from hexrd.utils.decorators import memoize
-from hexrd.utils.warnings import ignore_warnings
 
 from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane, _project_on_detector_cylinder
@@ -501,10 +502,8 @@ class PolarView:
 
         # It's okay to have all nan-slices here, but it produces a warning.
         # Just ignore the warning.
-        with ignore_warnings(RuntimeWarning):
-            # In case there are overlapping detectors, we do nanmean for
-            # the intensities instead of nansum. This would produce a
-            # somewhat more reasonable intensity.
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', category=RuntimeWarning)
             correction_field = np.nanmean(stacked, axis=0)
 
         img *= correction_field
