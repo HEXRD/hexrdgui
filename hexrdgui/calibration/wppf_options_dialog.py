@@ -29,6 +29,7 @@ from hexrd.utils.hkl import hkl_to_str
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
 from hexrd.wppf.phase import Material_Rietveld
+from hexrd.wppf.tds import TDS_MODEL_TYPES
 from hexrd.wppf.texture import HarmonicModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
@@ -82,6 +83,7 @@ class WppfOptionsDialog(QObject):
         self.populate_background_methods()
         self.populate_peakshape_methods()
         self.populate_amorphous_options()
+        self.populate_tds_options()
 
         self.dynamic_background_widgets = []
 
@@ -93,6 +95,7 @@ class WppfOptionsDialog(QObject):
 
         self.amorphous_experiment_files = []
         self._texture_settings = self._default_texture_settings
+        self._tds_settings = {}
 
         self.params = self.generate_params()
         self.initialize_tree_view()
@@ -163,6 +166,31 @@ class WppfOptionsDialog(QObject):
             self.on_texture_plot_pole_figures_clicked
         )
 
+        self.ui.selected_tds_material.currentIndexChanged.connect(
+            self.on_selected_tds_material_changed
+        )
+        self.ui.include_tds_model.toggled.connect(
+            self.on_include_tds_model_toggled
+        )
+        self.ui.tds_model_type.currentIndexChanged.connect(
+            self.on_tds_model_type_changed
+        )
+        self.ui.tds_warren_debye_temperature.valueChanged.connect(
+            self.on_tds_warren_debye_temperature_value_changed
+        )
+        self.ui.tds_select_experimental_data_file.clicked.connect(
+            self.on_tds_select_experimental_data_file_clicked
+        )
+        self.ui.tds_experimental_data_file.textChanged.connect(
+            self.save_tds_experimental_settings
+        )
+        self.ui.tds_experimental_scale.valueChanged.connect(
+            self.save_tds_experimental_settings
+        )
+        self.ui.tds_experimental_shift.valueChanged.connect(
+            self.save_tds_experimental_settings
+        )
+
         self.ui.export_params.clicked.connect(self.export_params)
         self.ui.import_params.clicked.connect(self.import_params)
         self.ui.reset_params_to_defaults.clicked.connect(self.reset_params)
@@ -230,6 +258,7 @@ class WppfOptionsDialog(QObject):
         self.ui.show_difference_as_percent.setVisible(self.show_difference_curve)
 
         self.update_texture_model_enable_states()
+        self.update_tds_enabled()
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
@@ -254,6 +283,19 @@ class WppfOptionsDialog(QObject):
 
             if prev in all_labels:
                 w.setCurrentIndex(all_labels.index(prev))
+
+    def populate_tds_options(self):
+        w = self.ui.tds_model_type
+        prev = w.currentText()
+        types = list(TDS_MODEL_TYPES)
+
+        with block_signals(w):
+            w.clear()
+            for name in types:
+                w.addItem(name)
+
+            if prev in types:
+                w.setCurrentIndex(types.index(prev))
 
     def save_plot(self):
         obj = self._wppf_object
@@ -511,6 +553,7 @@ class WppfOptionsDialog(QObject):
     def selected_materials(self, v):
         self._selected_materials = v
         self.update_texture_material_options()
+        self.update_tds_material_options()
 
     @property
     def materials(self):
@@ -897,6 +940,7 @@ class WppfOptionsDialog(QObject):
             'min_tth',
             'max_tth',
             'texture_settings',
+            'tds_settings',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -953,7 +997,9 @@ class WppfOptionsDialog(QObject):
 
         self.update_enable_states()
         self.update_texture_material_options()
+        self.update_tds_material_options()
         self.update_texture_gui()
+        self.update_tds_gui()
 
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
@@ -2388,6 +2434,152 @@ class WppfOptionsDialog(QObject):
             v = f'{j:.2f}'
 
         w.setText(f'Texture index: {v}')
+
+    @property
+    def tds_settings(self):
+        return self._tds_settings
+
+    @tds_settings.setter
+    def tds_settings(self, v):
+        self._tds_settings = v
+
+        # Validate materials in the tds model dict are selected
+        # materials. Remove materials that are not.
+        self.prune_invalid_tds_materials()
+        self.update_tds_gui()
+
+    def prune_invalid_tds_materials(self):
+        valid_mats = self.selected_materials
+        for name in list(self.tds_settings):
+            if name not in valid_mats:
+                self.tds_settings.pop(name)
+
+    @property
+    def selected_tds_material(self) -> str:
+        return self.ui.selected_tds_material.currentText()
+
+    def update_tds_material_options(self):
+        valid_mats = self.selected_materials
+
+        w = self.ui.selected_tds_material
+        prev_selected = w.currentText()
+        with block_signals(w):
+            w.clear()
+            w.addItems(valid_mats)
+            if prev_selected in valid_mats:
+                w.setCurrentText(prev_selected)
+
+        # Also verify all TDS materials are present.
+        # Remove any that are not.
+        self.prune_invalid_tds_materials()
+        self.on_selected_tds_material_changed()
+
+    def on_selected_tds_material_changed(self):
+        self.update_tds_gui()
+
+    def tds_setup_default_material_if_missing(self):
+        mat_name = self.selected_tds_material
+        if mat_name not in self.tds_settings:
+            self.tds_settings[mat_name] = self._default_tds_new_material_settings
+
+    def on_include_tds_model_toggled(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+        settings['enabled'] = self.ui.include_tds_model.isChecked()
+        self.update_tds_gui()
+
+    def on_tds_model_type_changed(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+        settings['model_type'] = self.ui.tds_model_type.currentText()
+        self.update_tds_gui()
+
+    def on_tds_warren_debye_temperature_value_changed(self):
+        # FIXME: compute equivalent temperature and display it
+        pass
+
+    def on_tds_select_experimental_data_file_clicked(self):
+        default_path = self.ui.tds_experimental_data_file.currentText()
+        if not default_path:
+            default_path = HexrdConfig().working_dir
+
+        selected_file, _ = QFileDialog.getOpenFileName(
+            self.ui,
+            'Select Experiment File',
+            default_path,
+            'XY files (*.xy)',
+        )
+
+        if selected_file:
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
+            self.ui.tds_experimental_data_file.setText(selected_file)
+
+    def save_tds_experimental_settings(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        experimental_settings = settings['experimental']
+        experimental_settings['data_file'] = self.ui.tds_experimental_data_file.text()
+        experimental_settings['scale'] = self.ui.tds_experimental_scale.value()
+        experimental_settings['shift'] = self.ui.tds_experimental_shift.value()
+
+    def update_tds_enabled(self):
+        is_rietveld = self.method == 'Rietveld'
+        self.ui.tds_tab.setEnabled(is_rietveld)
+
+    def update_tds_gui(self):
+        self.update_tds_enabled()
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        model_type = settings['model_type']
+        is_enabled = settings['enabled']
+
+        with block_signals(self.ui.tds_model_type):
+            self.ui.tds_model_type.setCurrentText(model_type)
+
+        with block_signals(self.ui.include_tds_model):
+            self.ui.include_tds_model.setChecked(is_enabled)
+
+        is_warren = model_type == 'warren'
+        is_experimental = model_type == 'experimental'
+
+        self.ui.tds_model_type_label.setEnabled(is_enabled)
+        self.ui.tds_model_type.setEnabled(is_enabled)
+        self.ui.tds_warren_settings_group.setVisible(is_enabled and is_warren)
+        self.ui.tds_experimental_settings_group.setVisible(is_enabled and is_experimental)
+
+        warren_settings = settings['warren']
+        self.ui.tds_warren_debye_temperature.setValue(warren_settings['theta_D'])
+
+        experimental_settings = settings['experimental']
+        self.ui.tds_experimental_data_file.setText(experimental_settings['data_file'])
+        self.ui.tds_experimental_scale.setValue(experimental_settings['scale'])
+        self.ui.tds_experimental_shift.setValue(experimental_settings['shift'])
+
+    @property
+    def _default_tds_new_material_settings(self) -> dict:
+        return {
+            'enabled': False,
+            'model_type': 'warren',
+            'warren': self._default_tds_warren_settings,
+            'experimental': self._default_tds_experimental_settings,
+        }
+
+    @property
+    def _default_tds_warren_settings(self) -> dict:
+        return {
+            'theta_D': 200,
+        }
+
+    @property
+    def _default_tds_experimental_settings(self) -> dict:
+        return {
+            'data_file': '',
+            'scale': 1.0,
+            'shift': 0.0,
+        }
+
 
 
 def generate_params(
