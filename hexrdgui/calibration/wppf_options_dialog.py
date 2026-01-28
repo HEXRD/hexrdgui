@@ -29,6 +29,12 @@ from hexrd.utils.hkl import hkl_to_str
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
 from hexrd.wppf.phase import Material_Rietveld
+from hexrd.wppf.tds import (
+    TDS,
+    TDS_MODEL_TYPES,
+    TDS_material,
+    VALID_SGNUMS as VALID_TDS_SGNUMS,
+)
 from hexrd.wppf.texture import HarmonicModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
@@ -82,6 +88,7 @@ class WppfOptionsDialog(QObject):
         self.populate_background_methods()
         self.populate_peakshape_methods()
         self.populate_amorphous_options()
+        self.populate_tds_options()
 
         self.dynamic_background_widgets = []
 
@@ -93,6 +100,7 @@ class WppfOptionsDialog(QObject):
 
         self.amorphous_experiment_files = []
         self._texture_settings = self._default_texture_settings
+        self._tds_settings = {}
 
         self.params = self.generate_params()
         self.initialize_tree_view()
@@ -129,6 +137,7 @@ class WppfOptionsDialog(QObject):
         self.ui.display_wppf_plot.toggled.connect(self.display_wppf_plot_toggled)
         self.ui.plot_background.toggled.connect(self.plot_background_toggled)
         self.ui.plot_amorphous.toggled.connect(self.plot_amorphous_toggled)
+        self.ui.plot_tds.toggled.connect(self.plot_tds_toggled)
         self.ui.edit_plot_style.pressed.connect(self.edit_plot_style)
         self.ui.pick_spline_points.clicked.connect(self.pick_spline_points)
         self.ui.show_difference_curve.toggled.connect(
@@ -161,6 +170,32 @@ class WppfOptionsDialog(QObject):
         )
         self.ui.texture_plot_pole_figures.clicked.connect(
             self.on_texture_plot_pole_figures_clicked
+        )
+
+        self.ui.selected_tds_material.currentIndexChanged.connect(
+            self.on_selected_tds_material_changed
+        )
+        self.ui.include_tds_model.toggled.connect(self.on_include_tds_model_toggled)
+        self.ui.tds_model_type.currentIndexChanged.connect(
+            self.on_tds_model_type_changed
+        )
+        self.ui.tds_temperature_atom_type.currentIndexChanged.connect(
+            self.on_tds_temperature_atom_type_changed
+        )
+        self.ui.tds_debye_temperature.valueChanged.connect(
+            self.on_tds_debye_temperature_value_changed
+        )
+        self.ui.tds_select_experimental_data_file.clicked.connect(
+            self.on_tds_select_experimental_data_file_clicked
+        )
+        self.ui.tds_experimental_data_file.textChanged.connect(
+            self.save_tds_experimental_settings
+        )
+        self.ui.tds_experimental_scale.valueChanged.connect(
+            self.save_tds_experimental_settings
+        )
+        self.ui.tds_experimental_shift.valueChanged.connect(
+            self.save_tds_experimental_settings
         )
 
         self.ui.export_params.clicked.connect(self.export_params)
@@ -230,6 +265,7 @@ class WppfOptionsDialog(QObject):
         self.ui.show_difference_as_percent.setVisible(self.show_difference_curve)
 
         self.update_texture_model_enable_states()
+        self.update_tds_enabled()
 
     def populate_background_methods(self):
         self.ui.background_method.addItems(list(background_methods.keys()))
@@ -254,6 +290,19 @@ class WppfOptionsDialog(QObject):
 
             if prev in all_labels:
                 w.setCurrentIndex(all_labels.index(prev))
+
+    def populate_tds_options(self):
+        w = self.ui.tds_model_type
+        prev = w.currentText()
+        types = list(TDS_MODEL_TYPES)
+
+        with block_signals(w):
+            w.clear()
+            for name in types:
+                w.addItem(name)
+
+            if prev in types:
+                w.setCurrentIndex(types.index(prev))
 
     def save_plot(self):
         obj = self._wppf_object
@@ -294,14 +343,35 @@ class WppfOptionsDialog(QObject):
         if obj.amorphous_model is not None:
             data['amorphous'] = obj.amorphous_model.amorphous_lineout
 
+        if obj.tds_model is not None and obj.tds_model.TDSmodels:
+            tds_models = obj.tds_model.TDSmodels
+            tds_dict = {}
+            for p in tds_models:
+                for w, tds_material in tds_models[p].items():
+                    tds_dict.setdefault(p, {})[w] = tds_material.tds_lineout
+
+            data['tds'] = tds_dict
+
         # Delete the file if it already exists
         if filename.exists():
             filename.unlink()
 
+        def recurse_create_dataset(key, data, group):
+            if isinstance(data, dict):
+                if not data:
+                    return
+
+                group2 = group.create_group(key)
+                for key2, data2 in data.items():
+                    recurse_create_dataset(key2, data2, group2)
+                return
+
+            group.create_dataset(key, data=data)
+
         # Save as HDF5
         with h5py.File(filename, 'w') as f:
             for key, value in data.items():
-                f.create_dataset(key, data=value)
+                recursive_create_datasets(key, value, f)
 
             # Save parameters as well
             to_save = ('value',)
@@ -511,6 +581,7 @@ class WppfOptionsDialog(QObject):
     def selected_materials(self, v):
         self._selected_materials = v
         self.update_texture_material_options()
+        self.update_tds_material_options()
 
     @property
     def materials(self):
@@ -802,6 +873,14 @@ class WppfOptionsDialog(QObject):
         self.ui.plot_amorphous.setChecked(b)
 
     @property
+    def plot_tds(self) -> bool:
+        return self.ui.plot_tds.isChecked()
+
+    @plot_tds.setter
+    def plot_tds(self, b: bool):
+        self.ui.plot_tds.setChecked(b)
+
+    @property
     def params_dict(self):
         ret = {}
         for key, param in self.params.items():
@@ -892,11 +971,13 @@ class WppfOptionsDialog(QObject):
             'display_wppf_plot',
             'plot_background',
             'plot_amorphous',
+            'plot_tds',
             'params_dict',
             'limit_tth',
             'min_tth',
             'max_tth',
             'texture_settings',
+            'tds_settings',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -923,9 +1004,13 @@ class WppfOptionsDialog(QObject):
     def plot_amorphous_toggled(self):
         HexrdConfig().display_wppf_amorphous = self.plot_amorphous
 
+    def plot_tds_toggled(self):
+        HexrdConfig().display_wppf_tds = self.plot_tds
+
     def edit_plot_style(self):
         dialog = WppfStylePicker(
             amorphous_visible=self.include_amorphous,
+            tds_visible=self.any_tds_models_enabled,
             parent=self.ui,
         )
         dialog.exec()
@@ -935,6 +1020,7 @@ class WppfOptionsDialog(QObject):
             self.ui.display_wppf_plot,
             self.ui.plot_background,
             self.ui.plot_amorphous,
+            self.ui.plot_tds,
             self.ui.show_difference_curve,
             self.ui.show_difference_as_percent,
         ]
@@ -942,6 +1028,7 @@ class WppfOptionsDialog(QObject):
             self.display_wppf_plot = HexrdConfig().display_wppf_plot
             self.plot_background = HexrdConfig().display_wppf_background
             self.plot_amorphous = HexrdConfig().display_wppf_amorphous
+            self.plot_tds = HexrdConfig().display_wppf_tds
 
             self.show_difference_curve = HexrdConfig().show_wppf_difference_axis
             self.show_difference_as_percent = (
@@ -953,7 +1040,9 @@ class WppfOptionsDialog(QObject):
 
         self.update_enable_states()
         self.update_texture_material_options()
+        self.update_tds_material_options()
         self.update_texture_gui()
+        self.update_tds_gui()
 
     def update_background_parameters(self):
         if self.background_method == self._prev_background_method:
@@ -1608,6 +1697,7 @@ class WppfOptionsDialog(QObject):
             'show_difference_as_percent',
             'plot_background',
             'plot_amorphous',
+            'plot_tds',
         ]
         return [getattr(self.ui, x) for x in names]
 
@@ -1632,15 +1722,19 @@ class WppfOptionsDialog(QObject):
             raise Exception(f'Unknown method: {self.method}')
 
         class_type = class_types[self.method]
-        return class_type(
+        obj = class_type(
             **self.wppf_object_kwargs,
             reset_background_params=reset_background_params,
         )
 
+        if self.method == 'Rietveld':
+            # Add the TDS model to it, if applicable
+            self.set_tds_model(obj)
+
+        return obj
+
     @property
     def wppf_object_kwargs(self):
-        wavelength = {'synchrotron': [_angstroms(HexrdConfig().beam_wavelength), 1.0]}
-
         if self.use_experiment_file:
             expt_spectrum = np.loadtxt(self.experiment_file)
         else:
@@ -1698,12 +1792,18 @@ class WppfOptionsDialog(QObject):
             # Make a deep copy of the materials so that WPPF
             # won't modify any arrays in place shared by our materials.
             'phases': copy.deepcopy(self.materials),
-            'wavelength': wavelength,
+            'wavelength': self._wppf_wavelength_arg,
             'bkgmethod': self.background_method_dict,
             'peakshape': self.peak_shape,
             'amorphous_model': amorphous_model,
             **extra_kwargs,
         }
+
+    @property
+    def _wppf_wavelength_arg(self) -> dict[str, list[float, float]]:
+        # We only support one wavelength currently
+        # For the value, the first is the wavelength, the second is the weight
+        return {'synchrotron': [_angstroms(HexrdConfig().beam_wavelength), 1.0]}
 
     def update_wppf_object(self):
         obj = self._wppf_object
@@ -1721,6 +1821,9 @@ class WppfOptionsDialog(QObject):
             setattr(obj, key, val)
 
         self.update_degree_of_crystallinity()
+
+        # Update the Rietveld TDS model, if applicable
+        self.update_rietveld_tds_model()
 
     def export_params(self):
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -2389,6 +2492,267 @@ class WppfOptionsDialog(QObject):
 
         w.setText(f'Texture index: {v}')
 
+    @property
+    def tds_settings(self):
+        return self._tds_settings
+
+    @tds_settings.setter
+    def tds_settings(self, v):
+        self._tds_settings = v
+
+        # Validate materials in the tds model dict are selected
+        # materials. Remove materials that are not.
+        self.prune_invalid_tds_materials()
+        self.update_tds_gui()
+
+    def prune_invalid_tds_materials(self):
+        valid_mats = self.selected_materials
+        for name in list(self.tds_settings):
+            if name not in valid_mats:
+                self.tds_settings.pop(name)
+
+    @property
+    def selected_tds_material(self) -> str:
+        return self.ui.selected_tds_material.currentText()
+
+    def update_tds_material_options(self):
+        valid_mats = self.selected_materials
+
+        w = self.ui.selected_tds_material
+        prev_selected = w.currentText()
+        with block_signals(w):
+            w.clear()
+            w.addItems(valid_mats)
+            if prev_selected in valid_mats:
+                w.setCurrentText(prev_selected)
+
+        # Also verify all TDS materials are present.
+        # Remove any that are not.
+        self.prune_invalid_tds_materials()
+        self.on_selected_tds_material_changed()
+
+    def on_selected_tds_material_changed(self):
+        self.update_tds_gui()
+
+    def tds_setup_default_material_if_missing(self):
+        mat_name = self.selected_tds_material
+        if mat_name not in self.tds_settings:
+            self.tds_settings[mat_name] = self._default_tds_new_material_settings
+
+    def on_include_tds_model_toggled(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        # Verify we can enable TDS for this material
+        mat = HexrdConfig().material(self.selected_tds_material)
+
+        if mat.sgnum not in VALID_TDS_SGNUMS:
+            valid_str = ', '.join([str(i) for i in VALID_TDS_SGNUMS])
+            msg = f'TDS currently only supports the following space groups: {valid_str}'
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            print(msg, file=sys.stderr)
+            self.update_tds_gui()
+            return
+
+        settings['enabled'] = self.ui.include_tds_model.isChecked()
+        self.update_tds_gui()
+
+    def on_tds_model_type_changed(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+        settings['model_type'] = self.ui.tds_model_type.currentText()
+        self.update_tds_gui()
+
+    def update_tds_temperature_atom_types(self):
+        mat = HexrdConfig().material(self.selected_tds_material)
+
+        options = [ct.ptableinverse[x] for x in mat.atom_type]
+
+        w = self.ui.tds_temperature_atom_type
+        prev = w.currentText()
+        with block_signals(w):
+            w.clear()
+            w.addItems(options)
+
+            if prev in options:
+                w.setCurrentIndex(options.index(prev))
+
+    def on_tds_temperature_atom_type_changed(self):
+        # Load the saved Debye temperature, if available
+        self.update_tds_debye_temperature()
+        self.update_tds_equivalent_temperature()
+
+    def on_tds_debye_temperature_value_changed(self):
+        # Save the modified Debye temperature so we will remember it
+        self.save_tds_debye_temperature()
+        self.update_tds_equivalent_temperature()
+
+    def update_tds_equivalent_temperature(self):
+        enabled = self.tds_settings.get(self.selected_tds_material, {}).get(
+            'enabled', False
+        )
+        if not enabled:
+            # This is not visible, so don't bother updating.
+            return
+
+        mat = HexrdConfig().material(self.selected_tds_material)
+        mat_rietveld = Material_Rietveld(material_obj=mat)
+
+        selected_atom_type = self.ui.tds_temperature_atom_type.currentText()
+        debye_temperatures = {
+            selected_atom_type: self.ui.tds_debye_temperature.value(),
+        }
+        output = mat_rietveld.calc_temperature(debye_temperatures)
+        equiv_temp = output[selected_atom_type]
+        text = f'{equiv_temp:.2f} K'
+        self.ui.tds_computed_equivalent_temperature.setText(text)
+
+    def on_tds_select_experimental_data_file_clicked(self):
+        default_path = self.ui.tds_experimental_data_file.currentText()
+        if not default_path:
+            default_path = HexrdConfig().working_dir
+
+        selected_file, _ = QFileDialog.getOpenFileName(
+            self.ui,
+            'Select Experiment File',
+            default_path,
+            'XY files (*.xy)',
+        )
+
+        if selected_file:
+            HexrdConfig().working_dir = str(Path(selected_file).parent)
+            self.ui.tds_experimental_data_file.setText(selected_file)
+
+    def save_tds_experimental_settings(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        experimental_settings = settings['experimental']
+        experimental_settings['data_file'] = self.ui.tds_experimental_data_file.text()
+        experimental_settings['scale'] = self.ui.tds_experimental_scale.value()
+        experimental_settings['shift'] = self.ui.tds_experimental_shift.value()
+
+    def update_tds_enabled(self):
+        is_rietveld = self.method == 'Rietveld'
+        self.ui.tds_tab.setEnabled(is_rietveld)
+
+    def update_tds_gui(self):
+        self.update_tds_enabled()
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        model_type = settings['model_type']
+        is_enabled = settings['enabled']
+
+        with block_signals(self.ui.tds_model_type):
+            self.ui.tds_model_type.setCurrentText(model_type)
+
+        with block_signals(self.ui.include_tds_model):
+            self.ui.include_tds_model.setChecked(is_enabled)
+
+        is_experimental = model_type == 'experimental'
+
+        self.ui.tds_model_type_label.setEnabled(is_enabled)
+        self.ui.tds_model_type.setEnabled(is_enabled)
+        self.ui.tds_temperature_settings_group.setVisible(is_enabled)
+        self.ui.tds_experimental_settings_group.setVisible(
+            is_enabled and is_experimental
+        )
+
+        experimental_settings = settings['experimental']
+        self.ui.tds_experimental_data_file.setText(experimental_settings['data_file'])
+        self.ui.tds_experimental_scale.setValue(experimental_settings['scale'])
+        self.ui.tds_experimental_shift.setValue(experimental_settings['shift'])
+
+        self.update_tds_temperature_atom_types()
+        self.update_tds_debye_temperature()
+        self.update_tds_equivalent_temperature()
+
+        self.ui.plot_tds.setEnabled(self.any_tds_models_enabled)
+
+    def update_tds_debye_temperature(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        selected_atom_type = self.ui.tds_temperature_atom_type.currentText()
+
+        temperature_settings = settings['debye_temperatures']
+        debye_temperature = temperature_settings.setdefault(selected_atom_type, 200)
+        self.ui.tds_debye_temperature.setValue(debye_temperature)
+
+    def save_tds_debye_temperature(self):
+        self.tds_setup_default_material_if_missing()
+        settings = self.tds_settings[self.selected_tds_material]
+
+        selected_atom_type = self.ui.tds_temperature_atom_type.currentText()
+
+        temperature_settings = settings['debye_temperatures']
+        temperature_settings[selected_atom_type] = self.ui.tds_debye_temperature.value()
+
+    @property
+    def _default_tds_new_material_settings(self) -> dict:
+        return {
+            'enabled': False,
+            'model_type': 'warren',
+            'debye_temperatures': {},
+            'experimental': self._default_tds_experimental_settings,
+        }
+
+    @property
+    def _default_tds_experimental_settings(self) -> dict:
+        return {
+            'data_file': '',
+            'scale': 1.0,
+            'shift': 0.0,
+        }
+
+    @property
+    def any_tds_models_enabled(self) -> bool:
+        if self.method != 'Rietveld':
+            return False
+
+        for settings in self.tds_settings.values():
+            if settings.get('enabled', False):
+                return True
+
+        return False
+
+    def update_rietveld_tds_model(self):
+        if not isinstance(self._wppf_object, Rietveld):
+            # Nothing to do
+            return
+
+        # Update the TDS model on the Rietveld object
+        self.set_tds_model(self._wppf_object)
+
+    def set_tds_model(self, obj: Rietveld):
+        if not self.any_tds_models_enabled:
+            # If there are no TDS models, just set the tds model to None
+            obj.tds_model = None
+            return
+
+        # Make a default TDS model with all warren model types
+        tds = TDS(
+            model_type='warren',
+            phases=obj.phases,
+            tth=obj.tth_list,
+        )
+
+        # Loop through the materials. Delete any TDS_material objects
+        # that should NOT be modeled. Also update any material objects
+        # that are not warren.
+        for mat_name, settings in self.tds_settings.items():
+            if not settings.get('enabled', False):
+                # This material shouldn't be modeled. Eliminate it.
+                tds.TDSmodels.pop(mat_name, None)
+                continue
+
+            for wlen_name, tds_mat in tds.TDSmodels[mat_name].items():
+                _set_tds_settings_to_tds_material(settings, tds_mat)
+
+        # Set the TDS model. The smoothing will be updated automatically.
+        obj.tds_model = tds
+
 
 def generate_params(
     method, materials, peak_shape, bkgmethod, amorphous_model, texture_model
@@ -2565,6 +2929,15 @@ def mat_gp_to_p_funcs_factory(wlen: float) -> dict:
         'from_display': from_display,
         'to_display_stderr': to_display_stderr,
     }
+
+
+def _set_tds_settings_to_tds_material(tds_mat_settings: dict, tds_mat: TDS_material):
+    tds_mat.model_type = tds_mat_settings['model_type']
+    if tds_mat.model_type == 'experimental':
+        # Set the relevant experimental settings
+        tds_mat.model_data = np.loadtxt(tds_mat_settings['data_file'])
+        tds_mat.scale = tds_mat_settings['scale']
+        tds_mat.shift = tds_mat_settings['shift']
 
 
 if __name__ == '__main__':

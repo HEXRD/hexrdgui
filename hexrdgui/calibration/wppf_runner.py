@@ -1,5 +1,7 @@
 import copy
 
+import numpy as np
+
 from PySide6.QtCore import QCoreApplication
 
 from hexrd.material import Material
@@ -26,6 +28,7 @@ class WppfRunner:
         HexrdConfig().wppf_data = None
         HexrdConfig().wppf_background_lineout = None
         HexrdConfig().wppf_amorphous_lineout = None
+        HexrdConfig().wppf_tds_lineout = None
 
         HexrdConfig().rerender_wppf.emit()
 
@@ -97,6 +100,7 @@ class WppfRunner:
 
         HexrdConfig().wppf_background_lineout = background
 
+        # Compute amorphous lineout, if applicable
         amorphous_lineout = []
         if obj.amorphous_model is not None:
             tth_list = obj.amorphous_model.tth_list
@@ -112,6 +116,24 @@ class WppfRunner:
             ]
 
         HexrdConfig().wppf_amorphous_lineout = amorphous_lineout
+
+        # Compute TDS lineout, if applicable
+        tds_lineout = []
+        if obj.tds_model is not None:
+            x = obj.tth_list
+            y = np.zeros(x.shape)
+            for p in obj.tds_model.TDSmodels:
+                for k in obj.tds_model.TDSmodels[p]:
+                    y += obj.calculate_scaled_tds_signal(p, k)
+
+            if len(background) > 1:
+                # background[1] is the background intensity.
+                # We will automatically add the background, if present.
+                y += background[1]
+
+            tds_lineout = [x, y]
+
+        HexrdConfig().wppf_tds_lineout = tds_lineout
 
         HexrdConfig().rerender_wppf.emit()
 

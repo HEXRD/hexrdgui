@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>774</width>
-    <height>307</height>
+    <height>405</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,81 +26,6 @@
    <property name="bottomMargin">
     <number>6</number>
    </property>
-   <item row="1" column="0" colspan="2">
-    <widget class="QGroupBox" name="background_group">
-     <property name="title">
-      <string>Background Plot</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="4">
-       <widget class="QLabel" name="background_line_width_label">
-        <property name="text">
-         <string>Line Width:</string>
-        </property>
-        <property name="buddy">
-         <cstring>background_line_width</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="background_color_label">
-        <property name="text">
-         <string>Color:</string>
-        </property>
-        <property name="buddy">
-         <cstring>background_color</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="3">
-       <widget class="QComboBox" name="background_line_style"/>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="background_color">
-        <property name="text">
-         <string/>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="background_line_style_label">
-        <property name="text">
-         <string>Line Style:</string>
-        </property>
-        <property name="buddy">
-         <cstring>background_line_style</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5">
-       <widget class="ScientificDoubleSpinBox" name="background_line_width">
-        <property name="keyboardTracking">
-         <bool>false</bool>
-        </property>
-        <property name="decimals">
-         <number>8</number>
-        </property>
-        <property name="maximum">
-         <double>100000.000000000000000</double>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QDialogButtonBox" name="button_box">
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0" colspan="2">
     <widget class="QGroupBox" name="simulated_spectrum_group">
      <property name="title">
@@ -198,6 +123,81 @@
      </layout>
     </widget>
    </item>
+   <item row="4" column="0" colspan="2">
+    <widget class="QDialogButtonBox" name="button_box">
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="2">
+    <widget class="QGroupBox" name="background_group">
+     <property name="title">
+      <string>Background Plot</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="4">
+       <widget class="QLabel" name="background_line_width_label">
+        <property name="text">
+         <string>Line Width:</string>
+        </property>
+        <property name="buddy">
+         <cstring>background_line_width</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="background_color_label">
+        <property name="text">
+         <string>Color:</string>
+        </property>
+        <property name="buddy">
+         <cstring>background_color</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QComboBox" name="background_line_style"/>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="background_color">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="background_line_style_label">
+        <property name="text">
+         <string>Line Style:</string>
+        </property>
+        <property name="buddy">
+         <cstring>background_line_style</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="ScientificDoubleSpinBox" name="background_line_width">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>100000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="2" column="0" colspan="2">
     <widget class="QGroupBox" name="amorphous_group">
      <property name="title">
@@ -246,6 +246,74 @@
       </item>
       <item row="0" column="5">
        <widget class="ScientificDoubleSpinBox" name="amorphous_line_width">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <double>100000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
+    <widget class="QGroupBox" name="tds_group">
+     <property name="title">
+      <string>TDS Plot</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="0">
+       <widget class="QLabel" name="tds_color_label">
+        <property name="text">
+         <string>Color:</string>
+        </property>
+        <property name="buddy">
+         <cstring>amorphous_color</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="tds_color">
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="tds_line_style_label">
+        <property name="text">
+         <string>Line Style:</string>
+        </property>
+        <property name="buddy">
+         <cstring>amorphous_line_style</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QComboBox" name="tds_line_style"/>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="tds_line_width_label">
+        <property name="text">
+         <string>Line Width:</string>
+        </property>
+        <property name="buddy">
+         <cstring>amorphous_line_width</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="ScientificDoubleSpinBox" name="tds_line_width">
         <property name="keyboardTracking">
          <bool>false</bool>
         </property>
