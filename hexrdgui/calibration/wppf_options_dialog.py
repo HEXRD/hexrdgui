@@ -356,14 +356,14 @@ class WppfOptionsDialog(QObject):
         if filename.exists():
             filename.unlink()
 
-        def recurse_create_dataset(key, data, group):
+        def recursive_create_datasets(key, data, group):
             if isinstance(data, dict):
                 if not data:
                     return
 
                 group2 = group.create_group(key)
                 for key2, data2 in data.items():
-                    recurse_create_dataset(key2, data2, group2)
+                    recursive_create_datasets(key2, data2, group2)
                 return
 
             group.create_dataset(key, data=data)
@@ -2566,16 +2566,17 @@ class WppfOptionsDialog(QObject):
     def update_tds_temperature_atom_types(self):
         mat = HexrdConfig().material(self.selected_tds_material)
 
-        options = [ct.ptableinverse[x] for x in mat.atom_type]
+        if mat is not None:
+            options = [ct.ptableinverse[x] for x in mat.atom_type]
 
-        w = self.ui.tds_temperature_atom_type
-        prev = w.currentText()
-        with block_signals(w):
-            w.clear()
-            w.addItems(options)
+            w = self.ui.tds_temperature_atom_type
+            prev = w.currentText()
+            with block_signals(w):
+                w.clear()
+                w.addItems(options)
 
-            if prev in options:
-                w.setCurrentIndex(options.index(prev))
+                if prev in options:
+                    w.setCurrentIndex(options.index(prev))
 
     def on_tds_temperature_atom_type_changed(self):
         # Load the saved Debye temperature, if available
