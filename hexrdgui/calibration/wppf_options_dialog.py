@@ -348,7 +348,9 @@ class WppfOptionsDialog(QObject):
             tds_dict = {}
             for p in tds_models:
                 for w, tds_material in tds_models[p].items():
-                    tds_dict.setdefault(p, {})[w] = tds_material.tds_lineout
+                    tds_dict.setdefault(p, {})[w] = obj.calculate_scaled_tds_signal(
+                        p, w
+                    )
 
             data['tds'] = tds_dict
 
