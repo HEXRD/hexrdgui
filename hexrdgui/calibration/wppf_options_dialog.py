@@ -2570,15 +2570,18 @@ class WppfOptionsDialog(QObject):
 
         if mat is not None:
             options = [ct.ptableinverse[x] for x in mat.atom_type]
+        else:
+            # FIXME: how is this possible?
+            options = []
 
-            w = self.ui.tds_temperature_atom_type
-            prev = w.currentText()
-            with block_signals(w):
-                w.clear()
-                w.addItems(options)
+        w = self.ui.tds_temperature_atom_type
+        prev = w.currentText()
+        with block_signals(w):
+            w.clear()
+            w.addItems(options)
 
-                if prev in options:
-                    w.setCurrentIndex(options.index(prev))
+            if prev in options:
+                w.setCurrentIndex(options.index(prev))
 
     def on_tds_temperature_atom_type_changed(self):
         # Load the saved Debye temperature, if available
@@ -2602,12 +2605,17 @@ class WppfOptionsDialog(QObject):
         mat_rietveld = Material_Rietveld(material_obj=mat)
 
         selected_atom_type = self.ui.tds_temperature_atom_type.currentText()
-        debye_temperatures = {
-            selected_atom_type: self.ui.tds_debye_temperature.value(),
-        }
-        output = mat_rietveld.calc_temperature(debye_temperatures)
-        equiv_temp = output[selected_atom_type]
-        text = f'{equiv_temp:.2f} K'
+        if selected_atom_type:
+            debye_temperatures = {
+                selected_atom_type: self.ui.tds_debye_temperature.value(),
+            }
+            output = mat_rietveld.calc_temperature(debye_temperatures)
+            equiv_temp = output[selected_atom_type]
+            text = f'{equiv_temp:.2f} K'
+        else:
+            # FIXME: how is this possible?
+            text = 'NaN'
+
         self.ui.tds_computed_equivalent_temperature.setText(text)
 
     def on_tds_select_experimental_data_file_clicked(self):
