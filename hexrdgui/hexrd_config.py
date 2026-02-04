@@ -12,6 +12,8 @@ import numpy as np
 from scipy.signal import medfilt2d
 import yaml
 
+import hexrd.hedm.config  # FIXME: remove this after we fix all paths to new workflows
+
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.instrument import calc_beam_vec, HEDMInstrument
