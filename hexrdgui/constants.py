@@ -78,6 +78,12 @@ DEFAULT_WPPF_AMORPHOUS_STYLE = {
     'lw': 1.0,
 }
 
+DEFAULT_WPPF_TDS_STYLE = {
+    'c': '#ff0000',
+    'ls': 'dashdot',
+    'lw': 1.0,
+}
+
 HEXRD_DIRECTORY_SUFFIX = '.hexrd'
 
 BUFFER_KEY = 'buffer'

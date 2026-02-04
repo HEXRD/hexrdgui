@@ -76,6 +76,7 @@ class ImageCanvas(FigureCanvas):
         self.wppf_plot = None
         self.wppf_background_plot = None
         self.wppf_amorphous_plot = None
+        self.wppf_tds_plot = None
         self.wppf_difference_plot = None
         self.auto_picked_data_artists = []
         self.beam_marker_artists = []
@@ -241,6 +242,10 @@ class ImageCanvas(FigureCanvas):
         if self.wppf_amorphous_plot:
             remove_artist(self.wppf_amorphous_plot)
             self.wppf_amorphous_plot = None
+
+        if self.wppf_tds_plot:
+            remove_artist(self.wppf_tds_plot)
+            self.wppf_tds_plot = None
 
         if self.wppf_difference_plot:
             remove_artist(self.wppf_difference_plot)
@@ -1851,6 +1856,11 @@ class ImageCanvas(FigureCanvas):
         if HexrdConfig().display_wppf_amorphous and amorphous:
             style = HexrdConfig().wppf_amorphous_style
             (self.wppf_amorphous_plot,) = axis.plot(*amorphous, **style)
+
+        tds = HexrdConfig().wppf_tds_lineout
+        if HexrdConfig().display_wppf_tds and tds:
+            style = HexrdConfig().wppf_tds_style
+            (self.wppf_tds_plot,) = axis.plot(*tds, **style)
 
         last_lineout = HexrdConfig().last_unscaled_azimuthal_integral_data
         diff_axis = self.wppf_difference_axis

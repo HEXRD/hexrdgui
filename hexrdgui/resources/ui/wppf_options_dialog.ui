@@ -138,7 +138,7 @@
         </sizepolicy>
        </property>
        <property name="currentIndex">
-        <number>0</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="general_tab">
         <attribute name="title">
@@ -371,17 +371,13 @@
         <layout class="QGridLayout" name="gridLayout_6">
          <item row="0" column="0">
           <layout class="QGridLayout" name="gridLayout_3">
-           <item row="1" column="1">
-            <widget class="QCheckBox" name="show_difference_as_percent">
-             <property name="text">
-              <string>Show difference as percent?</string>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="plot_amorphous">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of amorphous model (default: red line) in the lineout. The background is added to the amorphous model automatically.&lt;/p&gt;&lt;p&gt;The style of the amorphous model plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="show_difference_curve">
              <property name="text">
-              <string>Show difference curve?</string>
+              <string>Plot amorphous model?</string>
              </property>
             </widget>
            </item>
@@ -392,10 +388,17 @@
              </property>
             </widget>
            </item>
-           <item row="0" column="2">
-            <widget class="QPushButton" name="edit_plot_style">
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="show_difference_curve">
              <property name="text">
-              <string>Edit Plot Style</string>
+              <string>Show difference curve?</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="show_difference_as_percent">
+             <property name="text">
+              <string>Show difference as percent?</string>
              </property>
             </widget>
            </item>
@@ -409,13 +412,17 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="1">
-            <widget class="QCheckBox" name="plot_amorphous">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Include plot of amorphous model (default: red line) in the lineout. The background is added to the amorphous model automatically.&lt;/p&gt;&lt;p&gt;The style of the amorphous model plot can be edited by clicking &amp;quot;Edit Plot Style&amp;quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="edit_plot_style">
              <property name="text">
-              <string>Plot amorphous model?</string>
+              <string>Edit Plot Style</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2">
+            <widget class="QCheckBox" name="plot_tds">
+             <property name="text">
+              <string>Plot TDS model?</string>
              </property>
             </widget>
            </item>
@@ -743,6 +750,239 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="tds_tab">
+        <attribute name="title">
+         <string>TDS</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_12">
+         <item row="0" column="0">
+          <widget class="QLabel" name="tds_label">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Thermal Diffuse Scattering&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0" colspan="2">
+          <widget class="QGroupBox" name="tds_experimental_settings_group">
+           <property name="title">
+            <string/>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_13">
+            <item row="1" column="1">
+             <widget class="QLabel" name="tds_experimental_scale_label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale the experimental TDS data by this factor before applying it to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Scale Factor:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1" colspan="2">
+             <layout class="QHBoxLayout" name="tds_experimental_data_file_layout">
+              <item>
+               <widget class="QLabel" name="tds_experimental_data_file_label">
+                <property name="text">
+                 <string>Experiment data file:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="tds_experimental_data_file"/>
+              </item>
+              <item>
+               <widget class="QPushButton" name="tds_select_experimental_data_file">
+                <property name="text">
+                 <string>Select</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item row="2" column="2">
+             <widget class="ScientificDoubleSpinBox" name="tds_experimental_shift">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shift the experimental TDS data in 2θ before applying it to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>-10000000.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100000000.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="ScientificDoubleSpinBox" name="tds_experimental_scale">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale the experimental TDS data by this factor before applying it to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="minimum">
+               <double>-10000000.000000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>100000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="tds_experimental_shift_label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shift the experimental TDS data in 2θ before applying it to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Shift:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="selected_tds_material_label">
+           <property name="text">
+            <string>TDS Settings for Material:</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="2">
+          <widget class="QGroupBox" name="groupBox">
+           <property name="title">
+            <string/>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_14">
+            <item row="0" column="0">
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QCheckBox" name="include_tds_model">
+                <property name="text">
+                 <string>Model TDS for this material?</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="tds_model_type_label">
+                <property name="text">
+                 <string>Model Type:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QComboBox" name="tds_model_type"/>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <widget class="QGroupBox" name="tds_temperature_settings_group">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="title">
+            <string>Equivalent Temperature</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_11">
+            <item row="1" column="1">
+             <widget class="ScientificDoubleSpinBox" name="tds_debye_temperature">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="suffix">
+               <string> K</string>
+              </property>
+              <property name="decimals">
+               <number>8</number>
+              </property>
+              <property name="maximum">
+               <double>10000000000.000000000000000</double>
+              </property>
+              <property name="value">
+               <double>200.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QLabel" name="tds_computed_equivalent_temperature">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>200 K</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="tds_debye_temperature_label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Debye Temperature:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="tds_computed_equivalent_temperature_label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Computed Equivalent Temperature:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="tds_temperature_atom_type_label">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+              <property name="text">
+               <string>Atom Type:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="tds_temperature_atom_type">
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select an atom type, and input the Debye temperature in order to compute and display the equivalent temperature.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;The Debye Waller factors from the parameters will also be used in this equation.&lt;br/&gt;&lt;/p&gt;&lt;p&gt;Note: the Debye Temperature and Computed Equivalent Temperature are for information purposes only, and do not affect the TDS contributions to the lineout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <spacer name="verticalSpacer_6">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="1" column="1">
+          <widget class="QComboBox" name="selected_tds_material"/>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </item>
     </layout>
@@ -757,7 +997,6 @@
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>tab_widget</tabstop>
   <tabstop>select_materials_button</tabstop>
   <tabstop>method</tabstop>
   <tabstop>refinement_steps</tabstop>
@@ -790,6 +1029,15 @@
   <tabstop>texture_integration_range</tabstop>
   <tabstop>texture_show_simulated_spectrum</tabstop>
   <tabstop>texture_plot_pole_figures</tabstop>
+  <tabstop>selected_tds_material</tabstop>
+  <tabstop>include_tds_model</tabstop>
+  <tabstop>tds_model_type</tabstop>
+  <tabstop>tds_temperature_atom_type</tabstop>
+  <tabstop>tds_debye_temperature</tabstop>
+  <tabstop>tds_experimental_data_file</tabstop>
+  <tabstop>tds_select_experimental_data_file</tabstop>
+  <tabstop>tds_experimental_scale</tabstop>
+  <tabstop>tds_experimental_shift</tabstop>
   <tabstop>export_params</tabstop>
   <tabstop>import_params</tabstop>
   <tabstop>reset_params_to_defaults</tabstop>
@@ -798,6 +1046,8 @@
   <tabstop>preview_spectrum</tabstop>
   <tabstop>undo_last_run</tabstop>
   <tabstop>run_button</tabstop>
+  <tabstop>plot_tds</tabstop>
+  <tabstop>tab_widget</tabstop>
  </tabstops>
  <resources/>
  <connections>

@@ -12,6 +12,8 @@ import numpy as np
 from scipy.signal import medfilt2d
 import yaml
 
+import hexrd.hedm.config  # FIXME: remove this after we fix all paths to new workflows
+
 import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.instrument import calc_beam_vec, HEDMInstrument
@@ -313,6 +315,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.wppf_data = None
         self.wppf_background_lineout = None
         self.wppf_amorphous_lineout = None
+        self.wppf_tds_lineout = None
         self._auto_picked_data = None
         self.last_unscaled_azimuthal_integral_data = None
         self._threshold_data = {}
@@ -2848,6 +2851,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.rerender_wppf.emit()
 
     @property
+    def display_wppf_tds(self):
+        return self.wppf_settings.setdefault('display_tds', False)
+
+    @display_wppf_tds.setter
+    def display_wppf_tds(self, b):
+        if self.display_wppf_tds != b:
+            self.wppf_settings['display_tds'] = b
+            self.rerender_wppf.emit()
+
+    @property
     def show_wppf_difference_axis(self) -> bool:
         return self.wppf_settings.setdefault('show_difference_axis', False)
 
@@ -2909,6 +2922,19 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def wppf_amorphous_style(self, s):
         if self.wppf_amorphous_style != s:
             self.wppf_settings['amorphous_style'] = s
+            self.rerender_wppf.emit()
+
+    @property
+    def wppf_tds_style(self):
+        settings = self.wppf_settings.setdefault('tds_style', {})
+        if not settings:
+            settings.update(copy.deepcopy(constants.DEFAULT_WPPF_TDS_STYLE))
+        return settings
+
+    @wppf_tds_style.setter
+    def wppf_tds_style(self, s):
+        if self.wppf_tds_style != s:
+            self.wppf_settings['tds_style'] = s
             self.rerender_wppf.emit()
 
     @property
