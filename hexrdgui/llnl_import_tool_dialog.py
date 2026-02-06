@@ -262,6 +262,7 @@ class LLNLImportToolDialog(QObject):
         self.canvas = parent.image_tab_widget.active_canvas
         self.detector_images = {}
         self.atlas_coords = None
+        self._image_plate = None
 
         # Disable these by default.
         # If we disable these in Qt Designer, there are some weird bugs
@@ -596,6 +597,16 @@ class LLNLImportToolDialog(QObject):
         finally:
             self.cmap.block_updates(False)
 
+    @property
+    def image_plate(self):
+        return self._image_plate
+
+    @image_plate.setter
+    def image_plate(self, ip):
+        self._image_plate = ip
+        if self.it is not None:
+            self.it.detector = ip
+
     def image_plate_selected(self, selected):
         # Don't allow the color map range to change while we are changing
         # image plates. Otherwise, it gets reset to something like "1 - 6".
@@ -725,8 +736,8 @@ class LLNLImportToolDialog(QObject):
         # TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-999.h5
         # ->
         # TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
-        image = re.sub("CAMERA-\d{2}-", "CAMERA-*-", selected_file)
-        files = re.sub("-\d{3}.h", "-*.h", image)
+        image = re.sub(r"CAMERA-\d{2}-", "CAMERA-*-", selected_file)
+        files = re.sub(r"-\d{3}.h", "-*.h", image)
 
         # Sort matched files. We know that those ending in -999 are data files.
         # Dark files may have different values at the end (-003, -005, etc.) so
