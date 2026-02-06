@@ -646,7 +646,7 @@ class MainWindow(QObject):
             self.ui,
             'Load Materials File',
             HexrdConfig().working_dir,
-            'HDF5 files (*.h5 *.hdf5), CIF (*.cif)',
+            'All supported files (*.h5 *.hdf5 *.cif);;HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
         )
         if not selected_file:
             return
