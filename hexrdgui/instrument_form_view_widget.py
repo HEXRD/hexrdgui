@@ -592,7 +592,7 @@ class InstrumentFormViewWidget(QObject):
 
     @beam_vector_is_finite.setter
     def beam_vector_is_finite(self, b):
-        self.ui.beam_vector_is_finite.setChecked(b)
+        self.ui.beam_vector_is_finite.setChecked(bool(b))
 
     def set_beam_vector_is_finite(self, b):
         self.beam_vector_is_finite = b
