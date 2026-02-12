@@ -17,6 +17,7 @@ from hexrd.instrument import (
     calc_beam_vec,
     HEDMInstrument,
 )
+from hexrd.matrixutil import rowNorm
 from hexrd.transforms import xfcapi
 
 from hexrdgui import constants, resource_loader
@@ -532,7 +533,7 @@ class InstrumentFormViewWidget(QObject):
 
         # Only add the note it if is not close to its unit vector
         beam_vec = np.asarray(self.cartesian_beam_vector)
-        unit_vec = xfcapi.unitRowVector(beam_vec)
+        unit_vec = xfcapi.unit_vector(beam_vec)
 
         if np.all(np.isclose(unit_vec, beam_vec, atol=1e-3)):
             return
@@ -575,7 +576,7 @@ class InstrumentFormViewWidget(QObject):
             return
 
         beam_vec = np.atleast_2d(self.cartesian_beam_vector)
-        self.beam_vector_magnitude = xfcapi.rowNorm(beam_vec).item()
+        self.beam_vector_magnitude = rowNorm(beam_vec).item()
 
     def update_cartesian_beam_vector_from_magnitude(self):
         if not self.beam_vector_is_finite:

@@ -9,7 +9,7 @@ from PySide6.QtCore import Signal, QObject, Qt, QTimer
 from PySide6.QtWidgets import QFileDialog, QSizePolicy
 
 from hexrd.cli.fit_grains import GrainData
-from hexrd.transforms import xfcapi
+from hexrd.rotations import mapAngle
 
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -372,7 +372,7 @@ class IndexingResultsDialog(QObject):
         output = np.degrees(np.concatenate(all_angles))
 
         # Fix eta period
-        output[:, 0] = xfcapi.mapAngle(
+        output[:, 0] = mapAngle(
             output[:, 0], np.degrees(self.eta_period), units='degrees'
         )
         return output

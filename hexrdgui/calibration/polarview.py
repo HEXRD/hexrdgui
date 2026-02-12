@@ -4,7 +4,7 @@ from skimage.filters.edges import binary_erosion
 from skimage.morphology import footprint_rectangle
 from skimage.transform import warp
 
-from hexrd.transforms.xfcapi import mapAngle
+from hexrd.rotations import mapAngle
 from hexrd.utils.decorators import memoize
 from hexrd.utils.warnings import ignore_warnings
 

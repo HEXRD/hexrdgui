@@ -2,7 +2,7 @@ import numpy as np
 
 from hexrd import constants
 from hexrd.rotations import make_rmat_euler
-from hexrd.transforms.xfcapi import angles_to_gvec, angles_to_dvec, gvecToDetectorXY
+from hexrd.transforms.xfcapi import angles_to_gvec, angles_to_dvec, gvec_to_xy
 from hexrd.xrdutil.utils import _project_on_detector_cylinder, _dvec_to_angs
 
 
@@ -111,15 +111,15 @@ def generate_ring_points_chi(const_chi, sample_tilt, instr):
 
             gvecs = chi_vecs_to_gvecs(chivecs, sample_tilt)
 
-            xy_det = gvecToDetectorXY(
+            xy_det = gvec_to_xy(
                 gvecs,
-                rMat_d=panel.rmat,
-                rMat_s=constants.identity_3x3,
-                rMat_c=constants.identity_3x3,
-                tVec_d=panel.tvec,
-                tVec_s=instr.tvec,
-                tVec_c=constants.zeros_3,
-                beamVec=panel.bvec,
+                rmat_d=panel.rmat,
+                rmat_s=constants.identity_3x3,
+                rmat_c=constants.identity_3x3,
+                tvec_d=panel.tvec,
+                tvec_s=instr.tvec,
+                tvec_c=constants.zeros_3,
+                beam_vec=panel.bvec,
             )
 
         elif panel.detector_type == 'cylindrical':

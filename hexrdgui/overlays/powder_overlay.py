@@ -6,7 +6,7 @@ from hexrd import constants
 from hexrd.material import unitcell
 
 from hexrd.instrument import switch_xray_source
-from hexrd.transforms import xfcapi
+from hexrd.rotations import mapAngle
 from hexrd.xrdutil.phutil import invalidate_past_critical_beta
 from hexrd.utils.hkl import hkl_to_str
 
@@ -516,7 +516,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     raw_ang_crds = ang_crds
 
                 # Need to ensure the angles are mapped
-                raw_ang_crds[:, 1] = xfcapi.mapAngle(
+                raw_ang_crds[:, 1] = mapAngle(
                     raw_ang_crds[:, 1], np.radians(self.eta_period), units='radians'
                 )
 
@@ -550,7 +550,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 ang_crds = np.degrees(ang_crds)
 
                 # fix eta period
-                ang_crds[:, 1] = xfcapi.mapAngle(
+                ang_crds[:, 1] = mapAngle(
                     ang_crds[:, 1], self.eta_period, units='degrees'
                 )
 

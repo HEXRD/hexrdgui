@@ -1,5 +1,7 @@
 import numpy as np
-from hexrd.transforms.xfcapi import makeEtaFrameRotMat, anglesToDVec, Xl
+
+from hexrd.constants import lab_x
+from hexrd.transforms.xfcapi import make_beam_rmat, angles_to_dvec
 
 
 def ij2xy(ij, stereo_size):
@@ -131,7 +133,7 @@ def ij2ang(ij, stereo_size, bvec):
 
     tth = np.squeeze(np.arccos(np.dot(bvec, vhat_l.T)))
 
-    rm = makeEtaFrameRotMat(bvec, Xl)
+    rm = make_beam_rmat(bvec, lab_x)
 
     vx, vy = np.dot(rm[:, 0:2].T, vhat_l.T)
     # vx = np.dot(rm[:,0], vhat_l.T)
@@ -166,7 +168,7 @@ def ang2ij(angs, stereo_size, bvec):
     """
     angs_cp = np.atleast_2d(angs)
     zrs = np.zeros((angs_cp.shape[0], 1))
-    vhat_l = anglesToDVec(np.hstack((angs_cp, zrs)), bHat_l=bvec)
+    vhat_l = angles_to_dvec(np.hstack((angs_cp, zrs)), beam_vec=bvec)
     return xy2ij(v3d2xy(vhat_l), stereo_size)
 
 
@@ -203,7 +205,7 @@ if __name__ == '__main__':
     plt.figure()
     plt.imshow(eta)
 
-    # slower one since it uses anglesToDVec
+    # slower one since it uses angles_to_dvec
     ij = ang2ij(ang, stereo_size, bvec)
 
     plt.show()

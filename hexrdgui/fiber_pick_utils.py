@@ -65,7 +65,7 @@ def _pick_to_fiber(
     # the sample direction
     tth = pd.getTTh()[map_index]  # !!! in radians
     angs = np.atleast_2d(np.hstack([tth, np.radians(pick_coords)]))
-    samp_dir = xfcapi.anglesToGVec(angs, bHat_l=beam_vec, chi=chi).reshape(3, 1)
+    samp_dir = xfcapi.angles_to_gvec(angs, beam_vec=beam_vec, chi=chi).reshape(3, 1)
 
     # make the fiber
     qfib = discreteFiber(
@@ -74,7 +74,7 @@ def _pick_to_fiber(
 
     if as_expmap:
         phis = 2.0 * np.arccos(qfib[0, :])
-        ns = xfcapi.unitRowVector(qfib[1:, :].T)
+        ns = xfcapi.unit_vector(qfib[1:, :].T)
         expmaps = phis * ns.T
         return expmaps.T  # (3, ndiv)
     else:
@@ -126,7 +126,7 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
     if len(expmap) == 4:
         # have a quat; convert here
         phi = 2.0 * np.arccos(expmap[0])
-        n = xfcapi.unitRowVector(expmap[1:])
+        n = xfcapi.unit_vector(expmap[1:])
         expmap = phi * n
     elif len(expmap) > 4:
         raise RuntimeError("orientation must be a single exponential map or quaternion")

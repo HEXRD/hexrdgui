@@ -11,7 +11,7 @@ class DisplayPlane:
 
     def __init__(self, tilt=tilt_DFTL, tvec=tvec_DFLT):
         self.tilt = tilt
-        self.rmat = xfcapi.makeDetectorRotMat(self.tilt)
+        self.rmat = xfcapi.make_detector_rmat(self.tilt)
         self.tvec = tvec
 
     def panel_size(self, instr):

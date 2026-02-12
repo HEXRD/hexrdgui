@@ -3,11 +3,10 @@ import numpy as np
 
 from PySide6.QtCore import Signal
 
-from hexrd import rotations
+from hexrd.rotations import angularDifference, mapAngle
 import hexrd.constants as cnst
 from hexrd.fitting.calibration.calibrator import Calibrator
 from hexrd.fitting.calibration.lmfit_param_handling import fix_detector_y
-from hexrd.transforms import xfcapi
 
 from hexrdgui.calibration.calibration_dialog import CalibrationDialog
 from hexrdgui.calibration.hedm.calibration_results_dialog import (
@@ -483,7 +482,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
                 x_diff = abs(xyo_det[det_key][ig][:, 0] - xyo_f[det_key][ig][:, 0])
                 y_diff = abs(xyo_det[det_key][ig][:, 1] - xyo_f[det_key][ig][:, 1])
                 ome_diff = np.degrees(
-                    xfcapi.angularDifference(
+                    angularDifference(
                         xyo_det[det_key][ig][:, 2], xyo_f[det_key][ig][:, 2]
                     )
                 )
@@ -637,7 +636,7 @@ def parse_spots_data(spots_data, instr, grain_ids, ome_period=None, refit_idx=No
 
             # re-map omegas if need be
             if ome_period is not None:
-                xyo_det_values[:, 2] = rotations.mapAngle(
+                xyo_det_values[:, 2] = mapAngle(
                     xyo_det_values[:, 2],
                     ome_period,
                 )

@@ -3,8 +3,8 @@ from typing import Union
 import numpy as np
 
 from hexrd import constants
-from hexrd.rotations import make_rmat_euler
-from hexrd.transforms.xfcapi import angles_to_gvec, mapAngle
+from hexrd.rotations import make_rmat_euler, mapAngle
+from hexrd.transforms.xfcapi import angles_to_gvec
 
 from hexrdgui.constants import KEV_TO_WAVELENGTH
 
