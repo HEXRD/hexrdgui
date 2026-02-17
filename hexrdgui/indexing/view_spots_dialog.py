@@ -1,7 +1,8 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QSizePolicy, QWidget
+from typing import Any
 
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
@@ -20,7 +21,7 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class ViewSpotsDialog:
-    def __init__(self, spots, parent=None):
+    def __init__(self, spots: dict, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('view_spots_dialog.ui', parent)
 
@@ -31,15 +32,15 @@ class ViewSpotsDialog:
 
         self.spots = spots
         self.tolerances = None
-        self.tth_centers = None
-        self.eta_centers = None
-        self.intensities = None
+        self.tth_centers: np.ndarray | None = None
+        self.eta_centers: np.ndarray | None = None
+        self.intensities: np.ndarray | None = None
         self.update_grain_id_list()
         self.grain_id_index_changed()
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.grain_id.currentIndexChanged.connect(self.grain_id_index_changed)
         self.ui.detector.currentIndexChanged.connect(self.detector_index_changed)
         self.ui.hkl.currentIndexChanged.connect(self.hkl_index_changed)
@@ -47,39 +48,43 @@ class ViewSpotsDialog:
         self.ui.show_ome_centers.toggled.connect(self.update_canvas)
         self.ui.show_frame_indices.toggled.connect(self.update_canvas)
 
-    def setup_canvas(self):
+    def setup_canvas(self) -> None:
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure())
 
         # Get the canvas to take up the majority of the screen most of the time
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         fig = canvas.figure
         ax = fig.add_subplot()
-        ax.format_coord = self.format_coord
+        ax.format_coord = self.format_coord  # type: ignore[method-assign]
         self.ui.canvas_layout.addWidget(canvas)
 
-        self.toolbar = NavigationToolbar(canvas, self.ui, coordinates=True)
+        self.toolbar: NavigationToolbar | None = NavigationToolbar(
+            canvas,
+            self.ui,
+            coordinates=True,
+        )
         self.ui.canvas_layout.addWidget(self.toolbar)
 
         # Center the toolbar
-        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
 
-    def clear_data(self):
+    def clear_data(self) -> None:
         # Ensure there is no memory leak, since the spots are large.
         # Go ahead and delete the data now.
         self.spots.clear()
 
     @property
-    def tolerances(self):
+    def tolerances(self) -> dict | None:
         return self._tolerances
 
     @tolerances.setter
-    def tolerances(self, d):
+    def tolerances(self, d: dict | None) -> None:
         self._tolerances = d
 
         self.ui.tolerances.clear()
@@ -93,7 +98,7 @@ class ViewSpotsDialog:
         text = ', '.join(items)
         self.ui.tolerances.setText(text)
 
-    def format_coord(self, x, y):
+    def format_coord(self, x: float, y: float) -> str:
         # Format the coordinates to be displayed on the navigation toolbar.
         # The coordinates are displayed when the mouse is moved.
         required_attrs = [
@@ -105,6 +110,9 @@ class ViewSpotsDialog:
         if any(x is None for x in required_attrs):
             return ''
 
+        assert self.tth_centers is not None
+        assert self.eta_centers is not None
+        assert self.intensities is not None
         m, n, _ = self.intensities.shape
 
         # Move x and y into a single frame's coordinates
@@ -118,8 +126,8 @@ class ViewSpotsDialog:
         eta_range = np.degrees((self.eta_centers[0], self.eta_centers[-1]))
 
         # Rescale x and y to be within the ranges
-        x = np.interp(x, (0, n), tth_range)
-        y = np.interp(y, (0, m), eta_range)
+        x = np.interp(x, (0, n), tth_range)  # type: ignore[assignment]
+        y = np.interp(y, (0, m), eta_range)  # type: ignore[assignment]
 
         float_format = '8.3f'
         delimiter = ',  '
@@ -131,7 +139,7 @@ class ViewSpotsDialog:
 
         return prefix + delimiter.join(labels)
 
-    def update_grain_id_list(self):
+    def update_grain_id_list(self) -> None:
         prev = self.selected_grain_id
         grain_ids = list(self.spots.keys())
         with block_signals(self.ui.grain_id):
@@ -144,7 +152,7 @@ class ViewSpotsDialog:
 
         self.ui.grain_id.setEnabled(len(grain_ids) > 1)
 
-    def update_detector_list(self):
+    def update_detector_list(self) -> None:
         prev = self.selected_detector_key
         grain_id = self.selected_grain_id
         det_keys = list(self.spots[grain_id][1].keys())
@@ -157,7 +165,7 @@ class ViewSpotsDialog:
 
         self.ui.detector.setEnabled(len(det_keys) > 1)
 
-    def update_hkls_list(self):
+    def update_hkls_list(self) -> None:
         prev = self.selected_gvec_id
         grain_id = self.selected_grain_id
         det_key = self.selected_detector_key
@@ -176,7 +184,7 @@ class ViewSpotsDialog:
             if prev in hkls:
                 self.ui.hkl.setCurrentText(hkls[prev])
 
-    def update_peak_ids(self):
+    def update_peak_ids(self) -> None:
         peak_ids = self.hkl_data[self.selected_gvec_id]['peak_ids']
         with block_signals(self.ui.peak_id):
             self.ui.peak_id.clear()
@@ -185,47 +193,47 @@ class ViewSpotsDialog:
 
         self.ui.peak_id.setEnabled(len(peak_ids) > 1)
 
-    def grain_id_index_changed(self):
+    def grain_id_index_changed(self) -> None:
         self.update_detector_list()
         self.detector_index_changed()
 
-    def detector_index_changed(self):
+    def detector_index_changed(self) -> None:
         self.update_hkls_list()
         self.hkl_index_changed()
 
-    def hkl_index_changed(self):
+    def hkl_index_changed(self) -> None:
         self.update_peak_ids()
         self.update_canvas()
 
     @property
-    def selected_grain_id(self):
+    def selected_grain_id(self) -> Any:
         return self.ui.grain_id.currentData()
 
     @property
-    def selected_detector_key(self):
+    def selected_detector_key(self) -> str:
         return self.ui.detector.currentText()
 
     @property
-    def selected_hkl(self):
+    def selected_hkl(self) -> str:
         return self.ui.hkl.currentText()
 
     @property
-    def selected_gvec_id(self):
+    def selected_gvec_id(self) -> Any:
         return self.ui.hkl.currentData()
 
     @property
-    def selected_peak_id(self):
+    def selected_peak_id(self) -> Any:
         return self.ui.peak_id.currentData()
 
     @property
-    def show_ome_centers(self):
+    def show_ome_centers(self) -> bool:
         return self.ui.show_ome_centers.isChecked()
 
     @property
-    def show_frame_indices(self):
+    def show_frame_indices(self) -> bool:
         return self.ui.show_frame_indices.isChecked()
 
-    def clear_canvas(self):
+    def clear_canvas(self) -> None:
         # Since the montage() function is creating everything from
         # scratch, it is faster for now for us to just throw away
         # the whole canvas and start with a new one. This doesn't
@@ -235,14 +243,15 @@ class ViewSpotsDialog:
         layout.removeWidget(self.toolbar)
 
         self.canvas.deleteLater()
-        self.canvas = None
+        self.canvas = None  # type: ignore[assignment]
 
-        self.toolbar.deleteLater()
-        self.toolbar = None
+        if self.toolbar is not None:
+            self.toolbar.deleteLater()
+            self.toolbar = None
 
         self.setup_canvas()
 
-    def update_canvas(self):
+    def update_canvas(self) -> None:
         self.clear_canvas()
 
         data_map = SPOTS_DATA_MAP
@@ -294,7 +303,13 @@ class ViewSpotsDialog:
         montage(**kwargs)
 
 
-def _find_data(all_spots, grain_id, det_key, gvec_id, peak_id):
+def _find_data(
+    all_spots: dict,
+    grain_id: Any,
+    det_key: str,
+    gvec_id: Any,
+    peak_id: Any,
+) -> Any:
     data_map = SPOTS_DATA_MAP
 
     if grain_id not in all_spots:

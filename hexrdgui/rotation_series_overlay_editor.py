@@ -1,8 +1,23 @@
+from __future__ import annotations
+
 import copy
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QInputDialog
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QDoubleSpinBox,
+    QInputDialog,
+    QWidget,
+)
+
+if TYPE_CHECKING:
+    from hexrd.material import Material
+
+    from hexrdgui.overlays.rotation_series_overlay import (
+        RotationSeriesOverlay,
+    )
 
 from hexrdgui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrdgui.hexrd_config import HexrdConfig
@@ -15,11 +30,11 @@ from hexrdgui.utils import block_signals
 
 class RotationSeriesOverlayEditor:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('rotation_series_overlay_editor.ui', parent)
 
-        self._overlay = None
+        self._overlay: RotationSeriesOverlay | None = None
 
         self.eta_ranges_editor = RangesTableEditor(parent=self.ui)
         self.eta_ranges_editor.set_title('η ranges')
@@ -36,7 +51,7 @@ class RotationSeriesOverlayEditor:
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.eta_ranges_editor.data_modified.connect(self.update_config)
         self.omega_ranges_editor.data_modified.connect(self.update_config)
         self.crystal_editor.params_modified.connect(self.update_config)
@@ -62,18 +77,18 @@ class RotationSeriesOverlayEditor:
         ImageLoadManager().new_images_loaded.connect(self.new_images_loaded)
 
     @property
-    def overlay(self):
+    def overlay(self) -> RotationSeriesOverlay | None:
         return self._overlay
 
     @overlay.setter
-    def overlay(self, v):
+    def overlay(self, v: RotationSeriesOverlay) -> None:
         self._overlay = v
         self.update_gui()
 
-    def new_images_loaded(self):
+    def new_images_loaded(self) -> None:
         self.update_gui()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         is_aggregated = HexrdConfig().is_aggregated
         has_omegas = HexrdConfig().has_omegas
 
@@ -100,7 +115,7 @@ class RotationSeriesOverlayEditor:
             getattr(self.ui, name).setEnabled(enable_widths)
 
     @property
-    def matching_attributes(self):
+    def matching_attributes(self) -> list[str]:
         return [
             'crystal_params',
             'refinements',
@@ -115,7 +130,7 @@ class RotationSeriesOverlayEditor:
             'sync_ome_period',
         ]
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         overlay = self.overlay
         if overlay is None:
             return
@@ -128,7 +143,7 @@ class RotationSeriesOverlayEditor:
         self.update_reflections_table()
         self.update_enable_states()
 
-    def update_config(self):
+    def update_config(self) -> None:
         if self.overlay is None:
             return
 
@@ -138,126 +153,127 @@ class RotationSeriesOverlayEditor:
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
-    def update_overlay_refinements(self):
+    def update_overlay_refinements(self) -> None:
         # update_config() does this, but it will also force a redraw
         # of the overlay, which we don't need.
+        assert self.overlay is not None
         self.overlay.refinements = self.refinements
 
     @property
-    def crystal_params(self):
+    def crystal_params(self) -> np.ndarray | None:
         return copy.deepcopy(self.crystal_editor.params)
 
     @crystal_params.setter
-    def crystal_params(self, v):
+    def crystal_params(self, v: np.ndarray | None) -> None:
         self.crystal_editor.params = v
 
     @property
-    def refinements(self):
+    def refinements(self) -> list[bool]:
         return self.crystal_editor.refinements
 
     @refinements.setter
-    def refinements(self, v):
+    def refinements(self, v: list[bool]) -> None:
         self.crystal_editor.refinements = v
 
     @property
-    def aggregated(self):
+    def aggregated(self) -> bool:
         return self.ui.aggregated.isChecked()
 
     @aggregated.setter
-    def aggregated(self, b):
+    def aggregated(self, b: bool) -> None:
         self.ui.aggregated.setChecked(b)
 
     @property
-    def ome_width(self):
+    def ome_width(self) -> float:
         return np.radians(self.ui.omega_width.value())
 
     @ome_width.setter
-    def ome_width(self, v):
+    def ome_width(self, v: float) -> None:
         self.ui.omega_width.setValue(np.degrees(v))
 
     @property
-    def eta_ranges(self):
+    def eta_ranges(self) -> np.ndarray:
         return self.eta_ranges_editor.data
 
     @eta_ranges.setter
-    def eta_ranges(self, v):
+    def eta_ranges(self, v: np.ndarray) -> None:
         self.eta_ranges_editor.data = v
 
     @property
-    def ome_ranges(self):
+    def ome_ranges(self) -> np.ndarray:
         return self.omega_ranges_editor.data
 
     @ome_ranges.setter
-    def ome_ranges(self, v):
+    def ome_ranges(self, v: np.ndarray) -> None:
         self.omega_ranges_editor.data = v
 
     @property
-    def sync_ome_ranges(self):
+    def sync_ome_ranges(self) -> bool:
         return self.ui.sync_ome_ranges.isChecked()
 
     @sync_ome_ranges.setter
-    def sync_ome_ranges(self, b):
+    def sync_ome_ranges(self, b: bool) -> None:
         self.ui.sync_ome_ranges.setChecked(b)
 
     @property
-    def sync_ome_period(self):
+    def sync_ome_period(self) -> bool:
         return self.ui.sync_ome_period.isChecked()
 
     @sync_ome_period.setter
-    def sync_ome_period(self, b):
+    def sync_ome_period(self, b: bool) -> None:
         self.ui.sync_ome_period.setChecked(b)
 
     @property
-    def ome_period_widgets(self):
+    def ome_period_widgets(self) -> list[QDoubleSpinBox]:
         return [getattr(self.ui, f'omega_period_{i}') for i in range(2)]
 
     @property
-    def ome_period(self):
+    def ome_period(self) -> list[float]:
         return [np.radians(w.value()) for w in self.ome_period_widgets]
 
     @ome_period.setter
-    def ome_period(self, v):
+    def ome_period(self, v: list[float]) -> None:
         for val, w in zip(v, self.ome_period_widgets):
             w.setValue(np.degrees(val))
 
     @property
-    def enable_widths(self):
+    def enable_widths(self) -> bool:
         return self.ui.enable_widths.isChecked()
 
     @enable_widths.setter
-    def enable_widths(self, b):
+    def enable_widths(self, b: bool) -> None:
         self.ui.enable_widths.setChecked(b)
 
     @property
-    def tth_width(self):
+    def tth_width(self) -> float | None:
         if not self.enable_widths:
             return None
 
         return np.radians(self.ui.tth_width.value())
 
     @tth_width.setter
-    def tth_width(self, v):
+    def tth_width(self, v: float | None) -> None:
         if v is None:
             return
 
         self.ui.tth_width.setValue(np.degrees(v))
 
     @property
-    def eta_width(self):
+    def eta_width(self) -> float | None:
         if not self.enable_widths:
             return None
 
         return np.radians(self.ui.eta_width.value())
 
     @eta_width.setter
-    def eta_width(self, v):
+    def eta_width(self, v: float | None) -> None:
         if v is None:
             return
 
         self.ui.eta_width.setValue(np.degrees(v))
 
     @property
-    def widgets(self):
+    def widgets(self) -> list[QWidget]:
         return [
             self.ui.aggregated,
             self.ui.omega_width,
@@ -267,14 +283,14 @@ class RotationSeriesOverlayEditor:
         ] + self.ome_period_widgets
 
     @property
-    def material(self):
+    def material(self) -> Material | None:
         return self.overlay.material if self.overlay is not None else None
 
-    def update_reflections_table(self):
+    def update_reflections_table(self) -> None:
         if hasattr(self, '_table'):
             self._table.material = self.material
 
-    def show_reflections_table(self):
+    def show_reflections_table(self) -> None:
         if not hasattr(self, '_table'):
             kwargs = {
                 'material': self.material,
@@ -287,7 +303,7 @@ class RotationSeriesOverlayEditor:
 
         self._table.show()
 
-    def mask_eta_by_wedge(self):
+    def mask_eta_by_wedge(self) -> None:
         title = 'Select Width'
         label = 'η Mask Width (°)'
         kwargs = {
@@ -296,21 +312,21 @@ class RotationSeriesOverlayEditor:
             'max': 360,
             'decimals': 4,
         }
-        mask, accepted = QInputDialog.getDouble(self.ui, title, label, **kwargs)
+        mask, accepted = QInputDialog.getDouble(self.ui, title, label, **kwargs)  # type: ignore[arg-type]
         if not accepted:
             return
 
         self.eta_ranges = np.radians([[-90 + mask, 90 - mask], [90 + mask, 270 - mask]])
         self.update_config()
 
-    def sync_ome_ranges_toggled(self):
+    def sync_ome_ranges_toggled(self) -> None:
         if self.overlay is None:
             return
 
         self.overlay.sync_ome_ranges = self.sync_ome_ranges
         self.update_enable_states()
 
-    def sync_ome_period_toggled(self):
+    def sync_ome_period_toggled(self) -> None:
         if self.overlay is None:
             return
 

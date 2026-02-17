@@ -1,8 +1,19 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import Any
+
 import numpy as np
 
 from PySide6.QtCore import QSortFilterProxyModel, Qt, Signal
-from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QMenu, QMessageBox, QTableView
+from PySide6.QtGui import QAction, QContextMenuEvent, QCursor
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QMenu,
+    QMessageBox,
+    QTableView,
+    QWidget,
+)
 
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.hexrd_config import HexrdConfig
@@ -22,27 +33,27 @@ class GrainsTableView(QTableView):
 
     selection_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.material = None
         self.pull_spots_allowed = True
         self.can_modify_grains = False
         self._data_model = None
-        self._tolerances = []
-        self.selected_tol_id = -1
+        self._tolerances: list[dict[str, float]] = []
+        self.selected_tol_id: int | None = -1
 
-        self.async_runner = AsyncRunner(parent)
+        self.async_runner = AsyncRunner(parent)  # type: ignore[arg-type]
 
         # Set our selection behavior
-        self.setSelectionBehavior(QTableView.SelectRows)
-        self.setSelectionMode(QTableView.ExtendedSelection)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         menu = QMenu(self)
-        actions = {}
+        actions: dict[QAction, Callable[[], None]] = {}
 
-        def add_actions(d):
+        def add_actions(d: dict[str, Any]) -> None:
             actions.update({menu.addAction(k): v for k, v in d.items()})
 
         if self.can_run_pull_spots:
@@ -67,36 +78,36 @@ class GrainsTableView(QTableView):
         return super().contextMenuEvent(event)
 
     @property
-    def grains_table(self):
+    def grains_table(self) -> np.ndarray | None:
         if not self.source_model:
             return None
 
         return self.source_model.full_grains_table
 
     @property
-    def proxy_model(self):
+    def proxy_model(self) -> Any:
         return self.model()
 
     @property
-    def source_model(self):
+    def source_model(self) -> Any:
         if not self.proxy_model:
             return None
         return self.proxy_model.sourceModel()
 
     @property
-    def selected_rows(self):
+    def selected_rows(self) -> list[Any]:
         if not self.selectionModel():
             return []
         return self.selectionModel().selectedRows()
 
     @property
-    def selected_grain_ids(self):
+    def selected_grain_ids(self) -> list[int]:
         # Map these rows through the proxy in case of sorting
         rows = [self.proxy_model.mapToSource(x) for x in self.selected_rows]
         return [int(self.source_model.data(x)) for x in rows]
 
     @property
-    def selected_grains(self):
+    def selected_grains(self) -> np.ndarray | None:
         grain_ids = self.selected_grain_ids
         if not grain_ids or self.grains_table is None:
             return None
@@ -104,12 +115,12 @@ class GrainsTableView(QTableView):
         return self.grains_table[grain_ids]
 
     @property
-    def num_selected_grains(self):
+    def num_selected_grains(self) -> int:
         return len(self.selected_grain_ids)
 
     @property
-    def can_run_pull_spots(self):
-        return (
+    def can_run_pull_spots(self) -> bool:
+        return bool(
             self.pull_spots_allowed
             and self.selected_grain_ids
             and self.material is not None
@@ -117,7 +128,7 @@ class GrainsTableView(QTableView):
         )
 
     @property
-    def tolerances(self):
+    def tolerances(self) -> list[dict[str, float]]:
         if self._tolerances:
             return self._tolerances
 
@@ -135,14 +146,14 @@ class GrainsTableView(QTableView):
         return res
 
     @tolerances.setter
-    def tolerances(self, v):
+    def tolerances(self, v: list[dict[str, float]]) -> None:
         self._tolerances = v
 
     @property
-    def num_grains(self):
+    def num_grains(self) -> int:
         return len(self.data_model.grains_table)
 
-    def select_tolerance_id(self):
+    def select_tolerance_id(self) -> bool:
         tolerances = self.tolerances
         if len(tolerances) == 1:
             self.selected_tol_id = 0
@@ -165,7 +176,7 @@ class GrainsTableView(QTableView):
         self.selected_tol_id = dialog.selected_row
         return True
 
-    def delete_selected_grains(self):
+    def delete_selected_grains(self) -> None:
         if self.num_selected_grains == self.num_grains:
             # Don't let the user delete all of the grains
             msg = 'Cannot delete all grains'
@@ -175,7 +186,7 @@ class GrainsTableView(QTableView):
 
         self.data_model.delete_grains(self.selected_grain_ids)
 
-    def pull_spots(self):
+    def pull_spots(self) -> None:
         if not self.select_tolerance_id():
             # User canceled
             return
@@ -187,27 +198,30 @@ class GrainsTableView(QTableView):
         self.async_runner.success_callback = self.visualize_spots
         self.async_runner.run(self.run_pull_spots_on_selected_grains)
 
-    def visualize_spots(self, spots):
+    def visualize_spots(self, spots: dict[Any, Any]) -> None:
         self.spots_viewer = ViewSpotsDialog(spots, self)
+        assert self.selected_tol_id is not None
         self.spots_viewer.tolerances = self.tolerances[self.selected_tol_id]
         self.spots_viewer.ui.show()
 
         # Since the data is large, make sure it gets deleted when we finish
         self.spots_viewer.ui.finished.connect(self.spots_viewer.clear_data)
 
-    def run_pull_spots_on_selected_grains(self):
+    def run_pull_spots_on_selected_grains(self) -> dict[int, Any]:
         selected_grains = self.selected_grain_ids
 
-        spots_output = {}
+        spots_output: dict[int, Any] = {}
         for grain_id in selected_grains:
             spots_output[grain_id] = self.run_pull_spots(grain_id)
 
         return spots_output
 
-    def run_pull_spots(self, grain_id):
+    def run_pull_spots(self, grain_id: int) -> Any:
+        assert self.grains_table is not None
         grain_params = self.grains_table[grain_id][3:15]
 
         # Prevent an exception...
+        assert self.material is not None
         indexing_config = HexrdConfig().indexing_config
         if indexing_config.get('_selected_material') is None:
             indexing_config['_selected_material'] = self.material.name
@@ -254,11 +268,11 @@ class GrainsTableView(QTableView):
         return instr.pull_spots(**kwargs)
 
     @property
-    def data_model(self):
+    def data_model(self) -> Any:
         return self._data_model
 
     @data_model.setter
-    def data_model(self, v):
+    def data_model(self, v: Any) -> None:
         self._data_model = v
         if v is None:
             self.setModel(None)
@@ -269,11 +283,15 @@ class GrainsTableView(QTableView):
         # A new selection model is created each time a new data model is set.
         self.selectionModel().selectionChanged.connect(self.on_selection_changed)
 
-    def setup_proxy(self):
+    def setup_proxy(self) -> None:
 
         # Subclass QSortFilterProxyModel to restrict sorting by column
         class GrainsTableSorter(QSortFilterProxyModel):
-            def sort(self, column, order):
+            def sort(
+                self,
+                column: int,
+                order: Qt.SortOrder = Qt.SortOrder.AscendingOrder,
+            ) -> None:
                 if column not in SORTABLE_COLUMNS:
                     return
                 return super().sort(column, order)
@@ -288,13 +306,13 @@ class GrainsTableView(QTableView):
         self.horizontalHeader().sortIndicatorChanged.connect(
             self.on_sort_indicator_changed
         )
-        self.sortByColumn(0, Qt.AscendingOrder)
+        self.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         self.horizontalHeader().setSortIndicatorShown(False)
 
-    def on_selection_changed(self):
+    def on_selection_changed(self) -> None:
         return self.selection_changed.emit()
 
-    def on_sort_indicator_changed(self, index, order):
+    def on_sort_indicator_changed(self, index: int, order: Qt.SortOrder) -> None:
         """Shows sort indicator for sortable columns, hides for all others."""
         horizontal_header = self.horizontalHeader()
         if index in SORTABLE_COLUMNS:

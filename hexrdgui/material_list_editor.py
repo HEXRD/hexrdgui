@@ -1,18 +1,19 @@
 from pathlib import Path
 
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox, QWidget
 
 from hexrd.material import Material
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.list_editor import ListEditor
 from hexrdgui.ui_loader import UiLoader
+from typing import Sequence
 
 
 class MaterialListEditor:
     """A list editor for materials"""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         self.ui = UiLoader().load_file('material_list_editor.ui', parent)
 
         self.editor = ListEditor(self.materials_names, parent)
@@ -21,7 +22,7 @@ class MaterialListEditor:
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         editor = self.editor
 
         editor.items_rearranged.connect(self.items_rearranged)
@@ -36,39 +37,39 @@ class MaterialListEditor:
 
         HexrdConfig().materials_dict_modified.connect(self.update_editor_items)
 
-    def update_editor_items(self):
+    def update_editor_items(self) -> None:
         self.editor.items = self.materials_names
 
     @property
-    def items(self):
+    def items(self) -> list:
         return self.editor.items
 
     @property
-    def materials(self):
+    def materials(self) -> dict:
         return HexrdConfig().materials
 
     @property
-    def materials_names(self):
+    def materials_names(self) -> list:
         return list(self.materials)
 
-    def items_rearranged(self):
+    def items_rearranged(self) -> None:
         HexrdConfig().rearrange_materials(self.items)
 
-    def items_deleted(self, deleted):
+    def items_deleted(self, deleted: list) -> None:
         HexrdConfig().remove_materials(deleted)
 
-    def items_copied(self, old_names, new_names):
+    def items_copied(self, old_names: Sequence[str], new_names: Sequence[str]) -> None:
         HexrdConfig().copy_materials(old_names, new_names)
 
-    def item_renamed(self, old_name, new_name):
+    def item_renamed(self, old_name: str, new_name: str) -> None:
         HexrdConfig().rename_material(old_name, new_name)
 
-    def item_added(self, new_name):
+    def item_added(self, new_name: str) -> None:
         material = Material()
         material.name = new_name
         HexrdConfig().add_material(new_name, material)
 
-    def export_to_cif(self):
+    def export_to_cif(self) -> None:
         selections = self.editor.selected_items
         filename = None
         if len(selections) == 1:
@@ -95,7 +96,7 @@ class MaterialListEditor:
             material = HexrdConfig().material(selected)
             HexrdConfig().save_material_cif(material, selected_dir, filename)
 
-    def import_from_cif(self):
+    def import_from_cif(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Import Material', HexrdConfig().working_dir, 'CIF files (*.cif)'
         )
@@ -109,7 +110,7 @@ class MaterialListEditor:
 
         self.update_editor_items()
 
-    def import_from_defaults(self):
+    def import_from_defaults(self) -> None:
         label = 'Import Default Material'
         items = HexrdConfig().available_default_materials
         selected, accepted = QInputDialog.getItem(
@@ -125,7 +126,7 @@ class MaterialListEditor:
                 'overwritten. Proceed?'
             )
             response = QMessageBox.question(self.ui, 'Already Exists', text)
-            if response == QMessageBox.No:
+            if response == QMessageBox.StandardButton.No:
                 return
 
         HexrdConfig().load_default_material(selected)

@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import copy
+from typing import Any, cast
 import numpy as np
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QModelIndex, Signal
 
 from hexrd import rotations
 import hexrd.constants as cnst
@@ -13,6 +16,7 @@ from hexrdgui.calibration.calibration_dialog import CalibrationDialog
 from hexrdgui.calibration.hedm.calibration_results_dialog import (
     HEDMCalibrationResultsDialog,
 )
+from hexrdgui.calibration.tree_item_models import CalibrationTreeItemModel
 from hexrdgui.calibration.material_calibration_dialog_callbacks import (
     MaterialCalibrationDialogCallbacks,
 )
@@ -26,7 +30,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
 
     apply_refinement_selections_needed = Signal()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Need to initialize this before setup_connections() is called
         self.extra_ui = UiLoader().load_file(
             'hedm_calibration_custom_widgets.ui',
@@ -52,7 +56,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
         self.ui.adjustSize()
         self._base_height = self.ui.size().height()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         super().setup_connections()
 
         self.extra_ui.show_refinements.toggled.connect(
@@ -73,7 +77,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
             self.save_refit_settings
         )
 
-    def show_refinements(self, b):
+    def show_refinements(self, b: bool) -> None:
         self.tree_view.setVisible(b)
         if b:
             # Increase the size to at least double the height of the base size
@@ -81,24 +85,24 @@ class HEDMCalibrationDialog(CalibrationDialog):
             size.setHeight(max(2 * self._base_height, size.height()))
             self.ui.resize(size)
 
-    def initialize_tree_view(self):
+    def initialize_tree_view(self) -> None:
         super().initialize_tree_view()
         self.show_refinements(self.extra_ui.show_refinements.isChecked())
         self.apply_refinement_selections()
 
         self.tree_view.dict_modified.connect(self.on_refinements_editor_modified)
 
-    def setup_refinement_options(self):
+    def setup_refinement_options(self) -> None:
         w = self.extra_ui.refinement_choice
         w.clear()
 
         for key, label in REFINEMENT_OPTIONS.items():
             w.addItem(label, key)
 
-    def on_refinements_editor_modified(self, index):
+    def on_refinements_editor_modified(self, index: QModelIndex) -> None:
         # If anything other than the boundary constraints was modified,
         # put it in "custom" mode.
-        model = self.tree_view.model()
+        model = cast(CalibrationTreeItemModel, self.tree_view.model())
         if self.delta_boundaries:
             boundary_columns = [model.DELTA_IDX]
         else:
@@ -119,19 +123,19 @@ class HEDMCalibrationDialog(CalibrationDialog):
             fix_strain_w.setChecked(False)
 
     @property
-    def fix_strain(self):
+    def fix_strain(self) -> bool:
         return self.extra_ui.fix_strain.isChecked()
 
     @fix_strain.setter
-    def fix_strain(self, b):
+    def fix_strain(self, b: bool) -> None:
         self.extra_ui.fix_strain.setChecked(b)
 
     @property
-    def refinement_choice(self):
+    def refinement_choice(self) -> str:
         return self.extra_ui.refinement_choice.currentData()
 
     @refinement_choice.setter
-    def refinement_choice(self, v):
+    def refinement_choice(self, v: str) -> None:
         w = self.extra_ui.refinement_choice
         i = w.findData(v)
         if i == -1:
@@ -140,50 +144,50 @@ class HEDMCalibrationDialog(CalibrationDialog):
         w.setCurrentIndex(i)
 
     @property
-    def fix_det_y(self):
+    def fix_det_y(self) -> bool:
         return self.extra_ui.refinement_choice.currentData() == 'fix_det_y'
 
     @property
-    def fix_grain_centroid(self):
+    def fix_grain_centroid(self) -> bool:
         w = self.extra_ui.refinement_choice
         return w.currentData() == 'fix_grain_centroid'
 
     @property
-    def fix_grain_y(self):
+    def fix_grain_y(self) -> bool:
         return self.extra_ui.refinement_choice.currentData() == 'fix_grain_y'
 
     @property
-    def custom_refinements(self):
+    def custom_refinements(self) -> bool:
         return self.extra_ui.refinement_choice.currentData() == 'custom'
 
-    def apply_refinement_selections(self):
+    def apply_refinement_selections(self) -> None:
         self.apply_refinement_selections_needed.emit()
 
     @property
-    def do_refit(self):
+    def do_refit(self) -> bool:
         return self.extra_ui.do_refit.isChecked()
 
     @do_refit.setter
-    def do_refit(self, b):
+    def do_refit(self, b: bool) -> None:
         self.extra_ui.do_refit.setChecked(b)
 
     @property
-    def refit_pixel_scale(self):
+    def refit_pixel_scale(self) -> float:
         return self.extra_ui.refit_pixel_scale.value()
 
     @refit_pixel_scale.setter
-    def refit_pixel_scale(self, v):
+    def refit_pixel_scale(self, v: float) -> None:
         self.extra_ui.refit_pixel_scale.setValue(v)
 
     @property
-    def refit_ome_step_scale(self):
+    def refit_ome_step_scale(self) -> float:
         return self.extra_ui.refit_ome_step_scale.value()
 
     @refit_ome_step_scale.setter
-    def refit_ome_step_scale(self, v):
+    def refit_ome_step_scale(self, v: float) -> None:
         self.extra_ui.refit_ome_step_scale.setValue(v)
 
-    def load_refit_settings(self):
+    def load_refit_settings(self) -> None:
         # Load refit settings from the indexing config
         indexing_config = HexrdConfig().indexing_config
         calibration_config = indexing_config['_hedm_calibration']
@@ -193,7 +197,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
         self.refit_pixel_scale = fit_grains_config['refit'][0]
         self.refit_ome_step_scale = fit_grains_config['refit'][1]
 
-    def save_refit_settings(self):
+    def save_refit_settings(self) -> None:
         # Save refit settings to the indexing config
         indexing_config = HexrdConfig().indexing_config
         calibration_config = indexing_config['_hedm_calibration']
@@ -204,7 +208,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
         fit_grains_config['refit'][1] = self.refit_ome_step_scale
 
     @property
-    def extra_ui_settings(self):
+    def extra_ui_settings(self) -> dict[str, Any]:
         keys = [
             'fix_strain',
             'refinement_choice',
@@ -215,7 +219,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
         return {k: getattr(self, k) for k in keys}
 
     @extra_ui_settings.setter
-    def extra_ui_settings(self, settings):
+    def extra_ui_settings(self, settings: dict[str, Any]) -> None:
         block_signals_widgets = [
             self.extra_ui.fix_strain,
             self.extra_ui.refinement_choice,
@@ -224,7 +228,7 @@ class HEDMCalibrationDialog(CalibrationDialog):
             for k, v in settings.items():
                 setattr(self, k, v)
 
-    def validate_parameters(self):
+    def validate_parameters(self) -> None:
         super().validate_parameters()
 
         config = self.tree_view.model().config
@@ -245,10 +249,18 @@ class HEDMCalibrationDialog(CalibrationDialog):
 
 class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
-    def __init__(self, overlays, spots_data, *args, **kwargs):
+    dialog: HEDMCalibrationDialog  # type: ignore[assignment]
+
+    def __init__(
+        self,
+        overlays: list[Any],
+        spots_data: Any,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         self.overlays = overlays
         self.xyo_i_list = []
-        self.extra_ui_undo_stack = []
+        self.extra_ui_undo_stack: list[Any] = []
         self.spots_data = spots_data
 
         super().__init__(overlays, *args, **kwargs)
@@ -257,7 +269,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         xyo_i = compute_xyo(self.calibrators)
         self.xyo_i_list.append(xyo_i)
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         super().setup_connections()
 
         self.dialog.apply_refinement_selections_needed.connect(
@@ -265,7 +277,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         )
 
     @property
-    def grain_ids(self):
+    def grain_ids(self) -> np.ndarray:
         # These are always ordered as expected...
         return np.arange(len(self.calibrators))
 
@@ -275,7 +287,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         return self.overlays[0].ome_period
 
     @property
-    def xyo_det(self):
+    def xyo_det(self) -> dict[str, list[Any]]:
         # This should never change, so we cache it
         if not hasattr(self, '_xyo_det'):
             _, xyo_det, _ = parse_spots_data(
@@ -288,7 +300,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         return self._xyo_det
 
-    def on_calibration_finished(self):
+    def on_calibration_finished(self) -> None:
         super().on_calibration_finished()
 
         cfg = create_indexing_config()
@@ -330,18 +342,18 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
             # Do an "undo"
             self.pop_undo_stack()
 
-    def push_undo_stack(self):
+    def push_undo_stack(self) -> Any:
         self.extra_ui_undo_stack.append(self.dialog.extra_ui_settings)
         return super().push_undo_stack()
 
-    def pop_undo_stack(self):
+    def pop_undo_stack(self) -> Any:
         self.dialog.extra_ui_settings = self.extra_ui_undo_stack.pop()
 
         # Remove the last xyo_i
         self.xyo_i_list.pop(-1)
         return super().pop_undo_stack()
 
-    def _copy_deltas(self, prev_params, new_params, copy_vary):
+    def _copy_deltas(self, prev_params: Any, new_params: Any, copy_vary: bool) -> None:
         delta_boundaries = self.dialog.delta_boundaries
         for name, param in new_params.items():
             if name not in prev_params:
@@ -365,10 +377,10 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
                 param.max = param.value + delta
                 param.delta = delta
 
-    def reset_params(self):
+    def reset_params(self) -> None:
         self.calibrator.reset_lmfit_params()
 
-    def apply_refinement_selections(self):
+    def apply_refinement_selections(self) -> None:
         dialog = self.dialog
 
         if not dialog.custom_refinements:
@@ -377,7 +389,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         params_dict = self.calibrator.params
 
-        def finalize():
+        def finalize() -> None:
             # The dialog parameters should have the deltas set on them
             prev_params = dialog.params_dict
             self._copy_deltas(prev_params, params_dict, copy_vary=False)
@@ -414,7 +426,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         finalize()
 
-    def run_calibration(self, **extra_kwargs):
+    def run_calibration(self, **extra_kwargs: Any) -> Any:
         do_refit = self.dialog.do_refit
 
         # First, run the calibration one time as normal
@@ -521,7 +533,7 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         # We don't want to modify the data dicts on the original
         # calibrator, so only do it on the copy.
         for i, calibrator in enumerate(ic.calibrators):
-            data_dict = {
+            data_dict: dict[str, dict[str, Any]] = {
                 'hkls': {},
                 'pick_xys': {},
             }
@@ -557,25 +569,25 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         print(results_message)
 
-    def draw_picks_on_canvas(self):
+    def draw_picks_on_canvas(self) -> None:
         pass
 
-    def clear_drawn_picks(self):
+    def clear_drawn_picks(self) -> None:
         pass
 
-    def on_edit_picks_clicked(self):
+    def on_edit_picks_clicked(self) -> None:
         raise NotImplementedError
 
-    def save_picks_to_file(self, selected_file):
+    def save_picks_to_file(self, selected_file: Any) -> None:
         raise NotImplementedError
 
-    def load_picks_from_file(self, selected_file):
+    def load_picks_from_file(self, selected_file: Any) -> None:
         raise NotImplementedError
 
 
 def compute_xyo(calibrators: list[Calibrator]) -> dict[str, list]:
     instr = calibrators[0].instr
-    xyo = {}
+    xyo: dict[str, Any] = {}
     for calibrator in calibrators:
         results = calibrator.model()
         for det_key, values in results.items():
@@ -593,10 +605,16 @@ def compute_xyo(calibrators: list[Calibrator]) -> dict[str, list]:
     return xyo
 
 
-def parse_spots_data(spots_data, instr, grain_ids, ome_period=None, refit_idx=None):
-    hkls = {}
-    xyo_det = {}
-    idx_0 = {}
+def parse_spots_data(
+    spots_data: Any,
+    instr: Any,
+    grain_ids: np.ndarray,
+    ome_period: np.ndarray | None = None,
+    refit_idx: dict[str, list[Any]] | None = None,
+) -> tuple[dict[str, list[Any]], dict[str, list[Any]], dict[str, list[Any]]]:
+    hkls: dict[str, Any] = {}
+    xyo_det: dict[str, Any] = {}
+    idx_0: dict[str, Any] = {}
     for det_key, panel in instr.detectors.items():
         hkls[det_key] = []
         xyo_det[det_key] = []

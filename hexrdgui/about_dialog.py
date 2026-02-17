@@ -15,31 +15,34 @@ LOGO_HEIGHT = 80
 
 
 class AboutDialog(QObject):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self.ui = UiLoader().load_file('about_dialog.ui', parent)
+        self.ui = UiLoader().load_file(
+            'about_dialog.ui', parent  # type: ignore[arg-type]
+        )
 
         self._populate_hexrd_logo()
         self._populate_logos()
         self._populate_versions()
 
-    def _populate_hexrd_logo(self):
+    def _populate_hexrd_logo(self) -> None:
         data = load_resource(hexrdgui.resources.icons, 'hexrd.ico', binary=True)
+        assert isinstance(data, bytes)
         pixmap = QPixmap()
-        pixmap.loadFromData(data, 'ico')
+        pixmap.loadFromData(data, b'ico')
         self.ui.image.setPixmap(pixmap)
 
-    def _calculate_size(self, size):
+    def _calculate_size(self, size: QSize) -> QSize:
         ratio = size.height() / size.width()
 
-        return QSize(LOGO_HEIGHT / ratio, LOGO_HEIGHT)
+        return QSize(int(LOGO_HEIGHT / ratio), LOGO_HEIGHT)
 
-    def _populate_logos(self):
+    def _populate_logos(self) -> None:
         data = load_resource(hexrdgui.resources.icons, 'llnl_logo.svg', binary=True)
 
         self.ui.logos_horizontal_layout.addStretch()
         llnl = QSvgWidget()
-        llnl.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
+        llnl.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
         llnl.load(data)
         llnl.setFixedSize(self._calculate_size(llnl.sizeHint()))
         self.ui.logos_horizontal_layout.addWidget(llnl, stretch=1)
@@ -48,16 +51,17 @@ class AboutDialog(QObject):
         data = load_resource(hexrdgui.resources.icons, 'kitware_logo.svg', binary=True)
 
         kitware = QSvgWidget()
-        kitware.renderer().setAspectRatioMode(Qt.KeepAspectRatio)
+        kitware.renderer().setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
         kitware.load(data)
         kitware.setFixedSize(self._calculate_size(kitware.sizeHint()))
         self.ui.logos_horizontal_layout.addWidget(kitware, stretch=1)
         self.ui.logos_horizontal_layout.addStretch()
 
         data = load_resource(hexrdgui.resources.icons, 'afrl_logo.png', binary=True)
+        assert isinstance(data, bytes)
 
         pixmap = QPixmap()
-        pixmap.loadFromData(data, 'png')
+        pixmap.loadFromData(data, b'png')
         afrl = QLabel()
         pixmap = pixmap.scaled(self._calculate_size(pixmap.size()))
         afrl.setPixmap(pixmap)
@@ -66,7 +70,7 @@ class AboutDialog(QObject):
         self.ui.logos_horizontal_layout.addWidget(afrl, stretch=1)
         self.ui.logos_horizontal_layout.addStretch()
 
-    def _populate_versions(self):
+    def _populate_versions(self) -> None:
         tree = self.ui.information
 
         packages = [

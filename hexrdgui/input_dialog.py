@@ -1,4 +1,13 @@
-from PySide6.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QLabel, QVBoxLayout
+from typing import Any
+
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
 
 from hexrdgui.utils.dialog import add_help_url
 
@@ -6,8 +15,15 @@ from hexrdgui.utils.dialog import add_help_url
 class InputDialog(QDialog):
     @classmethod
     def getItem(
-        cls, parent, title, label, items, current=0, editable=True, help_url=None
-    ):
+        cls,
+        parent: QWidget | None,
+        title: str,
+        label: str,
+        items: Any,
+        current: int = 0,
+        editable: bool = True,
+        help_url: str | None = None,
+    ) -> tuple[str | None, bool]:
         # This is made after `QInputDialog.getItem()`, but allows for help
         # text to also be provided.
         dialog = cls(parent=parent)
@@ -16,8 +32,8 @@ class InputDialog(QDialog):
         layout = QVBoxLayout()
         dialog.setLayout(layout)
 
-        label = QLabel(label)
-        layout.addWidget(label)
+        label_widget = QLabel(label)
+        layout.addWidget(label_widget)
 
         combo_box = QComboBox()
         combo_box.addItems(items)
@@ -25,7 +41,7 @@ class InputDialog(QDialog):
         combo_box.setEditable(editable)
         layout.addWidget(combo_box)
 
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         button_box = QDialogButtonBox(buttons)
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)

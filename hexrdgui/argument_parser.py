@@ -1,8 +1,9 @@
 import argparse
 from pathlib import Path
+from typing import Any
 
 
-def check_positive_int(value):
+def check_positive_int(value: str) -> int:
     """Ensure the value is a positive int"""
     error_msg = f"invalid positive int value: {value}"
 
@@ -17,7 +18,7 @@ def check_positive_int(value):
     return ivalue
 
 
-def check_state_file(value):
+def check_state_file(value: str) -> str:
     """Ensure the value is a valid state file"""
     path = Path(value)
     if not path.exists():
@@ -34,7 +35,7 @@ class ArgumentParser(argparse.ArgumentParser):
     accessible throughout the program.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
 
         # Add hexrdgui-specific stuff here
         kwargs.update(

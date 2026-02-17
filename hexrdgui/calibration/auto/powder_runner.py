@@ -1,10 +1,11 @@
 from functools import partial
 import traceback
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 
@@ -27,32 +28,32 @@ class PowderRunner(QObject):
 
     calibration_finished = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self.parent = parent
-        self.async_runner = AsyncRunner(parent)
+        self._parent = parent
+        self.async_runner = AsyncRunner(parent)  # type: ignore[arg-type]
 
-    def clear(self):
+    def clear(self) -> None:
         # Nothing to do right now...
         pass
 
-    def run(self):
+    def run(self) -> None:
         try:
             self.validate()
             self._run()
         except Exception as e:
-            QMessageBox.critical(self.parent, 'HEXRD', f'Error: {e}')
+            QMessageBox.critical(self._parent, 'HEXRD', f'Error: {e}')
             traceback.print_exc()
 
-    def validate(self):
+    def validate(self) -> None:
         overlays = self.visible_powder_overlays
         if len(overlays) != 1:
             raise Exception('There must be exactly one visible powder overlay')
 
-    def _run(self):
+    def _run(self) -> None:
         # First, have the user pick some options
-        if not PowderCalibrationDialog(self.material, self.parent).exec():
+        if not PowderCalibrationDialog(self.material, self._parent).exec():
             # User canceled...
             return
 
@@ -91,12 +92,12 @@ class PowderRunner(QObject):
         )
         self.extract_powder_lines()
 
-    def extract_powder_lines(self):
+    def extract_powder_lines(self) -> None:
         self.async_runner.progress_title = 'Auto picking points...'
         self.async_runner.success_callback = self.extract_powder_lines_finished
         self.async_runner.run(self.run_extract_powder_lines)
 
-    def run_extract_powder_lines(self):
+    def run_extract_powder_lines(self) -> None:
         options = HexrdConfig().config['calibration']['powder']
         kwargs = {
             'fit_tth_tol': options['fit_tth_tol'],
@@ -112,10 +113,10 @@ class PowderRunner(QObject):
         # Save the picks to the active overlay in case we need them later
         self.save_picks_to_overlay()
 
-    def extract_powder_lines_finished(self):
+    def extract_powder_lines_finished(self) -> None:
         self.show_calibration_dialog()
 
-    def show_calibration_dialog(self):
+    def show_calibration_dialog(self) -> 'CalibrationDialog':
         format_extra_params_func = partial(
             format_material_params_func,
             overlays=[self.active_overlay],
@@ -127,7 +128,7 @@ class PowderRunner(QObject):
             'instr': self.instr,
             'params_dict': self.ic.params,
             'format_extra_params_func': format_extra_params_func,
-            'parent': self.parent,
+            'parent': self._parent,
             'engineering_constraints': self.ic.engineering_constraints,
             'window_title': 'Fast Powder Calibration',
             'help_url': 'calibration/fast_powder',
@@ -151,7 +152,7 @@ class PowderRunner(QObject):
 
         return dialog
 
-    def on_calibration_finished(self):
+    def on_calibration_finished(self) -> None:
         material_modified = any(
             self.ic.params[param_name].vary for param_name in self.pc.param_names
         )
@@ -166,29 +167,29 @@ class PowderRunner(QObject):
         self.calibration_finished.emit()
 
     @property
-    def overlays(self):
+    def overlays(self) -> list:
         return HexrdConfig().overlays
 
     @property
-    def visible_overlays(self):
+    def visible_overlays(self) -> list:
         return [x for x in self.overlays if x.visible]
 
     @property
-    def visible_powder_overlays(self):
+    def visible_powder_overlays(self) -> list:
         overlays = self.visible_overlays
         return [x for x in overlays if x.is_powder]
 
     @property
-    def active_overlay(self):
+    def active_overlay(self) -> Any:
         overlays = self.visible_powder_overlays
         return overlays[0] if overlays else None
 
     @property
-    def material(self):
+    def material(self) -> Any:
         overlay = self.active_overlay
         return overlay.material if overlay else None
 
-    def save_picks_to_overlay(self):
+    def save_picks_to_overlay(self) -> None:
         # Currently, we only have one active overlay
         self.active_overlay.calibration_picks = self.pc.calibration_picks
 
@@ -196,8 +197,8 @@ class PowderRunner(QObject):
 class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
     @property
-    def data_xys(self):
-        ret = {}
+    def data_xys(self) -> dict:
+        ret: dict[str, Any] = {}
         if (
             HexrdConfig().has_multi_xrs
             and not self.showing_picks_from_all_xray_sources
@@ -216,18 +217,18 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
             ret[k] = np.vstack(points)
         return ret
 
-    def draw_picks_on_canvas(self):
+    def draw_picks_on_canvas(self) -> None:
         HexrdConfig().auto_picked_data = self.data_xys
 
-    def clear_drawn_picks(self):
+    def clear_drawn_picks(self) -> None:
         HexrdConfig().auto_picked_data = None
 
-    def on_edit_picks_clicked(self):
+    def on_edit_picks_clicked(self) -> None:
         dialog = self.create_hkl_picks_tree_view_dialog()
         dialog.button_box_visible = True
         dialog.ui.show()
 
-        def on_finished():
+        def on_finished(result: int = 0) -> None:
             self.dialog.show()
             self.redraw_picks()
 
@@ -239,12 +240,12 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         self.clear_drawn_picks()
         self.dialog.hide()
 
-    def save_picks_to_file(self, selected_file):
+    def save_picks_to_file(self, selected_file: str) -> None:
         # Reuse the same logic from the HKLPicksTreeViewDialog
         dialog = self.create_hkl_picks_tree_view_dialog()
         dialog.export_picks_from_overlays(selected_file, self.overlays)
 
-    def load_picks_from_file(self, selected_file):
+    def load_picks_from_file(self, selected_file: str) -> dict:
         # Reuse the same logic from the HKLPicksTreeViewDialog
         dialog = self.create_hkl_picks_tree_view_dialog()
         dialog.import_picks(selected_file)

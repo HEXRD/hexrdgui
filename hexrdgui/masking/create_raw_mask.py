@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 
 from skimage import measure
@@ -13,26 +17,28 @@ from hexrdgui.utils.polygon import polygon_to_mask
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
-def recompute_raw_threshold_mask():
+def recompute_raw_threshold_mask() -> dict:
     from hexrdgui.masking.mask_manager import MaskManager
 
     results = {}
     if tm := MaskManager().threshold_mask:
         for det in HexrdConfig().detector_names:
             ims = HexrdConfig().imageseries(det)
+            assert ims is not None
             if tm.visible:
-                masks = [None for i in range(len(ims))]
+                mask_list: list[np.ndarray | None] = [None for i in range(len(ims))]
                 for idx in range(len(ims)):
                     img = HexrdConfig().image(det, idx)
                     mask = create_threshold_mask(img, tm.data)
-                    masks[idx] = mask
+                    mask_list[idx] = mask
+                masks: Any = mask_list
             else:
-                masks = np.ones(ims.shape, dtype=bool)
+                masks = np.ones(ims.shape, dtype=np.bool_)
             results[det] = masks
     return results
 
 
-def create_threshold_mask(img, values):
+def create_threshold_mask(img: np.ndarray, values: list[float]) -> np.ndarray:
     lt_val, gt_val = values
     lt_mask = img < lt_val
     gt_mask = img > gt_val
@@ -40,7 +46,7 @@ def create_threshold_mask(img, values):
     return ~np.logical_or(lt_mask, gt_mask)
 
 
-def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
+def convert_polar_to_raw(line_data: Any, reverse_tth_distortion: bool = True) -> list:
     for i, line in enumerate(line_data):
         # Make sure there are at least 300 sample points
         # so that the conversion will appear correct.
@@ -87,7 +93,7 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
             res = 2
             mask_shape = np.array(panel.shape) * res
 
-            mask = ~polygon_to_mask(raw * res, mask_shape)
+            mask = ~polygon_to_mask(raw * res, tuple(mask_shape))
             if not mask.any():
                 # The mask did not affect this panel.
                 continue
@@ -112,11 +118,12 @@ def convert_polar_to_raw(line_data, reverse_tth_distortion=True):
     return raw_line_data
 
 
-def create_raw_mask(line_data):
+def create_raw_mask(line_data: Any) -> list:
     masks = []
     for det in HexrdConfig().detector_names:
         det_lines = [line for line in line_data if det == line[0]]
         img = HexrdConfig().image(det, 0)
+        assert img is not None
         final_mask = np.ones(img.shape, dtype=bool)
         for _, data in det_lines:
             mask = polygon_to_mask(data, img.shape)
@@ -125,7 +132,7 @@ def create_raw_mask(line_data):
     return masks
 
 
-def rebuild_raw_masks():
+def rebuild_raw_masks() -> None:
     from hexrdgui.masking.mask_manager import MaskManager
 
     for mask in MaskManager().masks.values():

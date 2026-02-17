@@ -1,3 +1,7 @@
+from typing import Any
+
+from PySide6.QtWidgets import QWidget
+
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
@@ -6,12 +10,12 @@ from hexrdgui.utils import block_signals
 
 class AbsorptionCorrectionOptionsDialog:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('absorption_correction_options_dialog.ui', parent)
 
-        self.additional_materials = {}
-        self.mat_options = []
+        self.additional_materials: dict[str, Any] = {}
+        self.mat_options: list[Any] = []
 
         self.get_initial_filter_values()
         self.load_additional_materials()
@@ -19,7 +23,7 @@ class AbsorptionCorrectionOptionsDialog:
         self.update_gui()
 
     @property
-    def material_selectors(self):
+    def material_selectors(self) -> dict[str, Any]:
         return {
             'filter': self.ui.filter_material,
             'coating': self.ui.coating_material,
@@ -27,7 +31,7 @@ class AbsorptionCorrectionOptionsDialog:
         }
 
     @property
-    def material_inputs(self):
+    def material_inputs(self) -> dict[str, Any]:
         return {
             'filter': self.ui.filter_material_input,
             'coating': self.ui.coating_material_input,
@@ -35,7 +39,7 @@ class AbsorptionCorrectionOptionsDialog:
         }
 
     @property
-    def density_inputs(self):
+    def density_inputs(self) -> dict[str, Any]:
         return {
             'filter': self.ui.filter_density,
             'coating': self.ui.coating_density,
@@ -54,17 +58,17 @@ class AbsorptionCorrectionOptionsDialog:
 
         return None
 
-    def load_additional_materials(self):
+    def load_additional_materials(self) -> None:
         # FIXME: Update to use defaults once they've been added to HEXRD
         return
 
     @property
-    def any_detector_filters_applied(self):
+    def any_detector_filters_applied(self) -> bool:
         det_names = HexrdConfig().detector_names
         all_filters = [HexrdConfig().detector_filter(det) for det in det_names]
-        return any(filter.thickness > 0 for filter in all_filters)
+        return any(filter.thickness > 0 for filter in all_filters if filter is not None)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         # Filter info is set per detector
         self.ui.detectors.addItems(HexrdConfig().detector_names)
 
@@ -90,6 +94,10 @@ class AbsorptionCorrectionOptionsDialog:
         if (phosphor := HexrdConfig().detector_phosphor(det)) is None:
             HexrdConfig().update_detector_phosphor(det)
             phosphor = HexrdConfig().detector_phosphor(det)
+
+        assert filter is not None
+        assert coating is not None
+        assert phosphor is not None
 
         # FILTER
         if filter.material not in self.mat_options:
@@ -118,7 +126,7 @@ class AbsorptionCorrectionOptionsDialog:
         self.ui.phosphor_readout_length.setValue(phosphor.readout_length)
         self.ui.phosphor_pre_U0.setValue(phosphor.pre_U0)
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         for k, w in self.material_selectors.items():
             w.currentIndexChanged.connect(
                 lambda index, k=k: self.material_changed(k, index=index)
@@ -135,10 +143,15 @@ class AbsorptionCorrectionOptionsDialog:
         self.ui.apply_coating.toggled.connect(self.toggle_apply_coating)
         self.ui.apply_phosphor.toggled.connect(self.toggle_apply_phosphor)
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
-    def material_changed(self, category, index=0, text=None):
+    def material_changed(
+        self,
+        category: str,
+        index: int = 0,
+        text: str | None = None,
+    ) -> None:
         selected = self.material_selectors[category].currentText()
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
@@ -167,13 +180,17 @@ class AbsorptionCorrectionOptionsDialog:
                 # If the mat name is None, then we aren't updating it
                 self.filters[det_name]['material'] = mat_name
 
-    def filter_info_changed(self, new_value=None, det_name=None):
+    def filter_info_changed(
+        self,
+        new_value: Any = None,
+        det_name: str | None = None,
+    ) -> None:
         if det_name is None:
             det_name = self.ui.detectors.currentText()
         self.filters[det_name]['density'] = self.ui.filter_density.value()
         self.filters[det_name]['thickness'] = self.ui.filter_thickness.value()
 
-    def detector_changed(self, new_det):
+    def detector_changed(self, new_det: str) -> None:
         filter_widgets = [
             self.ui.filter_material,
             self.ui.filter_material_input,
@@ -195,7 +212,7 @@ class AbsorptionCorrectionOptionsDialog:
             self.ui.filter_density.setValue(self.filters[new_det]['density'])
             self.ui.filter_thickness.setValue(self.filters[new_det]['thickness'])
 
-    def accept_changes(self):
+    def accept_changes(self) -> None:
         materials = {}
         for key, selector in self.material_selectors.items():
             if selector.currentIndex() == 0:
@@ -225,7 +242,7 @@ class AbsorptionCorrectionOptionsDialog:
                 formula=self.chemical_formula(materials['phosphor']),
             )
 
-    def toggle_apply_filters(self, checked):
+    def toggle_apply_filters(self, checked: bool) -> None:
         if not checked:
             self.ui.filter_thickness.setValue(0.0)
             for det in HexrdConfig().detector_names:
@@ -237,7 +254,7 @@ class AbsorptionCorrectionOptionsDialog:
         self.ui.filter_density.setEnabled(checked)
         self.ui.filter_thickness.setEnabled(checked)
 
-    def toggle_apply_coating(self, checked):
+    def toggle_apply_coating(self, checked: bool) -> None:
         if not checked:
             self.ui.coating_thickness.setValue(0.0)
         self.ui.coating_material.setEnabled(checked)
@@ -246,7 +263,7 @@ class AbsorptionCorrectionOptionsDialog:
         self.ui.coating_density.setEnabled(checked)
         self.ui.coating_thickness.setEnabled(checked)
 
-    def toggle_apply_phosphor(self, checked):
+    def toggle_apply_phosphor(self, checked: bool) -> None:
         if not checked:
             self.ui.phosphor_thickness.setValue(0.0)
         self.ui.phosphor_material.setEnabled(checked)
@@ -257,7 +274,7 @@ class AbsorptionCorrectionOptionsDialog:
         self.ui.phosphor_readout_length.setEnabled(checked)
         self.ui.phosphor_pre_U0.setEnabled(checked)
 
-    def get_initial_filter_values(self):
+    def get_initial_filter_values(self) -> None:
         # Use the current value, or if none, use the default
         self.filters = {}
         instr = create_hedm_instrument()

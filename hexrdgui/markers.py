@@ -2,7 +2,7 @@ from matplotlib.path import Path
 import numpy as np
 
 igor_marker = Path(
-    **{
+    **{  # type: ignore[arg-type]
         'vertices': np.array(
             [
                 [-16.48574545, -28.6460785],

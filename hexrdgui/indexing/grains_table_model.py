@@ -1,6 +1,15 @@
+from typing import Any
+
 import numpy as np
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
+from PySide6.QtCore import (
+    QAbstractTableModel,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+    Signal,
+)
+from PySide6.QtWidgets import QWidget
 
 from hexrdgui.indexing.utils import write_grains_txt
 
@@ -10,7 +19,12 @@ class GrainsTableModel(QAbstractTableModel):
 
     grains_table_modified = Signal()
 
-    def __init__(self, grains_table, excluded_columns=None, parent=None):
+    def __init__(
+        self,
+        grains_table: np.ndarray,
+        excluded_columns: list | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self.full_grains_table = grains_table
         self.full_headers = [
@@ -41,15 +55,22 @@ class GrainsTableModel(QAbstractTableModel):
 
         self.regenerate_grains_table()
 
-    def regenerate_grains_table(self):
+    def regenerate_grains_table(self) -> None:
         self.grains_table = self.full_grains_table[:, self.included_columns]
         self.headers = [self.full_headers[x] for x in self.included_columns]
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(
+        self,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> int:
         return len(self.headers)
 
-    def data(self, model_index, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
+    def data(
+        self,
+        model_index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if role != Qt.ItemDataRole.DisplayRole:
             return None
 
         # Presume that row and column are valid
@@ -58,19 +79,32 @@ class GrainsTableModel(QAbstractTableModel):
         value = self.grains_table[row][column].item()
         return value
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             return self.headers[section]
 
         return super().headerData(section, orientation, role)
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(
+        self,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> int:
         if parent.isValid():
             return 0
 
         return len(self.grains_table)
 
-    def removeRows(self, row, count, parent):
+    def removeRows(
+        self,
+        row: int,
+        count: int,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> bool:
         while count > 0:
             self.full_grains_table = np.delete(self.full_grains_table, row, axis=0)
             count -= 1
@@ -81,7 +115,7 @@ class GrainsTableModel(QAbstractTableModel):
 
     # Custom methods
 
-    def delete_grains(self, grain_ids):
+    def delete_grains(self, grain_ids: list) -> None:
         any_modified = False
         for grain_id in grain_ids:
             to_delete = np.where(self.full_grains_table[:, 0] == grain_id)[0]
@@ -95,7 +129,7 @@ class GrainsTableModel(QAbstractTableModel):
             self.renumber_grains()
             self.grains_table_modified.emit()
 
-    def renumber_grains(self):
+    def renumber_grains(self) -> None:
         sorted_indices = np.argsort(self.full_grains_table[:, 0])
         print(f'Renumbering grains from 0 to {len(sorted_indices) - 1}...')
 
@@ -104,18 +138,18 @@ class GrainsTableModel(QAbstractTableModel):
 
         self.regenerate_grains_table()
 
-    def remove_rows(self, rows):
+    def remove_rows(self, rows: np.ndarray) -> None:
         for row in rows:
             self.beginRemoveRows(QModelIndex(), row, row)
             self.removeRow(row)
             self.endRemoveRows()
 
     @property
-    def included_columns(self):
+    def included_columns(self) -> list:
         return [
             i for i in range(len(self.full_headers)) if i not in self.excluded_columns
         ]
 
-    def save(self, path):
+    def save(self, path: str) -> None:
         write_grains_txt(self.full_grains_table, path)
         print('Wrote', path)

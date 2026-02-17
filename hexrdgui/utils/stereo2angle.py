@@ -2,7 +2,7 @@ import numpy as np
 from hexrd.transforms.xfcapi import makeEtaFrameRotMat, anglesToDVec, Xl
 
 
-def ij2xy(ij, stereo_size):
+def ij2xy(ij: np.ndarray, stereo_size: int) -> np.ndarray:
     """
     simple routine to convert pixel
     coordinates to normalized coordinates
@@ -28,7 +28,7 @@ def ij2xy(ij, stereo_size):
     return res
 
 
-def xy2ij(xy, stereo_size):
+def xy2ij(xy: np.ndarray, stereo_size: int) -> np.ndarray:
     """
     simple routine to convert normalized
     coordinate on stereo projection to
@@ -51,7 +51,7 @@ def xy2ij(xy, stereo_size):
     return (xy + 1.0) * r
 
 
-def xy2v3d(xy):
+def xy2v3d(xy: np.ndarray) -> np.ndarray:
     """
     simple function to convert xy
     normalized coordinates to the
@@ -78,7 +78,7 @@ def xy2v3d(xy):
     return np.array([vx, vy, vz]).T
 
 
-def v3d2xy(vec):
+def v3d2xy(vec: np.ndarray) -> np.ndarray:
     """
     simple function to convert 3d vector
     to normalized stereographic coordinates
@@ -99,7 +99,7 @@ def v3d2xy(vec):
     return vec[:, 0:2] / den
 
 
-def ij2ang(ij, stereo_size, bvec):
+def ij2ang(ij: np.ndarray, stereo_size: int, bvec: np.ndarray) -> np.ndarray:
     """
     simple routine to convert pixel
     coordinates to angles in the beam
@@ -141,7 +141,7 @@ def ij2ang(ij, stereo_size, bvec):
     return np.array([tth, eta]).T
 
 
-def ang2ij(angs, stereo_size, bvec):
+def ang2ij(angs: np.ndarray, stereo_size: int, bvec: np.ndarray) -> np.ndarray:
     """
     simple routine to convert angle in beam
     frame to the pixel coordinates in the

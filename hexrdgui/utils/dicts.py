@@ -1,13 +1,13 @@
 import numpy as np
 
 
-def ensure_all_keys_match(dict1, dict2):
+def ensure_all_keys_match(dict1: dict, dict2: dict) -> dict:
     # This ensures that all keys in dict1 match the keys in dict2.
     # If they do not match, a KeyError will be raised.
     # A dict is returned where the keys in dict2 are sorted to match
     # those in dict1.
 
-    def recurse(this, other, ret, path):
+    def recurse(this: dict, other: dict, ret: dict, path: list) -> None:
         this_keys = sorted(this.keys())
         other_keys = sorted(other.keys())
         if this_keys != other_keys:
@@ -26,12 +26,12 @@ def ensure_all_keys_match(dict1, dict2):
             else:
                 ret[k] = other[k]
 
-    ret = {}
+    ret: dict = {}
     recurse(dict1, dict2, ret, [])
     return ret
 
 
-def ndarrays_to_lists(d):
+def ndarrays_to_lists(d: dict) -> None:
     # Convert all numpy arrays in a dict into lists
     for k, v in d.items():
         if isinstance(v, dict):

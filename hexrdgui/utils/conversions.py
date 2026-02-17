@@ -1,6 +1,11 @@
-from typing import Union
+from __future__ import annotations
+
+from typing import Any, Sequence, TYPE_CHECKING, Union
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from hexrd import constants
 from hexrd.rotations import make_rmat_euler
@@ -11,17 +16,22 @@ from hexrdgui.constants import KEV_TO_WAVELENGTH
 from .stereo2angle import ij2ang as stereo_ij2ang, ang2ij as ang2stereo_ij
 
 
-def cart_to_pixels(xys, panel):
+def cart_to_pixels(xys: np.ndarray, panel: Any) -> np.ndarray:
     return panel.cartToPixel(xys)[:, [1, 0]]
 
 
-def pixels_to_cart(ij, panel):
+def pixels_to_cart(ij: np.ndarray, panel: Any) -> np.ndarray:
     return panel.pixelToCart(ij[:, [1, 0]])
 
 
 def cart_to_angles(
-    xys, panel, eta_period=None, tvec_s=None, tvec_c=None, apply_distortion=True
-):
+    xys: np.ndarray,
+    panel: Any,
+    eta_period: Any = None,
+    tvec_s: np.ndarray | None = None,
+    tvec_c: np.ndarray | None = None,
+    apply_distortion: bool = True,
+) -> np.ndarray:
     # If the eta period is specified, the eta angles will be mapped to be
     # within this period.
     kwargs = {
@@ -38,7 +48,13 @@ def cart_to_angles(
     return ang_crds
 
 
-def angles_to_cart(angles, panel, tvec_s=None, tvec_c=None, apply_distortion=True):
+def angles_to_cart(
+    angles: Sequence[float],
+    panel: Any,
+    tvec_s: np.ndarray | None = None,
+    tvec_c: np.ndarray | None = None,
+    apply_distortion: bool = True,
+) -> np.ndarray:
     kwargs = {
         'tth_eta': np.radians(angles),
         'tvec_s': tvec_s,
@@ -48,25 +64,38 @@ def angles_to_cart(angles, panel, tvec_s=None, tvec_c=None, apply_distortion=Tru
     return panel.angles_to_cart(**kwargs)
 
 
-def angles_to_pixels(angles, panel, tvec_s=None, tvec_c=None, apply_distortion=True):
+def angles_to_pixels(
+    angles: Sequence[float],
+    panel: Any,
+    tvec_s: np.ndarray | None = None,
+    tvec_c: np.ndarray | None = None,
+    apply_distortion: bool = True,
+) -> np.ndarray:
     xys = angles_to_cart(
         angles, panel, tvec_s=tvec_s, tvec_c=tvec_c, apply_distortion=apply_distortion
     )
     return cart_to_pixels(xys, panel)
 
 
-def pixels_to_angles(ij, panel, eta_period=None, tvec_s=None, tvec_c=None):
+def pixels_to_angles(
+    ij: np.ndarray,
+    panel: Any,
+    eta_period: Any = None,
+    tvec_s: np.ndarray | None = None,
+    tvec_c: np.ndarray | None = None,
+) -> np.ndarray:
     xys = pixels_to_cart(ij, panel)
 
-    kwargs = {
-        'eta_period': eta_period,
-        'tvec_s': tvec_s,
-        'tvec_c': tvec_c,
-    }
-    return cart_to_angles(xys, panel, **kwargs)
+    return cart_to_angles(
+        xys,
+        panel,
+        eta_period=eta_period,
+        tvec_s=tvec_s,
+        tvec_c=tvec_c,
+    )
 
 
-def stereo_to_angles(ij, instr, stereo_size):
+def stereo_to_angles(ij: np.ndarray, instr: HEDMInstrument, stereo_size: int) -> np.ndarray:
     # Returns radians
     return stereo_ij2ang(
         ij=ij,
@@ -75,7 +104,7 @@ def stereo_to_angles(ij, instr, stereo_size):
     )
 
 
-def angles_to_stereo(angs, instr, stereo_size):
+def angles_to_stereo(angs: np.ndarray, instr: HEDMInstrument, stereo_size: int) -> np.ndarray:
     # angs is in radians
     return ang2stereo_ij(
         angs=angs,
@@ -84,7 +113,10 @@ def angles_to_stereo(angs, instr, stereo_size):
     )
 
 
-def tth_to_q(tth: Union[np.ndarray, float], beam_energy: float):
+def tth_to_q(
+    tth: Union[np.ndarray, float],
+    beam_energy: float,
+) -> Union[np.ndarray, float]:
     # Convert tth values in degrees to q-space in Angstrom^-1
     # The formula is Q = 4 * pi * sin(theta)/lambda.
     # lambda is the wavelength in Angstrom, and
@@ -95,13 +127,21 @@ def tth_to_q(tth: Union[np.ndarray, float], beam_energy: float):
     return 4 * np.pi * np.sin(tth / 2) * beam_energy / KEV_TO_WAVELENGTH
 
 
-def q_to_tth(q: Union[np.ndarray, float], beam_energy: float):
+def q_to_tth(
+    q: Union[np.ndarray, float],
+    beam_energy: float,
+) -> Union[np.ndarray, float]:
     # Convert the q-space values (Angstrom^-1) to tth in degrees
     tth = np.arcsin(q / 4 / np.pi * KEV_TO_WAVELENGTH / beam_energy) * 2
     return np.degrees(tth)
 
 
-def angles_to_chi(tth_eta, sample_tilt, bvec, evec):
+def angles_to_chi(
+    tth_eta: np.ndarray,
+    sample_tilt: np.ndarray,
+    bvec: np.ndarray,
+    evec: np.ndarray,
+) -> np.ndarray:
     rmat = make_rmat_euler(sample_tilt, 'xyz', extrinsic=True)
     nhat = np.dot(rmat, constants.lab_z)
 

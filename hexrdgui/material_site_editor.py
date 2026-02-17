@@ -1,9 +1,19 @@
+from __future__ import annotations
+
 import copy
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QItemSelectionModel, QObject, Signal
-from PySide6.QtWidgets import QComboBox, QLineEdit, QSizePolicy, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QComboBox,
+    QLineEdit,
+    QSizePolicy,
+    QTableWidgetItem,
+    QWidget,
+)
+from PySide6.QtGui import QMouseEvent
 
 from hexrd.constants import chargestate
 from hexrd.material import Material
@@ -34,7 +44,7 @@ class MaterialSiteEditor(QObject):
 
     site_modified = Signal()
 
-    def __init__(self, site, parent=None):
+    def __init__(self, site: dict[str, Any], parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -42,15 +52,15 @@ class MaterialSiteEditor(QObject):
 
         self._site = site
 
-        self.charge_comboboxes = []
-        self.occupancy_spinboxes = []
-        self.thermal_factor_spinboxes = []
+        self.charge_comboboxes: list[QComboBox] = []
+        self.occupancy_spinboxes: list[ScientificDoubleSpinBox] = []
+        self.thermal_factor_spinboxes: list[ThermalFactorSpinBox] = []
 
         self.update_gui()
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.select_atom_types.pressed.connect(self.select_atom_types)
         self.ui.thermal_factor_type.currentIndexChanged.connect(
             self.thermal_factor_type_changed
@@ -61,7 +71,7 @@ class MaterialSiteEditor(QObject):
         self.ui.remove_atom_type.pressed.connect(self.remove_selected_atom)
         self.ui.convert_u_to_tensors.toggled.connect(self.convert_u_to_tensors)
 
-    def select_atom_types(self):
+    def select_atom_types(self) -> None:
         dialog = PeriodicTableDialog(self.atom_types, self.ui)
         if not dialog.exec():
             return
@@ -69,33 +79,34 @@ class MaterialSiteEditor(QObject):
         self.atom_types = dialog.selected_atoms
 
     @property
-    def site(self):
+    def site(self) -> dict[str, Any]:
         return self._site
 
     @site.setter
-    def site(self, v):
+    def site(self, v: dict[str, Any]) -> None:
         self._site = v
         self.update_gui()
 
     @property
-    def atoms(self):
+    def atoms(self) -> list:
         return self.site['atoms']
 
     @property
-    def total_occupancy(self):
+    def total_occupancy(self) -> float:
         return sum(x['occupancy'] for x in self.atoms)
 
     @property
-    def fractional_coords(self):
+    def fractional_coords(self) -> list[float]:
         return self.site['fractional_coords']
 
     @property
-    def thermal_factor_type(self):
+    def thermal_factor_type(self) -> str:
         return self.ui.thermal_factor_type.currentText()
 
-    def U(self, val):
+    def U(self, val: float) -> float:
         # Take a thermal factor from a spin box and convert it to U
         type = self.thermal_factor_type
+        multiplier: float
         if type == 'U':
             multiplier = 1
         elif type == 'B':
@@ -105,7 +116,7 @@ class MaterialSiteEditor(QObject):
 
         return val * multiplier
 
-    def B(self, val):
+    def B(self, val: float) -> float:
         # Take a thermal factor from a spin box and convert it to B
         type = self.thermal_factor_type
         if type == 'U':
@@ -117,9 +128,10 @@ class MaterialSiteEditor(QObject):
 
         return val * multiplier
 
-    def thermal_factor(self, atom):
+    def thermal_factor(self, atom: dict) -> float:
         # Given an atom, return the thermal factor in either B or U
         type = self.thermal_factor_type
+        multiplier: float
         if type == 'U':
             multiplier = 1
         elif type == 'B':
@@ -130,11 +142,11 @@ class MaterialSiteEditor(QObject):
         return atom['U'] * multiplier
 
     @property
-    def atom_types(self):
+    def atom_types(self) -> list:
         return [x['symbol'] for x in self.site['atoms']]
 
     @atom_types.setter
-    def atom_types(self, v):
+    def atom_types(self, v: list) -> None:
         if v == self.atom_types:
             # No changes needed...
             return
@@ -159,15 +171,15 @@ class MaterialSiteEditor(QObject):
         self.emit_site_modified_if_valid()
 
     @property
-    def num_rows(self):
+    def num_rows(self) -> int:
         return self.ui.table.rowCount()
 
     @property
-    def selected_row(self):
+    def selected_row(self) -> int | None:
         selected = self.ui.table.selectionModel().selectedRows()
         return selected[0].row() if selected else None
 
-    def select_row(self, i):
+    def select_row(self, i: int | None) -> None:
         if i is None or i >= self.num_rows:
             # Out of range. Don't do anything.
             return
@@ -177,17 +189,17 @@ class MaterialSiteEditor(QObject):
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
         selection_model.select(model_index, command)
 
-    def selection_changed(self):
+    def selection_changed(self) -> None:
         self.update_enable_states()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         enable_remove = self.num_rows > 1 and self.selected_row is not None
         self.ui.remove_atom_type.setEnabled(enable_remove)
 
-    def remove_selected_atom(self):
+    def remove_selected_atom(self) -> None:
         if self.selected_row is None:
             return
 
@@ -195,11 +207,11 @@ class MaterialSiteEditor(QObject):
         del atom_types[self.selected_row]
         self.atom_types = atom_types
 
-    def create_symbol_label(self, v):
+    def create_symbol_label(self, v: str) -> QTableWidgetItem:
         w = QTableWidgetItem(v)
         return w
 
-    def create_charge_combobox(self, charge, symbol):
+    def create_charge_combobox(self, charge: str, symbol: str) -> QComboBox:
         cb = QComboBox(self.ui.table)
 
         if charge not in chargestate[symbol]:
@@ -209,13 +221,16 @@ class MaterialSiteEditor(QObject):
         cb.setCurrentText(charge)
         cb.currentIndexChanged.connect(self.update_config)
 
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         cb.setSizePolicy(size_policy)
 
         self.charge_comboboxes.append(cb)
         return cb
 
-    def create_occupancy_spinbox(self, v):
+    def create_occupancy_spinbox(
+        self,
+        v: float,
+    ) -> ScientificDoubleSpinBox:
         sb = ScientificDoubleSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
         sb.setMinimum(OCCUPATION_MIN)
@@ -223,13 +238,16 @@ class MaterialSiteEditor(QObject):
         sb.setValue(v)
         sb.valueChanged.connect(self.update_config)
 
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sb.setSizePolicy(size_policy)
 
         self.occupancy_spinboxes.append(sb)
         return sb
 
-    def create_thermal_factor_spinbox(self, v):
+    def create_thermal_factor_spinbox(
+        self,
+        v: float,
+    ) -> ThermalFactorSpinBox:
         sb = ThermalFactorSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
         sb.setMinimum(THERMAL_FACTOR_MIN)
@@ -238,19 +256,19 @@ class MaterialSiteEditor(QObject):
         sb.valueChanged.connect(self.update_config)
         sb.setToolTip('Double-click to open tensor editor')
 
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sb.setSizePolicy(size_policy)
 
         self.thermal_factor_spinboxes.append(sb)
         return sb
 
-    def clear_table(self):
+    def clear_table(self) -> None:
         self.charge_comboboxes.clear()
         self.occupancy_spinboxes.clear()
         self.thermal_factor_spinboxes.clear()
         self.ui.table.clearContents()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         with block_signals(*self.site_settings_widgets):
             for i, w in enumerate(self.fractional_coords_widgets):
                 w.setValue(self.fractional_coords[i])
@@ -259,7 +277,7 @@ class MaterialSiteEditor(QObject):
             self.update_table()
             self.reset_scalar_tensor_toggle()
 
-    def reset_scalar_tensor_toggle(self):
+    def reset_scalar_tensor_toggle(self) -> None:
         any_scalars = any(
             not isinstance(w.value(), np.ndarray) for w in self.thermal_factor_spinboxes
         )
@@ -267,7 +285,7 @@ class MaterialSiteEditor(QObject):
         with block_signals(self.ui.convert_u_to_tensors):
             self.ui.convert_u_to_tensors.setChecked(not any_scalars)
 
-    def update_table(self):
+    def update_table(self) -> None:
         prev_selected = self.selected_row
 
         block_list = [self.ui.table, self.ui.table.selectionModel()]
@@ -279,14 +297,14 @@ class MaterialSiteEditor(QObject):
                 w = self.create_symbol_label(atom['symbol'])
                 self.ui.table.setItem(i, COLUMNS['symbol'], w)
 
-                w = self.create_charge_combobox(atom['charge'], atom['symbol'])
+                w = self.create_charge_combobox(atom['charge'], atom['symbol'])  # type: ignore[assignment]
                 self.ui.table.setCellWidget(i, COLUMNS['charge'], w)
 
-                w = self.create_occupancy_spinbox(atom['occupancy'])
+                w = self.create_occupancy_spinbox(atom['occupancy'])  # type: ignore[assignment]
                 self.ui.table.setCellWidget(i, COLUMNS['occupancy'], w)
 
                 v = self.thermal_factor(atom)
-                w = self.create_thermal_factor_spinbox(v)
+                w = self.create_thermal_factor_spinbox(v)  # type: ignore[assignment]
                 self.ui.table.setCellWidget(i, COLUMNS['thermal_factor'], w)
 
             self.update_occupancy_validity()
@@ -302,7 +320,7 @@ class MaterialSiteEditor(QObject):
             # Just in case the selection actually changed...
             self.selection_changed()
 
-    def thermal_factor_type_changed(self):
+    def thermal_factor_type_changed(self) -> None:
         self.update_thermal_factor_header()
         self.update_table()
 
@@ -310,11 +328,11 @@ class MaterialSiteEditor(QObject):
         text = f'Convert {self.thermal_factor_type} to tensors'
         self.ui.convert_u_to_tensors.setText(text)
 
-    def update_thermal_factor_header(self):
+    def update_thermal_factor_header(self) -> None:
         w = self.ui.table.horizontalHeaderItem(COLUMNS['thermal_factor'])
         w.setText(self.thermal_factor_type)
 
-    def update_config(self):
+    def update_config(self) -> None:
         for i, w in enumerate(self.fractional_coords_widgets):
             self.fractional_coords[i] = w.value()
 
@@ -332,10 +350,10 @@ class MaterialSiteEditor(QObject):
 
         self.emit_site_modified_if_valid()
 
-    def update_total_occupancy(self):
+    def update_total_occupancy(self) -> None:
         self.ui.total_occupancy.setValue(self.total_occupancy)
 
-    def reset_occupancies(self):
+    def reset_occupancies(self) -> None:
         total = 1.0
         atoms = self.atoms
         num_atoms = len(atoms)
@@ -346,14 +364,14 @@ class MaterialSiteEditor(QObject):
         self.update_occupancy_validity()
 
     @property
-    def site_valid(self):
+    def site_valid(self) -> bool:
         return self.occupancies_valid
 
     @property
-    def occupancies_valid(self):
+    def occupancies_valid(self) -> bool:
         return self.total_occupancy <= 1.0
 
-    def update_occupancy_validity(self):
+    def update_occupancy_validity(self) -> None:
         valid = self.occupancies_valid
         color = 'white' if valid else 'red'
         msg = '' if valid else 'Sum of occupancies must be <= 1'
@@ -361,23 +379,25 @@ class MaterialSiteEditor(QObject):
         self.ui.total_occupancy.setStyleSheet(f'background-color: {color}')
         self.ui.total_occupancy.setToolTip(msg)
 
-    def emit_site_modified_if_valid(self):
+    def emit_site_modified_if_valid(self) -> None:
         if not self.site_valid:
             return
 
         self.site_modified.emit()
 
     @property
-    def fractional_coords_widgets(self):
+    def fractional_coords_widgets(self) -> list:
         return [self.ui.coords_x, self.ui.coords_y, self.ui.coords_z]
 
     @property
-    def site_settings_widgets(self):
+    def site_settings_widgets(self) -> list:
         return self.fractional_coords_widgets
 
-    def convert_u_to_tensors(self, b):
+    def convert_u_to_tensors(self, b: bool) -> None:
 
-        def scalar_to_tensor(spinbox):
+        def scalar_to_tensor(
+            spinbox: ThermalFactorSpinBox,
+        ) -> None:
             if isinstance(spinbox.value(), np.ndarray):
                 # Already a tensor
                 return
@@ -386,7 +406,9 @@ class MaterialSiteEditor(QObject):
             tensor[:3] = spinbox.value()
             spinbox.setValue(tensor)
 
-        def tensor_to_scalar(spinbox):
+        def tensor_to_scalar(
+            spinbox: ThermalFactorSpinBox,
+        ) -> None:
             value = spinbox.value()
             if not isinstance(value, np.ndarray):
                 # Already a scalar
@@ -412,16 +434,16 @@ class MaterialSiteEditor(QObject):
 
 
 class ThermalFactorSpinBox(ScientificDoubleSpinBox):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.editor = ThermalFactorEditor(0, parent)
         self.setLineEdit(ThermalFactorLineEdit(self, self))
         self.valueChanged.connect(self.update_editor_value)
 
-    def value(self):
+    def value(self) -> Any:
         return self.editor.value
 
-    def setValue(self, v):
+    def setValue(self, v: Any) -> None:
         self.editor.value = v
         if self.editor.is_tensor:
             # Force an update
@@ -433,17 +455,17 @@ class ThermalFactorSpinBox(ScientificDoubleSpinBox):
             self.valueChanged.emit(v)
             self.setReadOnly(False)
 
-    def update_editor_value(self):
+    def update_editor_value(self) -> None:
         if not self.editor.is_tensor:
             self.editor.value = super().value()
 
-    def textFromValue(self, value):
+    def textFromValue(self, value: float) -> str:
         if not hasattr(self, 'editor') or not self.editor.is_tensor:
             return super().textFromValue(value)
 
         return 'Tensor'
 
-    def open_editor(self):
+    def open_editor(self) -> None:
         original = copy.deepcopy(self.editor.value)
         if not self.editor.exec():
             self.editor.value = original
@@ -453,20 +475,24 @@ class ThermalFactorSpinBox(ScientificDoubleSpinBox):
 
 
 class ThermalFactorLineEdit(QLineEdit):
-    def __init__(self, spinbox, parent=None):
+    def __init__(
+        self,
+        spinbox: ThermalFactorSpinBox,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.spinbox = spinbox
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent) -> None:
         if self.isReadOnly():
             self.open_editor()
             return
 
         super().mousePressEvent(event)
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         self.open_editor()
 
-    def open_editor(self):
+    def open_editor(self) -> None:
         self.spinbox.open_editor()

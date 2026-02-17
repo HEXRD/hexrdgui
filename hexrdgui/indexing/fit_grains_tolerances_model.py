@@ -1,4 +1,9 @@
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, Signal
+from __future__ import annotations
+
+from typing import Any
+
+from PySide6.QtCore import QAbstractTableModel, QModelIndex, QPersistentModelIndex, Qt, Signal
+from PySide6.QtWidgets import QWidget
 
 
 class FitGrainsToleranceModel(QAbstractTableModel):
@@ -9,19 +14,23 @@ class FitGrainsToleranceModel(QAbstractTableModel):
 
     data_modified = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.tth_tolerances = []
-        self.eta_tolerances = []
-        self.omega_tolerances = []
+        self.tth_tolerances: list[float] = []
+        self.eta_tolerances: list[float] = []
+        self.omega_tolerances: list[float] = []
 
     # Override methods:
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         return 3
 
-    def data(self, model_index, role=Qt.DisplayRole):
-        if role not in (Qt.DisplayRole, Qt.EditRole):
+    def data(
+        self,
+        model_index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if role not in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole):
             return
 
         row, column = model_index.row(), model_index.column()
@@ -34,7 +43,12 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         # Note that conventional [row][col] is reversed here
         return self.data_columns[column][row]
 
-    def setData(self, model_index, value, role=Qt.EditRole):
+    def setData(
+        self,
+        model_index: QModelIndex | QPersistentModelIndex,
+        value: float,
+        role: int = Qt.ItemDataRole.EditRole,
+    ) -> bool:
         # This should always be a float
         try:
             value = float(value)
@@ -48,18 +62,23 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.data_modified.emit()
         return True
 
-    def flags(self, model_index):
+    def flags(self, model_index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         # All items are editable
-        return super().flags(model_index) | Qt.ItemIsEditable
+        return super().flags(model_index) | Qt.ItemFlag.ItemIsEditable
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+    def headerData(
+        self,
+        section: int,
+        orientation: Qt.Orientation,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             headers = ['tth', 'eta', 'omega']
             return headers[section]
         # (else)
         return super().headerData(section, orientation, role)
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
         if parent.isValid():
             return 0
         return len(self.tth_tolerances)
@@ -67,14 +86,16 @@ class FitGrainsToleranceModel(QAbstractTableModel):
     # Custom methods:
 
     @property
-    def data_columns(self):
+    def data_columns(
+        self,
+    ) -> tuple[list[float], list[float], list[float]]:
         return (
             self.tth_tolerances,
             self.eta_tolerances,
             self.omega_tolerances,
         )
 
-    def add_row(self):
+    def add_row(self) -> None:
         new_row = self.rowCount()
         self.beginInsertRows(QModelIndex(), new_row, new_row)
         self.tth_tolerances.append(0.0)
@@ -83,7 +104,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.endInsertRows()
         self.data_modified.emit()
 
-    def delete_rows(self, rows):
+    def delete_rows(self, rows: list[int]) -> None:
         first = rows[0]
         last = rows[-1]
         self.beginRemoveRows(QModelIndex(), first, last)
@@ -94,7 +115,7 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.endRemoveRows()
         self.data_modified.emit()
 
-    def move_rows(self, rows, delta):
+    def move_rows(self, rows: list[int], delta: int) -> None:
         """Move rows in the table
 
         @param delta: number of rows to move
@@ -116,22 +137,22 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         self.endMoveRows()
         self.data_modified.emit()
 
-    def copy_to_config(self, config):
+    def copy_to_config(self, config: dict[str, Any]) -> None:
         config['tolerance'] = {
             'tth': self.tth_tolerances,
             'eta': self.eta_tolerances,
             'omega': self.omega_tolerances,
         }
 
-    def update_from_config(self, config):
+    def update_from_config(self, config: dict[str, Any]) -> None:
         # This method should generally be called *before* the instance
         # is assigned to a view, but just in case, we emit the internal
         # signals to notify views.
         self.beginResetModel()
 
-        self.tth_tolerances = config.get('tth')
-        self.eta_tolerances = config.get('eta')
-        self.omega_tolerances = config.get('omega')
+        self.tth_tolerances = config.get('tth', [])
+        self.eta_tolerances = config.get('eta', [])
+        self.omega_tolerances = config.get('omega', [])
 
         self.endResetModel()
 

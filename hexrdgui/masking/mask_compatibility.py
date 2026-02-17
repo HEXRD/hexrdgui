@@ -1,10 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from hexrd.instrument import unwrap_h5_to_dict
 from hexrd.utils.compatibility import h5py_read_string
 
 from hexrdgui.masking.constants import CURRENT_MASK_VERSION
 
+if TYPE_CHECKING:
+    import h5py
 
-def convert_masks_v1_to_v2(h5py_group):
+
+def convert_masks_v1_to_v2(h5py_group: h5py.Group) -> dict:
     # This is a file using the old format
     items = {}
     visible = list(h5py_read_string(h5py_group['_visible']))
@@ -40,12 +47,12 @@ def convert_masks_v1_to_v2(h5py_group):
     return items
 
 
-def load_masks(h5py_group):
+def load_masks(h5py_group: h5py.Group) -> dict:
     version = h5py_group.attrs.get("_version", 1)
     if version != CURRENT_MASK_VERSION:
         return CONVERSION_DICT[(version, CURRENT_MASK_VERSION)](h5py_group)
 
-    d = {}
+    d: dict[str, Any] = {}
     unwrap_h5_to_dict(h5py_group, d)
     return d
 

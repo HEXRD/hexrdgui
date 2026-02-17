@@ -2,6 +2,8 @@ import copy
 
 import numpy as np
 
+from typing import Any
+
 from PySide6.QtCore import QCoreApplication
 
 from hexrd.material import Material
@@ -13,18 +15,19 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 class WppfRunner:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: Any = None) -> None:
         self.parent = parent
-        self.undo_stack = []
+        self.undo_stack: list[Any] = []
+        self.wppf_options_dialog: WppfOptionsDialog | None = None
 
-    def clear(self):
+    def clear(self) -> None:
         self.wppf_options_dialog = None
         self.undo_stack.clear()
 
         self.clear_wppf_plots()
         HexrdConfig().show_wppf_difference_axis = False
 
-    def clear_wppf_plots(self):
+    def clear_wppf_plots(self) -> None:
         HexrdConfig().wppf_data = None
         HexrdConfig().wppf_background_lineout = None
         HexrdConfig().wppf_amorphous_lineout = None
@@ -32,7 +35,7 @@ class WppfRunner:
 
         HexrdConfig().rerender_wppf.emit()
 
-    def run(self):
+    def run(self) -> None:
         self.validate()
 
         # We will go through these steps:
@@ -40,15 +43,15 @@ class WppfRunner:
         # 2. Run WPPF
         self.select_options()
 
-    def validate(self):
+    def validate(self) -> None:
         if not self.visible_powder_overlays:
             raise Exception('At least one visible powder overlay is required')
 
     @property
-    def visible_powder_overlays(self):
+    def visible_powder_overlays(self) -> list:
         return [x for x in HexrdConfig().overlays if x.is_powder and x.visible]
 
-    def select_options(self):
+    def select_options(self) -> None:
         dialog = WppfOptionsDialog(self.parent)
         dialog.run.connect(self.run_wppf)
         dialog.undo_clicked.connect(self.pop_undo_stack)
@@ -57,8 +60,9 @@ class WppfRunner:
         dialog.show()
         self.wppf_options_dialog = dialog
 
-    def run_wppf(self):
+    def run_wppf(self) -> None:
         dialog = self.wppf_options_dialog
+        assert dialog is not None
         self.wppf_object = dialog.wppf_object
         varying_texture = dialog.varying_texture_params
 
@@ -86,7 +90,7 @@ class WppfRunner:
         # Save the new settings so state files will have them
         dialog.save_settings()
 
-    def rerender_wppf(self):
+    def rerender_wppf(self) -> None:
         self.clear_wppf_plots()
         obj = self.wppf_object
         if obj is None:
@@ -142,9 +146,10 @@ class WppfRunner:
         # calls to the event loop in the future instead.
         QCoreApplication.processEvents()
 
-    def write_params_to_materials(self):
+    def write_params_to_materials(self) -> None:
         for name, wppf_mat in self.wppf_object.phases.phase_dict.items():
             mat = _material_for_name(name)
+            assert mat is not None
 
             # Work around differences in WPPF objects
             if isinstance(self.wppf_object, Rietveld):
@@ -169,11 +174,12 @@ class WppfRunner:
 
         HexrdConfig().overlay_config_changed.emit()
 
-    def push_undo_stack(self):
+    def push_undo_stack(self) -> None:
         # Save the previous material parameters
         mat_params = {}
         for name in self.wppf_object.phases.phase_dict:
             mat = _material_for_name(name)
+            assert mat is not None
             mat_params[name] = {
                 'lparms': mat.lparms,
                 'atominfo': mat.atominfo,
@@ -183,11 +189,12 @@ class WppfRunner:
         # Make a deep copy of all parameters
         self.undo_stack.append(copy.deepcopy(mat_params))
 
-    def pop_undo_stack(self):
+    def pop_undo_stack(self) -> None:
         entry = self.undo_stack.pop()
 
         for name, mat_params in entry.items():
             mat = _material_for_name(name)
+            assert mat is not None
 
             mat.lparms = mat_params['lparms']
             mat.atominfo[:] = mat_params['atominfo']
@@ -199,16 +206,17 @@ class WppfRunner:
         HexrdConfig().overlay_config_changed.emit()
 
         dialog = self.wppf_options_dialog
+        assert dialog is not None
         # Use underscore method so we don't accidentally auto-create one
         self.wppf_object = dialog._wppf_object
 
         self.rerender_wppf()
 
-    def on_object_reset(self):
+    def on_object_reset(self) -> None:
         # Clear the WPPF plots
         self.clear_wppf_plots()
 
-    def update_param_values(self):
+    def update_param_values(self) -> None:
         # Update the param values with their new values from the wppf_object
         params = self.params
 
@@ -217,10 +225,11 @@ class WppfRunner:
             v['value'] = new_params[k].value
 
         dialog = self.wppf_options_dialog
+        assert dialog is not None
         dialog.update_gui()
 
     @property
-    def params(self):
+    def params(self) -> dict:
         conf = HexrdConfig().config['calibration']
         return conf.setdefault('wppf', {}).setdefault('params_dict', {})
 
@@ -230,3 +239,4 @@ def _material_for_name(name: str) -> Material | None:
     for internal_name in HexrdConfig().materials:
         if internal_name.replace('-', '_') == name:
             return HexrdConfig().material(internal_name)
+    return None

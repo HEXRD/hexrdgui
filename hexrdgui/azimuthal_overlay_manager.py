@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import random
+from typing import Any
+
 from PySide6.QtCore import Qt, QItemSelectionModel
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -28,21 +32,21 @@ COLUMNS = {
 
 class AzimuthalOverlayManager:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('azimuthal_overlay_manager.ui', parent)
 
         self.overlay_editor = AzimuthalOverlayEditor(self.ui)
         self.ui.overlay_editor_layout.addWidget(self.overlay_editor.ui)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
-        self.material_combos = []
-        self.visibility_boxes = []
+        self.material_combos: list[QComboBox] = []
+        self.visibility_boxes: list[QCheckBox] = []
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.table.selectionModel().selectionChanged.connect(self.selection_changed)
         self.ui.table.itemChanged.connect(self.table_item_changed)
         self.ui.add_button.pressed.connect(self.add)
@@ -60,21 +64,21 @@ class AzimuthalOverlayManager:
         HexrdConfig().state_loaded.connect(self.update_table)
         HexrdConfig().material_modified.connect(self.on_material_modified)
 
-    def show(self):
+    def show(self) -> None:
         self.update_table()
         self.ui.show()
 
-    def on_material_renamed(self, old_name, new_name):
+    def on_material_renamed(self, old_name: str, new_name: str) -> None:
         self.update_table()
 
-    def create_materials_combo(self, v):
+    def create_materials_combo(self, v: str) -> QWidget:
         materials = list(HexrdConfig().materials.keys())
 
         if v not in materials:
             raise Exception(f'Unknown material: {v}')
 
         cb = QComboBox(self.ui.table)
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         cb.setSizePolicy(size_policy)
         for mat in materials:
             cb.addItem(mat, mat)
@@ -84,28 +88,28 @@ class AzimuthalOverlayManager:
         self.material_combos.append(cb)
         return self.create_table_widget(cb)
 
-    def create_visibility_checkbox(self, v):
+    def create_visibility_checkbox(self, v: bool) -> QWidget:
         cb = QCheckBox(self.ui.table)
         cb.setChecked(v)
         cb.toggled.connect(self.update_visibilities)
         self.visibility_boxes.append(cb)
         return self.create_table_widget(cb)
 
-    def create_table_widget(self, w):
+    def create_table_widget(self, w: QWidget) -> QWidget:
         # These are required to center the widget...
         tw = QWidget(self.ui.table)
         layout = QHBoxLayout(tw)
         layout.addWidget(w)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         return tw
 
-    def clear_table(self):
+    def clear_table(self) -> None:
         self.material_combos.clear()
         self.visibility_boxes.clear()
         self.ui.table.clearContents()
 
-    def update_table(self):
+    def update_table(self) -> None:
         block_list = [self.ui.table, self.ui.table.selectionModel()]
 
         with block_signals(*block_list):
@@ -117,10 +121,10 @@ class AzimuthalOverlayManager:
                 w = QTableWidgetItem(overlay['name'])
                 self.ui.table.setItem(i, COLUMNS['name'], w)
 
-                w = self.create_materials_combo(overlay['material'])
+                w = self.create_materials_combo(overlay['material'])  # type: ignore[assignment]
                 self.ui.table.setCellWidget(i, COLUMNS['material'], w)
 
-                w = self.create_visibility_checkbox(overlay['visible'])
+                w = self.create_visibility_checkbox(overlay['visible'])  # type: ignore[assignment]
                 self.ui.table.setCellWidget(i, COLUMNS['visible'], w)
 
             if prev_selected is not None:
@@ -138,13 +142,13 @@ class AzimuthalOverlayManager:
             # Force it to stretch manually.
             last_column = max(v for v in COLUMNS.values())
             self.ui.table.horizontalHeader().setSectionResizeMode(
-                last_column, QHeaderView.Stretch
+                last_column, QHeaderView.ResizeMode.Stretch
             )
 
             # Just in case the selection actually changed...
             self.selection_changed()
 
-    def select_row(self, i):
+    def select_row(self, i: int | None) -> None:
         if i is None or i >= self.ui.table.rowCount():
             # Out of range. Don't do anything.
             return
@@ -154,36 +158,36 @@ class AzimuthalOverlayManager:
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
         selection_model.select(model_index, command)
 
     @property
-    def overlays(self):
+    def overlays(self) -> list[dict[str, Any]]:
         return HexrdConfig().azimuthal_overlays
 
     @property
-    def selected_row(self):
+    def selected_row(self) -> int | None:
         selected = self.ui.table.selectionModel().selectedRows()
         return selected[0].row() if selected else None
 
-    def selection_changed(self):
+    def selection_changed(self) -> None:
         self.update_enable_states()
         self.update_overlay_editor()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         row_selected = self.selected_row is not None
         self.ui.remove_button.setEnabled(row_selected)
         self.ui.edit_style_button.setEnabled(row_selected)
         self.overlay_editor.enable_inputs(row_selected)
 
-    def update_overlay_editor(self):
+    def update_overlay_editor(self) -> None:
         if self.selected_row is not None:
             overlay = self.overlays[self.selected_row]
             self.overlay_editor.selected_overlay = overlay
         else:
             self.overlay_editor.selected_overlay = None
 
-    def update_config_materials(self):
+    def update_config_materials(self) -> None:
         any_changed = False
         for i in range(self.ui.table.rowCount()):
             w = self.material_combos[i]
@@ -200,32 +204,32 @@ class AzimuthalOverlayManager:
             self.update_table()
             HexrdConfig().azimuthal_options_modified.emit()
 
-    def update_visibilities(self):
+    def update_visibilities(self) -> None:
         for i in range(self.ui.table.rowCount()):
             w = self.visibility_boxes[i]
             self.overlays[i]['visible'] = w.isChecked()
         HexrdConfig().azimuthal_options_modified.emit()
 
     @property
-    def active_material_name(self):
+    def active_material_name(self) -> str | None:
         return HexrdConfig().active_material_name
 
     @property
-    def active_overlay(self):
+    def active_overlay(self) -> dict[str, Any] | None:
         i = self.selected_row
         if i is None or i >= len(self.overlays):
             return None
 
         return self.overlays[i]
 
-    def table_item_changed(self, item):
+    def table_item_changed(self, item: QTableWidgetItem) -> None:
         col = item.column()
         if col == COLUMNS['name']:
             return self.overlay_name_edited(item)
         else:
             raise Exception(f'Item editing not implemented for column: {col}')
 
-    def overlay_name_edited(self, item):
+    def overlay_name_edited(self, item: QTableWidgetItem) -> None:
         row = item.row()
         new_name = item.text()
         modified_overlay = self.overlays[row]
@@ -242,14 +246,18 @@ class AzimuthalOverlayManager:
         modified_overlay['name'] = new_name
         self.overlay_editor.update_name_label(new_name)
 
-    def create_unique_name(self, name=None):
+    def create_unique_name(self, name: str | None = None) -> str:
         if name is None:
-            name = self.active_material_name
+            name = self.active_material_name or ''
         existing_names = [o['name'] for o in self.overlays]
         return utils.unique_name(existing_names, name)
 
-    def add_azimuthal_overlay(self):
-        tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
+    def add_azimuthal_overlay(self) -> None:
+        tth: np.ndarray
+        sum: np.ndarray
+        data = HexrdConfig().last_unscaled_azimuthal_integral_data
+        assert data is not None
+        tth, sum = data
         data = {
             'name': self.create_unique_name(),
             'material': self.active_material_name,
@@ -261,26 +269,28 @@ class AzimuthalOverlayManager:
         }
         self.overlays.append(data)
 
-    def add(self):
+    def add(self) -> None:
         self.add_azimuthal_overlay()
         self.update_table()
         self.select_row(len(self.overlays) - 1)
         HexrdConfig().azimuthal_options_modified.emit()
 
-    def remove(self):
+    def remove(self) -> None:
+        if self.selected_row is None:
+            return
         self.overlays.pop(self.selected_row)
         self.update_table()
         HexrdConfig().azimuthal_options_modified.emit()
 
-    def edit_style(self):
+    def edit_style(self) -> None:
         self._style_picker = AzimuthalOverlayStylePicker(self.active_overlay, self.ui)
         self._style_picker.exec()
 
-    def show_legend(self, value):
+    def show_legend(self, value: bool) -> None:
         HexrdConfig().show_azimuthal_legend = value
         HexrdConfig().azimuthal_options_modified.emit()
 
-    def on_material_modified(self, material_name):
+    def on_material_modified(self, material_name: str) -> None:
         update_needed = False
         for overlay in self.overlays:
             if overlay['material'] == material_name:

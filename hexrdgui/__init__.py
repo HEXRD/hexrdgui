@@ -1,4 +1,5 @@
 from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import QDialog, QPushButton
 
 
@@ -19,10 +20,11 @@ class EnterKeyFilter(QObject):
     Note that this filter **only** filters QDialog and QPushButton objects.
     """
 
-    def eventFilter(self, obj, event):
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         block = (
-            event.type() == QEvent.KeyPress
-            and event.key() in (Qt.Key_Return, Qt.Key_Enter)
+            event.type() == QEvent.Type.KeyPress
+            and isinstance(event, QKeyEvent)
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
             and isinstance(obj, (QDialog, QPushButton))
         )
 

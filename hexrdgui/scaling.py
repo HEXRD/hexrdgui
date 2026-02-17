@@ -1,4 +1,5 @@
 import functools
+from typing import Any, Callable
 
 import numpy as np
 
@@ -28,26 +29,28 @@ def log_log_sqrt(x: np.ndarray) -> np.ndarray:
 
 # This decorator automatically rescales the transform output to have
 # the same range as the transform input.
-def rescale_to_original(func):
-    def rescale_to_old(new, old):
+def rescale_to_original(
+    func: Callable[[np.ndarray], np.ndarray],
+) -> Callable[[np.ndarray], np.ndarray]:
+    def rescale_to_old(new: np.ndarray, old: Any) -> np.ndarray:
         new_range = (np.nanmin(new), np.nanmax(new))
         old_range = (np.nanmin(old), np.nanmax(old))
         return np.interp(new, new_range, old_range)
 
-    def fill_masked(x, fill_value=np.nan):
+    def fill_masked(x: Any, fill_value: float = np.nan) -> np.ndarray:
         if isinstance(x, np.ma.masked_array):
             return x.filled(fill_value)
         return x
 
     @functools.wraps(func)
-    def wrapper(old):
+    def wrapper(old: np.ndarray) -> np.ndarray:
         new = func(fill_masked(old))
         return rescale_to_old(new, old)
 
     return wrapper
 
 
-SCALING_OPTIONS = {
+SCALING_OPTIONS: dict[str, Callable[[np.ndarray], np.ndarray]] = {
     'none': none,
     'sqrt': sqrt,
     'log': log,

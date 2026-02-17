@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import copy
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 import yaml
 
-from PySide6.QtCore import Signal, QObject, QTimer, Qt
+from PySide6.QtCore import Signal, SignalInstance, QObject, QTimer, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -15,6 +18,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QSizePolicy,
     QSpinBox,
+    QWidget,
 )
 
 from hexrd.constants import sigma_to_fwhm
@@ -40,6 +44,11 @@ from hexrdgui.utils.matplotlib import remove_artist
 import hexrdgui.constants
 import hexrdgui.resources.indexing
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    import matplotlib as mpl
+
 
 DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
 
@@ -49,7 +58,7 @@ class OmeMapsViewerDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, data, parent=None):
+    def __init__(self, data: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -58,8 +67,10 @@ class OmeMapsViewerDialog(QObject):
         url = 'hedm/indexing/#find-orientations'
         add_help_url(self.ui.button_box, url)
 
+        self._data: Any = None
+        self.working_dir: str = HexrdConfig().working_dir
         self.data = data
-        self.cmap = HexrdConfig().default_cmap
+        self.cmap: str | mpl.colors.Colormap = HexrdConfig().default_cmap
         self.norm = None
         self.transform = lambda x: x
         self.spots = None
@@ -91,7 +102,7 @@ class OmeMapsViewerDialog(QObject):
         # This will trigger a re-draw and update of everything
         self.filter_modified()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.active_hkl.currentIndexChanged.connect(self.hkl_index_changed)
         self.ui.label_spots.toggled.connect(self.update_spots)
         self.ui.export_button.pressed.connect(self.on_export_button_pressed)
@@ -112,7 +123,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.select_hkls_widget.selection_changed.connect(self.update_config)
 
-        def changed_signal(w):
+        def changed_signal(w: QWidget) -> SignalInstance:
             if isinstance(w, (QDoubleSpinBox, QSpinBox)):
                 return w.valueChanged
             elif isinstance(w, QComboBox):
@@ -140,7 +151,7 @@ class OmeMapsViewerDialog(QObject):
         )
         self.ui.fiber_step.valueChanged.connect(self.synchronize_fiber_step_boxes)
 
-    def setup_combo_box_item_data(self):
+    def setup_combo_box_item_data(self) -> None:
         # Set the item data for the combo boxes to be the names we want
         item_data = [
             'seed_search',
@@ -158,7 +169,7 @@ class OmeMapsViewerDialog(QObject):
         for i, data in enumerate(item_data):
             self.ui.clustering_algorithm.setItemData(i, data)
 
-    def create_tooltips(self):
+    def create_tooltips(self) -> None:
         tooltip = (
             'Full width at half maximum (FWHM) to use for the Gaussian '
             f'Laplace filter.\nDefault: {DEFAULT_FWHM:.2f}'
@@ -166,7 +177,7 @@ class OmeMapsViewerDialog(QObject):
         self.ui.filtering_fwhm.setToolTip(tooltip)
         self.ui.filtering_fwhm_label.setToolTip(tooltip)
 
-    def select_quaternion_grid_file(self):
+    def select_quaternion_grid_file(self) -> None:
         title = 'Select quaternion grid file'
         filters = 'NPY files (*.npy)'
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -177,7 +188,7 @@ class OmeMapsViewerDialog(QObject):
             HexrdConfig().working_dir = str(Path(selected_file).parent)
             self.quaternion_grid_file = selected_file
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         filtering = self.ui.apply_filtering.isChecked()
         apply_gl = self.ui.filtering_apply_gaussian_laplace.isChecked()
         fwhm_enabled = filtering and apply_gl
@@ -186,21 +197,21 @@ class OmeMapsViewerDialog(QObject):
         self.ui.filtering_fwhm.setEnabled(fwhm_enabled)
         self.ui.filtering_fwhm_label.setEnabled(fwhm_enabled)
 
-    def reset_internal_config(self):
+    def reset_internal_config(self) -> None:
         self.config = copy.deepcopy(HexrdConfig().indexing_config)
 
-    def show(self):
+    def show(self) -> None:
         self.update_plot()
         self.ui.show()
 
-    def show_later(self):
+    def show_later(self) -> None:
         # In case this was called in a separate thread (which will
         # happen if the maps were generated), post the show() to the
         # event loop. Otherwise, on Mac, the dialog will not move to
         # the front.
         QTimer.singleShot(0, lambda: self.show())
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         # Update the config just in case...
         self.update_config()
         try:
@@ -213,10 +224,10 @@ class OmeMapsViewerDialog(QObject):
         self.save_config()
         self.accepted.emit()
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         self.rejected.emit()
 
-    def validate(self):
+    def validate(self) -> None:
         if self.quaternion_method_name == 'hand_picked':
             if self.hand_picked_quaternions.size == 0:
                 msg = 'At least one fiber must be picked'
@@ -250,7 +261,7 @@ class OmeMapsViewerDialog(QObject):
             msg = f'Unhandled quaternion method: {self.quaternion_method_name}'
             raise ValidationException(msg)
 
-    def setup_widget_paths(self):
+    def setup_widget_paths(self) -> None:
         text = resource_loader.load_resource(
             hexrdgui.resources.indexing, 'gui_config_maps.yml'
         )
@@ -258,7 +269,10 @@ class OmeMapsViewerDialog(QObject):
 
         paths = {}
 
-        def recursive_get_paths(cur_config, cur_path):
+        def recursive_get_paths(
+            cur_config: dict[str, Any],
+            cur_path: list[str],
+        ) -> None:
             for key, value in cur_config.items():
                 new_path = cur_path + [key]
                 if isinstance(value, str):
@@ -267,23 +281,25 @@ class OmeMapsViewerDialog(QObject):
 
                 recursive_get_paths(value, new_path)
 
-        initial_path = []
+        initial_path: list[str] = []
         recursive_get_paths(self.gui_config_maps, initial_path)
         self.widget_paths = paths
 
     @property
-    def seed_search_method_parameter_widgets(self):
+    def seed_search_method_parameter_widgets(
+        self,
+    ) -> list[QWidget]:
         maps = self.gui_config_maps
         methods = maps['find_orientations']['seed_search']['method']
         names = [v for d in methods.values() for v in d.values()]
         return [getattr(self.ui, x) for x in names]
 
     @property
-    def quaternion_method_name(self):
+    def quaternion_method_name(self) -> str:
         return self.ui.quaternion_method.currentData()
 
     @quaternion_method_name.setter
-    def quaternion_method_name(self, v):
+    def quaternion_method_name(self, v: str) -> None:
         w = self.ui.quaternion_method
         for i in range(w.count()):
             if v == w.itemData(i):
@@ -296,31 +312,31 @@ class OmeMapsViewerDialog(QObject):
         raise Exception(f'Unable to set quaternion_method: {v}')
 
     @property
-    def quaternions_hand_picked(self):
+    def quaternions_hand_picked(self) -> bool:
         return self.quaternion_method_name == 'hand_picked'
 
     @property
-    def quaternion_grid_file(self):
+    def quaternion_grid_file(self) -> str:
         return self.ui.quaternion_grid_file.text()
 
     @quaternion_grid_file.setter
-    def quaternion_grid_file(self, v):
+    def quaternion_grid_file(self, v: str) -> None:
         self.ui.quaternion_grid_file.setText(v)
 
-    def update_visibilities(self):
+    def update_visibilities(self) -> None:
         self.update_seed_search_visibilities()
         self.update_indexing_visibilities()
         self.update_clustering_visibilities()
 
-    def update_hand_picked_active_state(self):
+    def update_hand_picked_active_state(self) -> None:
         self.hand_picked_fibers_widget.active = self.quaternions_hand_picked
 
     @staticmethod
-    def set_widgets_visible(widgets, visible):
+    def set_widgets_visible(widgets: list[QWidget], visible: bool) -> None:
         for w in widgets:
             w.setVisible(visible)
 
-    def update_seed_search_visibilities(self):
+    def update_seed_search_visibilities(self) -> None:
         widgets = [
             self.ui.select_hkls_group,
             self.ui.label_spots,
@@ -329,7 +345,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.set_widgets_visible(widgets, visible)
 
-    def update_indexing_visibilities(self):
+    def update_indexing_visibilities(self) -> None:
         widgets = [
             self.ui.omega_group_box,
             self.ui.eta_group_box,
@@ -338,7 +354,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.set_widgets_visible(widgets, visible)
 
-    def update_clustering_visibilities(self):
+    def update_clustering_visibilities(self) -> None:
         widgets = [
             self.ui.clustering_group_box,
         ]
@@ -347,11 +363,11 @@ class OmeMapsViewerDialog(QObject):
         self.set_widgets_visible(widgets, visible)
 
     @property
-    def seed_search_method_name(self):
+    def seed_search_method_name(self) -> str:
         return self.ui.seed_search_method.currentData()
 
     @seed_search_method_name.setter
-    def seed_search_method_name(self, v):
+    def seed_search_method_name(self, v: str) -> None:
         w = self.ui.seed_search_method
         for i in range(w.count()):
             if v == w.itemData(i):
@@ -361,14 +377,14 @@ class OmeMapsViewerDialog(QObject):
 
         raise Exception(f'Unable to set seed_search_method: {v}')
 
-    def filter_modified(self):
+    def filter_modified(self) -> None:
         self.update_enable_states()
         self.update_config()
         self.reset_filters()
         self.update_plot()
 
     @property
-    def filter_widgets(self):
+    def filter_widgets(self) -> list[QWidget]:
         return [
             self.ui.apply_filtering,
             self.ui.filtering_apply_gaussian_laplace,
@@ -376,7 +392,7 @@ class OmeMapsViewerDialog(QObject):
         ]
 
     @property
-    def filter_maps(self):
+    def filter_maps(self) -> bool | float:
         if not self.ui.apply_filtering.isChecked():
             return False
 
@@ -387,7 +403,7 @@ class OmeMapsViewerDialog(QObject):
         return float(self.ui.filtering_fwhm.value() / sigma_to_fwhm)
 
     @filter_maps.setter
-    def filter_maps(self, v):
+    def filter_maps(self, v: bool | float) -> None:
         if isinstance(v, bool):
             filtering = v
             apply_gl = False
@@ -401,64 +417,64 @@ class OmeMapsViewerDialog(QObject):
         self.ui.filtering_apply_gaussian_laplace.setChecked(apply_gl)
         self.ui.filtering_fwhm.setValue(fwhm)
 
-    def quaternion_method_changed(self):
+    def quaternion_method_changed(self) -> None:
         self.update_quaternion_method_tab()
         self.update_visibilities()
         self.update_hand_picked_active_state()
         self.update_config()
         self.update_spots()
 
-    def seed_search_method_changed(self):
+    def seed_search_method_changed(self) -> None:
         self.update_seed_search_method_tab()
         self.update_config()
         self.update_spots()
 
-    def update_quaternion_method_tab(self):
+    def update_quaternion_method_tab(self) -> None:
         # Take advantage of the naming scheme...
         method_tab = getattr(self.ui, self.quaternion_method_name + '_tab')
         self.ui.quaternion_method_tab_widget.setCurrentWidget(method_tab)
 
-    def update_seed_search_method_tab(self):
+    def update_seed_search_method_tab(self) -> None:
         # Take advantage of the naming scheme...
         method_tab = getattr(self.ui, self.seed_search_method_name + '_tab')
         self.ui.seed_search_method_tab_widget.setCurrentWidget(method_tab)
 
     @property
-    def hkls(self):
+    def hkls(self) -> list[str]:
         return self.data.planeData.getHKLs(*self.data.iHKLList, asStr=True)
 
-    def update_hkl_options(self):
+    def update_hkl_options(self) -> None:
         # This won't trigger a re-draw. Can change in the future if needed.
         with block_signals(self.ui.active_hkl):
             self.ui.active_hkl.clear()
             self.ui.active_hkl.addItems(self.hkls)
 
-    def setup_plot(self):
+    def setup_plot(self) -> None:
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure(tight_layout=True))
 
         # Get the canvas to take up the majority of the screen most of the time
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         fig = canvas.figure
         ax = fig.add_subplot()
         ax.set_title('Eta Omega Maps')
         ax.set_xlabel(r'$\eta$ ($\deg$)')
         ax.set_ylabel(r'$\omega$ ($\deg$)')
-        ax.format_coord = self.format_coord
+        ax.format_coord = self.format_coord  # type: ignore[method-assign]
         self.ui.canvas_layout.addWidget(canvas)
 
         self.toolbar = NavigationToolbar(canvas, self.ui, coordinates=True)
         self.ui.canvas_layout.addWidget(self.toolbar)
 
         # Center the toolbar
-        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
 
-    def format_coord(self, x, y):
+    def format_coord(self, x: float, y: float) -> str:
         # Format the coordinates to be displayed on the navigation toolbar.
         # The coordinates are displayed when the mouse is moved.
         float_format = '8.3f'
@@ -471,7 +487,7 @@ class OmeMapsViewerDialog(QObject):
 
         return prefix + delimiter.join(labels)
 
-    def setup_color_map(self):
+    def setup_color_map(self) -> None:
         self.color_map_editor = ColorMapEditor(self, self.ui)
         self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
         self.update_cmap_bounds()
@@ -479,7 +495,7 @@ class OmeMapsViewerDialog(QObject):
         # Set the initial max as 20
         self.color_map_editor.ui.maximum.setValue(20)
 
-    def setup_hkls_table(self):
+    def setup_hkls_table(self) -> None:
         selected = self.config['find_orientations']['seed_search']['hkl_seeds']
         hkls = self.hkls
         items = [(x, i in selected) for i, x in enumerate(hkls)]
@@ -488,15 +504,15 @@ class OmeMapsViewerDialog(QObject):
         layout.addWidget(self.select_hkls_widget.ui)
 
     @property
-    def selected_hkls(self):
+    def selected_hkls(self) -> list[int]:
         return self.select_hkls_widget.selected_indices
 
     @property
-    def data(self):
+    def data(self) -> Any:
         return self._data
 
     @data.setter
-    def data(self, d):
+    def data(self, d: Any) -> None:
         if hasattr(self, '_data') and d == self._data:
             return
 
@@ -512,19 +528,19 @@ class OmeMapsViewerDialog(QObject):
         self.update_cmap_bounds()
 
     @property
-    def scaled_image_data(self):
+    def scaled_image_data(self) -> Any:
         return self.transform(self.image_data)
 
     @property
-    def image_data(self):
+    def image_data(self) -> Any:
         return self.data.dataStore[self.current_hkl_index]
 
-    def update_extent(self):
+    def update_extent(self) -> None:
         etas = np.degrees(self.data.etas)
         omes = np.degrees(self.data.omegas)
         self.extent = (etas[0], etas[-1], omes[-1], omes[0])
 
-    def update_cmap_bounds(self):
+    def update_cmap_bounds(self) -> None:
         if not hasattr(self, 'color_map_editor'):
             return
 
@@ -537,7 +553,7 @@ class OmeMapsViewerDialog(QObject):
             w.setToolTip(f'{w.toolTip()}\n\n{note}')
 
     @property
-    def display_spots(self):
+    def display_spots(self) -> bool:
         return all(
             (
                 self.quaternion_method_name == 'seed_search',
@@ -545,18 +561,19 @@ class OmeMapsViewerDialog(QObject):
             )
         )
 
-    def clear_spot_lines(self):
+    def clear_spot_lines(self) -> None:
         if hasattr(self, '_spot_lines'):
             remove_artist(self._spot_lines)
             del self._spot_lines
 
-    def update_spots(self):
+    def update_spots(self) -> None:
         self.clear_spot_lines()
         if not self.display_spots:
             self.draw()
             return
 
         self.create_spots()
+        assert self.spots is not None
         if self.spots.size:
             kwargs = {
                 'x': self.spots[:, 1],
@@ -569,12 +586,12 @@ class OmeMapsViewerDialog(QObject):
 
         self.draw()
 
-    def hkl_index_changed(self):
+    def hkl_index_changed(self) -> None:
         w = self.hand_picked_fibers_widget
         w.current_hkl_index = self.current_hkl_index
         self.update_plot()
 
-    def update_plot(self):
+    def update_plot(self) -> None:
         ax = self.ax
 
         data = self.scaled_image_data
@@ -603,30 +620,30 @@ class OmeMapsViewerDialog(QObject):
 
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.canvas.draw()
 
     @property
-    def current_hkl_index(self):
+    def current_hkl_index(self) -> int:
         return self.ui.active_hkl.currentIndex()
 
-    def set_cmap(self, cmap):
+    def set_cmap(self, cmap: str | mpl.colors.Colormap) -> None:
         self.cmap = cmap
         if hasattr(self, 'im'):
             self.im.set_cmap(cmap)
             self.draw()
 
-    def set_norm(self, norm):
+    def set_norm(self, norm: mpl.colors.Normalize | None) -> None:
         self.norm = norm
         if hasattr(self, 'im'):
             self.im.set_norm(norm)
             self.draw()
 
-    def set_scaling(self, transform):
+    def set_scaling(self, transform: Callable[[np.ndarray], np.ndarray]) -> None:
         self.transform = transform
         self.update_plot()
 
-    def create_spots(self):
+    def create_spots(self) -> None:
         # We will clean the data for spot labeling, so make a deep copy
         data = copy.deepcopy(self.image_data)
         clean_map(data)
@@ -650,7 +667,7 @@ class OmeMapsViewerDialog(QObject):
 
         self.spots = spots
 
-    def on_export_button_pressed(self):
+    def on_export_button_pressed(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui,
             'Export Eta Omega Maps',
@@ -666,7 +683,7 @@ class OmeMapsViewerDialog(QObject):
             # Save the raw data out...
             self.raw_data.save(selected_file)
 
-    def select_working_dir(self):
+    def select_working_dir(self) -> None:
         caption = 'Select directory to write scored orientations to'
         d = QFileDialog.getExistingDirectory(self.ui, caption, dir=self.working_dir)
 
@@ -674,11 +691,11 @@ class OmeMapsViewerDialog(QObject):
             self.working_dir = d
 
     @property
-    def threshold(self):
+    def threshold(self) -> float:
         return self.color_map_editor.ui.minimum.value()
 
     @threshold.setter
-    def threshold(self, v):
+    def threshold(self, v: float) -> None:
         if self.color_map_editor.ui.maximum.value() <= v:
             # Move the maximum so we can set the minimum also
             self.color_map_editor.ui.maximum.setValue(v + 1)
@@ -686,19 +703,19 @@ class OmeMapsViewerDialog(QObject):
         self.color_map_editor.ui.minimum.setValue(v)
 
     @property
-    def write_scored_orientations(self):
+    def write_scored_orientations(self) -> bool:
         return self.ui.write_scored_orientations.isChecked()
 
     @write_scored_orientations.setter
-    def write_scored_orientations(self, v):
+    def write_scored_orientations(self, v: bool) -> None:
         self.ui.write_scored_orientations.setChecked(v)
 
     @property
-    def yaml_widgets(self):
+    def yaml_widgets(self) -> list[QWidget]:
         return [getattr(self.ui, x) for x in self.widget_paths.keys()]
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list[QWidget]:
         return (
             self.yaml_widgets
             + self.filter_widgets
@@ -711,13 +728,13 @@ class OmeMapsViewerDialog(QObject):
             ]
         )
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         # Updates all of the widgets with their settings from the config
         self.update_hkl_options()
 
         with block_signals(*self.all_widgets):
 
-            def setter(w):
+            def setter(w: Any) -> Any:
                 if isinstance(w, QComboBox):
                     return lambda x: w.setCurrentIndex(w.findData(x))
 
@@ -726,7 +743,7 @@ class OmeMapsViewerDialog(QObject):
 
             config = self.config
 
-            def set_val(w, path):
+            def set_val(w: Any, path: list[str]) -> None:
                 cur = config
                 for x in path:
                     if x not in cur:
@@ -768,7 +785,7 @@ class OmeMapsViewerDialog(QObject):
 
             self.synchronize_fiber_step_boxes(self.ui.fiber_step.value())
 
-    def update_config(self):
+    def update_config(self) -> None:
         # Update all of the config with their settings from the widgets
         config = self.config
         find_orientations = config['find_orientations']
@@ -794,14 +811,14 @@ class OmeMapsViewerDialog(QObject):
         ]
         method[method_name] = copy.deepcopy(dummy_method[method_name])
 
-        def getter(w):
+        def getter(w: Any) -> Any:
             if isinstance(w, QComboBox):
                 return w.currentData
 
             # Assume it is a spin box of some kind
             return w.value
 
-        def set_val(val, path):
+        def set_val(val: Any, path: list[str]) -> None:
             cur = config
             for x in path[:-1]:
                 if x not in cur:
@@ -826,10 +843,10 @@ class OmeMapsViewerDialog(QObject):
 
         config['working_dir'] = self.working_dir
 
-    def save_config(self):
+    def save_config(self) -> None:
         HexrdConfig().config['indexing'] = copy.deepcopy(self.config)
 
-    def reset_filters(self):
+    def reset_filters(self) -> None:
         # Reset the data store
         if hasattr(self.data, '_dataStore'):
             name = '_dataStore'
@@ -853,15 +870,15 @@ class OmeMapsViewerDialog(QObject):
         # Perform the filtering
         filter_maps_if_requested(self.data, cfg)
 
-    def synchronize_fiber_step_boxes(self, v):
+    def synchronize_fiber_step_boxes(self, v: float) -> None:
         self.ui.fiber_step.setValue(v)
         self.hand_picked_fibers_widget.fiber_step = v
 
     @property
-    def hand_picked_quaternions(self):
+    def hand_picked_quaternions(self) -> Any:
         return self.hand_picked_fibers_widget.picked_quaternions
 
-    def update_current_fiber_plot(self):
+    def update_current_fiber_plot(self) -> None:
         self.hand_picked_fibers_widget.update_current()
         self.hand_picked_fibers_widget.draw_selected()
 

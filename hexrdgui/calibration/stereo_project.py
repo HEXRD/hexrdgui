@@ -1,4 +1,5 @@
 import copy
+from typing import Any
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
@@ -7,7 +8,13 @@ from hexrd import constants
 from hexrd.rotations import mapAngle
 
 
-def stereo_projection_of_polar_view(pvarray, tth_grid, eta_grid, instr, stereo_size):
+def stereo_projection_of_polar_view(
+    pvarray: np.ndarray,
+    tth_grid: np.ndarray,
+    eta_grid: np.ndarray,
+    instr: Any,
+    stereo_size: int,
+) -> np.ma.MaskedArray:
 
     kwargs = {
         'points': (eta_grid, tth_grid),
@@ -23,15 +30,21 @@ def stereo_projection_of_polar_view(pvarray, tth_grid, eta_grid, instr, stereo_s
     return stereo_project(instr, raw_bkgsub, stereo_size)
 
 
-def project_intensity_detector(det, interp_obj):
+def project_intensity_detector(
+    det: Any,
+    interp_obj: RegularGridInterpolator,
+) -> np.ndarray:
     tth, eta = np.degrees(det.pixel_angles())
     eta = mapAngle(eta, (0, 360.0), units='degrees')
     xi = (eta, tth)
     return interp_obj(xi)
 
 
-def project_intensities_to_raw(instr, interp_obj):
-    raw_bkgsub = dict.fromkeys(instr.detectors)
+def project_intensities_to_raw(
+    instr: Any,
+    interp_obj: RegularGridInterpolator,
+) -> dict[str, np.ndarray]:
+    raw_bkgsub: dict[str, np.ndarray] = {}
     for d in instr.detectors:
         det = instr.detectors[d]
         raw_bkgsub[d] = project_intensity_detector(det, interp_obj)
@@ -39,7 +52,11 @@ def project_intensities_to_raw(instr, interp_obj):
     return raw_bkgsub
 
 
-def stereo_project(instr, raw, stereo_size):
+def stereo_project(
+    instr: Any,
+    raw: dict[str, np.ndarray],
+    stereo_size: int,
+) -> np.ma.MaskedArray:
     # copy instruments and set viewing direction
     # to be centered at the VISAR
     instr_cp = copy.deepcopy(instr)
@@ -84,12 +101,12 @@ def stereo_project(instr, raw, stereo_size):
     return np.ma.masked_array(stereo, mask=fmask)
 
 
-def prep_polar_data(fid):
+def prep_polar_data(fid: Any) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     pvarray = np.array(fid['intensities'])
     tth_1dgrid = np.array(fid['tth_coordinates'])[0, :]
     eta_1dgrid = np.array(fid['eta_coordinates'])[:, 0]
 
-    eta_1dgrid = mapAngle(eta, (0, 360.0), units='degrees')
+    eta_1dgrid = mapAngle(eta_1dgrid, (0, 360.0), units='degrees')
     # np.mod(eta_1dgrid, 360)
     idx = np.argsort(eta_1dgrid)
     eta_1dgrid = eta_1dgrid[idx]
@@ -98,7 +115,7 @@ def prep_polar_data(fid):
     return (pvarray, tth_1dgrid, eta_1dgrid)
 
 
-def test_stereo_project(polar_file, state_file, stereo_size):
+def test_stereo_project(polar_file: str, state_file: str, stereo_size: int) -> None:
     import cProfile
     import pstats
 

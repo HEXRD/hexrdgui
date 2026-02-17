@@ -1,4 +1,5 @@
-from collections.abc import Sequence, ValuesView
+from collections.abc import Generator, Sequence, ValuesView
+from typing import Any
 
 from matplotlib.artist import Artist
 
@@ -6,7 +7,7 @@ from hexrdgui.utils.matplotlib import remove_artist
 
 
 class BlitManager:
-    def __init__(self, canvas):
+    def __init__(self, canvas: Any) -> None:
         """
         Parameters
         ----------
@@ -22,19 +23,19 @@ class BlitManager:
         # This dict can contain nested dicts, lists, etc.
         # But all non-container values must be artists.
         # We will find them recursively.
-        self.artists = {}
+        self.artists: dict[str, Any] = {}
 
         # grab the background on every draw
         self.cid = canvas.mpl_connect("draw_event", self.on_draw)
 
-    def disconnect(self):
-        self.remove_all_artists()
+    def disconnect(self) -> None:
+        self.remove_artists()
 
         if self.cid is not None:
-            self.mpl_disconnect(self.cid)
+            self.canvas.mpl_disconnect(self.cid)
             self.cid = None
 
-    def on_draw(self, event):
+    def on_draw(self, event: Any) -> None:
         """Callback to register with 'draw_event'."""
         cv = self.canvas
         if event is not None:
@@ -52,7 +53,7 @@ class BlitManager:
         self.bg = cv.copy_from_bbox(cv.figure.bbox)
         self.draw_all_artists()
 
-    def remove_artists(self, *path):
+    def remove_artists(self, *path: Any) -> None:
         # The *path is an arbitrary path into the artist dict
         parent = None
         d = self.artists
@@ -72,13 +73,13 @@ class BlitManager:
         else:
             self.artists.clear()
 
-    def draw_all_artists(self):
+    def draw_all_artists(self) -> None:
         """Draw all of the animated artists."""
         fig = self.canvas.figure
         for artist in _recursive_yield_artists(self.artists):
             fig.draw_artist(artist)
 
-    def update(self):
+    def update(self) -> None:
         """Update the screen with animated artists."""
         cv = self.canvas
         fig = cv.figure
@@ -98,7 +99,7 @@ class BlitManager:
         cv.flush_events()
 
 
-def _recursive_yield_artists(artists):
+def _recursive_yield_artists(artists: Any) -> Generator[Artist, None, None]:
     if isinstance(artists, dict):
         yield from _recursive_yield_artists(artists.values())
     elif isinstance(artists, (Sequence, ValuesView)):

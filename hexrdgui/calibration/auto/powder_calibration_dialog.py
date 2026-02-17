@@ -1,14 +1,21 @@
-from PySide6.QtWidgets import QMessageBox
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 import numpy as np
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 
+if TYPE_CHECKING:
+    from hexrd.material import Material
+
 
 class PowderCalibrationDialog:
 
-    def __init__(self, material, parent=None):
+    def __init__(self, material: Material, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('powder_calibration_dialog.ui', parent)
 
@@ -17,7 +24,7 @@ class PowderCalibrationDialog:
         self.setup_combo_boxes()
         self.update_gui()
 
-    def setup_combo_boxes(self):
+    def setup_combo_boxes(self) -> None:
         self.ui.peak_fit_type.clear()
         for t in peak_types:
             label = peak_type_to_label(t)
@@ -28,7 +35,7 @@ class PowderCalibrationDialog:
             label = background_type_to_label(t)
             self.ui.background_type.addItem(label, t)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         if self.tth_tol is None:
             default = 0.125
             msg = (
@@ -51,7 +58,7 @@ class PowderCalibrationDialog:
         self.peak_fit_type = options['pk_type']
         self.background_type = options['bg_type']
 
-    def update_config(self):
+    def update_config(self) -> None:
         options = HexrdConfig().config['calibration']['powder']
         self.tth_tol = self.ui.tth_tolerance.value()
         options['eta_tol'] = self.ui.eta_tolerance.value()
@@ -64,7 +71,7 @@ class PowderCalibrationDialog:
         options['pk_type'] = self.peak_fit_type
         options['bg_type'] = self.background_type
 
-    def exec(self):
+    def exec(self) -> bool:
         if not self.ui.exec():
             return False
 
@@ -72,28 +79,28 @@ class PowderCalibrationDialog:
         return True
 
     @property
-    def auto_guess_initial_fwhm(self):
+    def auto_guess_initial_fwhm(self) -> bool:
         return self.ui.auto_guess_initial_fwhm.isChecked()
 
     @auto_guess_initial_fwhm.setter
-    def auto_guess_initial_fwhm(self, b):
+    def auto_guess_initial_fwhm(self, b: bool) -> None:
         self.ui.auto_guess_initial_fwhm.setChecked(b)
 
     @property
-    def initial_fwhm(self):
+    def initial_fwhm(self) -> float:
         return self.ui.initial_fwhm.value()
 
     @initial_fwhm.setter
-    def initial_fwhm(self, v):
+    def initial_fwhm(self, v: float) -> None:
         self.ui.initial_fwhm.setValue(v)
 
     @property
-    def tth_tol(self):
+    def tth_tol(self) -> float | None:
         tth_width = self.material.planeData.tThWidth
         return None if tth_width is None else np.degrees(tth_width)
 
     @tth_tol.setter
-    def tth_tol(self, v):
+    def tth_tol(self, v: float) -> None:
         v = np.radians(v)
         if self.material.planeData.tThWidth == v:
             # Just return...
@@ -105,11 +112,11 @@ class PowderCalibrationDialog:
         HexrdConfig().overlay_config_changed.emit()
 
     @property
-    def peak_fit_type(self):
+    def peak_fit_type(self) -> str:
         return self.ui.peak_fit_type.currentData()
 
     @peak_fit_type.setter
-    def peak_fit_type(self, v):
+    def peak_fit_type(self, v: str) -> None:
         w = self.ui.peak_fit_type
         found = False
         for i in range(w.count()):
@@ -122,11 +129,11 @@ class PowderCalibrationDialog:
             raise Exception(f'Unknown peak fit type: {v}')
 
     @property
-    def background_type(self):
+    def background_type(self) -> str:
         return self.ui.background_type.currentData()
 
     @background_type.setter
-    def background_type(self, v):
+    def background_type(self, v: str) -> None:
         w = self.ui.background_type
         found = False
         for i in range(w.count()):
@@ -164,12 +171,12 @@ peak_type_to_label_map = {
     'pink_beam_dcs': 'DCS',
 }
 
-background_type_to_label_map = {}
+background_type_to_label_map: dict[str, Any] = {}
 
 
-def peak_type_to_label(t):
+def peak_type_to_label(t: str) -> str:
     return peak_type_to_label_map.get(t, t.capitalize())
 
 
-def background_type_to_label(t):
+def background_type_to_label(t: str) -> str:
     return background_type_to_label_map.get(t, t.capitalize())

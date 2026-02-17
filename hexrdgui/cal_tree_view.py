@@ -1,12 +1,15 @@
-from PySide6.QtCore import QObject, QModelIndex, Qt
+from __future__ import annotations
+
+from typing import Any, cast
+
+from PySide6.QtCore import QObject, QModelIndex, QPersistentModelIndex, Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
     QMenu,
     QMessageBox,
-    QStyledItemDelegate,
     QTreeView,
+    QWidget,
 )
-from PySide6.QtGui import QCursor
+from PySide6.QtGui import QContextMenuEvent, QCursor
 
 import numpy as np
 
@@ -23,17 +26,17 @@ VALUE_COL = KEY_COL + 1
 
 class CalTreeItemModel(BaseTreeItemModel):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.root_item = TreeItem(['key', 'value'])
         self.cfg = HexrdConfig()
         self.rebuild_tree()
 
-    def data(self, index, role):
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
             return None
 
-        if role != Qt.DisplayRole and role != Qt.EditRole:
+        if role != Qt.ItemDataRole.DisplayRole and role != Qt.ItemDataRole.EditRole:
             return None
 
         item = self.get_item(index)
@@ -46,7 +49,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         return value
 
-    def setData(self, index, value, role):
+    def setData(self, index: QModelIndex | QPersistentModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
         item = self.get_item(index)
         path = self.path_to_value(item, index.column())
 
@@ -81,6 +84,7 @@ class CalTreeItemModel(BaseTreeItemModel):
         item.set_data(index.column(), value)
 
         if item.child_count() == 0:
+            assert item.parent_item is not None
             parent = item.parent_item.data(KEY_COL)
             chi_path = ['oscillation_stage', 'chi']
             if path == chi_path:
@@ -97,13 +101,13 @@ class CalTreeItemModel(BaseTreeItemModel):
             dist_func_path = ['distortion', 'function_name']
             if len(path) > 4 and path[2:5] == dist_func_path:
                 # Rebuild the tree if the distortion function changed
-                QObject.parent(self).rebuild_tree()
+                cast(CalTreeView, QObject.parent(self)).rebuild_tree()
 
         return True
 
-    def flags(self, index):
+    def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag(0)
 
         flags = super(CalTreeItemModel, self).flags(index)
 
@@ -121,15 +125,21 @@ class CalTreeItemModel(BaseTreeItemModel):
             index.column() == VALUE_COL
             and item.child_count() == 0
             and item.data(KEY_COL) not in non_editable_keys
+            and item.parent_item is not None
             and item.parent_item.data(KEY_COL) not in non_editable_parent_keys
         )
 
         if editable:
-            flags = flags | Qt.ItemIsEditable
+            flags = flags | Qt.ItemFlag.ItemIsEditable
 
         return flags
 
-    def add_tree_item(self, key, value, parent):
+    def add_tree_item(  # type: ignore[override]
+        self,
+        key: Any,
+        value: Any,
+        parent: Any,
+    ) -> Any:
         # In the case of the panel buffer we don't want to added children
         # The editor will take care of this.
         if parent.data(KEY_COL) == constants.BUFFER_KEY:
@@ -139,7 +149,7 @@ class CalTreeItemModel(BaseTreeItemModel):
         tree_item = TreeItem(data, parent)
         return tree_item
 
-    def rebuild_tree(self):
+    def rebuild_tree(self) -> None:
         # Rebuild the tree from scratch
         self.clear()
         for key in self.cfg.internal_instrument_config.keys():
@@ -148,7 +158,8 @@ class CalTreeItemModel(BaseTreeItemModel):
                 self.cfg.internal_instrument_config[key], tree_item
             )
 
-    def recursive_add_tree_items(self, cur_config, cur_tree_item):
+    def recursive_add_tree_items(self, cur_config: Any, cur_tree_item: Any) -> None:
+        keys: Any
         if isinstance(cur_config, dict):
             keys = cur_config.keys()
         elif isinstance(cur_config, list):
@@ -192,7 +203,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
             self.set_value(key, data, tree_item)
 
-    def path_to_value(self, tree_item, column):
+    def path_to_value(self, tree_item: Any, column: int) -> list[Any]:
         path = []
         cur_tree_item = tree_item
         while True:
@@ -207,7 +218,7 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         return path
 
-    def set_value(self, key, cur_config, cur_tree_item):
+    def set_value(self, key: Any, cur_config: Any, cur_tree_item: Any) -> None:
         if isinstance(cur_config, list):
             children = cur_tree_item.child_items
             for child in children:
@@ -219,7 +230,10 @@ class CalTreeItemModel(BaseTreeItemModel):
 
 class CalTreeView(QTreeView):
 
-    def __init__(self, parent=None):
+    def model(self) -> CalTreeItemModel:
+        return super().model()  # type: ignore[return-value]
+
+    def __init__(self, parent: QWidget | None = None) -> None:
         super(CalTreeView, self).__init__(parent)
         self.setModel(CalTreeItemModel(self))
         self.setItemDelegateForColumn(VALUE_COL, ValueColumnDelegate(self))
@@ -234,11 +248,11 @@ class CalTreeView(QTreeView):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.collapsed.connect(self.update_collapsed_status)
         self.expanded.connect(self.update_collapsed_status)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         index = self.indexAt(event.pos())
         item = self.model().get_item(index)
         children = item.child_count()
@@ -247,8 +261,6 @@ class CalTreeView(QTreeView):
             menu = QMenu(self)
             collapse = menu.addAction('Collapse All')
             expand = menu.addAction('Expand All')
-            check = None
-            uncheck = None
             if children:
                 menu.addSeparator()
             action = menu.exec(QCursor.pos())
@@ -258,13 +270,13 @@ class CalTreeView(QTreeView):
             elif action == expand:
                 self.expand_selection(item, index)
 
-    def rebuild_tree(self):
+    def rebuild_tree(self) -> None:
         # We rebuild it from scratch every time it is shown in case
         # the number of detectors have changed.
         self.model().rebuild_tree()
         self.expand_all_rows()
 
-    def expand_all_rows(self):
+    def expand_all_rows(self) -> None:
         self.blockSignals(True)
         # It is *significantly* faster to recursively expand
         # all rows using Qt's function and then to collapse as
@@ -273,7 +285,7 @@ class CalTreeView(QTreeView):
         self.fix_row_states()
         self.blockSignals(False)
 
-    def fix_row_states(self, parent=QModelIndex()):
+    def fix_row_states(self, parent: QModelIndex = QModelIndex()) -> None:
         # Recursively fix all row states
         # This includes opening persistent editors and collapsing any
         # needed rows.
@@ -295,21 +307,21 @@ class CalTreeView(QTreeView):
 
             self.fix_row_states(index)
 
-    def expand_selection(self, parent, index):
+    def expand_selection(self, parent: Any, index: QModelIndex) -> None:
         for child in range(parent.child_count()):
             self.expand_selection(
                 parent.child_items[child], self.model().index(child, KEY_COL, index)
             )
         self.expand(index)
 
-    def collapse_selection(self, parent, index):
+    def collapse_selection(self, parent: Any, index: QModelIndex) -> None:
         for child in range(parent.child_count()):
             self.collapse_selection(
                 parent.child_items[child], self.model().index(child, KEY_COL, index)
             )
         self.collapse(index)
 
-    def update_collapsed_status(self, index):
+    def update_collapsed_status(self, index: QModelIndex) -> None:
         item = self.model().get_item(index)
         path = self.model().path_to_value(item, KEY_COL)
 

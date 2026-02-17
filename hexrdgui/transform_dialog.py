@@ -1,22 +1,23 @@
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.ui_loader import UiLoader
+from typing import Any
 
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpacerItem
+from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpacerItem, QWidget
 
 
 class TransformDialog:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('transforms_dialog.ui', parent)
-        self.det_labels = []
-        self.det_cboxes = []
+        self.det_labels: list[Any] = []
+        self.det_cboxes: list[QComboBox] = []
 
         self.update_gui()
         self.setup_connections()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         options = [
             '(None)',
             'Mirror about Vertical',
@@ -44,15 +45,15 @@ class TransformDialog:
             label.setEnabled(False)
             cbox.setEnabled(False)
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.update_all.clicked.connect(self.toggle_options)
         self.ui.update_each.clicked.connect(self.toggle_options)
         self.ui.accepted.connect(self.apply_transforms)
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
-    def toggle_options(self):
+    def toggle_options(self) -> None:
         enabled = self.ui.update_all.isChecked()
         self.ui.all_label.setEnabled(enabled)
         self.ui.transform_all_menu.setEnabled(enabled)
@@ -60,7 +61,7 @@ class TransformDialog:
             label.setEnabled(not enabled)
             cbox.setEnabled(not enabled)
 
-    def apply_transforms(self):
+    def apply_transforms(self) -> None:
         num_dets = len(HexrdConfig().detector_names)
         trans = []
         if self.ui.update_all.isChecked():

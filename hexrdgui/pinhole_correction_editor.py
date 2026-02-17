@@ -1,5 +1,11 @@
+from __future__ import annotations
+
 import h5py
 import numpy as np
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import (
@@ -8,6 +14,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QMessageBox,
     QSpinBox,
+    QWidget,
 )
 
 import hexrd.resources
@@ -36,14 +43,14 @@ class PinholeCorrectionEditor(QObject):
 
     settings_modified = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('pinhole_correction_editor.ui', parent)
 
-        self.pinhole_materials = {}
-        self.pinhole_distortion_object = None
+        self.pinhole_materials: dict[str, Any] = {}
+        self.pinhole_distortion_object: PolarDistortionObject | None = None
 
         # Default to "None" tab
         self.ui.correction_type.setCurrentIndex(0)
@@ -56,7 +63,7 @@ class PinholeCorrectionEditor(QObject):
         self.on_rygg_absorption_length_selector_changed()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.layer_type.currentIndexChanged.connect(self.update_gui)
 
         for w in self.all_widgets:
@@ -85,28 +92,28 @@ class PinholeCorrectionEditor(QObject):
 
         self.ui.apply_to_polar_view.toggled.connect(self.on_apply_to_polar_view_toggled)
 
-    def setup_layer_options(self):
+    def setup_layer_options(self) -> None:
         labels = list(REVERSED_LAYER_TYPES)
         self.ui.layer_type.addItems(labels)
 
-    def synchronize_values(self):
+    def synchronize_values(self) -> None:
         with block_signals(*self.all_widgets):
             self.correction_kwargs = {}
         self.on_settings_modified()
 
-    def on_settings_modified(self):
+    def on_settings_modified(self) -> None:
         self.settings_modified.emit()
         self.update_polar_distortion_object()
 
     @property
-    def correction_type(self):
+    def correction_type(self) -> str | None:
         v = self.ui.correction_type.currentText()
 
         if v != 'None':
             if not ask_to_create_physics_package_if_missing():
                 # There's no physics package. We can't switch.
                 self.correction_type = None
-                return
+                return None
 
         conversions = {
             'None': None,
@@ -120,7 +127,7 @@ class PinholeCorrectionEditor(QObject):
         return v
 
     @correction_type.setter
-    def correction_type(self, v):
+    def correction_type(self, v: str | None) -> None:
         conversions = {
             None: 'None',
             'JHEPinholeDistortion': 'Pinhole (JHE)',
@@ -132,19 +139,20 @@ class PinholeCorrectionEditor(QObject):
 
         self.ui.correction_type.setCurrentText(v)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         # This will trigger any needed updates
         # The getter grabs values from the physics package, while
         # the setter sets values in the UI.
         self.correction_kwargs = self.correction_kwargs
 
     @property
-    def correction_kwargs(self):
+    def correction_kwargs(self) -> dict[str, Any] | None:
         dtype = self.correction_type
         physics = HexrdConfig().physics_package
         if dtype is None:
             return None
-        elif dtype == 'LayerDistortion':
+        assert physics is not None
+        if dtype == 'LayerDistortion':
             layer_type = REVERSED_LAYER_TYPES[self.ui.layer_type.currentText()]
             return {
                 'layer_type': layer_type,
@@ -172,7 +180,7 @@ class PinholeCorrectionEditor(QObject):
         raise Exception(f'Not implemented for: {dtype}')
 
     @correction_kwargs.setter
-    def correction_kwargs(self, v):
+    def correction_kwargs(self, v: dict[str, Any] | None) -> None:
         if v is None:
             return
 
@@ -180,12 +188,13 @@ class PinholeCorrectionEditor(QObject):
             return
 
         physics = HexrdConfig().physics_package
+        assert physics is not None
 
         vp = v.copy()
         # These units are in mm, but we display in micrometers
         for key, value in v.items():
             if key in ('num_phi_elements', 'absorption_length', 'layer_type'):
-                multiplier = 1
+                multiplier = 1.0
             else:
                 multiplier = 1e3
 
@@ -248,7 +257,7 @@ class PinholeCorrectionEditor(QObject):
             self.auto_select_rygg_absorption_length()
 
     @property
-    def layer_widgets(self):
+    def layer_widgets(self) -> list:
         return [
             self.ui.layer_type,
             self.ui.layer_standoff,
@@ -258,14 +267,14 @@ class PinholeCorrectionEditor(QObject):
         ]
 
     @property
-    def jhe_widgets(self):
+    def jhe_widgets(self) -> list:
         return [
             self.ui.jhe_diameter,
             self.ui.jhe_thickness,
         ]
 
     @property
-    def rygg_widgets(self):
+    def rygg_widgets(self) -> list:
         return [
             self.ui.rygg_diameter,
             self.ui.rygg_thickness,
@@ -273,7 +282,7 @@ class PinholeCorrectionEditor(QObject):
         ] + self.rygg_absorption_length_widgets
 
     @property
-    def rygg_absorption_length_widgets(self):
+    def rygg_absorption_length_widgets(self) -> list:
         return [
             self.ui.rygg_absorption_length_label,
             self.ui.rygg_absorption_length_selector,
@@ -281,14 +290,14 @@ class PinholeCorrectionEditor(QObject):
         ]
 
     @property
-    def apply_panel_buffer_buttons(self):
+    def apply_panel_buffer_buttons(self) -> list:
         return [
             self.ui.jhe_apply_panel_buffers,
             self.ui.rygg_apply_panel_buffers,
         ]
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list:
         # Except for the correction type
         return [
             *self.layer_widgets,
@@ -297,7 +306,7 @@ class PinholeCorrectionEditor(QObject):
             *self.apply_panel_buffer_buttons,
         ]
 
-    def correction_type_changed(self):
+    def correction_type_changed(self) -> None:
         idx = self.ui.correction_type.currentIndex()
         self.ui.tab_widget.set_current_index_later(idx)
 
@@ -314,10 +323,10 @@ class PinholeCorrectionEditor(QObject):
         self.validate()
         self.on_settings_modified()
 
-    def update_tab_widget_visibility(self):
+    def update_tab_widget_visibility(self) -> None:
         self.ui.tab_widget.setVisible(self.correction_type is not None)
 
-    def validate(self):
+    def validate(self) -> None:
         if self.correction_type is None:
             # No validation needed
             return
@@ -347,7 +356,7 @@ class PinholeCorrectionEditor(QObject):
                 )
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
 
-    def apply_panel_buffers(self):
+    def apply_panel_buffers(self) -> None:
         instr = create_hedm_instrument()
         ph_buffer = generate_pinhole_panel_buffer(instr)
 
@@ -368,7 +377,7 @@ class PinholeCorrectionEditor(QObject):
         msg = 'Pinhole dimensions were applied to the panel buffers'
         QMessageBox.information(self.ui, 'HEXRD', msg)
 
-    def load_pinhole_materials(self):
+    def load_pinhole_materials(self) -> None:
         module = hexrd.resources
 
         # Use a high dmin since we do not care about the HKLs here.
@@ -385,20 +394,20 @@ class PinholeCorrectionEditor(QObject):
 
         self.pinhole_materials = materials
 
-    def on_material_modified(self, name):
+    def on_material_modified(self, name: str) -> None:
         # Just make sure the value is up-to-date
         self.on_rygg_absorption_length_selector_changed()
 
-    def on_beam_energy_modified(self):
+    def on_beam_energy_modified(self) -> None:
         # Just make sure the value is up-to-date
         self.on_rygg_absorption_length_selector_changed()
 
-    def on_materials_dict_modified(self):
+    def on_materials_dict_modified(self) -> None:
         # This gets called if materials get added/removed/deleted/renamed
         with block_signals(self, self.ui.rygg_absorption_length_selector):
             self.populate_rygg_absorption_length_options()
 
-    def populate_rygg_absorption_length_options(self):
+    def populate_rygg_absorption_length_options(self) -> None:
         self.ui.rygg_absorption_length_selector.clear()
 
         pinhole_names = list(self.pinhole_materials)
@@ -414,20 +423,20 @@ class PinholeCorrectionEditor(QObject):
         self.ui.rygg_absorption_length_selector.insertSeparator(2 + len(pinhole_names))
 
     @property
-    def user_material_names_start_idx(self):
+    def user_material_names_start_idx(self) -> int:
         # 0 is "Enter Manually" and there are 2 separators.
         return 3 + len(self.pinhole_materials)
 
     @property
-    def pinhole_material_names_start_idx(self):
+    def pinhole_material_names_start_idx(self) -> int:
         # 0 is "Enter Manually", 1 is a separator, and 2 is the start
         return 2
 
     @property
-    def enter_manually_idx(self):
+    def enter_manually_idx(self) -> int:
         return 0
 
-    def on_rygg_absorption_length_selector_changed(self):
+    def on_rygg_absorption_length_selector_changed(self) -> None:
         if not HexrdConfig().has_physics_package:
             # Cannot update
             return
@@ -435,19 +444,19 @@ class PinholeCorrectionEditor(QObject):
         self.ui.rygg_absorption_length_value.setValue(HexrdConfig().absorption_length())
 
     @property
-    def none_option_visible(self):
+    def none_option_visible(self) -> bool:
         return not self.ui.correction_type.view().isRowHidden(0)
 
     @none_option_visible.setter
-    def none_option_visible(self, b):
+    def none_option_visible(self, b: bool) -> None:
         self.ui.correction_type.view().setRowHidden(0, not b)
 
     @property
-    def rygg_absorption_length_visible(self):
+    def rygg_absorption_length_visible(self) -> bool:
         return any(w.isVisible() for w in self.rygg_absorption_length_widgets)
 
     @rygg_absorption_length_visible.setter
-    def rygg_absorption_length_visible(self, b):
+    def rygg_absorption_length_visible(self, b: bool) -> None:
         for w in self.rygg_absorption_length_widgets:
             w.setVisible(b)
 
@@ -455,65 +464,72 @@ class PinholeCorrectionEditor(QObject):
         self.apply_to_polar_view_visible = False
 
     @property
-    def apply_to_polar_view_visible(self):
+    def apply_to_polar_view_visible(self) -> bool:
         return self.ui.apply_to_polar_view.isVisible()
 
     @apply_to_polar_view_visible.setter
-    def apply_to_polar_view_visible(self, b):
+    def apply_to_polar_view_visible(self, b: bool) -> None:
         if b and not self.rygg_absorption_length_visible:
             raise Exception('Absorption length must be visible first')
 
         self.ui.apply_to_polar_view.setVisible(b)
 
     @property
-    def apply_panel_buffer_visible(self):
+    def apply_panel_buffer_visible(self) -> bool:
         return any(w.isVisible() for w in self.apply_panel_buffer_buttons)
 
     @apply_panel_buffer_visible.setter
-    def apply_panel_buffer_visible(self, b):
+    def apply_panel_buffer_visible(self, b: bool) -> None:
         for w in self.apply_panel_buffer_buttons:
             w.setVisible(b)
 
-    def auto_select_rygg_absorption_length(self):
+    def auto_select_rygg_absorption_length(self) -> None:
         w = self.ui.rygg_absorption_length_selector
 
         # Set the material to match the pinhole package if it exists.
         # If not default to "Enter Manually"
+        physics_package = HexrdConfig().physics_package
+        assert physics_package is not None
         for i in range(1, w.count()):
             name = w.itemText(i)
             if not name:
                 # It's a separator
                 continue
-            if name == HexrdConfig().physics_package.pinhole_material:
+            if name == physics_package.pinhole_material:
                 w.setCurrentText(name)
                 return
 
         # Set it to `Enter Manually` if nothing else matched
         w.setCurrentText('Enter Manually')
 
-    def update_from_object(self, obj):
+    def update_from_object(self, obj: Any) -> None:
         if type(obj) not in REVERSED_TYPE_MAP:
             raise NotImplementedError(type(obj))
 
         self.correction_type = REVERSED_TYPE_MAP[type(obj)]
         kwargs = self.correction_kwargs
+        assert kwargs is not None
         for key in kwargs:
             # These should have identical names on the object
             kwargs[key] = getattr(obj, key)
 
         self.correction_kwargs = kwargs
 
-    def create_object(self, panel):
+    def create_object(self, panel: Any) -> Any:
         if self.correction_type is None:
+            return None
+
+        correction_kwargs = self.correction_kwargs
+        if correction_kwargs is None:
             return None
 
         kwargs = {
             'panel': panel,
-            **self.correction_kwargs,
+            **correction_kwargs,
         }
         return TYPE_MAP[self.correction_type](**kwargs)
 
-    def create_object_dict(self, instr):
+    def create_object_dict(self, instr: HEDMInstrument) -> dict[str, Any] | None:
         if self.correction_type is None:
             return None
 
@@ -523,17 +539,20 @@ class PinholeCorrectionEditor(QObject):
 
         return ret
 
-    def on_apply_to_polar_view_toggled(self, b):
+    def on_apply_to_polar_view_toggled(self, b: bool) -> None:
         self.apply_to_polar_view = b
 
     @property
-    def apply_to_polar_view(self):
+    def apply_to_polar_view(self) -> bool:
         return self.ui.apply_to_polar_view.isChecked()
 
     @apply_to_polar_view.setter
-    def apply_to_polar_view(self, b):
+    def apply_to_polar_view(self, b: bool) -> None:
         if b:
-            obj = PolarDistortionObject(self.correction_type, self.correction_kwargs)
+            correction_kwargs = self.correction_kwargs
+            if correction_kwargs is None:
+                correction_kwargs = {}
+            obj = PolarDistortionObject(self.correction_type, correction_kwargs)
             HexrdConfig().custom_polar_tth_distortion_object = obj
             self.pinhole_distortion_object = obj
         else:
@@ -545,7 +564,7 @@ class PinholeCorrectionEditor(QObject):
 
         self.on_settings_modified()
 
-    def update_polar_distortion_object(self):
+    def update_polar_distortion_object(self) -> None:
         obj = self.pinhole_distortion_object
         if (
             not obj
@@ -560,8 +579,12 @@ class PinholeCorrectionEditor(QObject):
             obj.pinhole_distortion_type = self.correction_type
             any_changes = True
 
-        if obj.pinhole_distortion_kwargs != self.correction_kwargs:
-            obj.pinhole_distortion_kwargs = self.correction_kwargs
+        correction_kwargs = self.correction_kwargs
+        if (
+            correction_kwargs is not None
+            and obj.pinhole_distortion_kwargs != correction_kwargs
+        ):
+            obj.pinhole_distortion_kwargs = correction_kwargs
             any_changes = True
 
         if any_changes:
@@ -569,7 +592,7 @@ class PinholeCorrectionEditor(QObject):
             HexrdConfig().flag_overlay_updates_for_all_materials()
             HexrdConfig().rerender_needed.emit()
 
-    def update_gui_from_polar_distortion_object(self):
+    def update_gui_from_polar_distortion_object(self) -> None:
         if not (obj := HexrdConfig().saved_custom_polar_tth_distortion_object):
             return
 

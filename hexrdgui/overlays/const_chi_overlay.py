@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from hexrd import constants
 
@@ -18,12 +24,12 @@ class ConstChiOverlay(Overlay):
 
     def __init__(
         self,
-        material_name,
-        chi_values=None,
-        tvec=None,
-        chi_values_serialized=None,
-        **overlay_kwargs
-    ):
+        material_name: str,
+        chi_values: list[Any] | None = None,
+        tvec: np.ndarray | None = None,
+        chi_values_serialized: list[Any] | None = None,
+        **overlay_kwargs: Any
+    ) -> None:
         # chi_values_serialized is only used if chi_values is None.
         # It is used for state loading.
         Overlay.__init__(self, material_name, **overlay_kwargs)
@@ -42,13 +48,13 @@ class ConstChiOverlay(Overlay):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         HexrdConfig().sample_tilt_modified.connect(self.on_sample_tilt_modified)
 
     @property
-    def child_attributes_to_save(self):
+    def child_attributes_to_save(self) -> list[str]:
         # These names must be identical here, as attributes, and as
         # arguments to the __init__ method.
         return [
@@ -57,11 +63,11 @@ class ConstChiOverlay(Overlay):
         ]
 
     @property
-    def chi_values(self):
+    def chi_values(self) -> list[Any]:
         return self._chi_values
 
     @chi_values.setter
-    def chi_values(self, v):
+    def chi_values(self, v: list[Any]) -> None:
         values = []
         for x in v:
             if isinstance(x, dict):
@@ -79,41 +85,43 @@ class ConstChiOverlay(Overlay):
         self._chi_values = sorted(values)
 
     @property
-    def chi_values_serialized(self):
+    def chi_values_serialized(self) -> list[dict[str, Any]]:
         return [asdict(x) for x in self.chi_values]
 
     @chi_values_serialized.setter
-    def chi_values_serialized(self, v):
+    def chi_values_serialized(self, v: list[Any]) -> None:
         # The regular setter can already handle this
         self.chi_values = v
 
     @property
-    def tvec(self):
+    def tvec(self) -> np.ndarray:
         return self._tvec
 
     @tvec.setter
-    def tvec(self, v):
+    def tvec(self, v: Any) -> None:
         self._tvec = np.asarray(v, float)
 
     @property
-    def sample_tilt(self):
+    def sample_tilt(self) -> Any:
         from hexrdgui.hexrd_config import HexrdConfig
 
         return HexrdConfig().sample_tilt
 
     @sample_tilt.setter
-    def sample_tilt(self, v):
+    def sample_tilt(self, v: Any) -> None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         HexrdConfig().sample_tilt = v
 
-    def on_sample_tilt_modified(self):
+    def on_sample_tilt_modified(self) -> None:
         self.update_needed = True
 
-    def generate_overlay(self):
+    def generate_overlay(self) -> dict[str, Any]:
         instr = self.instrument
 
-        data = {det_key: {'data': [], 'chi': []} for det_key in instr.detectors}
+        data: dict[str, Any] = {
+            det_key: {'data': [], 'chi': []} for det_key in instr.detectors
+        }
         for chi_value in self.chi_values:
             if not chi_value.visible:
                 continue
@@ -134,7 +142,12 @@ class ConstChiOverlay(Overlay):
 
         return data
 
-    def cart_to_display_mode(self, xys, instr, det_key):
+    def cart_to_display_mode(
+        self,
+        xys: np.ndarray,
+        instr: HEDMInstrument,
+        det_key: str,
+    ) -> np.ndarray:
         panel = instr.detectors[det_key]
         if self.display_mode in (ViewType.raw, ViewType.cartesian):
             # Find the distances between all points, and insert nans between
@@ -183,7 +196,7 @@ class ConstChiOverlay(Overlay):
         )
 
     @property
-    def default_style(self):
+    def default_style(self) -> dict[str, Any]:
         return {
             'data': {
                 'c': '#e01b24',  # Red
@@ -193,7 +206,7 @@ class ConstChiOverlay(Overlay):
         }
 
     @property
-    def default_highlight_style(self):
+    def default_highlight_style(self) -> dict[str, Any]:
         return {
             'data': {
                 'c': '#ff00ff',  # Magenta
@@ -203,30 +216,30 @@ class ConstChiOverlay(Overlay):
         }
 
     @property
-    def refinement_labels(self):
+    def refinement_labels(self) -> list[Any]:
         return []
 
     @property
-    def default_refinements(self):
+    def default_refinements(self) -> list[Any]:
         return []
 
     @property
-    def has_picks_data(self):
+    def has_picks_data(self) -> bool:
         # Const chi overlays do not currently support picks data
         return False
 
     @property
-    def calibration_picks_polar(self):
+    def calibration_picks_polar(self) -> list[Any]:
         # Const chi overlays do not currently support picks data
         return []
 
     @calibration_picks_polar.setter
-    def calibration_picks_polar(self, picks):
+    def calibration_picks_polar(self, picks: Any) -> None:
         # Const chi overlays do not currently support picks data
         pass
 
     @property
-    def has_widths(self):
+    def has_widths(self) -> bool:
         # Const chi overlays do not currently support widths
         return False
 
@@ -237,7 +250,7 @@ class ChiValue:
     hkl: str = 'None'
     visible: bool = True
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'ChiValue') -> bool:
         return self.value < other.value
 
 

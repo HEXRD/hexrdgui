@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 
 from PySide6.QtCore import QObject, Qt, Signal
@@ -10,71 +12,78 @@ class ReorderPairsWidget(QObject):
 
     items_reordered = Signal()
 
-    def __init__(self, items, titles, parent=None):
+    def __init__(
+        self,
+        items: list,
+        titles: list,
+        parent: QObject | None = None,
+    ) -> None:
         # The items should be a list of tuples of length two, like
         # (first, second).
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('reorder_pairs_widget.ui', parent)
+        self.ui = loader.load_file(
+            'reorder_pairs_widget.ui', parent  # type: ignore[arg-type]
+        )
 
-        self.combo_boxes = []
+        self.combo_boxes: list[QComboBox] = []
 
         self.titles = titles
-        self.parent = parent
+        self._parent = parent
         self.items = items
 
     @property
-    def items(self):
+    def items(self) -> list:
         return self._items
 
     @items.setter
-    def items(self, v):
+    def items(self, v: list) -> None:
         self._items = copy.deepcopy(v)
         self.update_table()
         self.ui.table.resizeColumnsToContents()
 
     @property
-    def titles(self):
+    def titles(self) -> list:
         table = self.ui.table
         num_cols = table.columnCount()
         return [table.horizontalHeaderItem(i) for i in range(num_cols)]
 
     @titles.setter
-    def titles(self, v):
+    def titles(self, v: list) -> None:
         self.ui.table.setHorizontalHeaderLabels(v)
 
-    def create_table_widget(self, w):
+    def create_table_widget(self, w: QWidget) -> QWidget:
         # These are required to center the widget...
         tw = QWidget(self.ui.table)
         layout = QHBoxLayout(tw)
         layout.addWidget(w)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         return tw
 
-    def create_combo_box(self, i, j):
+    def create_combo_box(self, i: int, j: int) -> QWidget:
         value = self.items[i][j]
         options = [x[j] for x in self.items]
 
         cb = QComboBox(self.ui.table)
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         cb.setSizePolicy(size_policy)
         cb.addItems(options)
         cb.setCurrentIndex(options.index(value))
 
-        def callback():
+        def callback() -> None:
             self.item_edited(i, j, cb.currentText())
 
         cb.currentIndexChanged.connect(callback)
         self.combo_boxes.append(cb)
         return self.create_table_widget(cb)
 
-    def clear_table(self):
+    def clear_table(self) -> None:
         self.combo_boxes.clear()
         self.ui.table.clearContents()
 
-    def update_table(self):
+    def update_table(self) -> None:
         self.clear_table()
         self.ui.table.setRowCount(len(self.items))
         for i, pair in enumerate(self.items):
@@ -82,7 +91,7 @@ class ReorderPairsWidget(QObject):
                 w = self.create_combo_box(i, j)
                 self.ui.table.setCellWidget(i, j, w)
 
-    def item_edited(self, i, j, new_value):
+    def item_edited(self, i: int, j: int, new_value: str) -> None:
         # Find the old index of the new value and do a swap
         old_index = [x[j] for x in self.items].index(new_value)
 
@@ -120,7 +129,7 @@ if __name__ == '__main__':
     widget = ReorderPairsWidget(items, titles)
     layout.addWidget(widget.ui)
 
-    def items_reordered():
+    def items_reordered() -> None:
         print(f'Items reordered: {widget.items}')
 
     widget.items_reordered.connect(items_reordered)

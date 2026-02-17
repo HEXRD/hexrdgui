@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
@@ -15,64 +16,68 @@ from hexrdgui.overlays import update_overlay_data
 from hexrdgui.utils.conversions import tth_to_q
 
 
-def polar_viewer():
+def polar_viewer() -> 'InstrumentViewer':
     return InstrumentViewer()
 
 
 class InstrumentViewer:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.type = ViewType.polar
         self.instr = create_hedm_instrument()
 
         self.draw_polar()
 
     @property
-    def all_detector_borders(self):
+    def all_detector_borders(self) -> Any:
         return self.pv.all_detector_borders
 
     @property
-    def angular_grid(self):
+    def angular_grid(self) -> Any:
         return self.pv.angular_grid
 
     @property
-    def raw_img(self):
+    def raw_img(self) -> np.ma.MaskedArray | None:
         return self.pv.raw_img
 
     @property
-    def warp_mask(self):
+    def warp_mask(self) -> np.ndarray:
         return self.pv.warp_mask
 
     @property
-    def snipped_img(self):
+    def snipped_img(self) -> np.ndarray | None:
         return self.pv.snipped_img
 
     @property
-    def img(self):
-        return self.pv.img
+    def img(self) -> np.ndarray:
+        img = self.pv.img
+        assert img is not None
+        return img
 
     @property
-    def display_img(self):
-        return self.pv.display_img
+    def display_img(self) -> np.ndarray:
+        display_img = self.pv.display_img
+        assert display_img is not None
+        return display_img
 
     @property
-    def snip_background(self):
+    def snip_background(self) -> np.ndarray | None:
         return self.pv.snip_background
 
     @property
-    def erosion_mask(self):
+    def erosion_mask(self) -> np.ndarray | None:
         return self.pv.erosion_mask
 
-    def update_angular_grid(self):
+    def update_angular_grid(self) -> None:
         self.pv.update_angular_grid()
 
-    def update_image(self):
+    def update_image(self) -> None:
         self.pv.generate_image()
 
-    def reapply_masks(self):
+    def reapply_masks(self) -> None:
         self.pv.reapply_masks()
 
-    def draw_polar(self):
+    def draw_polar(self) -> None:
         """show polar view of rings"""
         self.pv = PolarView(self.instr)
         self.pv.warp_all_images()
@@ -87,16 +92,18 @@ class InstrumentViewer:
         '''
         self._extent = np.degrees(self.pv.extent)  # l, r, b, t
 
-    def update_overlay_data(self):
+    def update_overlay_data(self) -> None:
         update_overlay_data(self.instr, self.type)
 
-    def update_detectors(self, detectors):
+    def update_detectors(self, detectors: Any) -> None:
         self.pv.update_detectors(detectors)
 
-    def write_image(self, filename='polar_image.npz'):
+    def write_image(self, filename: str | Path = 'polar_image.npz') -> None:
         filename = Path(filename)
 
-        tth, intensities = HexrdConfig().last_unscaled_azimuthal_integral_data
+        data = HexrdConfig().last_unscaled_azimuthal_integral_data
+        assert data is not None
+        tth, intensities = data
 
         # Remove any nan values
         mask = intensities.mask
@@ -131,11 +138,11 @@ class InstrumentViewer:
 
         intensities = self.img
         if np.ma.is_masked(intensities):
-            intensities = intensities.filled(np.nan)
+            intensities = np.ma.MaskedArray(intensities).filled(np.nan)  # type: ignore[assignment]
 
         raw_intensities = self.raw_img
         if np.ma.is_masked(raw_intensities):
-            raw_intensities = raw_intensities.filled(np.nan)
+            raw_intensities = np.ma.MaskedArray(raw_intensities).filled(np.nan)  # type: ignore[assignment]
 
         eta, tth = np.degrees(self.angular_grid)
 
@@ -171,15 +178,15 @@ class InstrumentViewer:
             if mask.visible:
                 data[f'visible_mask_{name}'] = mask.get_masked_arrays(
                     self.type,
-                )
+                )  # type: ignore[call-arg]
             elif mask.show_border:
                 data[f'border_mask_{name}'] = mask.get_masked_arrays(
                     self.type,
-                )
+                )  # type: ignore[call-arg]
             elif mask.highlight:
                 data[f'highlight_mask_{name}'] = mask.get_masked_arrays(
                     self.type,
-                )
+                )  # type: ignore[call-arg]
 
         keep_detectors = HexrdConfig().azimuthal_lineout_detectors
         if (
@@ -203,7 +210,7 @@ class InstrumentViewer:
                 for key, value in data.items():
                     f.create_dataset(key, data=value)
 
-    def write_maud(self, filename='polar_to_maud.esg'):
+    def write_maud(self, filename: str | Path = 'polar_to_maud.esg') -> None:
         filename = Path(filename)
 
         with open(filename, 'w') as fid:
@@ -223,7 +230,9 @@ class InstrumentViewer:
 
                 fid.write(hstr)
                 fid.write(block_hdr)
-                tth = HexrdConfig().last_unscaled_azimuthal_integral_data[0]
+                integral_data = HexrdConfig().last_unscaled_azimuthal_integral_data
+                assert integral_data is not None
+                tth = integral_data[0]
                 for rho, inten in zip(tth, intensities[i]):
                     if np.isnan(inten):
                         continue

@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from functools import partial
 import os
 from pathlib import Path
 import shutil
 import tempfile
+from collections.abc import Sequence
+from typing import Any, TYPE_CHECKING
 
 import h5py
 import numpy as np
@@ -17,6 +21,7 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QMainWindow,
     QMessageBox,
+    QWidget,
 )
 
 from hexrdgui.about_dialog import AboutDialog
@@ -86,6 +91,11 @@ from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
 from hexrdgui import resource_loader, state
 from hexrd.resources import instrument_templates
 
+if TYPE_CHECKING:
+    from PySide6.QtGui import QIcon
+
+    from hexrdgui.image_canvas import ImageCanvas
+
 
 class MainWindow(QObject):
 
@@ -95,8 +105,16 @@ class MainWindow(QObject):
     # Emitted when a new configuration is loaded
     config_loaded = Signal()
 
-    def __init__(self, parent=None, image_files=None):
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        image_files: list[str] | None = None,
+    ) -> None:
         super().__init__(parent)
+
+        self._powder_runner: PowderRunner | None = None
+        self._indexing_config_view: IndexingTreeViewDialog | None = None
+        self._fit_grains_config_view: FitGrainsTreeViewDialog | None = None
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -110,11 +128,11 @@ class MainWindow(QObject):
         self.messages_widget = MessagesWidget(self.ui)
         dock_widget_contents = self.ui.messages_dock_widget_contents
         dock_widget_contents.layout().addWidget(self.messages_widget.ui)
-        self.ui.resizeDocks([self.ui.messages_dock_widget], [80], Qt.Vertical)
+        self.ui.resizeDocks([self.ui.messages_dock_widget], [80], Qt.Orientation.Vertical)
 
         # Let the left dock widget take up the whole left side
-        self.ui.setCorner(Qt.TopLeftCorner, Qt.LeftDockWidgetArea)
-        self.ui.setCorner(Qt.BottomLeftCorner, Qt.LeftDockWidgetArea)
+        self.ui.setCorner(Qt.Corner.TopLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea)
+        self.ui.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea)
 
         self.color_map_editor = ColorMapEditor(
             self.ui.image_tab_widget, self.ui.central_widget
@@ -188,7 +206,7 @@ class MainWindow(QObject):
         self.add_view_dock_widget_actions()
         self.update_recent_state_files()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         """This is to setup connections for non-gui objects"""
         self.ui.installEventFilter(self)
         self.ui.action_open_instrument_file.triggered.connect(
@@ -415,14 +433,16 @@ class MainWindow(QObject):
             self.on_llnl_import_completed
         )
 
-    def on_state_loaded(self):
+    def on_state_loaded(self) -> None:
         self.update_action_check_states()
         self.update_action_enable_states()
         self.materials_panel.update_gui_from_config()
 
-    def update_action_check_states(self):
+    def update_action_check_states(self) -> None:
         checkbox_to_hexrd_config_mappings = {
-            'action_apply_pixel_solid_angle_correction': 'apply_pixel_solid_angle_correction',
+            'action_apply_pixel_solid_angle_correction': (
+                'apply_pixel_solid_angle_correction'
+            ),
             'action_apply_polarization_correction': 'apply_polarization_correction',
             'action_apply_lorentz_correction': 'apply_lorentz_correction',
             'action_subtract_minimum': 'intensity_subtract_minimum',
@@ -440,7 +460,7 @@ class MainWindow(QObject):
             with block_signals(cb):
                 cb.setChecked(getattr(HexrdConfig(), attr_name))
 
-    def update_action_enable_states(self):
+    def update_action_enable_states(self) -> None:
         enabled_to_hexrd_config_mappings = {
             'action_edit_physics_package': 'has_physics_package',
         }
@@ -450,13 +470,13 @@ class MainWindow(QObject):
             with block_signals(action):
                 action.setEnabled(getattr(HexrdConfig(), attr_name))
 
-    def set_icon(self, icon):
+    def set_icon(self, icon: QIcon) -> None:
         self.ui.setWindowIcon(icon)
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def add_materials_panel(self):
+    def add_materials_panel(self) -> None:
         # Remove the placeholder materials panel from the UI, and
         # add the real one.
         materials_panel_index = -1
@@ -473,7 +493,7 @@ class MainWindow(QObject):
             materials_panel_index, self.materials_panel.ui, 'Materials'
         )
 
-    def enable_canvas_focus_mode(self, b):
+    def enable_canvas_focus_mode(self, b: bool) -> None:
         # Disable these widgets when focus mode is set
         disable_widgets = [
             self.image_mode_widget.ui,
@@ -488,10 +508,10 @@ class MainWindow(QObject):
         for w in disable_widgets:
             w.setEnabled(not b)
 
-    def on_instrument_config_loaded(self):
+    def on_instrument_config_loaded(self) -> None:
         self.update_config_gui()
 
-    def on_action_open_config_file_triggered(self):
+    def on_action_open_config_file_triggered(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui,
             'Load Configuration',
@@ -505,7 +525,7 @@ class MainWindow(QObject):
 
             HexrdConfig().load_instrument_config(str(path))
 
-    def _save_config(self, extension, filter):
+    def _save_config(self, extension: str, filter: str) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Save Configuration', HexrdConfig().working_dir, filter
         )
@@ -517,13 +537,13 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = str(Path(selected_file).parent)
             return HexrdConfig().save_instrument_config(selected_file)
 
-    def on_action_save_config_hexrd_triggered(self):
+    def on_action_save_config_hexrd_triggered(self) -> None:
         self._save_config('.hexrd', 'HEXRD files (*.hexrd)')
 
-    def on_action_save_config_yaml_triggered(self):
+    def on_action_save_config_yaml_triggered(self) -> None:
         self._save_config('.yml', 'YAML files (*.yml)')
 
-    def open_grain_fitting_results(self):
+    def open_grain_fitting_results(self) -> None:
         selected_file, _ = QFileDialog.getOpenFileName(
             self.ui,
             'Open Grain Fitting File',
@@ -542,7 +562,7 @@ class MainWindow(QObject):
             dialog.show()
             self._fit_grains_results_dialog = dialog
 
-    def on_detectors_changed(self):
+    def on_detectors_changed(self) -> None:
         HexrdConfig().reset_overlay_calibration_picks()
         HexrdConfig().clear_overlay_data()
         HexrdConfig().current_imageseries_idx = 0
@@ -550,13 +570,13 @@ class MainWindow(QObject):
         self.ui.image_tab_widget.switch_toolbar(0)
         self.simple_image_series_dialog.config_changed()
 
-    def on_detector_shape_changed(self, det_key):
+    def on_detector_shape_changed(self, det_key: str) -> None:
         # We need to load/reset the dummy images if a detector's shape changes.
         # Otherwise, the HexrdConfig().images_dict object will not have images
         # with the correct shape.
         self.load_dummy_images()
 
-    def load_dummy_images(self):
+    def load_dummy_images(self) -> None:
         if HexrdConfig().loading_state:
             # Don't load the dummy images during state load
             return
@@ -567,34 +587,34 @@ class MainWindow(QObject):
         # Manually indicate that new images were loaded
         ImageLoadManager().new_images_loaded.emit()
 
-    def open_image_file(self):
+    def open_image_file(self) -> list[str] | None:
         images_dir = HexrdConfig().images_dir
 
         selected_file, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, dir=images_dir
+            self.ui, dir=images_dir or ""
         )
 
         if len(selected_file) > 1:
             msg = 'Please select only one file.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
-            return
+            return None
 
         return selected_file
 
-    def open_image_files_triggered(self):
+    def open_image_files_triggered(self) -> None:
         try:
             self.open_image_files()
         except Exception as e:
             QMessageBox.warning(self.ui, 'HEXRD', str(e))
             return
 
-    def open_image_files(self, selected_files=None):
+    def open_image_files(self, selected_files: list[str] | None = None) -> None:
         if selected_files is None:
             # Get the most recent images dir
             images_dir = HexrdConfig().images_dir
 
             selected_files, selected_filter = QFileDialog.getOpenFileNames(
-                self.ui, dir=images_dir
+                self.ui, dir=images_dir or ""
             )
 
         if selected_files:
@@ -634,19 +654,20 @@ class MainWindow(QObject):
                 HexrdConfig().recent_images = image_files
                 ImageLoadManager().read_data(files, ui_parent=self.ui)
 
-    def images_loaded(self, enabled=True):
+    def images_loaded(self, enabled: bool = True) -> None:
         self.ui.action_transform_detectors.setEnabled(enabled)
         self.update_color_map_bounds()
         self.update_enable_states()
         self.color_map_editor.reset_range()
         self.update_image_mode_enable_states()
 
-    def on_action_open_materials_triggered(self):
+    def on_action_open_materials_triggered(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui,
             'Load Materials File',
             HexrdConfig().working_dir,
-            'All supported files (*.h5 *.hdf5 *.cif);;HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
+            'All supported files (*.h5 *.hdf5 *.cif);;'
+            'HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
         )
         if not selected_file:
             return
@@ -657,7 +678,7 @@ class MainWindow(QObject):
         else:
             HexrdConfig().load_materials(selected_file)
 
-    def on_action_save_imageseries_triggered(self):
+    def on_action_save_imageseries_triggered(self) -> None:
         if not HexrdConfig().has_images:
             msg = 'No ImageSeries available for saving.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
@@ -665,7 +686,7 @@ class MainWindow(QObject):
 
         SaveImagesDialog(self.ui).exec()
 
-    def on_action_save_materials_hdf5_triggered(self):
+    def on_action_save_materials_hdf5_triggered(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui,
             'Save Materials',
@@ -683,7 +704,7 @@ class MainWindow(QObject):
 
             return HexrdConfig().save_materials_hdf5(selected_file)
 
-    def on_action_save_materials_cif_triggered(self):
+    def on_action_save_materials_cif_triggered(self) -> None:
         caption = 'Select directory to save CIF files to'
         selected_dir = QFileDialog.getExistingDirectory(
             self.ui, caption, dir=HexrdConfig().working_dir
@@ -695,7 +716,7 @@ class MainWindow(QObject):
         for material in HexrdConfig().materials.values():
             HexrdConfig().save_material_cif(material, selected_dir)
 
-    def on_action_export_current_plot_triggered(self):
+    def on_action_export_current_plot_triggered(self) -> None:
         filters = 'HDF5 files (*.h5 *.hdf5);; NPZ files (*.npz)'
         if self.image_mode == ViewType.polar:
             # We can do CSV and XY as well
@@ -711,7 +732,7 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_current_plot(selected_file)
 
-    def on_action_export_to_maud_triggered(self):
+    def on_action_export_to_maud_triggered(self) -> None:
         filters = 'ESG files (*.esg)'
 
         default_path = os.path.join(HexrdConfig().working_dir, "maud.esg")
@@ -723,7 +744,7 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_to_maud(selected_file)
 
-    def on_action_run_laue_and_powder_calibration_triggered(self):
+    def on_action_run_laue_and_powder_calibration_triggered(self) -> None:
         if not hasattr(self, '_calibration_runner_async_runner'):
             # Initialize this only once and keep it around, so we don't
             # run into issues connecting/disconnecting the messages.
@@ -741,11 +762,11 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
             raise
 
-    def calibration_finished(self):
+    def calibration_finished(self) -> None:
         self.update_config_gui()
         self.deep_rerender()
 
-    def run_structureless_calibration(self):
+    def run_structureless_calibration(self) -> None:
         cached_async_runner_name = '_structureless_calibration_async_runner'
         if not hasattr(self, cached_async_runner_name):
             # Initialize this only once and keep it around, so we don't
@@ -764,11 +785,11 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
             raise
 
-    def structureless_calibration_updated(self):
+    def structureless_calibration_updated(self) -> None:
         self.update_config_gui()
         self.update_all()
 
-    def run_hedm_calibration(self):
+    def run_hedm_calibration(self) -> None:
         cached_async_runner_name = '_hedm_calibration_runner_async_runner'
         if not hasattr(self, cached_async_runner_name):
             # Initialize this only once and keep it around, so we don't
@@ -785,11 +806,11 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
             raise
 
-    def on_hedm_calibration_finished(self):
+    def on_hedm_calibration_finished(self) -> None:
         self.update_config_gui()
         self.deep_rerender()
 
-    def on_action_run_indexing_triggered(self):
+    def on_action_run_indexing_triggered(self) -> None:
         self.ui.action_rerun_clustering.setEnabled(False)
         self._indexing_runner = IndexingRunner(self.ui)
         self._indexing_runner.clustering_ran.connect(
@@ -797,10 +818,10 @@ class MainWindow(QObject):
         )
         self._indexing_runner.run()
 
-    def on_action_rerun_clustering(self):
+    def on_action_rerun_clustering(self) -> None:
         RerunClusteringDialog(self._indexing_runner, self.ui).exec()
 
-    def on_action_run_fit_grains_triggered(self):
+    def on_action_run_fit_grains_triggered(self) -> None:
         kwargs = {
             'grains_table': None,
             'indexing_runner': getattr(self, '_indexing_runner', None),
@@ -810,7 +831,7 @@ class MainWindow(QObject):
         runner = self._grain_fitting_runner = FitGrainsRunner(**kwargs)
         runner.run()
 
-    def run_wppf(self):
+    def run_wppf(self) -> None:
         self._wppf_runner = WppfRunner(self.ui)
         try:
             self._wppf_runner.run()
@@ -818,10 +839,10 @@ class MainWindow(QObject):
             QMessageBox.critical(self.ui, 'HEXRD', str(e))
             raise
 
-    def update_color_map_bounds(self):
+    def update_color_map_bounds(self) -> None:
         self.color_map_editor.update_bounds(HexrdConfig().masked_images_dict)
 
-    def on_action_edit_euler_angle_convention(self):
+    def on_action_edit_euler_angle_convention(self) -> None:
         allowed_conventions = ['None', 'Extrinsic XYZ', 'Intrinsic ZXZ']
         corresponding_values = [
             None,
@@ -842,7 +863,7 @@ class MainWindow(QObject):
             help_url=help_url,
         )
 
-        if not ok:
+        if not ok or name is None:
             # User canceled...
             return
 
@@ -853,20 +874,20 @@ class MainWindow(QObject):
         self.update_config_gui()
 
     @property
-    def active_canvas(self):
+    def active_canvas(self) -> ImageCanvas | None:
         return self.ui.image_tab_widget.active_canvas
 
-    def active_canvas_changed(self):
+    def active_canvas_changed(self) -> None:
         # Update the active canvas on HexrdConfig()
         HexrdConfig().active_canvas = self.active_canvas
         self.update_drawn_mask_line_picker_canvas()
         self.update_mask_region_canvas()
 
-    def update_drawn_mask_line_picker_canvas(self):
+    def update_drawn_mask_line_picker_canvas(self) -> None:
         if hasattr(self, '_apply_drawn_mask_line_picker'):
             self._apply_drawn_mask_line_picker.canvas_changed(self.active_canvas)
 
-    def on_action_edit_apply_hand_drawn_mask_triggered(self):
+    def on_action_edit_apply_hand_drawn_mask_triggered(self) -> None:
         # Make the dialog
         self._apply_drawn_mask_line_picker = HandDrawnMaskDialog(
             self.active_canvas, self.ui
@@ -876,7 +897,7 @@ class MainWindow(QObject):
             self.run_apply_hand_drawn_mask
         )
 
-    def run_apply_hand_drawn_mask(self, dets, line_data):
+    def run_apply_hand_drawn_mask(self, dets: list[str | None], line_data: list[np.ndarray]) -> None:
         if self.image_mode == ViewType.polar:
             for line in line_data:
                 raw_line = convert_polar_to_raw([line])
@@ -888,7 +909,7 @@ class MainWindow(QObject):
             MaskManager().raw_masks_changed.emit()
         self.new_mask_added.emit(self.image_mode)
 
-    def on_action_edit_apply_laue_mask_to_polar_triggered(self):
+    def on_action_edit_apply_laue_mask_to_polar_triggered(self) -> None:
         if not HexrdConfig().show_overlays:
             msg = 'Overlays are not displayed'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
@@ -917,7 +938,7 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
-    def action_edit_apply_powder_mask_to_polar(self):
+    def action_edit_apply_powder_mask_to_polar(self) -> None:
         if not HexrdConfig().show_overlays:
             msg = 'Overlays are not displayed'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
@@ -935,7 +956,7 @@ class MainWindow(QObject):
             for _, val in overlay.data.items():
                 # We will only apply masks for ranges that have both a
                 # start and a stop.
-                start_end_pairs = {}
+                start_end_pairs: dict[str, Any] = {}
                 for i, indices in enumerate(val['rbnd_indices']):
                     for idx in indices:
                         # Get the pair for this HKL index
@@ -971,18 +992,18 @@ class MainWindow(QObject):
         self.new_mask_added.emit(self.image_mode)
         MaskManager().polar_masks_changed.emit()
 
-    def update_mask_region_canvas(self):
+    def update_mask_region_canvas(self) -> None:
         if hasattr(self, '_masks_regions_dialog'):
             self._masks_regions_dialog.canvas_changed(self.active_canvas)
 
-    def on_action_edit_apply_region_mask_triggered(self):
+    def on_action_edit_apply_region_mask_triggered(self) -> None:
         self._masks_regions_dialog = MaskRegionsDialog(self.ui)
         self._masks_regions_dialog.new_mask_added.connect(self.new_mask_added.emit)
         self._masks_regions_dialog.show()
 
         self.ui.image_tab_widget.toggle_off_toolbar()
 
-    def show_pinhole_mask_dialog(self):
+    def show_pinhole_mask_dialog(self) -> None:
         if not ask_to_create_physics_package_if_missing():
             # Physics package is required, but user did not create one.
             return
@@ -993,7 +1014,7 @@ class MainWindow(QObject):
 
         self._pinhole_mask_dialog.show()
 
-    def apply_pinhole_mask(self):
+    def apply_pinhole_mask(self) -> None:
         instr = create_hedm_instrument()
         ph_buffer = generate_pinhole_panel_buffer(instr)
 
@@ -1033,11 +1054,12 @@ class MainWindow(QObject):
 
         self.new_mask_added.emit(self.image_mode)
 
-    def on_action_edit_reset_instrument_config(self):
+    def on_action_edit_reset_instrument_config(self) -> None:
         HexrdConfig().restore_instrument_config_backup()
         self.update_config_gui()
 
-    def on_show_raw_zoom_dialog(self):
+    def on_show_raw_zoom_dialog(self) -> None:
+        assert self.active_canvas is not None
         dialog = ZoomCanvasDialog(self.active_canvas, parent=self.ui)
         self._zoom_dialog = dialog
         dialog.show()
@@ -1047,7 +1069,7 @@ class MainWindow(QObject):
         dialog.zoom_width = int(img.shape[1] / 5)
         dialog.zoom_height = int(img.shape[0] / 5)
 
-    def change_image_mode(self, mode):
+    def change_image_mode(self, mode: str) -> None:
         # The masking canvas change needs to be triggered *before* the image
         # mode is changed. This makes sure that in-progress masks are completed
         # and associated with the correct image mode.
@@ -1061,7 +1083,7 @@ class MainWindow(QObject):
 
         self.update_all()
 
-    def update_image_mode_enable_states(self):
+    def update_image_mode_enable_states(self) -> None:
         # This is for enable states that depend on the image mode
         is_cartesian = self.image_mode == ViewType.cartesian
         is_polar = self.image_mode == ViewType.polar
@@ -1085,20 +1107,20 @@ class MainWindow(QObject):
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
         self.ui.action_export_to_maud.setEnabled(is_polar and has_images)
 
-    def start_fast_powder_calibration(self):
+    def start_fast_powder_calibration(self) -> None:
         if not HexrdConfig().has_images:
             msg = 'No images available for calibration.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
             return
 
-        if hasattr(self, '_powder_runner'):
+        if self._powder_runner is not None:
             self._powder_runner.clear()
 
         self._powder_runner = runner = PowderRunner(self.ui)
         runner.calibration_finished.connect(self.calibration_finished)
         runner.run()
 
-    def update_config_gui(self):
+    def update_config_gui(self) -> None:
         current_widget = self.ui.calibration_tab_widget.currentWidget()
         if current_widget is self.cal_tree_view:
             self.cal_tree_view.rebuild_tree()
@@ -1108,23 +1130,23 @@ class MainWindow(QObject):
             self.calibration_slider_widget.update_gui_from_config()
         self.config_loaded.emit()
 
-    def eventFilter(self, target, event):
-        if type(target) == QMainWindow:
-            if event.type() == QEvent.Close:
+    def eventFilter(self, target: QObject, event: QEvent) -> bool:
+        if type(target) is QMainWindow:
+            if event.type() == QEvent.Type.Close:
                 if self.confirm_application_close:
                     msg = 'Are you sure you want to quit?'
                     response = QMessageBox.question(self.ui, 'HEXRD', msg)
-                    if response == QMessageBox.No:
+                    if response == QMessageBox.StandardButton.No:
                         event.ignore()
                         return True
                 # If the main window is closing, save the config settings
                 HexrdConfig().save_settings()
-            elif event.type() in (QEvent.DragEnter, QEvent.Drop):
+            elif event.type() in (QEvent.Type.DragEnter, QEvent.Type.Drop):
                 self.validateDragDropEvent(event)
                 return True
 
         if not hasattr(self, '_first_paint_occurred'):
-            if type(target) == QMainWindow and event.type() == QEvent.Paint:
+            if type(target) is QMainWindow and event.type() == QEvent.Type.Paint:
                 # Draw the images for the first time after the first paint
                 # has occurred in order to avoid a black window.
                 QTimer.singleShot(0, self.update_all)
@@ -1132,18 +1154,21 @@ class MainWindow(QObject):
 
         return False
 
-    def update_if_mode_matches(self, mode):
+    def update_if_mode_matches(
+        self,
+        mode: str,
+    ) -> None:
         if self.image_mode == mode:
             self.update_all()
 
-    def deep_rerender(self):
+    def deep_rerender(self) -> None:
         # Clear all overlays
         HexrdConfig().clear_overlay_data()
 
         # Update all and clear the canvases
         self.update_all(clear_canvases=True)
 
-    def update_all(self, clear_canvases=False):
+    def update_all(self, clear_canvases: bool = False) -> None:
         # If there are no images loaded, skip the request
         if not HexrdConfig().imageseries_dict:
             return
@@ -1157,8 +1182,9 @@ class MainWindow(QObject):
         # Need to clear focus from current widget if enter is pressed or
         # else all clicks are emit an editingFinished signal and view is
         # constantly re-rendered
-        if QApplication.focusWidget() is not None:
-            QApplication.focusWidget().clearFocus()
+        focus_widget = QApplication.focusWidget()
+        if focus_widget is not None:
+            focus_widget.clearFocus()
 
         if clear_canvases:
             for canvas in self.ui.image_tab_widget.image_canvases:
@@ -1179,19 +1205,19 @@ class MainWindow(QObject):
 
         self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
-    def set_live_update(self, enabled):
+    def set_live_update(self, enabled: bool) -> None:
         HexrdConfig().live_update = enabled
 
         if enabled:
             # Go ahead and trigger an update as well
             self.update_all()
 
-    def on_rerender_needed(self):
+    def on_rerender_needed(self) -> None:
         # Only perform an update if we have live updates enabled
         if HexrdConfig().live_update:
             self.update_all()
 
-    def on_enable_canvas_toolbar(self, b):
+    def on_enable_canvas_toolbar(self, b: bool) -> None:
         prev_state_name = '_previous_action_show_toolbar_state'
         w = self.ui.action_show_toolbar
 
@@ -1207,7 +1233,7 @@ class MainWindow(QObject):
             checked = getattr(self, prev_state_name, True)
             w.setChecked(checked)
 
-    def show_beam_marker_toggled(self, b):
+    def show_beam_marker_toggled(self, b: bool) -> None:
         HexrdConfig().show_beam_marker = b
         if b:
             # Also show the style editor dialog
@@ -1216,21 +1242,21 @@ class MainWindow(QObject):
 
             self._beam_marker_style_editor.show()
 
-    def view_indexing_config(self):
-        if hasattr(self, '_indexing_config_view'):
+    def view_indexing_config(self) -> None:
+        if self._indexing_config_view is not None:
             self._indexing_config_view.reject()
 
         view = self._indexing_config_view = IndexingTreeViewDialog(self.ui)
         view.show()
 
-    def view_fit_grains_config(self):
-        if hasattr(self, '_fit_grains_config_view'):
+    def view_fit_grains_config(self) -> None:
+        if self._fit_grains_config_view is not None:
             self._fit_grains_config_view.reject()
 
         view = self._fit_grains_config_view = FitGrainsTreeViewDialog(self.ui)
         view.show()
 
-    def view_overlay_picks(self):
+    def view_overlay_picks(self) -> None:
         # Only works in the polar view right now, but could in theory work in
         # other views.
         if self.image_mode != ViewType.polar:
@@ -1255,25 +1281,25 @@ class MainWindow(QObject):
         dialog.button_box_visible = True
         dialog.ui.show()
 
-        def remove_all_highlighting():
+        def remove_all_highlighting() -> None:
             for overlay in overlays:
                 overlay.clear_highlights()
             HexrdConfig().flag_overlay_updates_for_all_materials()
             HexrdConfig().overlay_config_changed.emit()
 
-        def on_accepted():
+        def on_accepted() -> None:
             # Write the modified picks to the overlays
             updated_picks = tree_format_to_picks(overlays, dialog.dictionary)
             for i, new_picks in enumerate(updated_picks):
                 overlays[i].calibration_picks_polar = new_picks['picks']
 
-        def on_finished():
+        def on_finished() -> None:
             remove_all_highlighting()
 
         dialog.ui.accepted.connect(on_accepted)
         dialog.ui.finished.connect(on_finished)
 
-    def new_mouse_position(self, info):
+    def new_mouse_position(self, info: dict[str, Any]) -> None:
         if self.image_mode == ViewType.polar:
             # Use a special function for polar
             labels = self.polar_mouse_info_labels(info)
@@ -1284,7 +1310,7 @@ class MainWindow(QObject):
         msg = delimiter.join(labels)
         self.ui.status_bar.showMessage(msg)
 
-    def default_mouse_info_labels(self, info):
+    def default_mouse_info_labels(self, info: dict[str, Any]) -> list[str]:
         labels = []
         labels.append(f'x = {info["x_data"]:8.3f}')
         labels.append(f'y = {info["y_data"]:8.3f}')
@@ -1309,7 +1335,7 @@ class MainWindow(QObject):
 
         return labels
 
-    def polar_mouse_info_labels(self, info):
+    def polar_mouse_info_labels(self, info: dict[str, Any]) -> list[str]:
         labels = []
         # Assume x is tth in the polar view
         labels.append(f'tth = {info["x_data"]:8.3f}')
@@ -1338,10 +1364,10 @@ class MainWindow(QObject):
 
         return labels
 
-    def on_action_transform_detectors_triggered(self):
+    def on_action_transform_detectors_triggered(self) -> None:
         _ = TransformDialog(self.ui).exec()
 
-    def open_image_calculator(self):
+    def open_image_calculator(self) -> None:
         if dialog := getattr(self, '_image_calculator_dialog', None):
             dialog.hide()
 
@@ -1349,7 +1375,7 @@ class MainWindow(QObject):
         dialog.show()
         self._image_calculator_dialog = dialog
 
-        def on_accepted():
+        def on_accepted() -> None:
             ims = dialog.calculate()
 
             # Replace the current image series with this one
@@ -1360,10 +1386,10 @@ class MainWindow(QObject):
 
         dialog.accepted.connect(on_accepted)
 
-    def on_action_edit_config_triggered(self):
+    def on_action_edit_config_triggered(self) -> None:
         ConfigDialog(self.ui).exec()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         has_images = HexrdConfig().has_images
         num_images = HexrdConfig().imageseries_length
 
@@ -1373,7 +1399,7 @@ class MainWindow(QObject):
         # Update the HEDM enable states
         self.update_hedm_enable_states()
 
-    def update_hedm_enable_states(self):
+    def update_hedm_enable_states(self) -> None:
         actions = (self.ui.action_run_indexing, self.ui.action_run_fit_grains)
         for action in actions:
             action.setEnabled(False)
@@ -1392,15 +1418,15 @@ class MainWindow(QObject):
             action.setEnabled(True)
 
     @property
-    def image_mode(self):
+    def image_mode(self) -> str:
         return HexrdConfig().image_mode
 
     @image_mode.setter
-    def image_mode(self, b):
+    def image_mode(self, b: str) -> None:
         HexrdConfig().image_mode = b
 
     @property
-    def _menu_item_tooltips(self):
+    def _menu_item_tooltips(self) -> dict[str, dict[bool, str]]:
         # The keys here are QAction names. The value is a dict where the keys
         # are the enable state, and the values are the tooltips for that
         # enable state.
@@ -1464,22 +1490,22 @@ class MainWindow(QObject):
             },
         }
 
-    def _update_menu_item_tooltip_for_sender(self):
+    def _update_menu_item_tooltip_for_sender(self) -> None:
         # This function should be called automatically when the sending
         # QAction is modified.
         # The modification may have been its enable state.
 
         w = self.sender()
-        enabled = w.isEnabled()
+        enabled = w.isEnabled()  # type: ignore[attr-defined]
         name = w.objectName()
 
         tooltips = self._menu_item_tooltips
         if name not in tooltips:
             return
 
-        w.setToolTip(tooltips[name][enabled])
+        w.setToolTip(tooltips[name][enabled])  # type: ignore[attr-defined]
 
-    def update_all_menu_item_tooltips(self):
+    def update_all_menu_item_tooltips(self) -> None:
         tooltips = self._menu_item_tooltips
 
         for widget_name, tooltip_options in tooltips.items():
@@ -1487,10 +1513,10 @@ class MainWindow(QObject):
             enabled = w.isEnabled()
             w.setToolTip(tooltip_options[enabled])
 
-    def on_action_open_mask_manager_triggered(self):
+    def on_action_open_mask_manager_triggered(self) -> None:
         self.mask_manager_dialog.show()
 
-    def on_action_save_state_triggered(self):
+    def on_action_save_state_triggered(self) -> None:
 
         selected_file, _ = QFileDialog.getSaveFileName(
             self.ui,
@@ -1543,19 +1569,20 @@ class MainWindow(QObject):
         # Show the loaded state in the window title
         self.ui.setWindowTitle(f'HEXRD - {Path(selected_file).name}')
 
-    def load_entrypoint_file(self, filepath):
+    def load_entrypoint_file(self, filepath: str | Path) -> None:
         # First, identify what type of entrypoint file it is, and then
         # load based upon whatever it is.
 
         filepath = Path(filepath)
         if filepath.suffix in ('.yml', '.hexrd'):
             # It is an instrument file
-            return HexrdConfig().load_instrument_config(str(filepath))
+            HexrdConfig().load_instrument_config(str(filepath))
+            return
 
         # Assume it is a state file
-        return self.load_state_file(filepath)
+        self.load_state_file(filepath)
 
-    def on_action_load_state_triggered(self):
+    def on_action_load_state_triggered(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load State', HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
         )
@@ -1565,7 +1592,7 @@ class MainWindow(QObject):
 
         self.load_state_file(selected_file)
 
-    def load_state_file(self, filepath):
+    def load_state_file(self, filepath: str | Path) -> None:
         path = Path(filepath)
         if not path.exists():
             raise OSError(2, 'No such file or directory', filepath)
@@ -1574,7 +1601,7 @@ class MainWindow(QObject):
 
         # Some older state files have issues that need to be resolved.
         # Perform an update, if needed, to fix them, before reading.
-        state.update_if_needed(filepath)
+        state.update_if_needed(str(filepath))
 
         # The image series will take care of closing the file
         h5_file = h5py.File(filepath, "r")
@@ -1596,14 +1623,14 @@ class MainWindow(QObject):
         # the statuses in the GUI might not be up to date. Ensure it is.
         self.update_config_gui()
 
-    def add_view_dock_widget_actions(self):
+    def add_view_dock_widget_actions(self) -> None:
         # Add actions to show/hide all of the dock widgets
         dock_widgets = self.ui.findChildren(QDockWidget)
         titles = [w.windowTitle() for w in dock_widgets]
         for title, w in sorted(zip(titles, dock_widgets)):
             self.ui.view_dock_widgets.addAction(w.toggleViewAction())
 
-    def apply_polarization_correction_toggled(self, b):
+    def apply_polarization_correction_toggled(self, b: bool) -> None:
         if not b:
             # Just turn it off and return
             HexrdConfig().apply_polarization_correction = b
@@ -1621,13 +1648,13 @@ class MainWindow(QObject):
         # options already. Just apply it now.
         HexrdConfig().apply_polarization_correction = b
 
-    def apply_lorentz_correction_toggled(self, b):
+    def apply_lorentz_correction_toggled(self, b: bool) -> None:
         HexrdConfig().apply_lorentz_correction = b
 
-    def on_action_hedm_import_tool_triggered(self):
+    def on_action_hedm_import_tool_triggered(self) -> None:
         self.simple_image_series_dialog.show()
 
-    def on_llnl_import_completed(self, is_fiddle_instrument):
+    def on_llnl_import_completed(self, is_fiddle_instrument: bool) -> None:
         if is_fiddle_instrument:
             if self.ui.action_apply_median_filter.isChecked():
                 # Un-check the median filter if already checked - this ensures we
@@ -1638,45 +1665,51 @@ class MainWindow(QObject):
         # Always assume Physics Package is needed for LLNL import
         self.on_action_include_physics_package_toggled(True)
 
-    def on_action_llnl_import_tool_triggered(self):
+    def on_action_llnl_import_tool_triggered(self) -> None:
         dialog = self.llnl_import_tool_dialog
         dialog.show()
 
-    def on_action_image_stack_triggered(self):
+    def on_action_image_stack_triggered(self) -> None:
         self.image_stack_dialog.show()
 
-    def on_image_view_loaded(self, images):
+    def on_image_view_loaded(
+        self,
+        images: dict[str, np.ndarray],
+    ) -> None:
         # Update the data, but don't reset the bounds
         # This will update the histogram in the B&C editor
         self.color_map_editor.data = images
 
-    def on_polar_masks_reapplied(self, image):
+    def on_polar_masks_reapplied(
+        self,
+        image: np.ndarray,
+    ) -> None:
         # Update the data, but don't reset the bounds
         # This will update the histogram in the B&C editor
         self.color_map_editor.data = image
 
-    def on_action_about_triggered(self):
+    def on_action_about_triggered(self) -> None:
         dialog = AboutDialog(self.ui)
         dialog.ui.exec()
 
-    def on_action_documentation_triggered(self):
+    def on_action_documentation_triggered(self) -> None:
         QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
 
-    def on_action_show_all_colormaps_toggled(self, checked):
+    def on_action_show_all_colormaps_toggled(self, checked: bool) -> None:
         HexrdConfig().show_all_colormaps = checked
         self.color_map_editor.load_cmaps()
 
-    def on_action_edit_defaults_toggled(self):
+    def on_action_edit_defaults_toggled(self) -> None:
         self._edit_colormap_list_dialog.show()
 
-    def on_action_edit_apply_threshold_triggered(self):
+    def on_action_edit_apply_threshold_triggered(self) -> None:
         self.threshold_mask_dialog.show()
 
     @property
-    def thread_pool(self):
+    def thread_pool(self) -> QThreadPool:
         return QThreadPool.globalInstance()
 
-    def update_recent_state_files(self):
+    def update_recent_state_files(self) -> None:
         # Update actions to list recent state files for quick load
         recents_menu = self.ui.menu_open_recent
         [recents_menu.removeAction(a) for a in recents_menu.actions()]
@@ -1693,14 +1726,14 @@ class MainWindow(QObject):
             action = recents_menu.addAction(Path(recent).name)
             action.triggered.connect(partial(self.load_recent_state_file, recent))
 
-    def load_recent_state_file(self, path):
+    def load_recent_state_file(self, path: str) -> None:
         if not Path(path).exists():
             msg = (
                 f'Recent state file: "{path}"\n\nno longer exists. '
                 'Remove from recent files list?'
             )
             response = QMessageBox.question(self.ui, 'HEXRD', msg)
-            if response == QMessageBox.Yes:
+            if response == QMessageBox.StandardButton.Yes:
                 HexrdConfig().recent_state_files.remove(path)
                 self.update_recent_state_files()
 
@@ -1708,7 +1741,7 @@ class MainWindow(QObject):
 
         self.load_state_file(path)
 
-    def on_action_open_preconfigured_instrument_file_triggered(self):
+    def on_action_open_preconfigured_instrument_file_triggered(self) -> None:
         # Should we put this in HEXRD?
         aliases = {
             'dcs.yml': 'DCS',
@@ -1744,10 +1777,10 @@ class MainWindow(QObject):
         with resource_loader.resource_path(instrument_templates, fname) as f:
             HexrdConfig().load_instrument_config(Path(f))
 
-    def on_action_edit_physics_package_triggered(self):
+    def on_action_edit_physics_package_triggered(self) -> None:
         self.physics_package_manager_dialog.show()
 
-    def on_action_include_physics_package_toggled(self, b):
+    def on_action_include_physics_package_toggled(self, b: bool) -> None:
         self.ui.action_edit_physics_package.setEnabled(b)
         if b and not HexrdConfig().has_physics_package:
             HexrdConfig().create_default_physics_package()
@@ -1761,7 +1794,7 @@ class MainWindow(QObject):
         dialog = self.physics_package_manager_dialog
         dialog.show(delete_if_canceled=True)
 
-    def on_physics_package_modified(self):
+    def on_physics_package_modified(self) -> None:
         enable = HexrdConfig().has_physics_package
         w = self.ui.action_include_physics_package
         with block_signals(w):
@@ -1769,7 +1802,7 @@ class MainWindow(QObject):
 
         self.ui.action_edit_physics_package.setEnabled(enable)
 
-    def action_apply_absorption_correction_toggled(self, b):
+    def action_apply_absorption_correction_toggled(self, b: bool) -> None:
         if not b:
             # Just turn it off and return
             HexrdConfig().apply_absorption_correction = b
@@ -1787,7 +1820,7 @@ class MainWindow(QObject):
         # correction options already. Just apply it now.
         HexrdConfig().apply_absorption_correction = b
 
-    def action_apply_median_filter_toggled(self, b):
+    def action_apply_median_filter_toggled(self, b: bool) -> None:
         if not b:
             # Just turn it off and return
             HexrdConfig().apply_median_filter_correction = b
@@ -1804,26 +1837,26 @@ class MainWindow(QObject):
         # already. Just apply it now.
         HexrdConfig().apply_median_filter_correction = b
 
-    def validateDragDropEvent(self, event):
-        mime_data = event.mimeData()
+    def validateDragDropEvent(self, event: QEvent) -> None:
+        mime_data = event.mimeData()  # type: ignore[attr-defined]
         if not mime_data.hasUrls():
             event.ignore()
             return
 
         paths = [url.toLocalFile() for url in mime_data.urls()]
-        if event.type() == QEvent.Drop:
+        if event.type() == QEvent.Type.Drop:
             self.dropEvent(paths)
         else:
-            event.acceptProposedAction()
+            event.acceptProposedAction()  # type: ignore[attr-defined]
 
-    def dropEvent(self, paths):
+    def dropEvent(self, paths: Sequence[str | Path]) -> None:
         ext = Path(paths[0]).suffix.lower()
         if len(paths) == 1 and ext in ('.h5', '.hdf5'):
             try:
                 # Try loading it as a state file
                 self.load_state_file(paths[0])
                 return
-            except:
+            except Exception:
                 # If that fails, continue on to try a different loader
                 pass
         if len(paths) == 1 and ext in ('.hexrd', '.yml', '.yaml'):
@@ -1831,22 +1864,22 @@ class MainWindow(QObject):
                 # Try loading it as an instrument config
                 HexrdConfig().load_instrument_config(paths[0])
                 return
-            except:
+            except Exception:
                 # If that fails, continue on to try a different loader
                 pass
         if ext in ('.h5', '.hdf5', '.cif'):
             try:
                 # Try loading as materials file(s)
-                HexrdConfig().import_materials(paths)
+                HexrdConfig().import_materials(list(paths))
                 return
-            except:
+            except Exception:
                 # If that fails, continue on to try a different loader
                 pass
         try:
             # Fall back to trying to load as image if no loader succeeds or
             # extension is not in known list
-            self.open_image_files(selected_files=paths)
-        except Exception as e:
+            self.open_image_files(selected_files=[str(p) for p in paths])
+        except Exception:
             error_message = (
                 'Unable to guess file type (state, instrument, materials, or '
                 'image). Please use File menu to load.'

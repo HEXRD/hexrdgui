@@ -1,4 +1,8 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout
+from __future__ import annotations
+
+from typing import Any
+
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QWidget
 
 from hexrdgui.tree_views.base_dict_tree_item_model import (
     BaseTreeItemModel,
@@ -16,13 +20,22 @@ VALUE_COL = KEY_COL + 1
 
 class DictTreeItemModel(BaseDictTreeItemModel):
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(
+        self,
+        dictionary: dict[str, Any],
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(dictionary, parent)
 
         self.root_item = TreeItem(['key', 'value'])
         self.rebuild_tree()
 
-    def recursive_add_tree_items(self, cur_config, cur_tree_item):
+    def recursive_add_tree_items(
+        self,
+        cur_config: object,
+        cur_tree_item: TreeItem,
+    ) -> None:
+        keys: Any
         if isinstance(cur_config, dict):
             keys = cur_config.keys()
         elif isinstance(cur_config, list):
@@ -41,13 +54,22 @@ class DictTreeItemModel(BaseDictTreeItemModel):
             tree_item = self.add_tree_item(data, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
-    def path_to_value(self, tree_item, column):
+    def path_to_value(
+        self,
+        tree_item: TreeItem,
+        column: int,
+    ) -> list[str | int]:
         return self.path_to_item(tree_item)
 
 
 class DictTreeView(BaseDictTreeView):
 
-    def __init__(self, dictionary, model=DictTreeItemModel, parent=None):
+    def __init__(
+        self,
+        dictionary: dict[str, Any],
+        model: type[DictTreeItemModel] = DictTreeItemModel,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.setModel(model(dictionary, parent=self))
@@ -62,36 +84,42 @@ class DictTreeView(BaseDictTreeView):
 
 class DictTreeViewDialog(QDialog):
 
-    def __init__(self, dictionary, parent=None):
+    def __init__(
+        self,
+        dictionary: dict[str, Any],
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.setLayout(QVBoxLayout(self))
+        layout = self.layout()
+        assert layout is not None
 
         self.tree_view = DictTreeView(dictionary, parent=self)
-        self.layout().addWidget(self.tree_view)
+        layout.addWidget(self.tree_view)
 
         self.resize(500, 500)
 
-    def expand_rows(self):
-        return self.tree_view.expand_rows()
+    def expand_rows(self) -> None:
+        self.tree_view.expand_rows()
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         return self.tree_view.editable
 
     @editable.setter
-    def editable(self, v):
+    def editable(self, v: bool) -> None:
         self.tree_view.editable = v
 
-    def set_single_selection_mode(self):
+    def set_single_selection_mode(self) -> None:
         self.tree_view.set_single_selection_mode()
 
-    def set_multi_selection_mode(self):
+    def set_multi_selection_mode(self) -> None:
         self.tree_view.set_multi_selection_mode()
 
-    def set_extended_selection_mode(self):
+    def set_extended_selection_mode(self) -> None:
         self.tree_view.set_extended_selection_mode()
 
     @property
-    def selected_items(self):
+    def selected_items(self) -> list[TreeItem]:
         return self.tree_view.selected_items

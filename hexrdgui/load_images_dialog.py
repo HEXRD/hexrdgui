@@ -2,8 +2,9 @@ from collections import Counter  # To compare two lists' contents
 import re
 import os
 from pathlib import Path
+from typing import Any
 
-from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox
+from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QComboBox, QWidget
 from hexrdgui.constants import TRANSFORM_OPTIONS
 
 from hexrdgui.hexrd_config import HexrdConfig
@@ -12,7 +13,12 @@ from hexrdgui.ui_loader import UiLoader
 
 class LoadImagesDialog:
 
-    def __init__(self, image_files, manual_assign=False, parent=None):
+    def __init__(
+        self,
+        image_files: list[Any],
+        manual_assign: bool = False,
+        parent: QWidget | None = None,
+    ) -> None:
         self.setup_vars(image_files)
 
         loader = UiLoader()
@@ -26,7 +32,7 @@ class LoadImagesDialog:
         self.setup_table()
         self.update_table()
 
-    def setup_vars(self, image_files):
+    def setup_vars(self, image_files: list[Any]) -> None:
         # Flatten out the array of selected images
         self.image_files = []
         for imgs in image_files:
@@ -39,12 +45,12 @@ class LoadImagesDialog:
         multiple = max(len(self.image_files) // len(dets), 1)
         self.detectors = [det for det in dets for i in range(multiple)]
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.regex_combo.currentIndexChanged.connect(self.update_table)
         self.ui.regex_line_edit.textChanged.connect(self.update_combo_state)
         self.ui.regex_line_edit.textChanged.connect(self.update_table)
 
-    def exec(self):
+    def exec(self) -> bool:
         # Loop until canceled or validation succeeds
         while True:
             if self.ui.exec():
@@ -64,12 +70,12 @@ class LoadImagesDialog:
             else:
                 return False
 
-    def setup_state(self):
+    def setup_state(self) -> None:
         if 'trans' not in HexrdConfig().load_panel_state:
             num_dets = len(HexrdConfig().detector_names)
             HexrdConfig().load_panel_state = {'trans': [0 for x in range(num_dets)]}
 
-    def setup_roi_table(self, table):
+    def setup_roi_table(self, table: Any) -> None:
         # This use case is less common. For ROI configs images are re-used for
         # multiple detectors. Image names are toggled to match the detector for
         # that row.
@@ -96,7 +102,7 @@ class LoadImagesDialog:
                 lambda v, i=i: self.selection_changed(v, i)
             )
 
-    def setup_standard_table(self, table):
+    def setup_standard_table(self, table: Any) -> None:
         # The typical use case. This supports one or more images per detector.
         # The detector names are toggled to match the image for that row.
         table.setRowCount(len(self.image_files))
@@ -128,7 +134,7 @@ class LoadImagesDialog:
             f = QTableWidgetItem(Path(self.image_files[i]).name)
             table.setItem(i, 2, f)
 
-    def setup_table(self):
+    def setup_table(self) -> None:
         table = self.ui.match_detectors_table
         table.clearContents()
         if self.using_roi:
@@ -137,11 +143,11 @@ class LoadImagesDialog:
             self.setup_standard_table(table)
         table.resizeColumnsToContents()
 
-    def update_combo_state(self):
+    def update_combo_state(self) -> None:
         enable = len(self.ui.regex_line_edit.text()) == 0
         self.ui.regex_combo.setEnabled(enable)
 
-    def update_table(self):
+    def update_table(self) -> None:
         table = self.ui.match_detectors_table
         results = self.results()
         detectors = results.keys()
@@ -166,9 +172,9 @@ class LoadImagesDialog:
                 f = QTableWidgetItem(Path(image_files[i]).name)
                 table.setItem(i, 2, f)
 
-    def results(self):
+    def results(self) -> dict[str, list[str]]:
         table = self.ui.match_detectors_table
-        results = {}
+        results: dict[str, Any] = {}
         for i in range(table.rowCount()):
             if isinstance(table.item(i, 0), QTableWidgetItem):
                 detector = table.item(i, 0).text()
@@ -192,13 +198,13 @@ class LoadImagesDialog:
 
         return results
 
-    def current_regex(self):
+    def current_regex(self) -> str:
         if self.ui.regex_line_edit.text():
             return self.ui.regex_line_edit.text()
 
         return self.ui.regex_combo.currentText()
 
-    def selection_changed(self, val, row):
+    def selection_changed(self, val: str, row: int) -> None:
         table = self.ui.match_detectors_table
         if val in self.detectors:
             for i in range(table.rowCount()):
@@ -216,6 +222,6 @@ class LoadImagesDialog:
                     table.cellWidget(i, 1).setCurrentText(val)
 
 
-def _re_res(pat, s):
+def _re_res(pat: str, s: str) -> str:
     r = re.search(pat, s)
     return r.group(0) if r else '&'

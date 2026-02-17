@@ -5,11 +5,13 @@ import io
 import h5py
 import numpy as np
 
-from PySide6.QtWidgets import QDialogButtonBox, QMessageBox
+from PySide6.QtWidgets import QDialogButtonBox, QMessageBox, QWidget
 
 from hexrd.instrument import unwrap_h5_to_dict
 import hexrd.resources
 from hexrd.utils.decorators import memoize
+
+from typing import Any
 
 from hexrdgui.resource_loader import load_resource
 from hexrdgui.tree_views.dict_tree_view import DictTreeViewDialog
@@ -19,7 +21,7 @@ from hexrdgui.utils.dialog import add_help_url
 
 class XRayEnergySelectionDialog(DictTreeViewDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         # Load the data
         self.load_xray_dict()
         super().__init__(self.xray_dict, parent)
@@ -43,19 +45,21 @@ class XRayEnergySelectionDialog(DictTreeViewDialog):
         self.setWindowTitle('X-Ray Energy Selection')
 
         # Add the dialog buttons
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         button_box = QDialogButtonBox(buttons, self)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
         add_help_url(button_box, 'configuration/instrument/#x-ray-energy-selection')
-        self.layout().addWidget(button_box)
+        layout = self.layout()
+        assert layout is not None
+        layout.addWidget(button_box)
 
         UiLoader().install_dialog_enter_key_filters(self)
 
-    def load_xray_dict(self):
+    def load_xray_dict(self) -> None:
         self.xray_dict = _load_xray_dict()
 
-    def accept(self):
+    def accept(self) -> None:
         items = self.selected_items
         names = [self.generate_item_name(x) for x in items]
         values = [x.data(1) for x in items]
@@ -85,14 +89,14 @@ class XRayEnergySelectionDialog(DictTreeViewDialog):
         msg += 'Accept?'
 
         response = QMessageBox.question(self, 'HEXRD', msg)
-        if response == QMessageBox.No:
+        if response == QMessageBox.StandardButton.No:
             return
 
         self.selected_energy = mean
         super().accept()
 
     @staticmethod
-    def generate_item_name(item, delimiter='.'):
+    def generate_item_name(item: Any, delimiter: str = '.') -> str:
         name = item.data(0)
         while item.parent_item:
             item = item.parent_item
@@ -106,19 +110,20 @@ class XRayEnergySelectionDialog(DictTreeViewDialog):
 
 
 @memoize(maxsize=1)
-def _load_xray_dict():
+def _load_xray_dict() -> dict:
     # Load the data from the file
     filename = 'characteristic_xray_energies.h5'
     h5_data = load_resource(hexrd.resources, filename, binary=True)
+    assert isinstance(h5_data, bytes)
     io_data = io.BytesIO(h5_data)
 
     # Unwrap the h5 file to a dict
-    xray_dict = {}
+    xray_dict: dict[str, Any] = {}
     with h5py.File(io_data, 'r') as f:
         unwrap_h5_to_dict(f, xray_dict)
 
     # Sort the keys in the dict
-    def sort(x):
+    def sort(x: str) -> int:
         return int(x) if x.isdigit() else 0
 
     sorted_keys = sorted(xray_dict.keys(), key=sort)
@@ -134,7 +139,7 @@ if __name__ == '__main__':
 
     dialog = XRayEnergySelectionDialog()
 
-    def finished():
+    def finished() -> None:
         print(f'Selected value was: {dialog.selected_energy}')
         app.exit()
 

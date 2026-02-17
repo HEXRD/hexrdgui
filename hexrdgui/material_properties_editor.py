@@ -1,6 +1,10 @@
 import copy
+from typing import Any
+
 import numpy as np
 from numpy.linalg import LinAlgError, inv
+
+from PySide6.QtWidgets import QWidget
 
 from hexrd.material.unitcell import _StiffnessDict
 
@@ -15,7 +19,7 @@ class MaterialPropertiesEditor:
 
     elastic_tensor_shape = (6, 6)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('material_properties_editor.ui', parent)
 
@@ -29,7 +33,7 @@ class MaterialPropertiesEditor:
 
         self.update_gui()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.elastic_tensor_type.currentIndexChanged.connect(
             self.elastic_tensor_type_changed
         )
@@ -37,11 +41,11 @@ class MaterialPropertiesEditor:
         self.ui.show_pt_slider.clicked.connect(self.show_pt_slider)
 
     @property
-    def material(self):
+    def material(self) -> Any:
         return HexrdConfig().active_material
 
     @property
-    def elastic_tensor_type(self):
+    def elastic_tensor_type(self) -> str:
         type_map = {
             'Stiffness (GPa)': 'stiffness',
             'Compliance (TPa⁻¹)': 'compliance',
@@ -49,18 +53,18 @@ class MaterialPropertiesEditor:
         return type_map[self.ui.elastic_tensor_type.currentText()]
 
     @property
-    def elastic_tensor(self):
+    def elastic_tensor(self) -> Any:
         return getattr(self.material.unitcell, self.elastic_tensor_type, None)
 
     @elastic_tensor.setter
-    def elastic_tensor(self, v):
+    def elastic_tensor(self, v: Any) -> None:
         return setattr(self.material.unitcell, self.elastic_tensor_type, v)
 
-    def elastic_tensor_type_changed(self):
+    def elastic_tensor_type_changed(self) -> None:
         self.update_elastic_tensor_gui()
         self.update_elastic_tensor_tooltip()
 
-    def update_elastic_tensor_tooltip(self):
+    def update_elastic_tensor_tooltip(self) -> None:
         units_map = {
             'stiffness': 'GPa',
             'compliance': 'TPa⁻¹',
@@ -72,11 +76,11 @@ class MaterialPropertiesEditor:
 
         self.ui.elastic_tensor_group.setToolTip(tooltip)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         self.update_elastic_tensor_gui()
         self.update_misc_gui()
 
-    def update_elastic_tensor_gui(self):
+    def update_elastic_tensor_gui(self) -> None:
         if (elastic_tensor := self.elastic_tensor) is not None:
             data = copy.deepcopy(elastic_tensor)
         else:
@@ -93,7 +97,7 @@ class MaterialPropertiesEditor:
         editor.apply_constraints_func = constraints_func
         editor.data = data
 
-    def update_misc_gui(self):
+    def update_misc_gui(self) -> None:
         with block_signals(*self.misc_widgets):
             material = self.material
 
@@ -105,11 +109,11 @@ class MaterialPropertiesEditor:
             self.ui.volume.setValue(volume)
             self.ui.volume_per_atom.setValue(volume_per_atom)
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         matrix_valid = not self.elastic_tensor_editor.matrix_invalid
         self.ui.elastic_tensor_type.setEnabled(matrix_valid)
 
-    def elastic_tensor_edited(self):
+    def elastic_tensor_edited(self) -> None:
         data = copy.deepcopy(self.elastic_tensor_editor.data)
         try:
             self.elastic_tensor = copy.deepcopy(data)
@@ -123,14 +127,14 @@ class MaterialPropertiesEditor:
         self.update_enable_states()
 
     @property
-    def misc_widgets(self):
+    def misc_widgets(self) -> list:
         return [
             self.ui.density,
             self.ui.volume,
             self.ui.volume_per_atom,
         ]
 
-    def show_pt_slider(self):
+    def show_pt_slider(self) -> None:
         if dialog := getattr(self, '_pt_slider_dialog', None):
             dialog.hide()
 

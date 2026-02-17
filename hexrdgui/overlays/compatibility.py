@@ -1,7 +1,9 @@
+from typing import Any
+
 CURRENT_DICT_VERSION = 2
 
 
-def material_name(overlay_dict):
+def material_name(overlay_dict: dict) -> str | None:
     version = overlay_dict.get('_version', 1)
     if version == 1:
         key = 'material'
@@ -11,14 +13,14 @@ def material_name(overlay_dict):
     return overlay_dict.get(key)
 
 
-def to_dict(overlay):
+def to_dict(overlay: Any) -> dict:
     d = overlay.to_dict()
     # Keep track of a version so we can convert between formats properly
     d['_version'] = CURRENT_DICT_VERSION
     return d
 
 
-def from_dict(cls, d):
+def from_dict(cls: Any, d: dict) -> Any:
     version = d.pop('_version', 1)
 
     if 'eta_period' in d:
@@ -45,7 +47,7 @@ def from_dict(cls, d):
     return cls(**d)
 
 
-def convert_dict_v1_to_v2(d, type_str):
+def convert_dict_v1_to_v2(d: dict, type_str: str) -> dict:
     func_name = f'{type_str}_dict_v1_to_v2'
 
     if func_name not in globals():
@@ -54,7 +56,7 @@ def convert_dict_v1_to_v2(d, type_str):
     return globals()[func_name](d)
 
 
-def base_dict_v1_to_v2(d):
+def base_dict_v1_to_v2(d: dict) -> dict:
     ret = {}
 
     # Material is required
@@ -75,7 +77,7 @@ def base_dict_v1_to_v2(d):
     return ret
 
 
-def powder_dict_v1_to_v2(d):
+def powder_dict_v1_to_v2(d: dict) -> dict:
     ret = base_dict_v1_to_v2(d)
 
     options = d.get('options', {})
@@ -89,7 +91,7 @@ def powder_dict_v1_to_v2(d):
     return ret
 
 
-def laue_dict_v1_to_v2(d):
+def laue_dict_v1_to_v2(d: dict) -> dict:
     ret = base_dict_v1_to_v2(d)
 
     options = d.get('options', {})
@@ -107,7 +109,7 @@ def laue_dict_v1_to_v2(d):
     return ret
 
 
-def rotation_series_dict_v1_to_v2(d):
+def rotation_series_dict_v1_to_v2(d: dict) -> dict:
     ret = base_dict_v1_to_v2(d)
 
     options = d.get('options', {})
@@ -133,7 +135,7 @@ def rotation_series_dict_v1_to_v2(d):
     return ret
 
 
-def _set_if_present(ret, d, name_list):
+def _set_if_present(ret: dict, d: dict, name_list: list) -> None:
     for name in name_list:
         if name in d:
             ret[name] = d[name]

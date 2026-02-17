@@ -1,20 +1,28 @@
 # Some general utilities that are used in multiple places
 
+from __future__ import annotations
+
 from contextlib import contextmanager
 import copy
 from enum import IntEnum
 from functools import reduce
 import math
 import sys
+from typing import Any, Callable, Generator, Sequence, TYPE_CHECKING, cast
 
+from PySide6.QtCore import QEvent
+
+import matplotlib.image
 import matplotlib.transforms as mtransforms
 import numpy as np
 
 from PySide6.QtCore import QObject, QSignalBlocker
-from PySide6.QtWidgets import QLayout
+from PySide6.QtGui import QStandardItemModel
+from PySide6.QtWidgets import QComboBox, QLayout
 
 from hexrd import imageutil
 from hexrd.imageseries.omega import OmegaImageSeries
+from hexrd.instrument import HEDMInstrument
 from hexrd.rotations import (
     angleAxisOfRotMat,
     angles_from_rmat_xyz,
@@ -25,6 +33,10 @@ from hexrd.transforms.xfcapi import makeRotMatOfExpMap
 from hexrd.utils.decorators import memoize
 from hexrd.utils.hkl import str_to_hkl
 from hexrd.utils.panel_buffer import panel_buffer_as_2d_array
+from types import TracebackType
+
+if TYPE_CHECKING:
+    from hexrd.material.crystallography import PlaneData
 
 
 class SnipAlgorithmType(IntEnum):
@@ -33,7 +45,11 @@ class SnipAlgorithmType(IntEnum):
     SNIP_2D = 2
 
 
-def convert_tilt_convention(iconfig, old_convention, new_convention):
+def convert_tilt_convention(
+    iconfig: dict[str, Any],
+    old_convention: dict[str, Any] | None,
+    new_convention: dict[str, Any] | None,
+) -> None:
     """
     convert the tilt angles from an old convention to a new convention
     """
@@ -64,7 +80,11 @@ def convert_tilt_convention(iconfig, old_convention, new_convention):
         tilts[:] = np.asarray(rme.angles).tolist()
 
 
-def convert_angle_convention(angles, old_convention, new_convention):
+def convert_angle_convention(
+    angles: Any,
+    old_convention: dict[str, Any] | None,
+    new_convention: dict[str, Any] | None,
+) -> Any:
     if old_convention is not None:
         # First, convert these to the matrix invariants
         rme = RotMatEuler(np.zeros(3), **old_convention)
@@ -82,7 +102,11 @@ def convert_angle_convention(angles, old_convention, new_convention):
     return np.array(rme.angles).tolist()
 
 
-def coords2index(im, x, y):
+def coords2index(
+    im: matplotlib.image.AxesImage,
+    x: float,
+    y: float,
+) -> np.ndarray:
     """
     This function is modified from here:
     https://github.com/joferkington/mpldatacursor/blob/7dabc589ed02c35ac5d89de5931f91e0323aa795/mpldatacursor/pick_info.py#L28
@@ -106,7 +130,9 @@ def coords2index(im, x, y):
     if im.origin == 'upper':
         ymin, ymax = ymax, ymin
     data_extent = mtransforms.Bbox([[ymin, xmin], [ymax, xmax]])
-    array_extent = mtransforms.Bbox([[0, 0], im.get_array().shape[:2]])
+    arr = im.get_array()
+    assert arr is not None
+    array_extent = mtransforms.Bbox([[0, 0], arr.shape[:2]])
     trans = mtransforms.BboxTransformFrom(data_extent) + mtransforms.BboxTransformTo(
         array_extent
     )
@@ -114,7 +140,7 @@ def coords2index(im, x, y):
     return trans.transform_point([y, x]).astype(int)
 
 
-def snip_width_pixels():
+def snip_width_pixels() -> int:
 
     from hexrdgui.hexrd_config import HexrdConfig
 
@@ -126,7 +152,7 @@ def snip_width_pixels():
     return int(math.ceil(snip_width_deg / pixel_size_tth))
 
 
-def run_snip1d(img):
+def run_snip1d(img: np.ndarray) -> np.ndarray:
 
     from hexrdgui.hexrd_config import HexrdConfig
 
@@ -139,7 +165,12 @@ def run_snip1d(img):
 
 
 @memoize
-def _run_snip1d(img, snip_width, numiter, algorithm):
+def _run_snip1d(
+    img: np.ndarray,
+    snip_width: int,
+    numiter: int,
+    algorithm: SnipAlgorithmType,
+) -> np.ndarray:
     if algorithm == SnipAlgorithmType.Fast_SNIP_1D:
         return imageutil.fast_snip1d(img, snip_width, numiter)
     elif algorithm == SnipAlgorithmType.SNIP_1D:
@@ -151,7 +182,7 @@ def _run_snip1d(img, snip_width, numiter, algorithm):
     raise RuntimeError(f'Unrecognized polar_snip1d_algorithm {algorithm}')
 
 
-def remove_none_distortions(iconfig):
+def remove_none_distortions(iconfig: dict[str, Any]) -> None:
     # This modifies the iconfig in place to remove distortion
     # parameters that are set to None
     for det in iconfig['detectors'].values():
@@ -163,25 +194,43 @@ def remove_none_distortions(iconfig):
 class EventBlocker(QObject):
     """A context manager that can be used block a specific event"""
 
-    def __init__(self, obj, event_type):
+    def __init__(
+        self,
+        obj: QObject,
+        event_type: QEvent.Type,
+    ) -> None:
         super().__init__()
         self._obj = obj
         self._event_type = event_type
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self._obj.installEventFilter(self)
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self._obj.removeEventFilter(self)
 
-    def eventFilter(self, obj, event):
+    def eventFilter(  # type: ignore[override]
+        self,
+        obj: QObject,
+        event: QEvent,
+    ) -> bool:
         if event.type() == self._event_type:
             return True
         else:
             return super().eventFilter(obj, event)
 
 
-def unique_name(items, name, start=1, delimiter='_'):
+def unique_name(
+    items: Sequence[str],
+    name: str,
+    start: int = 1,
+    delimiter: str = '_',
+) -> str:
     value = start
     while name in items:
         prefix, delim, suffix = name.rpartition(delimiter)
@@ -195,7 +244,7 @@ def unique_name(items, name, start=1, delimiter='_'):
     return name
 
 
-def wrap_with_callbacks(func):
+def wrap_with_callbacks(func: Callable[..., Any]) -> Callable[..., Any]:
     """Call callbacks before and/or after a member function
 
     If this decorator is used on a member function, and if there is also
@@ -205,14 +254,14 @@ def wrap_with_callbacks(func):
     that are given to the member function.
     """
 
-    def callback(self, when, *args, **kwargs):
+    def callback(self: Any, when: str, *args: Any, **kwargs: Any) -> None:
         func_name = func.__name__
         callback_name = f'{when}_{func_name}_callback'
         f = self.__dict__.get(callback_name)
         if f is not None:
             f(*args, **kwargs)
 
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         callback(self, 'before', *args, **kwargs)
         ret = func(self, *args, **kwargs)
         callback(self, 'after', *args, **kwargs)
@@ -221,7 +270,7 @@ def wrap_with_callbacks(func):
     return wrapper
 
 
-def compose(*functions):
+def compose(*functions: Callable[..., Any]) -> Callable[..., Any]:
     # Combine a series of functions together.
     # Note that the functions are called from right to left.
     return reduce(lambda f, g: lambda x: f(g(x)), functions, lambda x: x)
@@ -230,17 +279,17 @@ def compose(*functions):
 class lazy_property:
     """Cache and always return the results of the first fetch"""
 
-    def __init__(self, function):
+    def __init__(self, function: Callable[..., Any]) -> None:
         self.function = function
         self.name = function.__name__
 
-    def __get__(self, obj, type=None) -> object:
+    def __get__(self, obj: Any, type: Any = None) -> object:
         obj.__dict__[self.name] = self.function(obj)
         return obj.__dict__[self.name]
 
 
 @contextmanager
-def exclusions_off(plane_data):
+def exclusions_off(plane_data: PlaneData) -> Generator[None, None, None]:
     prev = plane_data.exclusions
     plane_data.exclusions = None
     try:
@@ -250,7 +299,7 @@ def exclusions_off(plane_data):
 
 
 @contextmanager
-def tth_max_off(plane_data):
+def tth_max_off(plane_data: PlaneData) -> Generator[None, None, None]:
     prev = plane_data.tThMax
     plane_data.tThMax = None
     try:
@@ -259,12 +308,16 @@ def tth_max_off(plane_data):
         plane_data.tThMax = prev
 
 
-def has_nan(x):
+def has_nan(x: np.ndarray) -> bool:
     # Utility function to check if there are any NaNs in x
     return np.isnan(np.min(x))
 
 
-def instr_to_internal_dict(instr, calibration_dict=None, convert_tilts=True):
+def instr_to_internal_dict(
+    instr: HEDMInstrument,
+    calibration_dict: dict[str, Any] | None = None,
+    convert_tilts: bool = True,
+) -> dict[str, Any]:
     from hexrdgui.hexrd_config import HexrdConfig
 
     # Convert an HEDMInstrument object into an internal dict we can
@@ -300,7 +353,7 @@ def instr_to_internal_dict(instr, calibration_dict=None, convert_tilts=True):
     return config
 
 
-def is_int(s):
+def is_int(s: str) -> bool:
     """Check if a string is an int"""
     try:
         int(s)
@@ -310,7 +363,7 @@ def is_int(s):
 
 
 @contextmanager
-def block_signals(*objects):
+def block_signals(*objects: QObject) -> Generator[None, None, None]:
     """Block signals of objects via a with block:
 
     with block_signals(object):
@@ -324,7 +377,9 @@ def block_signals(*objects):
         blocked.clear()
 
 
-def reversed_enumerate(sequence):
+def reversed_enumerate(
+    sequence: Sequence[Any],
+) -> zip[tuple[int, Any]]:
     return zip(
         reversed(range(len(sequence))),
         reversed(sequence),
@@ -332,7 +387,7 @@ def reversed_enumerate(sequence):
 
 
 @contextmanager
-def default_stdout_stderr():
+def default_stdout_stderr() -> Generator[None, None, None]:
     # Ensure we are using default stdout and stderr in the context
     prev_stdout = sys.stdout
     prev_stderr = sys.stderr
@@ -345,17 +400,22 @@ def default_stdout_stderr():
         sys.stderr = prev_stderr
 
 
-def clear_layout(layout):
+def clear_layout(layout: QLayout) -> None:
     # Recursively removes all child layouts and deletes all child widgets
     while child := layout.takeAt(0):
         if isinstance(child, QLayout):
             clear_layout(child)
             child.deleteLater()
         else:
-            child.widget().deleteLater()
+            w = child.widget()
+            if w is not None:
+                w.deleteLater()
 
 
-def array_index_in_list(array, array_list):
+def array_index_in_list(
+    array: np.ndarray,
+    array_list: list[np.ndarray],
+) -> int:
     # Find the index of an array in a list of arrays
     for i, array2 in enumerate(array_list):
         if np.array_equal(array, array2):
@@ -364,9 +424,11 @@ def array_index_in_list(array, array_list):
     return -1
 
 
-def unique_array_list(array_list):
+def unique_array_list(
+    array_list: list[np.ndarray],
+) -> list[np.ndarray]:
     # Return a list with unique arrays in it (duplicates removed)
-    ret = []
+    ret: list[np.ndarray] = []
     for array in array_list:
         if array_index_in_list(array, ret) == -1:
             # It is not in the list
@@ -375,7 +437,7 @@ def unique_array_list(array_list):
     return ret
 
 
-def format_big_int(x, decimals=2):
+def format_big_int(x: float, decimals: int = 2) -> str:
     labels = [
         (1e12, 'trillion'),
         (1e9, 'billion'),
@@ -390,7 +452,7 @@ def format_big_int(x, decimals=2):
     return f'{x}'
 
 
-def format_memory_int(x, decimals=2):
+def format_memory_int(x: float, decimals: int = 2) -> str:
     labels = [
         (1e12, 'TB'),
         (1e9, 'GB'),
@@ -406,7 +468,7 @@ def format_memory_int(x, decimals=2):
     return f'{x} B'
 
 
-def apply_symmetric_constraint(x):
+def apply_symmetric_constraint(x: np.ndarray) -> np.ndarray:
     # Copy values from upper triangle to lower triangle.
     # Only works for square matrices.
     for i in range(x.shape[0]):
@@ -415,20 +477,23 @@ def apply_symmetric_constraint(x):
     return x
 
 
-def hkl_str_to_array(hkl):
+def hkl_str_to_array(hkl: str) -> np.ndarray:
     # For instance: '1 -1 10' => np.array((1, -1, 10))
     return np.array(str_to_hkl(hkl))
 
 
-def is_omega_imageseries(ims):
+def is_omega_imageseries(ims: object) -> bool:
     return isinstance(ims, OmegaImageSeries)
 
 
-def set_combobox_enabled_items(cb, enable_list):
+def set_combobox_enabled_items(
+    cb: QComboBox,
+    enable_list: np.ndarray | list[bool],
+) -> None:
     if not isinstance(enable_list, np.ndarray):
         enable_list = np.array(enable_list)
 
-    model = cb.model()
+    model = cast(QStandardItemModel, cb.model())
     for i, enable in enumerate(enable_list):
         item = model.item(i)
         item.setEnabled(bool(enable))
@@ -446,7 +511,7 @@ def set_combobox_enabled_items(cb, enable_list):
     cb.setCurrentIndex(new_index)
 
 
-def remove_duplicate_neighbors(points):
+def remove_duplicate_neighbors(points: np.ndarray) -> np.ndarray:
     # Remove any points from this 2D array that are duplicates with
     # their next neighbor.
     rolled = np.roll(points, -1, axis=0)
@@ -454,7 +519,7 @@ def remove_duplicate_neighbors(points):
     return np.delete(points, delete_indices, axis=0)
 
 
-def add_sample_points(points, min_output_length):
+def add_sample_points(points: np.ndarray, min_output_length: int) -> np.ndarray:
     """Add extra sample points to a 2D array of points
 
     This takes a 2D array of points and uses np.linspace() to add extra
@@ -482,12 +547,14 @@ def add_sample_points(points, min_output_length):
     return output.T.reshape(2, -1).T
 
 
-def convert_panel_buffer_to_2d_array(panel):
+def convert_panel_buffer_to_2d_array(panel: Any) -> None:
     panel.panel_buffer = panel_buffer_as_2d_array(panel)
 
 
 @contextmanager
-def masks_applied_to_panel_buffers(instr):
+def masks_applied_to_panel_buffers(
+    instr: HEDMInstrument,
+) -> Generator[None, None, None]:
     # Temporarily apply the masks to the panel buffers
     # This is useful, for instance, for auto point picking, where
     # we want the masked regions to be avoided.
@@ -506,11 +573,13 @@ def masks_applied_to_panel_buffers(instr):
             panel.panel_buffer = panel_buffers[det_key]
 
 
-def euler_angles_to_rmat(angles):
+def euler_angles_to_rmat(angles: Sequence[float]) -> np.ndarray:
     return rotMatOfExpMap(euler_angles_to_exp_map(angles))
 
 
-def rmat_to_euler_angles(rmat):
+def rmat_to_euler_angles(
+    rmat: np.ndarray,
+) -> np.ndarray | list[float]:
     from hexrdgui.hexrd_config import HexrdConfig
 
     # Convert from exp map parameters
@@ -527,7 +596,9 @@ def rmat_to_euler_angles(rmat):
     return angles
 
 
-def euler_angles_to_exp_map(angles):
+def euler_angles_to_exp_map(
+    angles: np.ndarray | Sequence[float],
+) -> np.ndarray:
     from hexrdgui.hexrd_config import HexrdConfig
 
     # Convert to exp map parameters
@@ -540,7 +611,9 @@ def euler_angles_to_exp_map(angles):
     return np.asarray(angles)
 
 
-def exp_map_to_euler_angles(angles):
+def exp_map_to_euler_angles(
+    angles: np.ndarray | Sequence[float],
+) -> Any:
     from hexrdgui.hexrd_config import HexrdConfig
 
     # Convert from exp map parameters

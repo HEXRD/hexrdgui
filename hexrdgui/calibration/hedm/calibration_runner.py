@@ -1,8 +1,10 @@
 from functools import partial
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QWidget
 
 from hexrd import instrument
 from hexrd.fitting.calibration import GrainCalibrator, InstrumentCalibrator
@@ -26,17 +28,17 @@ class HEDMCalibrationRunner(QObject):
 
     finished = Signal()
 
-    def __init__(self, async_runner, parent=None):
+    def __init__(self, async_runner: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.async_runner = async_runner
-        self.parent = parent
+        self._parent = parent
 
-        self.select_grains_dialog = None
-        self.options_dialog = None
+        self.select_grains_dialog: Any = None
+        self.options_dialog: HEDMCalibrationOptionsDialog | None = None
         self.clear()
 
-    def clear(self):
+    def clear(self) -> None:
         if self.select_grains_dialog:
             self.select_grains_dialog.ui.hide()
             self.select_grains_dialog = None
@@ -48,7 +50,7 @@ class HEDMCalibrationRunner(QObject):
         self.results = None
         self.results_message = ''
 
-    def run(self):
+    def run(self) -> None:
         self.clear()
         self.pre_validate()
 
@@ -60,14 +62,14 @@ class HEDMCalibrationRunner(QObject):
 
         kwargs = {
             'material': material,
-            'parent': self.parent,
+            'parent': self._parent,
         }
         dialog = HEDMCalibrationOptionsDialog(**kwargs)
         dialog.accepted.connect(self.on_options_dialog_accepted)
         dialog.show()
         self.options_dialog = dialog
 
-    def on_options_dialog_accepted(self):
+    def on_options_dialog_accepted(self) -> None:
         shape = (self.num_active_overlays, 21)
         self.grains_table = np.empty(shape, dtype=np.float64)
         gw = instrument.GrainDataWriter(array=self.grains_table)
@@ -77,13 +79,13 @@ class HEDMCalibrationRunner(QObject):
         self.synchronize_omega_period()
         self.run_calibration()
 
-    def run_calibration(self):
+    def run_calibration(self) -> None:
         # First, run pull_spots() to get the spots data
         self.async_runner.progress_title = 'Running pull spots...'
         self.async_runner.success_callback = self.on_pull_spots_finished
         self.async_runner.run(self.run_pull_spots)
 
-    def on_pull_spots_finished(self, spots_data_dict):
+    def on_pull_spots_finished(self, spots_data_dict: dict[int, Any]) -> None:
         cfg = create_indexing_config()
 
         # grab instrument
@@ -139,7 +141,7 @@ class HEDMCalibrationRunner(QObject):
 
         calibrators = []
         for i in grain_ids:
-            data_dict = {
+            data_dict: dict[str, dict[str, Any]] = {
                 'hkls': {},
                 'pick_xys': {},
             }
@@ -178,7 +180,7 @@ class HEDMCalibrationRunner(QObject):
             'cfg': cfg,
             'title': 'Initial Guess. Proceed?',
             'ome_period': np.degrees(ome_period),
-            'parent': self.parent,
+            'parent': self._parent,
         }
         dialog = HEDMCalibrationResultsDialog(**kwargs)
         if not dialog.exec():
@@ -195,12 +197,12 @@ class HEDMCalibrationRunner(QObject):
             'instr': instr,
             'params_dict': self.ic.params,
             'format_extra_params_func': format_extra_params_func,
-            'parent': self.parent,
+            'parent': self._parent,
             'engineering_constraints': self.ic.engineering_constraints,
             'window_title': 'HEDM Calibration',
             'help_url': 'calibration/rotation_series',
         }
-        dialog = HEDMCalibrationDialog(**kwargs)
+        dialog = HEDMCalibrationDialog(**kwargs)  # type: ignore[assignment]
 
         # Connect interactions to functions
         self._dialog_callback_handler = HEDMCalibrationCallbacks(
@@ -214,9 +216,9 @@ class HEDMCalibrationRunner(QObject):
         self._dialog_callback_handler.instrument_updated.connect(
             self.on_calibration_finished
         )
-        dialog.show()
+        dialog.show()  # type: ignore[attr-defined]
 
-    def on_calibration_finished(self):
+    def on_calibration_finished(self) -> None:
         overlays = self.active_overlays
         for overlay, calibrator in zip(overlays, self.ic.calibrators):
             modified = any(
@@ -237,7 +239,7 @@ class HEDMCalibrationRunner(QObject):
         HexrdConfig().update_overlay_editor.emit()
         self.finished.emit()
 
-    def run_pull_spots(self):
+    def run_pull_spots(self) -> dict[int, Any]:
         cfg = create_indexing_config()
 
         instr = cfg.instrument.hedm
@@ -267,60 +269,60 @@ class HEDMCalibrationRunner(QObject):
         return outputs
 
     @property
-    def grain_params(self):
+    def grain_params(self) -> np.ndarray:
         return self.grains_table[:, 3:15]
 
     @property
-    def overlays(self):
+    def overlays(self) -> list[Any]:
         return HexrdConfig().overlays
 
     @property
-    def visible_overlays(self):
+    def visible_overlays(self) -> list[Any]:
         return [x for x in self.overlays if x.visible]
 
     @property
-    def visible_rotation_series_overlays(self):
+    def visible_rotation_series_overlays(self) -> list[Any]:
         return [x for x in self.visible_overlays if x.is_rotation_series]
 
     @property
-    def active_overlays(self):
+    def active_overlays(self) -> list[Any]:
         return self.visible_rotation_series_overlays
 
     @property
-    def num_active_overlays(self):
+    def num_active_overlays(self) -> int:
         return len(self.active_overlays)
 
     @property
-    def first_active_overlay(self):
+    def first_active_overlay(self) -> Any:
         overlays = self.active_overlays
         return overlays[0] if overlays else None
 
     @property
-    def ome_period(self):
+    def ome_period(self) -> Any:
         # These should be the same for all overlays, and it is pre-validated
         return self.first_active_overlay.ome_period
 
     @property
-    def material(self):
+    def material(self) -> Any:
         return self.first_active_overlay.material
 
     @property
-    def active_overlay_refinements(self):
+    def active_overlay_refinements(self) -> list[Any]:
         return [x.refinements for x in self.active_overlays]
 
-    def synchronize_material(self):
+    def synchronize_material(self) -> None:
         # This material is used for creating the indexing config.
         # Make sure it matches the material we are using.
         cfg = HexrdConfig().indexing_config
         cfg['_selected_material'] = self.material.name
 
-    def synchronize_omega_period(self):
+    def synchronize_omega_period(self) -> None:
         # This omega period is deprecated, but still used in some places.
         # Make sure it is synchronized with our overlays' omega period.
         cfg = HexrdConfig().indexing_config
         cfg['find_orientations']['omega']['period'] = np.degrees(self.ome_period)
 
-    def pre_validate(self):
+    def pre_validate(self) -> None:
         # Validation to perform before we do anything else
         if not self.active_overlays:
             # No more validation needed.

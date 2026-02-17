@@ -1,14 +1,21 @@
+from typing import Any
+
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 import matplotlib.pyplot as plt
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QWidget
 
 from hexrdgui.utils.matplotlib import remove_artist
 
 
 class PointPickerDialog(QDialog):
-    def __init__(self, canvas, window_title='Pick Points', parent=None):
+    def __init__(
+        self,
+        canvas: Any,
+        window_title: str = 'Pick Points',
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         if len(canvas.figure.get_axes()) != 1:
@@ -21,21 +28,21 @@ class PointPickerDialog(QDialog):
 
         label = QLabel('Left-click to add points, right-click to remove points')
         layout.addWidget(label)
-        layout.setAlignment(label, Qt.AlignHCenter)
+        layout.setAlignment(label, Qt.AlignmentFlag.AlignHCenter)
 
         self.canvas = canvas
         layout.addWidget(canvas)
 
         self.toolbar = NavigationToolbar2QT(canvas, self)
         layout.addWidget(self.toolbar)
-        layout.setAlignment(self.toolbar, Qt.AlignHCenter)
+        layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignHCenter)
 
         # Add a button box for accept/cancel
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         self.button_box = QDialogButtonBox(buttons, self)
         layout.addWidget(self.button_box)
 
-        self.points = []
+        self.points: list[Any] = []
         self.scatter_artist = self.axis.scatter([], [], c='r', marker='x')
 
         # Default size
@@ -43,7 +50,7 @@ class PointPickerDialog(QDialog):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.pick_event_id = self.canvas.mpl_connect(
             'button_press_event', self.point_picked
         )
@@ -53,27 +60,27 @@ class PointPickerDialog(QDialog):
 
         self.finished.connect(self.on_finished)
 
-    def on_finished(self):
+    def on_finished(self) -> None:
         # Perform any needed cleanup
-        self.disconnect()
+        self.disconnect_all()
 
         if self.scatter_artist is not None:
             remove_artist(self.scatter_artist)
             self.scatter_artist = None
 
-    def disconnect(self):
+    def disconnect_all(self) -> None:
         self.canvas.mpl_disconnect(self.pick_event_id)
 
     @property
-    def figure(self):
+    def figure(self) -> Any:
         return self.canvas.figure
 
     @property
-    def axis(self):
+    def axis(self) -> Any:
         # We currently assume only one axis
         return self.figure.get_axes()[0]
 
-    def point_picked(self, event):
+    def point_picked(self, event: Any) -> None:
         if event.button == 3:
             # Right-click removes points
             self.undo_point()
@@ -94,14 +101,14 @@ class PointPickerDialog(QDialog):
         self.points.append((event.xdata, event.ydata))
         self.update_scatter_plot()
 
-    def undo_point(self):
+    def undo_point(self) -> None:
         if not self.points:
             return
 
         self.points.pop()
         self.update_scatter_plot()
 
-    def update_scatter_plot(self):
+    def update_scatter_plot(self) -> None:
         # We unfortunately cannot set an empty list. So do nans instead.
         points = self.points if self.points else [np.nan, np.nan]
         self.scatter_artist.set_offsets(points)

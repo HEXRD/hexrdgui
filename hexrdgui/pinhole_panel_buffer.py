@@ -1,7 +1,14 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
-def generate_pinhole_panel_buffer(instr):
+
+def generate_pinhole_panel_buffer(instr: HEDMInstrument) -> dict:
     ph_buffer = {}
 
     # Save the beam vector so we can restore it later

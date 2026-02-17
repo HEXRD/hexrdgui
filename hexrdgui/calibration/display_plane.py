@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, Sequence, TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from hexrd.transforms import xfcapi
 from hexrd import instrument
@@ -9,12 +16,16 @@ tilt_DFTL = np.zeros(3)
 
 class DisplayPlane:
 
-    def __init__(self, tilt=tilt_DFTL, tvec=tvec_DFLT):
+    def __init__(
+        self,
+        tilt: np.ndarray = tilt_DFTL,
+        tvec: np.ndarray = tvec_DFLT,
+    ) -> None:
         self.tilt = tilt
         self.rmat = xfcapi.makeDetectorRotMat(self.tilt)
         self.tvec = tvec
 
-    def panel_size(self, instr):
+    def panel_size(self, instr: HEDMInstrument) -> tuple[float, float]:
         """return bounding box of instrument panels in display plane"""
         xmin_i = ymin_i = np.inf
         xmax_i = ymax_i = -np.inf
@@ -44,7 +55,13 @@ class DisplayPlane:
 
         return (del_x, del_y)
 
-    def display_panel(self, sizes, mps, bvec=None, xrs_dist=None):
+    def display_panel(
+        self,
+        sizes: Sequence[int],
+        mps: float,
+        bvec: Any = None,
+        xrs_dist: Any = None,
+    ) -> Any:
 
         del_x = sizes[0]
         del_y = sizes[1]

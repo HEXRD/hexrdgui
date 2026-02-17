@@ -1,9 +1,10 @@
 from functools import partial
 import multiprocessing
+from typing import Any
 import numpy as np
 
 from PySide6.QtCore import QEvent, QObject, QTimer, Signal
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 
 from hexrd.imageseries import ImageSeries
 
@@ -39,8 +40,10 @@ class ImageModeWidget(QObject):
 
     raw_show_zoom_dialog = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+
+        self._polar_overlay_manager: AzimuthalOverlayManager | None = None
 
         loader = UiLoader()
         self.ui = loader.load_file('image_mode_widget.ui', parent)
@@ -61,7 +64,7 @@ class ImageModeWidget(QObject):
         self.setup_connections()
         self.update_gui_from_config()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.installEventFilter(self)
         self.ui.raw_tabbed_view.toggled.connect(HexrdConfig().set_tab_images)
         self.ui.raw_show_saturation.toggled.connect(
@@ -182,7 +185,7 @@ class ImageModeWidget(QObject):
 
         ImageLoadManager().new_images_loaded.connect(self.on_new_images_loaded)
 
-    def setup_eiger_stream_v2_options(self):
+    def setup_eiger_stream_v2_options(self) -> None:
         combo = self.ui.eiger_stream_v2_setting
         combo.clear()
 
@@ -194,11 +197,11 @@ class ImageModeWidget(QObject):
         for k, v in options.items():
             combo.addItem(k, v)
 
-    def on_new_images_loaded(self):
+    def on_new_images_loaded(self) -> None:
         self.update_visibility_states()
         self.update_eiger_stream_v2_settings()
 
-    def update_eiger_stream_v2_settings(self):
+    def update_eiger_stream_v2_settings(self) -> None:
         ims_dict = HexrdConfig().imageseries_dict
 
         # We assume that all imageseries have the same options set
@@ -232,7 +235,7 @@ class ImageModeWidget(QObject):
         with block_signals(w):
             w.setValue(settings['multiplier'])
 
-    def on_eiger_stream_v2_settings_modified(self):
+    def on_eiger_stream_v2_settings_modified(self) -> None:
         ims_dict = HexrdConfig().imageseries_dict
 
         if not ims_dict or not _is_eiger_stream_v2(next(iter(ims_dict.values()))):
@@ -252,8 +255,8 @@ class ImageModeWidget(QObject):
         # Trigger all the same logic as if we loaded new images
         ImageLoadManager().new_images_loaded.emit()
 
-    def eventFilter(self, target, event):
-        if target is self.ui and event.type() == QEvent.Resize:
+    def eventFilter(self, target: QObject, event: QEvent) -> bool:
+        if target is self.ui and event.type() == QEvent.Type.Resize:
             size = self.ui.polar_scroll_area_contents.minimumSizeHint()
 
             # Make the minimum height of the polar scroll area to be
@@ -272,18 +275,18 @@ class ImageModeWidget(QObject):
 
         return False
 
-    def enable_image_mode_widget(self, b):
+    def enable_image_mode_widget(self, b: bool) -> None:
         self.ui.tab_widget.setEnabled(b)
 
-    def set_image_mode_widget_tab(self, view_mode):
+    def set_image_mode_widget_tab(self, view_mode: Any) -> None:
         tab = VIEW_MODE_TO_TAB_INDEX[view_mode]
         self.ui.tab_widget.setCurrentIndex(tab)
 
-    def currentChanged(self, index):
+    def currentChanged(self, index: int) -> None:
         view_mode = TAB_INDEX_TO_VIEW_MODE[index]
         self.tab_changed.emit(view_mode)
 
-    def all_widgets(self):
+    def all_widgets(self) -> list[Any]:
         widgets = [
             self.ui.raw_tabbed_view,
             self.ui.raw_show_saturation,
@@ -317,7 +320,7 @@ class ImageModeWidget(QObject):
 
         return widgets
 
-    def update_gui_from_config(self):
+    def update_gui_from_config(self) -> None:
         with block_signals(*self.all_widgets()):
             self.ui.raw_stitch_roi_images.setChecked(
                 HexrdConfig().stitch_raw_roi_images
@@ -362,19 +365,19 @@ class ImageModeWidget(QObject):
         self.update_visibility_states()
         self.update_eiger_stream_v2_settings()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         apply_snip1d = self.ui.polar_apply_snip1d.isChecked()
         self.ui.polar_snip1d_width.setEnabled(apply_snip1d)
         self.ui.polar_snip1d_numiter.setEnabled(apply_snip1d)
         self.ui.polar_apply_erosion.setEnabled(apply_snip1d)
 
-    def on_instrument_config_load(self):
+    def on_instrument_config_load(self) -> None:
         self.update_visibility_states()
         self.update_beam_names()
         self.auto_generate_cartesian_params()
         self.auto_generate_polar_params()
 
-    def update_visibility_states(self):
+    def update_visibility_states(self) -> None:
         has_roi = HexrdConfig().instrument_has_roi
         self.ui.raw_stitch_roi_images.setVisible(has_roi)
 
@@ -390,7 +393,7 @@ class ImageModeWidget(QObject):
         can_make_waterfall_plot = 1 < HexrdConfig().imageseries_length <= 20
         self.ui.create_waterfall_plot.setVisible(can_make_waterfall_plot)
 
-    def auto_generate_cartesian_params(self):
+    def auto_generate_cartesian_params(self) -> None:
         if HexrdConfig().loading_state:
             # Don't modify the parameters if a state file is being
             # loaded. We want to keep whatever is in the state file...
@@ -416,7 +419,7 @@ class ImageModeWidget(QObject):
         # Get the GUI to update with the new values
         self.update_gui_from_config()
 
-    def auto_generate_polar_params(self):
+    def auto_generate_polar_params(self) -> None:
         if HexrdConfig().loading_state:
             # Don't modify the parameters if a state file is being
             # loaded. We want to keep whatever is in the state file...
@@ -459,16 +462,16 @@ class ImageModeWidget(QObject):
         self.update_gui_from_config()
 
     @property
-    def polar_apply_tth_distortion(self):
+    def polar_apply_tth_distortion(self) -> bool:
         return self.ui.polar_apply_tth_distortion.isChecked()
 
     @polar_apply_tth_distortion.setter
-    def polar_apply_tth_distortion(self, b):
+    def polar_apply_tth_distortion(self, b: bool) -> None:
         self.ui.polar_apply_tth_distortion.setChecked(b)
         self.ui.polar_tth_distortion_overlay.setEnabled(b)
 
     @property
-    def polar_tth_distortion_overlay(self):
+    def polar_tth_distortion_overlay(self) -> str | None:
         if (
             not self.polar_apply_tth_distortion
             or self.ui.polar_tth_distortion_overlay.currentIndex() == -1
@@ -478,7 +481,7 @@ class ImageModeWidget(QObject):
         return self.ui.polar_tth_distortion_overlay.currentText()
 
     @polar_tth_distortion_overlay.setter
-    def polar_tth_distortion_overlay(self, name):
+    def polar_tth_distortion_overlay(self, name: Any) -> None:
         if name and not isinstance(name, str):
             # Grab the name.
             name = name.name
@@ -490,10 +493,10 @@ class ImageModeWidget(QObject):
         if enabled:
             w.setCurrentText(name)
 
-    def on_polar_tth_distortion_overlay_changed(self):
+    def on_polar_tth_distortion_overlay_changed(self) -> None:
         self.polar_tth_distortion_overlay = HexrdConfig().polar_tth_distortion_object
 
-    def overlay_distortions_modified(self, name):
+    def overlay_distortions_modified(self, name: str | None) -> None:
         if name == self.polar_tth_distortion_overlay:
             # We need to rerender the whole polar view
             HexrdConfig().flag_overlay_updates_for_all_materials()
@@ -503,7 +506,7 @@ class ImageModeWidget(QObject):
         # Need to update the names
         self.update_polar_tth_distortion_overlay_options()
 
-    def update_polar_tth_distortion_overlay_options(self):
+    def update_polar_tth_distortion_overlay_options(self) -> None:
         w = self.ui.polar_tth_distortion_overlay
         prev_text = w.currentText()
         with block_signals(w):
@@ -537,14 +540,14 @@ class ImageModeWidget(QObject):
         enable = w.count() != 0
         self.ui.polar_apply_tth_distortion.setEnabled(enable)
 
-    def polar_tth_distortion_overlay_changed(self):
+    def polar_tth_distortion_overlay_changed(self) -> None:
         obj = self.polar_tth_distortion_overlay
         if obj == '[Custom]':
             obj = HexrdConfig().saved_custom_polar_tth_distortion_object
 
         HexrdConfig().polar_tth_distortion_object = obj
 
-    def on_eta_min_changed(self, min_value):
+    def on_eta_min_changed(self, min_value: float) -> None:
         """Sync max when min is changed."""
         max_value = HexrdConfig().polar_res_eta_max
         update_max = False
@@ -560,7 +563,7 @@ class ImageModeWidget(QObject):
                 HexrdConfig().set_polar_res_eta_max(max_value, rerender=False)
         HexrdConfig().polar_res_eta_min = min_value
 
-    def on_eta_max_changed(self, max_value):
+    def on_eta_max_changed(self, max_value: float) -> None:
         """Sync min when max is changed."""
         min_value = HexrdConfig().polar_res_eta_min
         update_min = False
@@ -577,43 +580,43 @@ class ImageModeWidget(QObject):
         HexrdConfig().polar_res_eta_max = max_value
 
     @property
-    def polar_x_axis_type(self):
+    def polar_x_axis_type(self) -> Any:
         label = self.ui.polar_x_axis_type.currentText()
         return POLAR_X_AXIS_LABELS_TO_VALUES[label]
 
     @polar_x_axis_type.setter
-    def polar_x_axis_type(self, value):
+    def polar_x_axis_type(self, value: Any) -> None:
         label = POLAR_X_AXIS_VALUES_TO_LABELS[value]
         self.ui.polar_x_axis_type.setCurrentText(label)
 
-    def on_polar_x_axis_type_changed(self):
+    def on_polar_x_axis_type_changed(self) -> None:
         HexrdConfig().polar_x_axis_type = self.polar_x_axis_type
 
-    def show_polar_overlay_manager(self):
-        if hasattr(self, '_polar_overlay_manager'):
+    def show_polar_overlay_manager(self) -> None:
+        if self._polar_overlay_manager is not None:
             self._polar_overlay_manager.ui.reject()
-            del self._polar_overlay_manager
+            self._polar_overlay_manager = None
 
         self._polar_overlay_manager = AzimuthalOverlayManager(self.ui)
         self._polar_overlay_manager.show()
 
-    def update_azimuthal_offset(self, value):
+    def update_azimuthal_offset(self, value: float) -> None:
         HexrdConfig().azimuthal_offset = value
         HexrdConfig().azimuthal_options_modified.emit()
 
-    def update_beam_names(self):
+    def update_beam_names(self) -> None:
         with block_signals(self.ui.polar_active_beam):
             self.ui.polar_active_beam.clear()
             self.ui.polar_active_beam.addItems(HexrdConfig().beam_names)
             self.ui.polar_active_beam.setCurrentText(HexrdConfig().active_beam_name)
 
-    def on_active_beam_changed(self):
+    def on_active_beam_changed(self) -> None:
         HexrdConfig().active_beam_name = self.ui.polar_active_beam.currentText()
 
-    def on_create_waterfall_plot_clicked(self):
+    def on_create_waterfall_plot_clicked(self) -> None:
         self.create_waterfall_plot.emit()
 
-    def on_select_detectors_for_lineout_clicked(self):
+    def on_select_detectors_for_lineout_clicked(self) -> None:
         detector_names = HexrdConfig().detector_names
         selected = HexrdConfig().azimuthal_lineout_detectors
         if selected is None:
@@ -639,7 +642,13 @@ POLAR_X_AXIS_LABELS_TO_VALUES = {
 POLAR_X_AXIS_VALUES_TO_LABELS = {v: k for k, v in POLAR_X_AXIS_LABELS_TO_VALUES.items()}
 
 
-def compute_polar_params(panel, max_tth_ps, max_eta_ps, min_tth, max_tth):
+def compute_polar_params(
+    panel: Any,
+    max_tth_ps: Any,
+    max_eta_ps: Any,
+    min_tth: Any,
+    max_tth: Any,
+) -> None:
     # Other than panel, all arguments are lists for appending results
     # pixel sizes
     #

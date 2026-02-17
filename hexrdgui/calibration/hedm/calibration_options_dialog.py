@@ -1,7 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem, QWidget
 
 from hexrdgui.constants import OverlayType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -12,13 +16,16 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
 
+if TYPE_CHECKING:
+    from hexrd.material import Material
+
 
 class HEDMCalibrationOptionsDialog(QObject):
 
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, material, parent=None):
+    def __init__(self, material: Material, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -27,14 +34,14 @@ class HEDMCalibrationOptionsDialog(QObject):
         add_help_url(self.ui.button_box, 'calibration/rotation_series')
 
         self.material = material
-        self.parent = parent
+        self._parent = parent
 
         self.setup_table()
         self.update_materials()
         self.update_gui()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.view_grains_table.clicked.connect(self.edit_grains_table)
 
         self.ui.material.currentIndexChanged.connect(self.material_changed)
@@ -50,7 +57,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         indexing_config = HexrdConfig().indexing_config
 
         indexing_config = HexrdConfig().indexing_config
@@ -61,31 +68,31 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.update_num_hkls()
         self.update_num_grains_selected()
 
-    def update_config(self):
+    def update_config(self) -> None:
         indexing_config = HexrdConfig().indexing_config
 
         indexing_config = HexrdConfig().indexing_config
         indexing_config['fit_grains']['npdiv'] = self.npdiv
         indexing_config['fit_grains']['threshold'] = self.threshold
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         try:
             self.validate()
         except Exception as e:
-            QMessageBox.critical(self.parent, 'HEXRD', f'Error: {e}')
+            QMessageBox.critical(self._parent, 'HEXRD', f'Error: {e}')
             self.show()
             return
 
         self.update_config()
         self.accepted.emit()
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         self.rejected.emit()
 
-    def validate(self):
+    def validate(self) -> None:
         # Validation to perform before we do anything else
         if not self.active_overlays:
             msg = 'At least one grain must be selected'
@@ -125,13 +132,13 @@ class HEDMCalibrationOptionsDialog(QObject):
             )
             raise Exception(msg)
 
-    def synchronize_material(self):
+    def synchronize_material(self) -> None:
         # This material is used for creating the indexing config.
         # Make sure it matches the material we are using.
         cfg = HexrdConfig().indexing_config
         cfg['_selected_material'] = self.material.name
 
-    def update_materials(self):
+    def update_materials(self) -> None:
         prev = self.selected_material
         material_names = list(HexrdConfig().materials)
 
@@ -143,14 +150,14 @@ class HEDMCalibrationOptionsDialog(QObject):
         else:
             self.ui.material.setCurrentText(self.material.name)
 
-    def material_changed(self):
+    def material_changed(self) -> None:
         # First, update the material on self.material
         self.material = HexrdConfig().material(self.selected_material)
 
         # Deselect all grains
         self.deselect_all_grains()
 
-    def deselect_all_grains(self):
+    def deselect_all_grains(self) -> None:
         for overlay in self.overlays:
             overlay.visible = False
 
@@ -159,7 +166,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         HexrdConfig().overlay_config_changed.emit()
         HexrdConfig().update_overlay_manager.emit()
 
-    def update_tolerances_grain_options(self):
+    def update_tolerances_grain_options(self) -> None:
         w = self.ui.tolerances_selected_grain
         if w.count() > 0:
             prev = int(w.currentText())
@@ -175,17 +182,17 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         self.update_tolerances_table()
 
-    def setup_table(self):
+    def setup_table(self) -> None:
         w = self.ui.tolerances_table
         for i in range(3):
             item = QTableWidgetItem()
-            item.setTextAlignment(Qt.AlignCenter)
+            item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             w.setItem(0, i, item)
 
         content_height = calc_table_height(w)
         w.setMaximumHeight(content_height)
 
-    def update_tolerances_table(self):
+    def update_tolerances_table(self) -> None:
         w = self.ui.tolerances_table
         if len(self.active_overlays) == 0:
             # Cannot update
@@ -208,7 +215,7 @@ class HEDMCalibrationOptionsDialog(QObject):
             item = w.item(0, col)
             item.setText(f'{np.round(np.degrees(val), 10)}')
 
-    def on_tolerances_changed(self):
+    def on_tolerances_changed(self) -> None:
         if len(self.active_overlays) == 0:
             # Can't do anything. Just return
             return
@@ -246,26 +253,26 @@ class HEDMCalibrationOptionsDialog(QObject):
         return self.ui.material.currentText()
 
     @selected_material.setter
-    def selected_material(self, v: str):
+    def selected_material(self, v: str) -> None:
         self.ui.material.setCurrentText(v)
 
     @property
-    def npdiv(self):
+    def npdiv(self) -> int:
         return self.ui.npdiv.value()
 
     @npdiv.setter
-    def npdiv(self, v):
+    def npdiv(self, v: int) -> None:
         self.ui.npdiv.setValue(v)
 
     @property
-    def threshold(self):
+    def threshold(self) -> float:
         return self.ui.threshold.value()
 
     @threshold.setter
-    def threshold(self, v):
+    def threshold(self, v: float) -> None:
         self.ui.threshold.setValue(v)
 
-    def choose_hkls(self):
+    def choose_hkls(self) -> None:
         kwargs = {
             'material': self.material,
             'title_prefix': 'Select hkls for HEDM calibration: ',
@@ -274,7 +281,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         self._reflections_table = ReflectionsTable(**kwargs)
         self._reflections_table.show()
 
-    def update_num_hkls(self):
+    def update_num_hkls(self) -> None:
         if self.material is None:
             num_hkls = 0
         else:
@@ -283,12 +290,12 @@ class HEDMCalibrationOptionsDialog(QObject):
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
 
-    def update_num_grains_selected(self):
+    def update_num_grains_selected(self) -> None:
         num_grains = len(self.active_overlays)
         text = f'Number of grains selected: {num_grains}'
         self.ui.num_grains_selected.setText(text)
 
-    def edit_grains_table(self):
+    def edit_grains_table(self) -> None:
         dialog = SelectGrainsDialog(None, self.ui)
         if not dialog.exec():
             return
@@ -335,19 +342,19 @@ class HEDMCalibrationOptionsDialog(QObject):
         HexrdConfig().update_overlay_manager.emit()
 
     @property
-    def overlays(self):
+    def overlays(self) -> list:
         return HexrdConfig().overlays
 
     @property
-    def visible_overlays(self):
+    def visible_overlays(self) -> list:
         return [x for x in self.overlays if x.visible]
 
     @property
-    def visible_rotation_series_overlays(self):
+    def visible_rotation_series_overlays(self) -> list:
         return [x for x in self.visible_overlays if x.is_rotation_series]
 
     @property
-    def active_overlays(self):
+    def active_overlays(self) -> list:
         return self.visible_rotation_series_overlays
 
 

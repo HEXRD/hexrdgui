@@ -13,11 +13,18 @@ from hexrdgui.utils import block_signals
 
 class WppfStylePicker(QObject):
 
-    def __init__(self, amorphous_visible=False, tds_visible=False, parent=None):
+    def __init__(
+        self,
+        amorphous_visible: bool = False,
+        tds_visible: bool = False,
+        parent: QObject | None = None,
+    ) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('wppf_style_picker.ui', parent)
+        self.ui = loader.load_file(
+            'wppf_style_picker.ui', parent  # type: ignore[arg-type]
+        )
         self.ui.installEventFilter(enter_key_filter)
 
         self.original_style = copy.deepcopy(self.style_config)
@@ -29,11 +36,11 @@ class WppfStylePicker(QObject):
         self.setup_connections()
         self.update_gui()
 
-    def exec(self):
+    def exec(self) -> int:
         self.ui.adjustSize()
         return self.ui.exec()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.marker.currentIndexChanged.connect(self.update_config)
         self.ui.marker_size.editingFinished.connect(self.update_config)
         self.ui.edge_color.pressed.connect(self.pick_color)
@@ -54,7 +61,7 @@ class WppfStylePicker(QObject):
         # Reset the style if the dialog is rejected
         self.ui.rejected.connect(self.reset_style)
 
-    def setup_combo_boxes(self):
+    def setup_combo_boxes(self) -> None:
         line_styles = ['solid', 'dotted', 'dashed', 'dashdot']
 
         marker_styles = ['.', 'o', '^', 's', 'x', 'D']
@@ -69,7 +76,7 @@ class WppfStylePicker(QObject):
             self.ui.tds_line_style.addItem(s)
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list:
         return [
             self.ui.marker,
             self.ui.marker_size,
@@ -86,7 +93,7 @@ class WppfStylePicker(QObject):
             self.ui.tds_line_width,
         ]
 
-    def reset_style(self):
+    def reset_style(self) -> None:
         if self.style_config == self.original_style:
             # Nothing really to do...
             return
@@ -94,13 +101,13 @@ class WppfStylePicker(QObject):
         self.style_config = copy.deepcopy(self.original_style)
         self.update_gui()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         with block_signals(*self.all_widgets):
             self.style_gui = self.style_config
 
         self.update_button_colors()
 
-    def update_config(self):
+    def update_config(self) -> None:
         self.style_config = self.style_gui
 
     @property
@@ -113,7 +120,7 @@ class WppfStylePicker(QObject):
         }
 
     @style_config.setter
-    def style_config(self, v: dict):
+    def style_config(self, v: dict) -> None:
         HexrdConfig().wppf_plot_style = v['plot']
         HexrdConfig().wppf_background_style = v['background']
         HexrdConfig().wppf_amorphous_style = v['amorphous']
@@ -129,7 +136,7 @@ class WppfStylePicker(QObject):
         }
 
     @style_gui.setter
-    def style_gui(self, v: dict):
+    def style_gui(self, v: dict) -> None:
         self.plot_style_gui = v['plot']
         self.background_style_gui = v['background']
         self.amorphous_style_gui = v['amorphous']
@@ -145,7 +152,7 @@ class WppfStylePicker(QObject):
         }
 
     @plot_style_gui.setter
-    def plot_style_gui(self, v: dict):
+    def plot_style_gui(self, v: dict) -> None:
         self.ui.marker.setCurrentText(v['marker'])
         self.ui.marker_size.setValue(v['s'])
         self.ui.face_color.setText(v['facecolors'])
@@ -160,7 +167,7 @@ class WppfStylePicker(QObject):
         }
 
     @background_style_gui.setter
-    def background_style_gui(self, v: dict):
+    def background_style_gui(self, v: dict) -> None:
         self.ui.background_color.setText(v['c'])
         self.ui.background_line_style.setCurrentText(v['ls'])
         self.ui.background_line_width.setValue(v['lw'])
@@ -174,7 +181,7 @@ class WppfStylePicker(QObject):
         }
 
     @amorphous_style_gui.setter
-    def amorphous_style_gui(self, v: dict):
+    def amorphous_style_gui(self, v: dict) -> None:
         self.ui.amorphous_color.setText(v['c'])
         self.ui.amorphous_line_style.setCurrentText(v['ls'])
         self.ui.amorphous_line_width.setValue(v['lw'])
@@ -188,24 +195,24 @@ class WppfStylePicker(QObject):
         }
 
     @tds_style_gui.setter
-    def tds_style_gui(self, v: dict):
+    def tds_style_gui(self, v: dict) -> None:
         self.ui.tds_color.setText(v['c'])
         self.ui.tds_line_style.setCurrentText(v['ls'])
         self.ui.tds_line_width.setValue(v['lw'])
 
-    def pick_color(self):
+    def pick_color(self) -> None:
         # This should only be called by signals/slots
         # It uses the sender() to get the button that called it
         sender = self.sender()
-        color = sender.text()
+        color = sender.text()  # type: ignore[attr-defined]
 
         dialog = QColorDialog(QColor(color), self.ui)
         if dialog.exec():
-            sender.setText(dialog.selectedColor().name())
+            sender.setText(dialog.selectedColor().name())  # type: ignore[attr-defined]
             self.update_button_colors()
             self.update_config()
 
-    def update_button_colors(self):
+    def update_button_colors(self) -> None:
         buttons = [
             self.ui.face_color,
             self.ui.edge_color,

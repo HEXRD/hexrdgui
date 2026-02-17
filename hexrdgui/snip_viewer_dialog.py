@@ -1,12 +1,13 @@
 from pathlib import Path
+from typing import Any, Callable
 
 import h5py
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QFileDialog, QSizePolicy
+from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget
 
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.hexrd_config import HexrdConfig
@@ -15,7 +16,12 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class SnipViewerDialog:
-    def __init__(self, data, extent, parent=None):
+    def __init__(
+        self,
+        data: np.ndarray,
+        extent: Any,
+        parent: QWidget | None = None,
+    ) -> None:
         self.ui = UiLoader().load_file('snip_viewer_dialog.ui', parent)
 
         self.data = data
@@ -29,21 +35,21 @@ class SnipViewerDialog:
         self.setup_color_map()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.export_data.clicked.connect(self.export)
 
-    def setup_color_map(self):
+    def setup_color_map(self) -> None:
         self.color_map_editor = ColorMapEditor(self, self.ui)
         self.ui.color_map_editor_layout.addWidget(self.color_map_editor.ui)
         self.color_map_editor.update_bounds(self.scaled_image_data)
 
-    def setup_canvas(self):
+    def setup_canvas(self) -> None:
         canvas = FigureCanvas(Figure(tight_layout=True))
         figure = canvas.figure
         ax = figure.add_subplot()
 
         # Get the canvas to take up the majority of the screen most of the time
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         ax.set_xlabel(r'2$\theta$ (deg)')
         ax.set_ylabel(r'$\eta$ (deg)')
@@ -69,7 +75,7 @@ class SnipViewerDialog:
         self.ui.canvas_layout.addWidget(self.toolbar)
 
         # Center the toolbar
-        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 
         self.figure = figure
         self.ax = ax
@@ -78,32 +84,32 @@ class SnipViewerDialog:
 
         self.draw_later()
 
-    def set_cmap(self, cmap):
+    def set_cmap(self, cmap: Any) -> None:
         self.cmap = cmap
         self.im.set_cmap(cmap)
         self.draw_later()
 
-    def set_norm(self, norm):
+    def set_norm(self, norm: Any) -> None:
         self.norm = norm
         self.im.set_norm(norm)
         self.draw_later()
 
-    def set_scaling(self, transform):
+    def set_scaling(self, transform: Callable[[np.ndarray], np.ndarray]) -> None:
         self.transform = transform
         self.im.set_data(self.scaled_image_data)
         self.draw_later()
 
     @property
-    def scaled_image_data(self):
+    def scaled_image_data(self) -> np.ndarray:
         return self.transform(self.data)
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def draw_later(self):
+    def draw_later(self) -> None:
         self.figure.canvas.draw_idle()
 
-    def export(self):
+    def export(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui,
             'Save Snip Background',
@@ -117,7 +123,7 @@ class SnipViewerDialog:
         HexrdConfig().working_dir = str(Path(selected_file).parent)
         self.write_data(selected_file)
 
-    def write_data(self, filename):
+    def write_data(self, filename: str | Path) -> None:
         filename = Path(filename)
 
         # Prepare the data to write out

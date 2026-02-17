@@ -1,8 +1,9 @@
 import copy
+from typing import Any
 
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QColorDialog
+from PySide6.QtWidgets import QColorDialog, QWidget
 
 from matplotlib import colormaps as cm
 import matplotlib.colors
@@ -19,7 +20,7 @@ from hexrdgui.utils import block_signals
 
 class ColorMapEditor:
 
-    def __init__(self, image_object, parent=None):
+    def __init__(self, image_object: Any, parent: QWidget | None = None) -> None:
         # The image_object can be any object with the following functions:
         # 1. set_cmap: a function to set the cmap on the image
         # 2. set_norm: a function to set the norm on the image
@@ -34,12 +35,12 @@ class ColorMapEditor:
         loader = UiLoader()
         self.ui = loader.load_file('color_map_editor.ui', parent)
 
-        self.bounds = (0, 16384)
+        self.bounds: tuple[int | float, int | float] = (0, 16384)
         self._data = None
 
         self.bad_color = np.array([0, 0, 0, 0], dtype=float)
 
-        self.bc_editor = None
+        self.bc_editor: BrightnessContrastEditor | None = None
         self.hide_overlays_during_bc_editing = False
 
         self._bc_previous_show_overlays = None
@@ -52,11 +53,11 @@ class ColorMapEditor:
         self.setup_connections()
 
     @property
-    def data(self):
+    def data(self) -> Any:
         return self._data
 
     @data.setter
-    def data(self, v):
+    def data(self, v: Any) -> None:
         self._data = v
         self.update_bc_enable_state()
 
@@ -64,7 +65,7 @@ class ColorMapEditor:
             self.bc_editor.data = v
             self.update_bc_editor()
 
-    def load_cmaps(self):
+    def load_cmaps(self) -> None:
         limited = HexrdConfig().limited_cmaps_list
 
         with block_signals(self.ui.color_map):
@@ -89,11 +90,11 @@ class ColorMapEditor:
                 if self.ui.color_map.currentText():
                     self.update_cmap()
 
-    def setup_scaling_options(self):
+    def setup_scaling_options(self) -> None:
         options = list(SCALING_OPTIONS.keys())
         self.ui.scaling.addItems(options)
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.bc_editor_button.pressed.connect(self.bc_editor_button_pressed)
 
         self.ui.minimum.valueChanged.connect(self.range_edited)
@@ -106,17 +107,17 @@ class ColorMapEditor:
         self.ui.show_invalid.toggled.connect(self.show_invalid_toggled)
         self.ui.scaling.currentIndexChanged.connect(self.update_scaling)
 
-    def range_edited(self):
+    def range_edited(self) -> None:
         self.update_bc_editor()
         self.update_mins_and_maxes()
         self.update_norm()
 
-    def update_bc_enable_state(self):
+    def update_bc_enable_state(self) -> None:
         has_images = HexrdConfig().has_images
         has_data = self.data is not None
         self.ui.bc_editor_button.setEnabled(has_data and has_images)
 
-    def bc_editor_button_pressed(self):
+    def bc_editor_button_pressed(self) -> None:
         if self.bc_editor:
             self.bc_editor.ui.reject()
 
@@ -135,18 +136,19 @@ class ColorMapEditor:
 
         self.update_bc_editor()
 
+        assert self.bc_editor is not None
         self.bc_editor.ui.show()
 
-    def update_bc_editor(self):
+    def update_bc_editor(self) -> None:
         if not self.bc_editor:
             return
 
         widgets = (self.ui.minimum, self.ui.maximum)
-        new_range = [x.value() for x in widgets]
+        new_range = tuple(x.value() for x in widgets)
         with block_signals(self.bc_editor):
             self.bc_editor.ui_range = new_range
 
-    def remove_bc_editor(self):
+    def remove_bc_editor(self) -> None:
         self.bc_editor = None
 
         show_overlays = (
@@ -159,7 +161,8 @@ class ColorMapEditor:
             HexrdConfig().show_overlays = True
             HexrdConfig().active_material_modified.emit()
 
-    def bc_editor_modified(self):
+    def bc_editor_modified(self) -> None:
+        assert self.bc_editor is not None
         with block_signals(self.ui.minimum, self.ui.maximum):
             # Round these values for a nicer display
             bc_min = round(self.bc_editor.ui_min, 2)
@@ -168,17 +171,17 @@ class ColorMapEditor:
             self.ui.maximum.setValue(bc_max)
             self.range_edited()
 
-    def update_mins_and_maxes(self):
+    def update_mins_and_maxes(self) -> None:
         # We can't do this in PySide6 for some reason:
         # self.ui.maximum.valueChanged.connect(self.ui.minimum.setMaximum)
         # self.ui.minimum.valueChanged.connect(self.ui.maximum.setMinimum)
         self.ui.maximum.setMinimum(self.ui.minimum.value())
         self.ui.minimum.setMaximum(self.ui.maximum.value())
 
-    def block_updates(self, blocked):
+    def block_updates(self, blocked: bool) -> None:
         self.updates_blocked = blocked
 
-    def update_bounds(self, data):
+    def update_bounds(self, data: Any) -> None:
         if hasattr(self, 'updates_blocked') and self.updates_blocked:
             # We don't want to adjust the bounds
             return
@@ -193,25 +196,30 @@ class ColorMapEditor:
         self.data = data
 
     @staticmethod
-    def percentile_range(data, low=69.0, high=99.9):
+    def percentile_range(
+        data: Any,
+        low: float = 69.0,
+        high: float = 99.9,
+    ) -> tuple[float, float]:
+        values: Any
         if isinstance(data, dict):
             values = data.values()
         elif not isinstance(data, (list, tuple)):
             values = [data]
 
-        l = min([np.nanpercentile(v, low) for v in values])
-        h = min([np.nanpercentile(v, high) for v in values])
+        lo = min([np.nanpercentile(v, low) for v in values])
+        hi = min([np.nanpercentile(v, high) for v in values])
 
-        if h - l < 5:
-            h = l + 5
+        if hi - lo < 5:
+            hi = lo + 5
 
         # Round these to two decimal places
-        l = round(l, 2)
-        h = round(h, 2)
+        lo = round(lo, 2)
+        hi = round(hi, 2)
 
-        return l, h
+        return lo, hi
 
-    def reset_range(self):
+    def reset_range(self) -> None:
         if hasattr(self, 'updates_blocked') and self.updates_blocked:
             # We don't want to adjust the range
             return
@@ -223,7 +231,7 @@ class ColorMapEditor:
         self.ui.minimum.setValue(self.bounds[0])
         self.ui.maximum.setValue(self.bounds[1])
 
-    def show_invalid_toggled(self, b):
+    def show_invalid_toggled(self, b: bool) -> None:
         if b:
             color = QColor.fromRgbF(*self.bad_color)
             title = 'Select Invalid Pixel Color'
@@ -238,7 +246,7 @@ class ColorMapEditor:
 
         self.update_cmap()
 
-    def update_cmap(self):
+    def update_cmap(self) -> None:
         # Get the Colormap object from the name
         cmap = cm.get_cmap(self.ui.color_map.currentText())
 
@@ -256,17 +264,17 @@ class ColorMapEditor:
             cmap.set_over('r')
 
         if self.ui.show_invalid.isChecked():
-            cmap.set_bad(self.bad_color)
+            cmap.set_bad(self.bad_color)  # type: ignore[arg-type]
 
         self.image_object.set_cmap(cmap)
 
-    def update_norm(self):
+    def update_norm(self) -> None:
         min = self.ui.minimum.value()
         max = self.ui.maximum.value()
         norm = matplotlib.colors.Normalize(vmin=min, vmax=max)
         self.image_object.set_norm(norm)
 
-    def update_scaling(self):
+    def update_scaling(self) -> None:
         new_scaling = SCALING_OPTIONS[self.ui.scaling.currentText()]
         self.image_object.set_scaling(new_scaling)
 
@@ -274,7 +282,7 @@ class ColorMapEditor:
         # This will update the data too.
         # Wait until the image is ready to do the update.
 
-        def do_bound_update_if_ready():
+        def do_bound_update_if_ready() -> None:
             if not getattr(self.image_object, 'image_ready', True):
                 # If the image is not ready, try again in 250 milliseconds
                 QTimer.singleShot(250, do_bound_update_if_ready)

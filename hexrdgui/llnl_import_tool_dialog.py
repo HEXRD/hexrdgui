@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import glob
 import os
 import re
 import sys
+from typing import Any, TYPE_CHECKING
 import numpy as np
 import yaml
 import tempfile
@@ -46,17 +49,26 @@ from hexrdgui.utils.dialog import add_help_url
 
 from lmfit import Parameters, Minimizer
 
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
+
 
 class AtlasConfig:
-    def __init__(self, raw_data, instr):
+    def __init__(self, raw_data: Any, instr: HEDMInstrument) -> None:
 
         self.instr = instr
         self.raw_data = raw_data
         self.compute_result_and_coords()
 
-    def _determine_coordinate_transform(self, start, finish):
+    def _determine_coordinate_transform(
+        self, start: np.ndarray, finish: np.ndarray
+    ) -> Any:
 
-        def optimization_function(params, start, finish):
+        def optimization_function(
+            params: Any,
+            start: np.ndarray,
+            finish: np.ndarray,
+        ) -> np.ndarray:
             alpha = params['alpha'].value
             beta = params['beta'].value
             gamma = params['gamma'].value
@@ -99,18 +111,18 @@ class AtlasConfig:
 
         if minimizer_result.chisqr > 1:
             msg = (
-                f'least-squares did not find a good solution. '
-                f'Double check data to make sure input is in order.'
+                'least-squares did not find a good solution. '
+                'Double check data to make sure input is in order.'
             )
             print(msg, file=sys.stderr)
             QMessageBox.warning(None, 'HEXRD', msg)
 
         return minimizer_result
 
-    def _transform_coordinates(self, pts):
+    def _transform_coordinates(self, pts: np.ndarray) -> np.ndarray:
         return np.dot(self.rmat, pts.T).T + np.repeat(self.tvec, pts.shape[0], axis=0)
 
-    def _get_icarus_corners_in_TCC(self):
+    def _get_icarus_corners_in_TCC(self) -> dict:
         IC_TCC = self._transform_coordinates(FIDDLE_ICARUS_CORNERS_CMM)
         # Check shape of IC_TCC. Should be 20 x 3
         if IC_TCC.shape != (20, 3):
@@ -124,7 +136,7 @@ class AtlasConfig:
             coords[k] = IC_TCC[ii * 4 : (ii + 1) * 4, :]
         return coords
 
-    def _get_orientation(self, crds, det):
+    def _get_orientation(self, crds: np.ndarray, det: str) -> np.ndarray:
         # Vertex in 4x3 matrix of the 4 vertices.
         # We return the normal using a cross product
         vertex = self._get_vertices(crds)
@@ -151,16 +163,16 @@ class AtlasConfig:
             return np.dot(RMAT_Z_180, rmat)
         return rmat
 
-    def _get_center(self, vertex):
+    def _get_center(self, vertex: np.ndarray) -> np.ndarray:
         # Return center of detector given the four vertices
         return np.mean(vertex, axis=0)
 
-    def _get_vertices(self, crds):
+    def _get_vertices(self, crds: np.ndarray) -> np.ndarray:
         # By default we will look up from TCC, so
         # there is a flip in the x-component sign
         return crds[0:4, :]
 
-    def update_instrument(self, detector):
+    def update_instrument(self, detector: str) -> None:
         v = self._get_vertices(self.coords[detector])
 
         # tvec sample is the position of the sample in NIF
@@ -174,7 +186,7 @@ class AtlasConfig:
         self.instr.detectors[detector].tvec = tvec
         self.instr.detectors[detector].tilt = ang * ax
 
-    def compute_result_and_coords(self):
+    def compute_result_and_coords(self) -> None:
         # get the coordinate transform connecting SMR in CMM to the TCC frame
         self.minimizer_result = self._determine_coordinate_transform(
             FIDDLE_SMR_CMM, self.atlas_coords_array
@@ -182,7 +194,7 @@ class AtlasConfig:
         self.coords = self._get_icarus_corners_in_TCC()
 
     @property
-    def rmat(self):
+    def rmat(self) -> np.ndarray:
         if hasattr(self, 'minimizer_result'):
             params = self.minimizer_result.params
             alpha = params['alpha'].value
@@ -194,7 +206,7 @@ class AtlasConfig:
             return np.eye(3)
 
     @property
-    def tvec(self):
+    def tvec(self) -> np.ndarray:
         if hasattr(self, 'minimizer_result'):
             params = self.minimizer_result.params
             return np.atleast_2d(
@@ -214,7 +226,7 @@ class AtlasConfig:
             )
 
     @property
-    def atlas_coords_array(self):
+    def atlas_coords_array(self) -> np.ndarray:
         # Return atlas coordinates as array
         atlas_coords_array = []
         for k, v in self.raw_data.items():
@@ -236,32 +248,36 @@ class LLNLImportToolDialog(QObject):
     # The boolean flag indicates whether this is a FIDDLE instrument or not
     complete_workflow = Signal(bool)
 
-    def __init__(self, cmap=None, parent=None):
+    def __init__(
+        self,
+        cmap: Any = None,
+        parent: Any = None,
+    ) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('llnl_import_tool_dialog.ui', parent)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         add_help_url(self.ui.button_box, 'configuration/images/#llnl-import-tool')
 
-        self.it = None
-        self.instrument = None
-        self.edited_images = {}
-        self.completed = []
+        self.it: InteractiveTemplate | None = None
+        self.instrument: str | None = None
+        self.edited_images: dict[str, Any] = {}
+        self.completed: list[Any] = []
         self.canvas = parent.image_tab_widget.image_canvases[0]
-        self.ip_and_det_defaults = {}
+        self.ip_and_det_defaults: dict[str, Any] = {}
         self.cmap = cmap
-        self.image_plates = []
-        self.detectors = []
-        self.current_image_selection = None
-        self.defaults = {}
+        self.image_plates: list[Any] = []
+        self.detectors: list[Any] = []
+        self.current_image_selection: str | None = None
+        self.defaults: dict[str, Any] = {}
         self.import_in_progress = False
-        self.loaded_images = {}
+        self.loaded_images: dict[str, Any] = {}
         self.canvas = parent.image_tab_widget.active_canvas
-        self.detector_images = {}
-        self.atlas_coords = None
+        self.detector_images: dict[str, Any] = {}
+        self.atlas_coords: dict[Any, np.ndarray] | None = None
         self._image_plate = None
 
         # Disable these by default.
@@ -298,7 +314,7 @@ class LLNLImportToolDialog(QObject):
         self.set_default_color()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.instruments.currentIndexChanged.connect(self.instrument_selected)
         self.ui.image_plate_load.clicked.connect(self.load_images)
         self.ui.image_plates.currentIndexChanged.connect(self.image_plate_selected)
@@ -328,21 +344,29 @@ class LLNLImportToolDialog(QObject):
         self.ui.accept_detector.clicked.connect(self.manually_load_detector_images)
         self.ui.load_atlas.clicked.connect(self.load_atlas_coords)
 
-    def enable_widgets(self, *widgets, enabled):
+    def enable_widgets(
+        self,
+        *widgets: QWidget,
+        enabled: bool,
+    ) -> None:
         for w in widgets:
             w.setEnabled(enabled)
 
-    def set_widget_visibility(self, *widgets, visible):
+    def set_widget_visibility(
+        self,
+        *widgets: QWidget,
+        visible: bool,
+    ) -> None:
         for w in widgets:
             w.setVisible(visible)
             w.setEnabled(visible)
 
-    def set_default_color(self):
+    def set_default_color(self) -> None:
         self.outline_color = '#00ffff'
         self.ui.line_color.setText(self.outline_color)
         self.ui.line_color.setStyleSheet('QPushButton {background-color: cyan}')
 
-    def get_instrument_defaults(self):
+    def get_instrument_defaults(self) -> bool | None:
         self.ip_and_det_defaults.clear()
         not_default = self.ui.config_selection.currentIndex() != 0
         if self.config_file and not_default:
@@ -375,14 +399,16 @@ class LLNLImportToolDialog(QObject):
                 }
                 fname = filenames[self.config_setting]
             else:
+                assert self.instrument is not None
                 fname = f'{self.instrument.lower()}_reference_config.yml'
 
             text = resource_loader.load_resource(hexrd_resources, fname)
             self.defaults = yaml.safe_load(text)
         self.ip_and_det_defaults['default_config'] = self.defaults
         self.set_detector_options()
+        return None
 
-    def set_detector_options(self):
+    def set_detector_options(self) -> None:
         self.image_plates.clear()
         self.detectors.clear()
         for det, vals in self.defaults['detectors'].items():
@@ -397,7 +423,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.detectors.clear()
         self.ui.detectors.addItems(self.detectors)
 
-    def load_config(self):
+    def load_config(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui,
             'Load Configuration',
@@ -405,12 +431,14 @@ class LLNLImportToolDialog(QObject):
             'HEXRD files (*.hexrd *.yml)',
         )
         self.config_file = selected_file if selected_file else None
+        if self.config_file is None:
+            return
         self.ui.config_file_label.setText(os.path.basename(self.config_file))
         self.ui.config_file_label.setToolTip(self.config_file)
         if self.ui.instrument.isEnabled():
             self.get_instrument_defaults()
 
-    def instrument_settings_changed(self, index):
+    def instrument_settings_changed(self, index: int) -> None:
         has_ip = index == 0
         self.set_widget_visibility(
             self.ui.image_plate_raw_image,
@@ -419,7 +447,7 @@ class LLNLImportToolDialog(QObject):
             visible=has_ip,
         )
 
-    def instrument_selected(self, idx):
+    def instrument_selected(self, idx: int) -> None:
         instruments = {1: 'TARDIS', 2: 'PXRDIP', 3: 'FIDDLE'}
         self.instrument = instruments.get(idx, None)
 
@@ -490,11 +518,11 @@ class LLNLImportToolDialog(QObject):
             # update anything it needs to update.
             self.instrument_was_selected.emit()
 
-    def set_convention(self):
+    def set_convention(self) -> None:
         new_conv = {'axes_order': 'zxz', 'extrinsic': False}
         HexrdConfig().set_euler_angle_convention(new_conv)
 
-    def update_config_selection(self, idx):
+    def update_config_selection(self, idx: int) -> None:
         enable_load = idx == 2  # Load configuration from file selected
         self.enable_widgets(
             self.ui.load_config, self.ui.config_file_label, enabled=enable_load
@@ -509,7 +537,7 @@ class LLNLImportToolDialog(QObject):
         return self.ui.config_settings.currentText()
 
     @property
-    def has_config_settings(self):
+    def has_config_settings(self) -> bool:
         return bool(
             self.instrument
             and self.instrument.lower() == 'tardis'
@@ -519,10 +547,10 @@ class LLNLImportToolDialog(QObject):
         )
 
     @property
-    def has_template(self):
+    def has_template(self) -> bool:
         return self.it is not None and self.it.shape is not None
 
-    def update_config_settings(self):
+    def update_config_settings(self) -> None:
         label = self.ui.config_settings_label
         combo = self.ui.config_settings
 
@@ -548,7 +576,7 @@ class LLNLImportToolDialog(QObject):
             if prev:
                 combo.setCurrentText(prev)
 
-    def load_atlas_coords(self):
+    def load_atlas_coords(self) -> None:
         file, filter = QFileDialog.getOpenFileName(
             self.ui, 'Select coordinates file', dir=HexrdConfig().working_dir
         )
@@ -559,22 +587,23 @@ class LLNLImportToolDialog(QObject):
         self.atlas_coords = {d: np.array(c) for d, c in coords.items()}
         self.ui.atlas_label.setText(Path(file).name)
 
-    def load_instrument_config(self):
+    def load_instrument_config(self) -> None:
         temp = tempfile.NamedTemporaryFile(delete=False, suffix='.hexrd')
         self.config_file = temp.name
         HexrdConfig().save_instrument_config(self.config_file)
+        assert self.instrument is not None
         fname = f'default_{self.instrument.lower()}_config.yml'
         with resource_loader.resource_path(hexrdgui.resources.calibration, fname) as f:
             for overlay in HexrdConfig().overlays:
                 overlay.visible = False
             HexrdConfig().load_instrument_config(f, import_raw=True)
 
-    def config_loaded_from_menu(self):
+    def config_loaded_from_menu(self) -> None:
         if not self.import_in_progress:
             return
         self.load_instrument_config()
 
-    def detector_selected(self, selected):
+    def detector_selected(self, selected: Any) -> None:
         # Don't allow the color map range to change while changing detectors.
         self.cmap.block_updates(True)
         try:
@@ -598,16 +627,16 @@ class LLNLImportToolDialog(QObject):
             self.cmap.block_updates(False)
 
     @property
-    def image_plate(self):
+    def image_plate(self) -> Any:
         return self._image_plate
 
     @image_plate.setter
-    def image_plate(self, ip):
+    def image_plate(self, ip: Any) -> None:
         self._image_plate = ip
         if self.it is not None:
             self.it.detector = ip
 
-    def image_plate_selected(self, selected):
+    def image_plate_selected(self, selected: Any) -> None:
         # Don't allow the color map range to change while we are changing
         # image plates. Otherwise, it gets reset to something like "1 - 6".
         self.cmap.block_updates(True)
@@ -639,19 +668,21 @@ class LLNLImportToolDialog(QObject):
         finally:
             self.cmap.block_updates(False)
 
-    def update_bbox_height(self, val):
+    def update_bbox_height(self, val: float) -> None:
+        assert self.it is not None
         y0, y1, *x = self.it.bounds
         h = y1 - y0
         scale = 1 - ((h - val) / h)
         self.it.scale_template(sy=scale)
 
-    def update_bbox_width(self, val):
+    def update_bbox_width(self, val: float) -> None:
+        assert self.it is not None
         *y, x0, x1 = self.it.bounds
         w = x1 - x0
         scale = 1 - ((w - val) / w)
         self.it.scale_template(sx=scale)
 
-    def _set_transform(self):
+    def _set_transform(self) -> None:
         if self.instrument == 'FIDDLE':
             flip = LLNLTransform.FIDDLE
         if self.instrument == 'PXRDIP':
@@ -665,9 +696,9 @@ class LLNLImportToolDialog(QObject):
                 flip = LLNLTransform.IP4
         HexrdConfig().load_panel_state['trans'] = [flip]
 
-    def accept_detector(self, data_file, dark_file):
+    def accept_detector(self, data_file: str, dark_file: str) -> None:
         # Custom dark subtraction for the FIDDLE instrument
-        img = [[]] * FIDDLE_FRAMES
+        img: list[Any] = [[]] * FIDDLE_FRAMES
         first, last = '/'.join(FIDDLE_HDF5_PATH).rsplit('0', 1)
         for frame in range(FIDDLE_FRAMES):
             # Use known path to find data 0/1/2/3 paths
@@ -685,7 +716,7 @@ class LLNLImportToolDialog(QObject):
         self.detector_images[self.detector]['img'] = ims
         self.complete_current_selection()
 
-    def manually_load_detector_images(self):
+    def manually_load_detector_images(self) -> None:
         data_file = self.detector_images[self.detector]['data']
         dark_file = self.detector_images[self.detector]['dark']
 
@@ -697,9 +728,9 @@ class LLNLImportToolDialog(QObject):
         HexrdConfig().imageseries_dict['default'] = img
         ImageLoadManager().read_data(ui_parent=self.ui.parent(), postprocess=True)
 
-    def load_detector_images(self):
+    def load_detector_images(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select file(s)', dir=HexrdConfig().images_dir
+            self.ui, 'Select file(s)', dir=HexrdConfig().images_dir or ""
         )
         if not selected_file:
             return
@@ -785,7 +816,11 @@ class LLNLImportToolDialog(QObject):
                 enabled=bool(selected['data'] and selected['dark']),
             )
 
-    def load_images(self, checked=False, selected_file=None):
+    def load_images(
+        self,
+        checked: bool = False,
+        selected_file: str | None = None,
+    ) -> None:
         # Needed to identify current image, regardless of image load path
         self.current_image_selection = self.image_plate
 
@@ -794,7 +829,7 @@ class LLNLImportToolDialog(QObject):
         if selected_file is None:
             caption = 'Select file(s)'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
-                self.ui, caption, dir=HexrdConfig().images_dir
+                self.ui, caption, dir=HexrdConfig().images_dir or ""
             )
 
         if selected_file:
@@ -844,7 +879,8 @@ class LLNLImportToolDialog(QObject):
             )
             self.add_template()
 
-    def add_transform(self):
+    def add_transform(self) -> None:
+        assert self.it is not None
         # Prevent color map reset on transform
         self.cmap.block_updates(True)
         self.it.toggle_boundaries(show=False)
@@ -866,7 +902,9 @@ class LLNLImportToolDialog(QObject):
         if self.has_template:
             self.it.update_image(img)
 
-    def display_bounds(self):
+    def display_bounds(self) -> None:
+        assert self.it is not None
+        assert self.it.img is not None
         self.ui.bb_height.blockSignals(True)
         self.ui.bb_width.blockSignals(True)
 
@@ -880,7 +918,7 @@ class LLNLImportToolDialog(QObject):
         self.ui.bb_height.blockSignals(False)
         self.ui.bb_width.blockSignals(False)
 
-    def read_in_template_bounds(self, module, file_name):
+    def read_in_template_bounds(self, module: Any, file_name: str) -> np.ndarray:
         with resource_loader.resource_path(module, file_name) as f:
             data = np.loadtxt(f)
         panels = create_hedm_instrument().detectors
@@ -888,7 +926,7 @@ class LLNLImportToolDialog(QObject):
         verts[:, [0, 1]] = verts[:, [1, 0]]
         return verts
 
-    def add_template(self):
+    def add_template(self) -> None:
         if (
             self.it is None  # InteractiveTemplate was never initialized
             or self.instrument is None  # No instrument selected
@@ -920,50 +958,57 @@ class LLNLImportToolDialog(QObject):
         if self.ui.instruments.currentText() != 'TARDIS':
             self.ui.bbox.setEnabled(True)
 
-    def update_template_style(self):
+    def update_template_style(self) -> None:
+        assert self.it is not None
         ls = self.ui.line_style.currentText()
         lw = self.ui.line_size.value()
         self.it.update_style(ls, lw, self.outline_color)
 
-    def pick_line_color(self):
+    def pick_line_color(self) -> None:
         sender = self.sender()
-        color = sender.text()
+        color = sender.text()  # type: ignore[attr-defined]
 
         dialog = QColorDialog(QColor(color), self.ui)
         if dialog.exec():
-            sender.setText(dialog.selectedColor().name())
+            sender.setText(dialog.selectedColor().name())  # type: ignore[attr-defined]
             lc = self.ui.line_color
             lc.setStyleSheet('QPushButton {background-color: %s}' % lc.text())
             self.outline_color = dialog.selectedColor().name()
             self.update_template_style()
 
-    def setup_translate_rotate(self):
+    def setup_translate_rotate(self) -> None:
         if self.has_template:
+            assert self.it is not None
             self.it.disconnect()
             self.it.connect_translate_rotate()
 
-    def clear_boundry(self):
+    def clear_boundry(self) -> None:
         if self.has_template:
+            assert self.it is not None
             self.it.clear()
 
-    def save_boundary_position(self):
+    def save_boundary_position(self) -> None:
+        assert self.it is not None
+        assert self.instrument is not None
         position = {'angle': self.it.rotation, 'translation': self.it.translation}
         HexrdConfig().set_boundary_position(self.instrument, self.image_plate, position)
         if self.it.shape:
             self.it.save_boundary(self.outline_color)
 
-    def swap_bounds_for_cropped(self):
+    def swap_bounds_for_cropped(self) -> None:
+        assert self.it is not None
         self.it.clear()
         line, width, color = self.it.shape_styles[-1].values()
         verts = self.read_in_template_bounds(
-            module=hexrd_resources, file_name=f'TARDIS_IMAGE-PLATE-3_bnd_cropped.txt'
+            module=hexrd_resources, file_name='TARDIS_IMAGE-PLATE-3_bnd_cropped.txt'
         )
         kwargs = {'fill': False, 'lw': width, 'color': color, 'linestyle': '--'}
         self.it.create_polygon(verts, **kwargs)
         self.update_bbox_width(1330)
         self.update_bbox_height(238)
 
-    def complete_current_selection(self):
+    def complete_current_selection(self) -> None:
+        assert self.current_image_selection is not None
         if self.has_template:
             self.save_boundary_position()
             if self.image_plate == 'IMAGE-PLATE-3':
@@ -998,17 +1043,19 @@ class LLNLImportToolDialog(QObject):
         self.ui.completed_text.setText(text)
         self.ui.completed_text.setToolTip(text)
 
-    def finalize(self):
+    def finalize(self) -> None:
+        assert self.current_image_selection is not None
         detectors = self.ip_and_det_defaults['default_config'].get('detectors', {})
         det = detectors.setdefault(self.current_image_selection, {})
         width = det.setdefault('pixels', {}).get('columns', 0)
         height = det.setdefault('pixels', {}).get('rows', 0)
-        panel_buffer = [0.0, 0.0]
+        panel_buffer: list[float] | np.ndarray = [0.0, 0.0]
         tilt = 0.0
 
         if not self.has_template:
             img = self.detector_images[self.detector]['img']
         else:
+            assert self.it is not None
             if self.instrument == 'PXRDIP':
                 # Boundary is currently rotated 90 degrees
                 width, height = height, width
@@ -1027,14 +1074,14 @@ class LLNLImportToolDialog(QObject):
             'panel_buffer': panel_buffer,
         }
 
-    def clear(self):
+    def clear(self) -> None:
         self.clear_boundry()
         self.enable_widgets(self.ui.add_transform, self.ui.file_selection, enabled=True)
         self.enable_widgets(
             self.ui.outline_appearance, self.ui.template_instructions, enabled=False
         )
 
-    def check_for_unsaved_changes(self):
+    def check_for_unsaved_changes(self) -> None:
         if not self.has_template and self.current_image_selection in self.completed:
             return
 
@@ -1043,12 +1090,12 @@ class LLNLImportToolDialog(QObject):
             + ' been accepted. Keep changes?'
         )
         response = QMessageBox.question(
-            self.ui, 'HEXRD', msg, (QMessageBox.Cancel | QMessageBox.Save)
+            self.ui, 'HEXRD', msg, (QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Save)
         )
-        if response == QMessageBox.Save:
+        if response == QMessageBox.StandardButton.Save:
             self.complete_current_selection()
 
-    def reset_panel(self):
+    def reset_panel(self) -> None:
         # Remove any templates that exist
         self.clear_boundry()
         # Reset internal state
@@ -1106,7 +1153,7 @@ class LLNLImportToolDialog(QObject):
         # We're all reset and ready to re-enable the main UI features
         HexrdConfig().enable_image_mode_widget.emit(True)
 
-    def import_complete(self):
+    def import_complete(self) -> None:
         self.import_in_progress = False
         self.cmap.block_updates(True)
         self.check_for_unsaved_changes()
@@ -1186,10 +1233,10 @@ class LLNLImportToolDialog(QObject):
         # the median filter after the import is complete
         self.complete_workflow.emit(self.instrument == 'FIDDLE')
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def close_widget(self):
+    def close_widget(self) -> None:
         block_list = [self.ui.instruments, self.ui.image_plates]
         with block_signals(*block_list):
             self.ui.instruments.setCurrentIndex(0)
@@ -1197,6 +1244,6 @@ class LLNLImportToolDialog(QObject):
         if self.ui.isFloating():
             self.ui.close()
 
-    def on_canceled(self):
+    def on_canceled(self) -> None:
         self.close_widget()
         self.cancel_workflow.emit()

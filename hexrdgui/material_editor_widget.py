@@ -1,5 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
 from PySide6.QtCore import Signal, QObject
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 import numpy as np
 
@@ -10,13 +14,16 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, set_combobox_enabled_items
 
+if TYPE_CHECKING:
+    from hexrd.material import Material
+
 
 class MaterialEditorWidget(QObject):
 
     # Emitted whenever the material is modified
     material_modified = Signal()
 
-    def __init__(self, material, parent=None):
+    def __init__(self, material: Material, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -35,7 +42,7 @@ class MaterialEditorWidget(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.lattice_type.currentIndexChanged.connect(self.lattice_type_changed)
 
         for w in self.lattice_length_widgets:
@@ -70,7 +77,7 @@ class MaterialEditorWidget(QObject):
         # Emit that the ring config changed when the material is modified
         self.material_modified.connect(HexrdConfig().overlay_config_changed.emit)
 
-    def setup_space_group_widgets(self):
+    def setup_space_group_widgets(self) -> None:
         self.ui.lattice_type.addItems(list(spacegroup._rqpDict.keys()))
 
         for i in range(230):
@@ -80,13 +87,13 @@ class MaterialEditorWidget(QObject):
             self.ui.hall_symbol.addItem(spacegroup.sgid_to_hall[k])
             self.ui.hermann_mauguin.addItem(spacegroup.sgid_to_hm[k])
 
-    def update_gui_from_material(self):
+    def update_gui_from_material(self) -> None:
         self.set_space_group_number(self.material.sgnum)
         self.lattice_type_changed()
         self.enable_lattice_params()  # This updates the values also
 
     @property
-    def lattice_length_widgets(self):
+    def lattice_length_widgets(self) -> list[Any]:
         return [
             self.ui.lattice_a,
             self.ui.lattice_b,
@@ -94,7 +101,7 @@ class MaterialEditorWidget(QObject):
         ]
 
     @property
-    def lattice_angle_widgets(self):
+    def lattice_angle_widgets(self) -> list[Any]:
         return [
             self.ui.lattice_alpha,
             self.ui.lattice_beta,
@@ -102,11 +109,11 @@ class MaterialEditorWidget(QObject):
         ]
 
     @property
-    def lattice_widgets(self):
+    def lattice_widgets(self) -> list[Any]:
         return self.lattice_length_widgets + self.lattice_angle_widgets
 
     @property
-    def space_group_setters(self):
+    def space_group_setters(self) -> list[Any]:
         return [
             self.ui.space_group,
             self.ui.hall_symbol,
@@ -115,23 +122,23 @@ class MaterialEditorWidget(QObject):
         ]
 
     @property
-    def sgnum(self):
+    def sgnum(self) -> int:
         return self.ui.space_group.currentData()
 
     @sgnum.setter
-    def sgnum(self, sgnum):
+    def sgnum(self, sgnum: int) -> None:
         self.ui.space_group.setCurrentIndex(sgnum - 1)
 
-    def space_group_number_modified(self):
+    def space_group_number_modified(self) -> None:
         self.set_space_group_number(self.sgnum)
         self.enable_lattice_params()
 
-    def set_space_group_number(self, sgnum):
+    def set_space_group_number(self, sgnum: int) -> None:
         match = _space_groups_without_settings == sgnum
         sgid = np.where(match)[0][0]
         self.set_space_group(sgid)
 
-    def set_space_group(self, val):
+    def set_space_group(self, val: int) -> None:
         with block_signals(*self.space_group_setters):
             sgid = _space_groups_without_settings[val]
             for sgids, lg in spacegroup._pgDict.items():
@@ -153,7 +160,7 @@ class MaterialEditorWidget(QObject):
 
         self.update_c_to_a_enable_state()
 
-    def reset_space_group_settings(self):
+    def reset_space_group_settings(self) -> None:
         self.ui.space_group_setting.clear()
         match = _space_groups_without_settings == self.sgnum
         indices = np.where(match)[0]
@@ -165,15 +172,15 @@ class MaterialEditorWidget(QObject):
                 setting = 'None'
             self.ui.space_group_setting.addItem(setting, int(idx))
 
-    def set_space_group_setting_by_idx(self, idx):
+    def set_space_group_setting_by_idx(self, idx: int) -> None:
         local_idx = self.ui.space_group_setting.findData(int(idx))
         self.ui.space_group_setting.setCurrentIndex(local_idx)
 
-    def space_group_setting_modified(self):
+    def space_group_setting_modified(self) -> None:
         idx = self.ui.space_group_setting.currentData()
         self.set_space_group(idx)
 
-    def enable_lattice_params(self):
+    def enable_lattice_params(self) -> None:
         """enable independent lattice parameters"""
         # lattice parameters are stored in the old "ValUnit" class
         with block_signals(*self.lattice_widgets, self.ui.c_to_a):
@@ -190,14 +197,14 @@ class MaterialEditorWidget(QObject):
             self.update_c_to_a_ratio()
 
     @property
-    def lattice_type(self):
+    def lattice_type(self) -> str:
         return self.ui.lattice_type.currentText()
 
     @lattice_type.setter
-    def lattice_type(self, v):
+    def lattice_type(self, v: str) -> None:
         self.ui.lattice_type.setCurrentText(v)
 
-    def lattice_type_changed(self):
+    def lattice_type_changed(self) -> None:
         valid_space_groups = space_groups_for_lattice_type(self.lattice_type)
 
         # First, do the enable list for the space group combo box
@@ -214,19 +221,19 @@ class MaterialEditorWidget(QObject):
         for cb in cb_list:
             set_combobox_enabled_items(cb, enable_list)
 
-    def lattice_length_modified(self):
+    def lattice_length_modified(self) -> None:
         self.confirm_large_lattice_parameter()
         self.c_or_a_modified()
         self.set_lattice_params()
 
-    def lattice_angle_modified(self):
+    def lattice_angle_modified(self) -> None:
         self.set_lattice_params()
 
-    def confirm_large_lattice_parameter(self):
+    def confirm_large_lattice_parameter(self) -> None:
         sender = self.sender()
 
         name = sender.objectName().removeprefix('lattice_')
-        value = sender.value()
+        value = sender.value()  # type: ignore[attr-defined]
         threshold = 50
 
         if value > threshold:
@@ -235,11 +242,11 @@ class MaterialEditorWidget(QObject):
                 f'large value of "{value:.2f}" Å. This might use too '
                 'many system resources. Proceed anyways?'
             )
-            if QMessageBox.question(self.ui, 'HEXRD', msg) == QMessageBox.No:
+            if QMessageBox.question(self.ui, 'HEXRD', msg) == QMessageBox.StandardButton.No:
                 # Reset the lattice parameter value.
                 self.update_gui_from_material()
 
-    def c_or_a_modified(self):
+    def c_or_a_modified(self) -> None:
         w_a = self.ui.lattice_a
         w_c = self.ui.lattice_c
 
@@ -260,30 +267,30 @@ class MaterialEditorWidget(QObject):
         with block_signals(other_w):
             other_w.setValue(other_v)
 
-    def update_c_to_a_ratio(self):
+    def update_c_to_a_ratio(self) -> None:
         w = self.ui.c_to_a
         c = self.ui.lattice_c.value()
         a = self.ui.lattice_a.value()
         with block_signals(w):
             w.setValue(c / a)
 
-    def c_to_a_ratio_modified(self):
+    def c_to_a_ratio_modified(self) -> None:
         c_to_a = self.ui.c_to_a.value()
         c = self.ui.lattice_c.value()
         self.ui.lattice_a.setValue(c / c_to_a)
 
     @property
-    def fix_c_to_a(self):
+    def fix_c_to_a(self) -> bool:
         return self.c_to_a_ratio_enabled and self.ui.fix_c_to_a.isChecked()
 
     @property
-    def c_to_a_ratio_enabled(self):
+    def c_to_a_ratio_enabled(self) -> bool:
         return 75 <= self.sgnum <= 194
 
-    def update_c_to_a_enable_state(self):
+    def update_c_to_a_enable_state(self) -> None:
         self.ui.c_to_a_ratio_group.setEnabled(self.c_to_a_ratio_enabled)
 
-    def set_lattice_params(self):
+    def set_lattice_params(self) -> None:
         """update all the lattice parameter boxes when one changes"""
         # note: material takes reduced set of lattice parameters but outputs
         #       all six
@@ -305,7 +312,7 @@ class MaterialEditorWidget(QObject):
 
         self.material_modified.emit()
 
-    def set_material_space_group(self, sgid):
+    def set_material_space_group(self, sgid: int) -> None:
         # This can be an expensive operation, so make sure it isn't
         # already equal before setting.
         if self.material.sgnum != sgid:
@@ -316,7 +323,7 @@ class MaterialEditorWidget(QObject):
             self.material.sgnum = sgid
             self.material_modified.emit()
 
-    def set_min_d_spacing(self):
+    def set_min_d_spacing(self) -> None:
         # This can be an expensive operation, so make sure it isn't
         # already equal before setting.
         val = self.ui.min_d_spacing.value()
@@ -325,21 +332,21 @@ class MaterialEditorWidget(QObject):
             self.material_modified.emit()
 
     @property
-    def material(self):
+    def material(self) -> Material:
         return self._material
 
     @material.setter
-    def material(self, m):
+    def material(self, m: Material) -> None:
         if m != self.material:
             self._material = m
             self.update_gui_from_material()
 
 
-def space_groups_for_lattice_type(ltype):
+def space_groups_for_lattice_type(ltype: str) -> tuple[int, ...]:
     return _ltype_to_sgrange[ltype]
 
 
-def _sgrange(min, max):
+def _sgrange(min: int, max: int) -> tuple[int, ...]:
     # inclusive range
     return tuple(range(min, max + 1))
 

@@ -1,3 +1,12 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+
 from hexrd.xrdutil.phutil import (
     polar_tth_corr_map_rygg_pinhole,
     JHEPinholeDistortion,
@@ -16,18 +25,21 @@ class PolarDistortionObject:
     """
 
     def __init__(
-        self, pinhole_distortion_type, pinhole_distortion_kwargs, name='[Custom]'
-    ):
+        self,
+        pinhole_distortion_type: str | None,
+        pinhole_distortion_kwargs: dict[str, Any],
+        name: str = '[Custom]',
+    ) -> None:
         self.pinhole_distortion_type = pinhole_distortion_type
         self.pinhole_distortion_kwargs = pinhole_distortion_kwargs
         self.name = name
 
     @property
-    def has_pinhole_distortion(self):
+    def has_pinhole_distortion(self) -> bool:
         return self.pinhole_distortion_type is not None
 
     @property
-    def has_polar_pinhole_displacement_field(self):
+    def has_polar_pinhole_displacement_field(self) -> bool:
         """
         Whether or not we can directly generate the polar tth displacement
         field by calling the `create_polar_tth_displacement_field()` function.
@@ -47,7 +59,7 @@ class PolarDistortionObject:
 
         return rets[self.pinhole_distortion_type]
 
-    def pinhole_displacement_field(self, instr):
+    def pinhole_displacement_field(self, instr: HEDMInstrument) -> dict[str, Any]:
         """
         This returns a dictionary of panel names where the values
         are the displacement fields for the panels.
@@ -78,7 +90,12 @@ class PolarDistortionObject:
 
         return f(**kwargs)
 
-    def create_polar_pinhole_displacement_field(self, instr, tth, eta):
+    def create_polar_pinhole_displacement_field(
+        self,
+        instr: HEDMInstrument,
+        tth: np.ndarray,
+        eta: np.ndarray,
+    ) -> np.ndarray:
         """Directly create the polar tth displacement field.
 
         If we are trying to create a polar tth displacement field, this
@@ -96,25 +113,25 @@ class PolarDistortionObject:
 
         raise NotImplementedError(self.pinhole_distortion_type)
 
-    def pinhole_distortion_dict(self, instr):
-        if not self.has_tth_distortion or instr is None:
+    def pinhole_distortion_dict(self, instr: HEDMInstrument) -> dict[str, Any] | None:
+        if not self.has_pinhole_distortion or instr is None:
             return None
 
-        def tth_jhe_pinhole_distortion(panel):
+        def tth_jhe_pinhole_distortion(panel: Any) -> JHEPinholeDistortion:
             kwargs = {
                 **self.pinhole_distortion_kwargs,
                 'panel': panel,
             }
             return JHEPinholeDistortion(**kwargs)
 
-        def tth_rygg_pinhole_distortion(panel):
+        def tth_rygg_pinhole_distortion(panel: Any) -> RyggPinholeDistortion:
             kwargs = {
                 **self.pinhole_distortion_kwargs,
                 'panel': panel,
             }
             return RyggPinholeDistortion(**kwargs)
 
-        def tth_layer_distortion(panel):
+        def tth_layer_distortion(panel: Any) -> LayerDistortion:
             kwargs = {
                 **self.pinhole_distortion_kwargs,
                 'panel': panel,
@@ -141,16 +158,16 @@ class PolarDistortionObject:
         return ret
 
     @property
-    def _attrs_to_serialize(self):
+    def _attrs_to_serialize(self) -> list[str]:
         return [
             'pinhole_distortion_type',
             'pinhole_distortion_kwargs',
             'name',
         ]
 
-    def serialize(self):
+    def serialize(self) -> dict[str, Any]:
         return {k: getattr(self, k) for k in self._attrs_to_serialize}
 
     @classmethod
-    def deserialize(cls, d):
+    def deserialize(cls, d: dict[str, Any]) -> 'PolarDistortionObject':
         return cls(**d)

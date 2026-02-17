@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import copy
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QObject, QThreadPool, Qt, Signal
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from hexrd import indexer, instrument
 from hexrd.cli.find_orientations import write_scored_orientations
@@ -40,53 +43,55 @@ class Runner(QObject):
     progress_text = Signal(str)
     accept_progress_signal = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.parent = parent
+        self._parent = parent
+        self.cancel_tracker: CancelTracker | None = None
 
-        self.progress_dialog = ProgressDialog(self.parent)
+        self.progress_dialog = ProgressDialog(self._parent)
         self.clear_cancel_tracker()
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.progress_text.connect(self.progress_dialog.setLabelText)
         self.accept_progress_signal.connect(self.progress_dialog.accept)
 
     @property
-    def thread_pool(self):
+    def thread_pool(self) -> QThreadPool:
         return QThreadPool.globalInstance()
 
-    def update_progress_text(self, text):
+    def update_progress_text(self, text: str) -> None:
         self.progress_text.emit(text)
 
-    def accept_progress(self):
+    def accept_progress(self) -> None:
         self.accept_progress_signal.emit()
 
         # Hide the cancel button again
         self.progress_dialog.cancel_visible = False
 
-    def on_async_error(self, t):
+    def on_async_error(self, t: tuple) -> None:
         # In case the progress dialog is open...
         self.accept_progress()
 
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
-        msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
+        msg_box = QMessageBox(QMessageBox.Icon.Critical, 'Error', msg)
         msg_box.exec()
 
-    def reset_cancel_tracker(self):
+    def reset_cancel_tracker(self) -> None:
         self.cancel_tracker = CancelTracker()
 
-    def clear_cancel_tracker(self):
+    def clear_cancel_tracker(self) -> None:
         self.cancel_tracker = None
 
-    def on_cancel_clicked(self):
-        self.cancel_tracker.need_to_cancel = True
+    def on_cancel_clicked(self) -> None:
+        if self.cancel_tracker is not None:
+            self.cancel_tracker.need_to_cancel = True
 
     @property
-    def operation_canceled(self):
-        return self.cancel_tracker and self.cancel_tracker.need_to_cancel
+    def operation_canceled(self) -> bool:
+        return self.cancel_tracker is not None and self.cancel_tracker.need_to_cancel
 
 
 class IndexingRunner(Runner):
@@ -94,33 +99,33 @@ class IndexingRunner(Runner):
     clustering_ran = Signal(bool)
     indexing_results_rejected = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.clear()
 
-    def clear(self):
-        self.ome_maps_select_dialog = None
-        self.ome_maps_viewer_dialog = None
-        self.indexing_results_dialog = None
-        self.ome_maps = None
-        self.grains_table = None
+    def clear(self) -> None:
+        self.ome_maps_select_dialog: OmeMapsSelectDialog | None = None
+        self.ome_maps_viewer_dialog: OmeMapsViewerDialog | None = None
+        self.indexing_results_dialog: IndexingResultsDialog | None = None
+        self.ome_maps: EtaOmeMaps | None = None
+        self.grains_table: np.ndarray | None = None
         self.is_rerunning_clustering = False
 
-    def run(self):
+    def run(self) -> None:
         # We will go through these steps:
         # 1. Have the user select/generate eta omega maps
         # 2. Have the user view and threshold the eta omega maps
         # 3. Run the indexing
         self.select_ome_maps()
 
-    def select_ome_maps(self):
-        dialog = OmeMapsSelectDialog(self.parent)
+    def select_ome_maps(self) -> None:
+        dialog = OmeMapsSelectDialog(self._parent)
         dialog.accepted.connect(self.ome_maps_selected)
         dialog.rejected.connect(self.clear)
         dialog.show()
         self.ome_maps_select_dialog = dialog
 
-    def ome_maps_selected(self):
+    def ome_maps_selected(self) -> None:
         dialog = self.ome_maps_select_dialog
         if dialog is None:
             return
@@ -159,7 +164,7 @@ class IndexingRunner(Runner):
                     )
                     msg += ', '.join([str(x) for x in missing2])
                 print(msg)
-                QMessageBox.critical(self.parent, 'Error', msg)
+                QMessageBox.critical(self._parent, 'Error', msg)
                 return
 
             # Save selected hkls as the active hkls. Convert them to tuples.
@@ -186,15 +191,15 @@ class IndexingRunner(Runner):
             worker.signals.finished.connect(self.accept_progress)
             self.progress_dialog.exec()
 
-    def run_eta_ome_maps(self, config):
+    def run_eta_ome_maps(self, config: Any) -> None:
         self.ome_maps = generate_eta_ome_maps(config, save=False)
 
-    def ome_maps_loaded(self):
+    def ome_maps_loaded(self) -> None:
         self.view_ome_maps()
 
-    def view_ome_maps(self):
+    def view_ome_maps(self) -> None:
         # Now, show the Ome Map viewer
-        dialog = OmeMapsViewerDialog(self.ome_maps, self.parent)
+        dialog = OmeMapsViewerDialog(self.ome_maps, self._parent)
         dialog.accepted.connect(self.ome_maps_viewed)
         # Don't clear if this is rejected because we might have just
         # gone back after rejecting indexing results, and the user
@@ -205,9 +210,10 @@ class IndexingRunner(Runner):
 
         self.ome_maps_viewer_dialog = dialog
 
-    def ome_maps_viewed(self):
+    def ome_maps_viewed(self) -> None:
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         dialog = self.ome_maps_viewer_dialog
+        assert dialog is not None
 
         # Save the quaternion method used so we can check it in other places
         find_orientations['_quaternion_method'] = dialog.quaternion_method_name
@@ -247,12 +253,12 @@ class IndexingRunner(Runner):
 
         self.progress_dialog.exec()
 
-    def generate_orientation_fibers(self, config):
+    def generate_orientation_fibers(self, config: Any) -> None:
         # Generate the orientation fibers
         self.update_progress_text('Generating orientation fibers')
         self.qfib = generate_orientation_fibers(config, self.ome_maps)
 
-    def orientation_fibers_generated(self):
+    def orientation_fibers_generated(self) -> None:
         # Perform some validation
         qfib_warning_threshold = 1e8
         if self.qfib.shape[1] > qfib_warning_threshold:
@@ -263,8 +269,8 @@ class IndexingRunner(Runner):
                 'Proceed anyways?'
             )
 
-            response = QMessageBox.question(self.parent, 'WARNING', msg)
-            if response == QMessageBox.No:
+            response = QMessageBox.question(self._parent, 'WARNING', msg)
+            if response == QMessageBox.StandardButton.No:
                 # Go back to the eta omega maps viewer
                 self.accept_progress()
                 self.view_ome_maps()
@@ -276,7 +282,7 @@ class IndexingRunner(Runner):
         worker.signals.result.connect(self.indexer_finished)
         worker.signals.error.connect(self.on_async_error)
 
-    def run_indexer(self):
+    def run_indexer(self) -> None:
         config = create_indexing_config()
 
         # Find orientations
@@ -306,7 +312,7 @@ class IndexingRunner(Runner):
             print(f'Writing scored orientations in {config.working_dir} ...')
             write_scored_orientations(results, config)
 
-    def indexer_finished(self):
+    def indexer_finished(self) -> None:
         # Compute number of orientations run_cluster() will use
         # to make sure there aren't too many
         config = create_indexing_config()
@@ -322,8 +328,8 @@ class IndexingRunner(Runner):
                 'Proceed anyways?'
             )
 
-            response = QMessageBox.question(self.parent, 'WARNING', msg)
-            if response == QMessageBox.No:
+            response = QMessageBox.question(self._parent, 'WARNING', msg)
+            if response == QMessageBox.StandardButton.No:
                 # Go back to the eta omega maps viewer
                 self.accept_progress()
                 self.view_ome_maps()
@@ -333,11 +339,11 @@ class IndexingRunner(Runner):
         self.thread_pool.start(worker)
 
         worker.signals.result.connect(
-            self._on_run_cluster_functions_finished, Qt.QueuedConnection
+            self._on_run_cluster_functions_finished, Qt.ConnectionType.QueuedConnection
         )
         worker.signals.error.connect(self.on_async_error)
 
-    def _on_run_cluster_functions_finished(self):
+    def _on_run_cluster_functions_finished(self) -> None:
         # This function was previously a nested function, but for some reason,
         # in the latest version of Qt (Qt 6.8.1), a queued connection on a
         # nested function no longer seems to work (the application freezes).
@@ -349,7 +355,7 @@ class IndexingRunner(Runner):
         self.confirm_indexing_results()
 
     @property
-    def clustering_needs_min_samples(self):
+    def clustering_needs_min_samples(self) -> bool:
         # Determine whether we need the min_samples for clustering
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         return all(
@@ -359,7 +365,7 @@ class IndexingRunner(Runner):
             )
         )
 
-    def run_cluster_functions(self):
+    def run_cluster_functions(self) -> None:
         if self.clustering_needs_min_samples:
             self.create_clustering_parameters()
         else:
@@ -367,13 +373,13 @@ class IndexingRunner(Runner):
 
         self.run_cluster()
 
-    def create_clustering_parameters(self):
+    def create_clustering_parameters(self) -> None:
         print('Creating cluster parameters...')
         self.update_progress_text('Creating cluster parameters')
         config = create_indexing_config()
         self.min_samples, mean_rpg = create_clustering_parameters(config, self.ome_maps)
 
-    def run_cluster(self):
+    def run_cluster(self) -> None:
         print('Running cluster...')
         self.update_progress_text('Running cluster')
         config = create_indexing_config()
@@ -392,7 +398,7 @@ class IndexingRunner(Runner):
         self.clustering_ran.emit(True)
         self.generate_grains_table()
 
-    def generate_grains_table(self):
+    def generate_grains_table(self) -> None:
         self.update_progress_text('Generating grains table')
         num_grains = self.qbar.shape[1]
         if num_grains == 0:
@@ -409,19 +415,19 @@ class IndexingRunner(Runner):
         self.grains_table = generate_grains_table(self.qbar)
         HexrdConfig().find_orientations_grains_table = copy.deepcopy(self.grains_table)
 
-    def confirm_indexing_results(self):
+    def confirm_indexing_results(self) -> None:
         if self.grains_table is None:
             msg = 'No grains found'
-            QMessageBox.critical(self.parent, msg, msg)
+            QMessageBox.critical(self._parent, msg, msg)
             return
 
-        dialog = IndexingResultsDialog(self.ome_maps, self.grains_table, self.parent)
+        dialog = IndexingResultsDialog(self.ome_maps, self.grains_table, self._parent)
 
         # We will automatically start fit grains after the indexing
         # is complete. The user can cancel this if they don't want to do it.
         dialog.accepted.connect(self.start_fit_grains_runner)
 
-        def on_rejected():
+        def on_rejected() -> None:
             if not self.is_rerunning_clustering:
                 # If the dialog is rejected, go back to the
                 # eta-omega maps viewer
@@ -435,19 +441,18 @@ class IndexingRunner(Runner):
         dialog.show_later()
         self.indexing_results_dialog = dialog
 
-    def start_fit_grains_runner(self):
+    def start_fit_grains_runner(self) -> None:
         if self.grains_table is None:
             msg = 'No grains found'
-            QMessageBox.critical(self.parent, msg, msg)
+            QMessageBox.critical(self._parent, msg, msg)
             return
 
-        kwargs = {
-            'grains_table': self.grains_table,
-            'indexing_runner': self,
-            'started_from_indexing': True,
-            'parent': self.parent,
-        }
-        runner = self._fit_grains_runner = FitGrainsRunner(**kwargs)
+        runner = self._fit_grains_runner = FitGrainsRunner(
+            grains_table=self.grains_table,
+            indexing_runner=self,
+            started_from_indexing=True,
+            parent=self._parent,
+        )
         runner.run()
 
 
@@ -455,11 +460,11 @@ class FitGrainsRunner(Runner):
 
     def __init__(
         self,
-        grains_table=None,
-        indexing_runner=None,
-        started_from_indexing=False,
-        parent=None,
-    ):
+        grains_table: np.ndarray | None = None,
+        indexing_runner: IndexingRunner | None = None,
+        started_from_indexing: bool = False,
+        parent: QWidget | None = None,
+    ) -> None:
         """
         If the grains_table is set, the user will not be asked to specify a
         grains table. Otherwise, a dialog will appear asking the user to
@@ -475,12 +480,13 @@ class FitGrainsRunner(Runner):
         self.started_from_indexing = started_from_indexing
         self.clear()
 
-    def clear(self):
-        self.fit_grains_select_dialog = None
-        self.fit_grains_options_dialog = None
-        self.fit_grains_results = None
+    def clear(self) -> None:
+        self.fit_grains_select_dialog: FitGrainsSelectDialog | None = None
+        self.fit_grains_options_dialog: FitGrainsOptionsDialog | None = None
+        self.fit_grains_results: list[Any] | None = None
+        self.result_grains_table: np.ndarray | None = None
 
-    def run(self):
+    def run(self) -> None:
         # We will go through these steps:
         # 1. If the table is not set, get the user to select one
         # 2. Display the fit grains options
@@ -488,23 +494,24 @@ class FitGrainsRunner(Runner):
         # 4. View the results
         self.select_grains_table()
 
-    def select_grains_table(self):
+    def select_grains_table(self) -> None:
         if self.grains_table is not None:
             # The grains table is already set. Go ahead to the options.
             self.view_fit_grains_options()
             return
 
-        dialog = FitGrainsSelectDialog(self.indexing_runner, self.parent)
+        dialog = FitGrainsSelectDialog(self.indexing_runner, self._parent)
         dialog.accepted.connect(self.grains_table_selected)
         dialog.rejected.connect(self.clear)
         dialog.show()
         self.fit_grains_select_dialog = dialog
 
-    def grains_table_selected(self):
+    def grains_table_selected(self) -> None:
+        assert self.fit_grains_select_dialog is not None
         self.grains_table = self.fit_grains_select_dialog.grains_table
         self.view_fit_grains_options()
 
-    def view_fit_grains_options(self):
+    def view_fit_grains_options(self) -> None:
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         quaternion_method = find_orientations.get('_quaternion_method')
         ensure_active_hkls_not_excluded = (
@@ -512,16 +519,15 @@ class FitGrainsRunner(Runner):
         )
 
         # Run dialog for user options
-        kwargs = {
-            'grains_table': self.grains_table,
-            'ensure_active_hkls_not_excluded': ensure_active_hkls_not_excluded,
-            'parent': self.parent,
-        }
-        dialog = FitGrainsOptionsDialog(**kwargs)
+        dialog = FitGrainsOptionsDialog(
+            grains_table=self.grains_table,
+            ensure_active_hkls_not_excluded=ensure_active_hkls_not_excluded,
+            parent=self._parent,
+        )
         dialog.accepted.connect(self.fit_grains_options_accepted)
         dialog.rejected.connect(self.clear)
 
-        def on_grains_table_modified():
+        def on_grains_table_modified() -> None:
             # Update our grains table
             self.grains_table = dialog.grains_table
 
@@ -529,7 +535,7 @@ class FitGrainsRunner(Runner):
         self.fit_grains_options_dialog = dialog
         dialog.show()
 
-    def fit_grains_options_accepted(self):
+    def fit_grains_options_accepted(self) -> None:
         # Setup to run in background
         self.progress_dialog.setWindowTitle('Running Fit Grains')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
@@ -548,10 +554,11 @@ class FitGrainsRunner(Runner):
         self.progress_dialog.cancel_clicked.connect(self.on_cancel_clicked)
         self.progress_dialog.exec()
 
-    def run_fit_grains(self):
+    def run_fit_grains(self) -> None:
         cfg = create_indexing_config()
         write_spots = HexrdConfig().indexing_config.get('_write_spots', False)
 
+        assert self.grains_table is not None
         num_grains = self.grains_table.shape[0]
         self.update_progress_text(f'Running fit grains on {num_grains} grains')
         kwargs = {
@@ -567,6 +574,7 @@ class FitGrainsRunner(Runner):
             # Operation was canceled
             return
 
+        assert self.fit_grains_results is not None
         self.result_grains_table = create_grains_table(self.fit_grains_results)
         print('Fit Grains Complete')
         HexrdConfig().fit_grains_grains_table = copy.deepcopy(self.result_grains_table)
@@ -575,7 +583,7 @@ class FitGrainsRunner(Runner):
         if write_spots:
             write_fit_grains_results(self.fit_grains_results, cfg)
 
-    def fit_grains_finished(self):
+    def fit_grains_finished(self) -> None:
         if self.operation_canceled:
             # Operation was canceled.
             self.view_fit_grains_options()
@@ -583,7 +591,7 @@ class FitGrainsRunner(Runner):
 
         if self.fit_grains_results is None:
             msg = 'Grain fitting failed'
-            QMessageBox.information(self.parent, msg, msg)
+            QMessageBox.information(self._parent, msg, msg)
             return
 
         for result in self.fit_grains_results:
@@ -600,19 +608,19 @@ class FitGrainsRunner(Runner):
 
         self.view_fit_grains_results()
 
-    def view_fit_grains_results(self):
+    def view_fit_grains_results(self) -> None:
         find_orientations = HexrdConfig().indexing_config['find_orientations']
         quaternion_method = find_orientations.get('_quaternion_method')
         allow_export_workflow = (
             self.started_from_indexing and quaternion_method == 'seed_search'
         )
 
-        kwargs = {
-            'grains_table': self.result_grains_table,
-            'allow_export_workflow': allow_export_workflow,
-            'parent': self.parent,
-        }
-        dialog = create_fit_grains_results_dialog(**kwargs)
+        assert self.result_grains_table is not None
+        dialog = create_fit_grains_results_dialog(
+            grains_table=self.result_grains_table,
+            allow_export_workflow=allow_export_workflow,
+            parent=self._parent,
+        )
         self.fit_grains_results_dialog = dialog
         dialog.show_later()
 
@@ -624,14 +632,14 @@ class CancelTracker:
     might be necessary in the future if it becomes more complex.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.need_to_cancel = False
 
-    def get_need_to_cancel(self):
+    def get_need_to_cancel(self) -> bool:
         return self.need_to_cancel
 
 
-def create_grains_table(fit_grains_results):
+def create_grains_table(fit_grains_results: list) -> np.ndarray:
     num_grains = len(fit_grains_results)
     shape = (num_grains, 21)
     grains_table = np.empty(shape)
@@ -643,23 +651,25 @@ def create_grains_table(fit_grains_results):
 
 
 def create_fit_grains_results_dialog(
-    grains_table, parent=None, allow_export_workflow=True
-):
+    grains_table: np.ndarray,
+    parent: QWidget | None = None,
+    allow_export_workflow: bool = True,
+) -> Any:
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
-    name = indexing_config.get('_selected_material')
+    name: str | None = indexing_config.get('_selected_material')
     if name not in HexrdConfig().materials:
         name = HexrdConfig().active_material_name
+    assert name is not None
     material = HexrdConfig().material(name)
 
     # Create the dialog
-    kwargs = {
-        'data': grains_table,
-        'material': material,
-        'parent': parent,
-        'allow_export_workflow': allow_export_workflow,
-    }
-    dialog = FitGrainsResultsDialog(**kwargs)
+    dialog = FitGrainsResultsDialog(
+        data=grains_table,
+        material=material,
+        parent=parent,
+        allow_export_workflow=allow_export_workflow,
+    )
     dialog.ui.resize(1200, 800)
 
     return dialog

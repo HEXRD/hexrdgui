@@ -1,4 +1,6 @@
-from PySide6.QtWidgets import QMessageBox
+from typing import Any
+
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 import numpy as np
 
@@ -8,7 +10,7 @@ from hexrdgui.ui_loader import UiLoader
 
 class LaueAutoPickerDialog:
 
-    def __init__(self, overlay, parent=None):
+    def __init__(self, overlay: Any, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('laue_auto_picker_dialog.ui', parent)
 
@@ -17,7 +19,7 @@ class LaueAutoPickerDialog:
 
         self.update_gui()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         if self.tth_tol is None or self.eta_tol is None:
             options = HexrdConfig().config['calibration']['laue_auto_picker']
             tth_tol = options['tth_tol']
@@ -43,7 +45,7 @@ class LaueAutoPickerDialog:
         self.ui.use_blob_detection.setChecked(options['use_blob_detection'])
         self.ui.blob_threshold.setValue(options['blob_threshold'])
 
-    def update_config(self):
+    def update_config(self) -> None:
         self.tth_tol = self.ui.tth_tol.value()
         self.eta_tol = self.ui.eta_tol.value()
 
@@ -57,7 +59,7 @@ class LaueAutoPickerDialog:
         options['use_blob_detection'] = self.ui.use_blob_detection.isChecked()
         options['blob_threshold'] = self.ui.blob_threshold.value()
 
-    def exec(self):
+    def exec(self) -> bool:
         if not self.ui.exec():
             return False
 
@@ -71,19 +73,19 @@ class LaueAutoPickerDialog:
         return True
 
     @property
-    def tth_tol(self):
+    def tth_tol(self) -> float | None:
         return np.degrees(self.overlay.tth_width)
 
     @tth_tol.setter
-    def tth_tol(self, v):
+    def tth_tol(self, v: float) -> None:
         self.overlay.tth_width = np.radians(v)
         self.overlay_modified = True
 
     @property
-    def eta_tol(self):
+    def eta_tol(self) -> float | None:
         return np.degrees(self.overlay.eta_width)
 
     @eta_tol.setter
-    def eta_tol(self, v):
+    def eta_tol(self, v: float) -> None:
         self.overlay.eta_width = np.radians(v)
         self.overlay_modified = True

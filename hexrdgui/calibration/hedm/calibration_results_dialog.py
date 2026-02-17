@@ -1,9 +1,16 @@
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QSizePolicy
+from __future__ import annotations
 
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from typing import Any, TYPE_CHECKING
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QSizePolicy, QWidget
+
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
+
+if TYPE_CHECKING:
+    from matplotlib.artist import Artist
 
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.ui_loader import UiLoader
@@ -16,19 +23,30 @@ DEFAULT_LABEL = ''
 
 class HEDMCalibrationResultsDialog:
     def __init__(
-        self, data, styles, labels, grain_ids, cfg, title, ome_period, parent=None
-    ):
+        self,
+        data: dict[str, Any],
+        styles: dict[str, str],
+        labels: dict[str, str],
+        grain_ids: list[int] | np.ndarray,
+        cfg: Any,
+        title: str,
+        ome_period: np.ndarray,
+        parent: QWidget | None = None,
+    ) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('hedm_calibration_results_dialog.ui', parent)
 
+        grain_ids_list: list[int]
         if isinstance(grain_ids, np.ndarray):
             # So we can easily use the .index() function...
-            grain_ids = grain_ids.tolist()
+            grain_ids_list = grain_ids.tolist()
+        else:
+            grain_ids_list = grain_ids
 
         self.data = data
         self.styles = styles
         self.labels = labels
-        self.grain_ids = grain_ids
+        self.grain_ids = grain_ids_list
         self.cfg = cfg
         self.title = title
         self.ome_period = ome_period
@@ -38,13 +56,13 @@ class HEDMCalibrationResultsDialog:
         self.update_canvas()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.detector.currentIndexChanged.connect(self.update_canvas)
         self.ui.show_all_grains.toggled.connect(self.show_all_grains_toggled)
         self.ui.grain_id.currentIndexChanged.connect(self.update_canvas)
         self.ui.show_legend.toggled.connect(self.update_canvas)
 
-    def setup_combo_boxes(self):
+    def setup_combo_boxes(self) -> None:
         self.ui.grain_id.clear()
         for grain_id in sorted(self.grain_ids):
             self.ui.grain_id.addItem(str(grain_id), grain_id)
@@ -55,7 +73,7 @@ class HEDMCalibrationResultsDialog:
 
         self.update_enable_states()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         enable_grain_id = not self.show_all_grains and self.ui.grain_id.count() > 1
         self.ui.grain_id.setEnabled(enable_grain_id)
         self.ui.grain_id_label.setEnabled(enable_grain_id)
@@ -67,14 +85,14 @@ class HEDMCalibrationResultsDialog:
         show_all_grains_visible = self.ui.grain_id.count() > 1
         self.ui.show_all_grains.setVisible(show_all_grains_visible)
 
-    def setup_canvas(self):
-        self.artists = []
+    def setup_canvas(self) -> None:
+        self.artists: list[Artist] = []
 
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure())
 
         # Get the canvas to take up the majority of the screen most of the time
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         fig = canvas.figure
         fig.suptitle(self.title)
@@ -94,47 +112,47 @@ class HEDMCalibrationResultsDialog:
         self.ui.canvas_layout.addWidget(self.toolbar)
 
         # Center the toolbar
-        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+        self.ui.canvas_layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 
         self.fig = fig
         self.ax = ax
         self.canvas = canvas
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
     @property
-    def selected_detector_key(self):
+    def selected_detector_key(self) -> str:
         return self.ui.detector.currentText()
 
     @property
-    def selected_grain_id(self):
+    def selected_grain_id(self) -> int:
         return self.ui.grain_id.currentData()
 
     @property
-    def show_all_grains(self):
+    def show_all_grains(self) -> bool:
         return self.ui.show_all_grains.isChecked()
 
     @property
-    def show_legend(self):
+    def show_legend(self) -> bool:
         return self.ui.show_legend.isChecked()
 
-    def show_all_grains_toggled(self):
+    def show_all_grains_toggled(self) -> None:
         self.update_enable_states()
         self.update_canvas()
 
     @property
-    def grain_ids_to_plot(self):
+    def grain_ids_to_plot(self) -> list[int]:
         if self.show_all_grains:
             return self.grain_ids
 
         return [self.selected_grain_id]
 
-    def clear_artists(self):
+    def clear_artists(self) -> None:
         while self.artists:
             remove_artist(self.artists.pop(0))
 
-    def update_canvas(self):
+    def update_canvas(self) -> None:
         self.clear_artists()
 
         instr = self.cfg.instrument.hedm
@@ -159,7 +177,13 @@ class HEDMCalibrationResultsDialog:
 
         self.canvas.draw()
 
-    def draw_entry(self, indices, data, style, label):
+    def draw_entry(
+        self,
+        indices: list[int],
+        data: np.ndarray,
+        style: str,
+        label: str | None,
+    ) -> None:
         for i, idx in enumerate(indices):
             x = data[idx][:, 0]
             y1 = data[idx][:, 1]

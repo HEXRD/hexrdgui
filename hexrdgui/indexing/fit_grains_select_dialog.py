@@ -1,9 +1,10 @@
 import os
+from typing import Any
 
 import numpy as np
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing.utils import generate_grains_table
@@ -16,11 +17,15 @@ class FitGrainsSelectDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, indexing_runner=None, parent=None):
+    def __init__(
+        self,
+        indexing_runner: Any = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.indexing_runner = indexing_runner
-        self.grains_table = None
+        self.grains_table: np.ndarray | None = None
 
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_select_dialog.ui', parent)
@@ -33,7 +38,7 @@ class FitGrainsSelectDialog(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.select_estimate_file_button.pressed.connect(self.select_estimate_file)
         self.ui.select_orientations_file_button.pressed.connect(
             self.select_orientations_file
@@ -42,10 +47,10 @@ class FitGrainsSelectDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         # Validate
         if self.method in self.file_methods and not self.file_name:
             msg = 'Please select a file'
@@ -56,7 +61,7 @@ class FitGrainsSelectDialog(QObject):
         self.set_grains_table()
         self.accepted.emit()
 
-    def set_grains_table(self):
+    def set_grains_table(self) -> None:
         if self.method == 'fit_grains':
             # Grab the most recent fit grains results
             self.grains_table = HexrdConfig().fit_grains_grains_table
@@ -73,18 +78,18 @@ class FitGrainsSelectDialog(QObject):
         else:
             raise Exception(f'Unknown method: {self.method}')
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         self.rejected.emit()
 
-    def select_estimate_file(self):
+    def select_estimate_file(self) -> None:
         self.select_file('Load grains.out file', 'grains.out files (*.out)')
 
-    def select_orientations_file(self):
+    def select_orientations_file(self) -> None:
         self.select_file(
             'Load orientations file', 'Accepted orientations files (*.dat)'
         )
 
-    def select_file(self, title, filters):
+    def select_file(self, title: str, filters: str) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, title, HexrdConfig().working_dir, filters
         )
@@ -94,36 +99,36 @@ class FitGrainsSelectDialog(QObject):
             self.file_name = selected_file
 
     @property
-    def file_methods(self):
+    def file_methods(self) -> tuple[str, ...]:
         # Methods that use a file name...
         return ('estimate', 'orientations')
 
     @property
-    def all_methods(self):
+    def all_methods(self) -> tuple[str, ...]:
         return ('fit_grains', 'indexing') + self.file_methods
 
     @property
-    def file_name(self):
+    def file_name(self) -> str:
         self.assert_file_method()
         widget = getattr(self.ui, f'{self.method}_file_name')
         return widget.text()
 
     @file_name.setter
-    def file_name(self, v):
+    def file_name(self, v: str) -> None:
         self.assert_file_method()
         widget = getattr(self.ui, f'{self.method}_file_name')
         widget.setText(v)
 
-    def assert_file_method(self):
+    def assert_file_method(self) -> None:
         if self.method not in self.file_methods:
             raise Exception(f'{self.method} is not a file method')
 
     @property
-    def method(self):
+    def method(self) -> str:
         return self.ui.method.currentData()
 
     @method.setter
-    def method(self, v):
+    def method(self, v: str) -> None:
         v = v.capitalize()
         ind = self.ui.method.findText(v)
         if ind == -1:
@@ -131,12 +136,12 @@ class FitGrainsSelectDialog(QObject):
 
         self.ui.method.setCurrentIndex(ind)
 
-    def update_method_tab(self):
+    def update_method_tab(self) -> None:
         # Take advantage of the naming scheme...
         method_tab = getattr(self.ui, f'{self.method}_tab')
         self.ui.tab_widget.setCurrentWidget(method_tab)
 
-    def update_valid_methods(self):
+    def update_valid_methods(self) -> None:
         valid_methods = list(self.all_methods)
 
         if HexrdConfig().fit_grains_grains_table is None:
@@ -145,7 +150,7 @@ class FitGrainsSelectDialog(QObject):
         if getattr(self.indexing_runner, 'grains_table', None) is None:
             valid_methods.remove('indexing')
 
-        def format_label(x):
+        def format_label(x: str) -> str:
             return x.replace('_', ' ').title()
 
         w = self.ui.method

@@ -1,7 +1,14 @@
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtCore import QItemSelectionModel, QModelIndex, QObject, Qt, Signal
-from PySide6.QtWidgets import QDialogButtonBox, QFileDialog, QHeaderView, QMessageBox
+from PySide6.QtWidgets import (
+    QDialogButtonBox,
+    QFileDialog,
+    QHeaderView,
+    QMessageBox,
+    QWidget,
+)
 
 import numpy as np
 
@@ -22,11 +29,17 @@ class FitGrainsOptionsDialog(QObject):
     rejected = Signal()
     grains_table_modified = Signal()
 
-    def __init__(self, grains_table, ensure_active_hkls_not_excluded=True, parent=None):
+    def __init__(
+        self,
+        grains_table: Any,
+        ensure_active_hkls_not_excluded: bool = True,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.grains_table = grains_table
         self.ensure_active_hkls_not_excluded = ensure_active_hkls_not_excluded
+        self._table: ReflectionsTable | None = None
 
         config = HexrdConfig().indexing_config['fit_grains']
         if config.get('do_fit') is False:
@@ -35,7 +48,7 @@ class FitGrainsOptionsDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('fit_grains_options_dialog.ui', parent)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         url = 'hedm/fit_grains/#fit-grains-options'
         add_help_url(self.ui.button_box, url)
@@ -53,7 +66,7 @@ class FitGrainsOptionsDialog(QObject):
         view.material = self.material
         view.can_modify_grains = True
 
-        ok_button = self.ui.button_box.button(QDialogButtonBox.Ok)
+        ok_button = self.ui.button_box.button(QDialogButtonBox.StandardButton.Ok)
         ok_button.setText('Fit Grains')
 
         self.tolerances_model = FitGrainsToleranceModel(self.ui)
@@ -64,12 +77,12 @@ class FitGrainsOptionsDialog(QObject):
         num_cols = self.tolerances_model.columnCount()
         for i in range(num_cols):
             self.ui.tolerances_view.horizontalHeader().setSectionResizeMode(
-                i, QHeaderView.Stretch
+                i, QHeaderView.ResizeMode.Stretch
             )
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.rejected)
         self.ui.tolerances_view.selectionModel().selectionChanged.connect(
@@ -96,7 +109,7 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.plot_grains.clicked.connect(self.plot_grains)
         self.data_model.grains_table_modified.connect(self.on_grains_table_modified)
 
-    def all_widgets(self):
+    def all_widgets(self) -> list[Any]:
         """Only includes widgets directly related to config parameters"""
         widgets = [
             self.ui.npdiv,
@@ -107,10 +120,10 @@ class FitGrainsOptionsDialog(QObject):
         ]
         return widgets
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def update_materials(self):
+    def update_materials(self) -> None:
         prev = self.selected_material
         material_names = list(HexrdConfig().materials)
 
@@ -122,7 +135,7 @@ class FitGrainsOptionsDialog(QObject):
         else:
             self.ui.material.setCurrentText(HexrdConfig().active_material_name)
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         if not self.validate():
             self.ui.show()
             return
@@ -131,7 +144,7 @@ class FitGrainsOptionsDialog(QObject):
         self.update_config()
         self.accepted.emit()
 
-    def validate(self):
+    def validate(self) -> bool:
         if self.ensure_active_hkls_not_excluded:
             # Verify that the active hkls are not excluded
             indexing_config = HexrdConfig().indexing_config
@@ -148,7 +161,7 @@ class FitGrainsOptionsDialog(QObject):
                 msg += '\n'.join([str(x) for x in missing])
                 msg += '\n\nThese will now be automatically enabled.\n'
                 print(msg)
-                QMessageBox.critical(self.parent(), 'Warning', msg)
+                QMessageBox.critical(self.parent(), 'Warning', msg)  # type: ignore[arg-type]
 
                 pd = self.material.planeData
                 new_exclusions = pd.exclusions
@@ -164,39 +177,39 @@ class FitGrainsOptionsDialog(QObject):
 
         return True
 
-    def on_tolerances_add_row(self):
+    def on_tolerances_add_row(self) -> None:
         new_row_num = self.tolerances_model.rowCount()
         self.tolerances_model.add_row()
 
         # Select first column of new row
-        self.ui.tolerances_view.setFocus(Qt.OtherFocusReason)
+        self.ui.tolerances_view.setFocus(Qt.FocusReason.OtherFocusReason)
         self.ui.tolerances_view.selectionModel().clear()
         model_index = self.tolerances_model.index(new_row_num, 0)
         self.ui.tolerances_view.selectionModel().setCurrentIndex(
-            model_index, QItemSelectionModel.Select
+            model_index, QItemSelectionModel.SelectionFlag.Select
         )
         # Have to repaint - is that because we are in a modal dialog?
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    def on_tolerances_delete_row(self):
+    def on_tolerances_delete_row(self) -> None:
         rows = self._get_selected_rows()
         self.tolerances_model.delete_rows(rows)
         self.ui.tolerances_view.selectionModel().clear()
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    def on_tolerances_move_down(self):
+    def on_tolerances_move_down(self) -> None:
         rows = self._get_selected_rows()
         self.tolerances_model.move_rows(rows, 1)
         self.ui.tolerances_view.selectionModel().clear()
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    def on_tolerances_move_up(self):
+    def on_tolerances_move_up(self) -> None:
         rows = self._get_selected_rows()
         self.tolerances_model.move_rows(rows, -1)
         self.ui.tolerances_view.selectionModel().clear()
         self.ui.tolerances_view.repaint(self.ui.tolerances_view.rect())
 
-    def on_tolerances_select(self):
+    def on_tolerances_select(self) -> None:
         """Sets button enable states based on current selection"""
         delete_enable = False
         up_enable = False
@@ -222,7 +235,7 @@ class FitGrainsOptionsDialog(QObject):
         self.ui.move_up.setEnabled(up_enable)
         self.ui.move_down.setEnabled(down_enable)
 
-    def tolerance_data_modified(self):
+    def tolerance_data_modified(self) -> None:
         # Update the tolerances on the table
         all_tolerances = self.tolerances_model.data_columns
         tolerances = []
@@ -237,7 +250,7 @@ class FitGrainsOptionsDialog(QObject):
 
         self.ui.grains_table_view.tolerances = tolerances
 
-    def update_config(self):
+    def update_config(self) -> None:
         # Set the new config options on the internal config
         config = HexrdConfig().indexing_config['fit_grains']
         config['npdiv'] = self.ui.npdiv.value()
@@ -257,14 +270,15 @@ class FitGrainsOptionsDialog(QObject):
         indexing_config['_selected_material'] = self.selected_material
         indexing_config['_write_spots'] = self.ui.write_out_spots.isChecked()
 
-    def update_gui_from_config(self, config):
+    def update_gui_from_config(self, config: dict[str, Any]) -> None:
         with block_signals(*self.all_widgets()):
             self.ui.npdiv.setValue(config.get('npdiv'))
-            self.ui.refit_pixel_scale.setValue(config.get('refit')[0])
-            self.ui.refit_ome_step_scale.setValue(config.get('refit')[1])
+            refit = config['refit']
+            self.ui.refit_pixel_scale.setValue(refit[0])
+            self.ui.refit_ome_step_scale.setValue(refit[1])
             self.ui.threshold.setValue(config.get('threshold'))
 
-            tolerances = config.get('tolerance')
+            tolerances = config['tolerance']
             self.tolerances_model.update_from_config(tolerances)
 
             indexing_config = HexrdConfig().indexing_config
@@ -281,10 +295,10 @@ class FitGrainsOptionsDialog(QObject):
 
             self.update_num_hkls()
 
-    def run(self):
+    def run(self) -> None:
         self.ui.show()
 
-    def _get_selected_rows(self):
+    def _get_selected_rows(self) -> list[int]:
         """Returns list of selected rows
 
         Rows must be *exclusively* selected. If any partial rows are selected,
@@ -304,23 +318,23 @@ class FitGrainsOptionsDialog(QObject):
         return selected_rows
 
     @property
-    def material_options(self):
+    def material_options(self) -> list[str]:
         w = self.ui.material
         return [w.itemText(i) for i in range(w.count())]
 
-    def selected_material_changed(self):
-        if hasattr(self, '_table'):
+    def selected_material_changed(self) -> None:
+        if self._table is not None:
             self._table.material = self.material
 
         self.ui.grains_table_view.material = self.material
         self.update_num_hkls()
 
     @property
-    def selected_material(self):
+    def selected_material(self) -> str:
         return self.ui.material.currentText()
 
     @selected_material.setter
-    def selected_material(self, name):
+    def selected_material(self, name: str | None) -> None:
         if (
             name is None
             or name not in self.material_options
@@ -333,12 +347,12 @@ class FitGrainsOptionsDialog(QObject):
         self.selected_material_changed()
 
     @property
-    def material(self):
+    def material(self) -> Any:
         return HexrdConfig().material(self.selected_material)
 
     @property
-    def reflections_table(self):
-        if hasattr(self, '_table'):
+    def reflections_table(self) -> Any:
+        if self._table is not None:
             return self._table
 
         kwargs = {
@@ -349,10 +363,10 @@ class FitGrainsOptionsDialog(QObject):
         self._table = ReflectionsTable(**kwargs)
         return self._table
 
-    def choose_hkls(self):
+    def choose_hkls(self) -> None:
         self.reflections_table.show()
 
-    def update_num_hkls(self):
+    def update_num_hkls(self) -> None:
         if self.material is None:
             num_hkls = 0
         else:
@@ -361,7 +375,7 @@ class FitGrainsOptionsDialog(QObject):
         text = f'Number of hkls selected:  {num_hkls}'
         self.ui.num_hkls_selected.setText(text)
 
-    def apply_min_sfac_to_hkls(self):
+    def apply_min_sfac_to_hkls(self) -> None:
         min_sfac = self.ui.min_sfac_value.value()
         table = self.reflections_table
 
@@ -377,16 +391,16 @@ class FitGrainsOptionsDialog(QObject):
         self.update_num_hkls()
         table.update_table()
 
-    def set_working_dir(self):
+    def set_working_dir(self) -> None:
         caption = 'Select directory to write spots files to'
         d = QFileDialog.getExistingDirectory(self.ui, caption, dir=self.spots_path)
 
         if d:
             self.spots_path = d
 
-    def plot_grains(self):
+    def plot_grains(self) -> None:
         plot_grains(self.grains_table, None, parent=self.ui)
 
-    def on_grains_table_modified(self):
+    def on_grains_table_modified(self) -> None:
         self.grains_table = self.data_model.full_grains_table
         self.grains_table_modified.emit()

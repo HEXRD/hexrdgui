@@ -1,5 +1,6 @@
 import glob
 import os
+from typing import Any
 import numpy as np
 import tempfile
 import yaml
@@ -19,14 +20,14 @@ class ImageFileManager(metaclass=Singleton):
     HDF4_FILE_EXTS = ['.h4', '.hdf4', '.hdf']
     HDF5_FILE_EXTS = ['.h5', '.hdf5', '.he5']
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Clear any previous images
         HexrdConfig().imageseries_dict.clear()
 
         self.remember = True
-        self.path = []
+        self.path: list[Any] = []
 
-    def load_dummy_images(self, initial=False):
+    def load_dummy_images(self, initial: bool = False) -> None:
         detector_names = HexrdConfig().detector_names
         iconfig = HexrdConfig().instrument_config
 
@@ -44,7 +45,7 @@ class ImageFileManager(metaclass=Singleton):
             rows = iconfig['detectors'][det_key]['pixels']['rows']
             return (rows, cols)
 
-        def make_dummy_ims(shape: tuple[int, int]) -> imageseries.ImageSeries:
+        def make_dummy_ims(shape: tuple[int, ...]) -> imageseries.ImageSeries:
             # Make a dummy imageseries
             data = np.ones(shape, dtype=np.uint8)
             ims = imageseries.open(None, 'array', data=data)
@@ -105,6 +106,7 @@ class ImageFileManager(metaclass=Singleton):
             ims_dict[det_key] = make_dummy_ims(shape)
 
             if unagg_length is not None:
+                assert unagg_dict is not None
                 shape = (unagg_length, *det_shape)
                 unagg_dict[det_key] = make_dummy_ims(shape)
 
@@ -119,7 +121,7 @@ class ImageFileManager(metaclass=Singleton):
         if load_panel_modified:
             HexrdConfig().load_panel_state_modified.emit()
 
-    def load_images(self, detectors, file_names, options=None):
+    def load_images(self, detectors: Any, file_names: Any, options: Any = None) -> None:
         HexrdConfig().imageseries_dict.clear()
         for name, f in zip(detectors, file_names):
             if isinstance(f, list):
@@ -131,7 +133,7 @@ class ImageFileManager(metaclass=Singleton):
         if self.remember:
             HexrdConfig().hdf5_path = self.path
 
-    def open_file(self, f, options=None):
+    def open_file(self, f: Any, options: Any = None) -> Any:
         # f could be either a file or numpy array
         ext = os.path.splitext(f)[1] if isinstance(f, str) else None
         if ext is None:
@@ -179,12 +181,12 @@ class ImageFileManager(metaclass=Singleton):
         elif ext == '.fch5':
             ims = imageseries.open(f, 'frame-cache', style='fch5')
         elif ext == '.yml':
-            data = yaml.load(open(f))
+            data = yaml.load(open(f), Loader=yaml.SafeLoader)
             form = next(iter(data))
             ims = imageseries.open(f, form)
         else:
             # elif ext in self.IMAGE_FILE_EXTS:
-            input_dict = {'image-files': {}}
+            input_dict: dict[str, Any] = {'image-files': {}}
             input_dict['image-files']['directory'] = os.path.dirname(f)
             input_dict['image-files']['files'] = glob.escape(os.path.basename(f))
             input_dict['options'] = {} if options is None else options
@@ -202,11 +204,11 @@ class ImageFileManager(metaclass=Singleton):
         #     ims = imageseries.open(f, 'array')
         return ims
 
-    def open_directory(self, d, files=None, options=None):
+    def open_directory(self, d: str, files: Any = None, options: Any = None) -> Any:
         if files is None:
             files = os.listdir(d)
 
-        input_dict = {'image-files': {}}
+        input_dict: dict[str, Any] = {'image-files': {}}
         input_dict['image-files']['directory'] = d
         file_str = ''
         for i, f in enumerate(files):
@@ -228,17 +230,19 @@ class ImageFileManager(metaclass=Singleton):
             os.remove(temp.name)
         return ims
 
-    def is_hdf(self, extension):
+    def is_hdf(self, extension: str) -> bool:
         return self.is_hdf4(extension) or self.is_hdf5(extension)
 
-    def is_hdf4(self, extension):
+    def is_hdf4(self, extension: str) -> bool:
         return extension in self.HDF4_FILE_EXTS
 
-    def is_hdf5(self, extension):
+    def is_hdf5(self, extension: str) -> bool:
         return extension in self.HDF5_FILE_EXTS
 
-    def hdf_path_exists(self, f):
+    def hdf_path_exists(self, f: Any) -> bool:
         ext = os.path.splitext(f)[1] if isinstance(f, str) else None
+        if ext is None:
+            return False
         if self.is_hdf5(ext):
             return self.hdf5_path_exists(f)
         elif self.is_hdf4(ext):
@@ -246,7 +250,7 @@ class ImageFileManager(metaclass=Singleton):
             pass
         return False
 
-    def hdf5_path_exists(self, f):
+    def hdf5_path_exists(self, f: str) -> bool:
         # If it is a special HDF5 file, just return True
         with h5py.File(f, 'r') as rf:
             if rf.attrs.get('version', '').startswith('CHESS_EIGER_STREAM'):
@@ -264,7 +268,7 @@ class ImageFileManager(metaclass=Singleton):
                     return True
             return False
 
-    def path_prompt(self, f):
+    def path_prompt(self, f: str) -> bool:
         path_dialog = LoadHDF5Dialog(f)
         if path_dialog.paths:
             path_dialog.ui.exec()

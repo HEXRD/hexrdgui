@@ -1,3 +1,5 @@
+from PySide6.QtWidgets import QWidget
+
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
@@ -5,40 +7,40 @@ from hexrdgui.utils import block_signals
 
 class PolarizationOptionsDialog:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('polarization_options_dialog.ui', parent)
 
         self.update_gui()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.accepted.connect(self.accept)
         self.ui.horizontal.valueChanged.connect(self.horizontal_modified)
         self.ui.vertical.valueChanged.connect(self.vertical_modified)
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
-    def accept(self):
+    def accept(self) -> None:
         # When the dialog is accepted, save the settings in HexrdConfig.
         options = HexrdConfig().config['image']['polarization']
         options['unpolarized'] = self.ui.unpolarized.isChecked()
         options['f_hor'] = self.ui.horizontal.value()
         options['f_vert'] = self.ui.vertical.value()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         options = HexrdConfig().config['image']['polarization']
         self.ui.unpolarized.setChecked(options['unpolarized'])
         self.ui.horizontal.setValue(options['f_hor'])
         self.ui.vertical.setValue(options['f_vert'])
 
-    def horizontal_modified(self, v):
+    def horizontal_modified(self, v: float) -> None:
         # Set the vertical to be 1 - horizontal
         with block_signals(self.ui.vertical):
             self.ui.vertical.setValue(1 - v)
 
-    def vertical_modified(self, v):
+    def vertical_modified(self, v: float) -> None:
         # Set the horizontal to be 1 - vertical
         with block_signals(self.ui.horizontal):
             self.ui.horizontal.setValue(1 - v)

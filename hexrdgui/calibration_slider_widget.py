@@ -1,5 +1,7 @@
+from typing import Any
+
 from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 import numpy as np
 
@@ -16,7 +18,7 @@ class CalibrationSliderWidget(QObject):
     CONF_VAL_TO_SLIDER_VAL = 10
     SLIDER_VAL_TO_CONF_VAL = 0.1
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -26,7 +28,7 @@ class CalibrationSliderWidget(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.detector.currentIndexChanged.connect(self.update_gui_from_config)
         for widget in self.config_widgets:
             widget.valueChanged.connect(self.update_widget_counterpart)
@@ -47,7 +49,7 @@ class CalibrationSliderWidget(QObject):
 
         HexrdConfig().euler_angle_convention_changed.connect(self.update_labels)
 
-    def update_ranges(self):
+    def update_ranges(self) -> None:
         r = self.ui.sb_translation_range.value()
         slider_r = r * self.CONF_VAL_TO_SLIDER_VAL
         for w in self.translation_widgets:
@@ -69,14 +71,14 @@ class CalibrationSliderWidget(QObject):
             r_val = slider_r if w.objectName().startswith('slider') else r
             w.setRange(v - r_val / 2.0, v + r_val / 2.0)
 
-    def current_detector(self):
+    def current_detector(self) -> str:
         return self.ui.detector.currentText()
 
-    def current_detector_dict(self):
+    def current_detector_dict(self) -> dict[str, Any]:
         return HexrdConfig().detector(self.current_detector())
 
     @property
-    def translation_widgets(self):
+    def translation_widgets(self) -> list[Any]:
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
         root = 'translation'
@@ -86,7 +88,7 @@ class CalibrationSliderWidget(QObject):
         return [getattr(self.ui, x) for x in widget_names]
 
     @property
-    def tilt_widgets(self):
+    def tilt_widgets(self) -> list[Any]:
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
         root = 'tilt'
@@ -96,11 +98,11 @@ class CalibrationSliderWidget(QObject):
         return [getattr(self.ui, x) for x in widget_names]
 
     @property
-    def transform_widgets(self):
+    def transform_widgets(self) -> list[Any]:
         return self.translation_widgets + self.tilt_widgets
 
     @property
-    def beam_widgets(self):
+    def beam_widgets(self) -> list[Any]:
         # Let's take advantage of the naming scheme
         prefixes = ['sb', 'slider']
         roots = ['energy', 'azimuth', 'polar']
@@ -112,20 +114,20 @@ class CalibrationSliderWidget(QObject):
         return [getattr(self.ui, x) for x in widget_names]
 
     @property
-    def config_widgets(self):
+    def config_widgets(self) -> list[Any]:
         return self.transform_widgets + self.beam_widgets
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list[Any]:
         return self.config_widgets + [self.ui.detector]
 
-    def on_detector_changed(self):
+    def on_detector_changed(self) -> None:
         self.update_gui_from_config()
 
-    def update_widget_counterpart(self):
+    def update_widget_counterpart(self) -> None:
         sender = self.sender()
         name = sender.objectName()
-        value = sender.value()
+        value = sender.value()  # type: ignore[attr-defined]
 
         prefix, root, ind = name.split('_')
 
@@ -145,7 +147,7 @@ class CalibrationSliderWidget(QObject):
         finally:
             counter_widget.blockSignals(blocked)
 
-    def update_gui_from_config(self):
+    def update_gui_from_config(self) -> None:
         self.update_detectors_from_config()
 
         self._cache_instrument_rigid_body_params()
@@ -158,7 +160,7 @@ class CalibrationSliderWidget(QObject):
         self.validate_relative_transforms_setting()
         self.update_visibility_states()
 
-    def update_visibility_states(self):
+    def update_visibility_states(self) -> None:
         visible = self.lock_relative_transforms
         widgets = [
             self.ui.lock_relative_transforms_setting,
@@ -168,7 +170,7 @@ class CalibrationSliderWidget(QObject):
         for w in widgets:
             w.setVisible(visible)
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         enable = not (
             self.lock_relative_transforms and self.transform_instrument_rigid_body
         )
@@ -179,19 +181,19 @@ class CalibrationSliderWidget(QObject):
         for w in widgets:
             w.setEnabled(enable)
 
-    def on_lock_relative_transforms_toggled(self):
+    def on_lock_relative_transforms_toggled(self) -> None:
         self.update_visibility_states()
         self.update_enable_states()
         self.update_transform_widgets()
         self.update_ranges()
 
-    def on_lock_relative_transforms_setting_changed(self):
+    def on_lock_relative_transforms_setting_changed(self) -> None:
         self.validate_relative_transforms_setting()
         self.update_enable_states()
         self.update_transform_widgets()
         self.update_ranges()
 
-    def validate_relative_transforms_setting(self):
+    def validate_relative_transforms_setting(self) -> None:
         if not self.lock_relative_transforms:
             return
 
@@ -233,7 +235,7 @@ class CalibrationSliderWidget(QObject):
     def locked_center_of_rotation(self) -> str:
         return self.ui.locked_center_of_rotation.currentText()
 
-    def update_detectors_from_config(self):
+    def update_detectors_from_config(self) -> None:
         widget = self.ui.detector
 
         old_detector = self.current_detector()
@@ -255,14 +257,14 @@ class CalibrationSliderWidget(QObject):
         finally:
             widget.blockSignals(blocked)
 
-    def update_config_from_gui(self, val):
+    def update_config_from_gui(self, val: float) -> None:
         """This function only updates the sender value"""
         sender = self.sender()
         name = sender.objectName()
 
         # Take advantage of the widget naming scheme
-        prefix, key, ind = name.split('_')
-        ind = int(ind)
+        prefix, key, ind_str = name.split('_')
+        ind = int(ind_str)
 
         if prefix == 'slider':
             val *= self.SLIDER_VAL_TO_CONF_VAL
@@ -297,7 +299,13 @@ class CalibrationSliderWidget(QObject):
                 beam_dict['vector'][key] = val
                 HexrdConfig().beam_vector_changed.emit()
 
-    def _transform_locked(self, det, key, ind, val):
+    def _transform_locked(
+        self,
+        det: dict[str, Any],
+        key: str,
+        ind: int,
+        val: float,
+    ) -> None:
         det_names = HexrdConfig().detector_names
         if self.transform_instrument_rigid_body:
             # All detectors will be transformed as a group
@@ -405,7 +413,7 @@ class CalibrationSliderWidget(QObject):
             # must update the GUI too.
             self.update_transform_widgets()
 
-    def _cache_instrument_rigid_body_params(self):
+    def _cache_instrument_rigid_body_params(self) -> None:
         # We cache the instrument rigid body params in the current
         # Euler angle convention setting. This is necessary to prevent
         # jumpiness when moving the "tilt" for the slider widget, when
@@ -425,18 +433,18 @@ class CalibrationSliderWidget(QObject):
             'translation': params['translation'].copy(),
         }
 
-    def update_transform_widgets(self):
+    def update_transform_widgets(self) -> None:
         self._cache_instrument_rigid_body_params()
         with block_signals(*self.transform_widgets):
             for w in self.transform_widgets:
                 self.update_widget_value(w)
 
-    def update_widget_value(self, widget):
+    def update_widget_value(self, widget: Any) -> None:
         name = widget.objectName()
 
         # Take advantage of the widget naming scheme
-        prefix, key, ind = name.split('_')
-        ind = int(ind)
+        prefix, key, ind_str = name.split('_')
+        ind = int(ind_str)
 
         if key in ['tilt', 'translation']:
             if self.lock_relative_transforms and self.transform_instrument_rigid_body:
@@ -477,29 +485,31 @@ class CalibrationSliderWidget(QObject):
 
         widget.setValue(val)
 
-    def reset_config(self):
+    def reset_config(self) -> None:
         HexrdConfig().restore_instrument_config_backup()
         self.update_gui_from_config()
 
-    def update_labels(self):
+    def update_labels(self) -> None:
         # Make sure tilt labels reflect current euler convention
         if HexrdConfig().euler_angle_convention is None:
-            a, b, c = 'xyz'
+            a, b, c = 'xyz'  # type: ignore[misc]
         else:
-            a, b, c = HexrdConfig().euler_angle_convention['axes_order']
+            convention = HexrdConfig().euler_angle_convention
+            assert convention is not None
+            a, b, c = convention['axes_order']
         self.ui.label_tilt_2.setText(str.upper(a + ':'))
         self.ui.label_tilt_0.setText(str.upper(b + ':'))
         self.ui.label_tilt_1.setText(str.upper(c + ':'))
 
 
-def _tilt_to_rmat(tilt):
+def _tilt_to_rmat(tilt: Any) -> np.ndarray:
     # Convert the tilt to exponential map parameters, and then
     # to the rotation matrix, and return.
     convention = HexrdConfig().euler_angle_convention
     return rotMatOfExpMap(np.asarray(convert_angle_convention(tilt, convention, None)))
 
 
-def _rmat_to_tilt(rmat):
+def _rmat_to_tilt(rmat: np.ndarray) -> Any:
     # Convert the rotation matrix to exponential map parameters,
     # and then to the tilt, and return.
     convention = HexrdConfig().euler_angle_convention

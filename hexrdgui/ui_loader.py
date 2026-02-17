@@ -1,6 +1,8 @@
-from PySide6.QtCore import QBuffer, QByteArray
+from typing import Any
+
+from PySide6.QtCore import QBuffer, QByteArray, QObject
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QPushButton
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QPushButton, QWidget
 
 from hexrdgui import enter_key_filter, resource_loader
 
@@ -10,12 +12,12 @@ import hexrdgui.resources.ui
 
 
 class UiLoader(QUiLoader, metaclass=QSingleton):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
 
         self.register_custom_widgets()
 
-    def register_custom_widgets(self):
+    def register_custom_widgets(self) -> None:
         # Import these here to avoid circular imports
         from hexrdgui.hidden_bar_tab_widget import HiddenBarTabWidget
         from hexrdgui.indexing.grains_table_view import GrainsTableView
@@ -34,7 +36,7 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
         for item in register_list:
             self.registerCustomWidget(item)
 
-    def load_file(self, file_name, parent=None):
+    def load_file(self, file_name: str, parent: QWidget | None = None) -> Any:
         """Load a UI file and return the widget
 
         Returns a widget created from the UI file.
@@ -43,9 +45,10 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
                           in hexrd.resources.ui).
         """
         text = resource_loader.load_resource(hexrdgui.resources.ui, file_name)
+        assert isinstance(text, str)
         return self.load_string(text, parent)
 
-    def load_string(self, string, parent=None):
+    def load_string(self, string: str, parent: QWidget | None = None) -> Any:
         """Load a UI file from a string and return the widget"""
         data = QByteArray(string.encode('utf-8'))
         buf = QBuffer(data)
@@ -55,7 +58,7 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
         self.process_ui(ui)
         return ui
 
-    def process_ui(self, ui):
+    def process_ui(self, ui: QWidget) -> None:
         """Perform any additional processing on loaded UI objects
 
         Currently, it installs an enter key filter for QDialogs to prevent
@@ -64,7 +67,7 @@ class UiLoader(QUiLoader, metaclass=QSingleton):
         if isinstance(ui, QDialog):
             self.install_dialog_enter_key_filters(ui)
 
-    def install_dialog_enter_key_filters(self, dialog):
+    def install_dialog_enter_key_filters(self, dialog: QDialog) -> None:
         """Block enter key press accept/reject for dialogs
 
         This function installs enter key filters on a QDialog and all

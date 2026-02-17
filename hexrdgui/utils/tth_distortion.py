@@ -2,7 +2,11 @@ import numpy as np
 from skimage.transform import warp
 
 
-def apply_tth_distortion_if_needed(ang_crds, in_degrees=False, reverse=False):
+def apply_tth_distortion_if_needed(
+    ang_crds: np.ndarray,
+    in_degrees: bool = False,
+    reverse: bool = False,
+) -> np.ndarray:
     from hexrdgui.hexrd_config import HexrdConfig
 
     # The ang_crds is a numpy array of angular coordinates
@@ -27,6 +31,8 @@ def apply_tth_distortion_if_needed(ang_crds, in_degrees=False, reverse=False):
         return ang_crds
 
     # Set up the variables we need
+    assert polar_corr_field is not None
+    assert polar_angular_grid is not None
     polar_field = polar_corr_field.filled(np.nan)
     eta_centers, tth_centers = polar_angular_grid
     first_eta_col = eta_centers[:, 0]

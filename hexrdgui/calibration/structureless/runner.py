@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from itertools import cycle
 import traceback
+from typing import TYPE_CHECKING, Any, Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from PySide6.QtCore import QCoreApplication, QObject, Signal
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from hexrd.fitting.calibration import StructurelessCalibrator
 from hexrd.fitting.calibration.lmfit_param_handling import (
@@ -32,45 +35,54 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 from .picks_io import load_picks_from_file, save_picks_to_file
 
+if TYPE_CHECKING:
+    from hexrdgui.async_runner import AsyncRunner
+    from hexrdgui.image_canvas import ImageCanvas
+
 
 class StructurelessCalibrationRunner(QObject):
 
     instrument_updated = Signal()
 
-    def __init__(self, canvas, async_runner, parent=None):
+    def __init__(
+        self,
+        canvas: ImageCanvas,
+        async_runner: AsyncRunner,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.canvas = canvas
         self.async_runner = async_runner
-        self.parent = parent
+        self._parent = parent
 
         # Used for 2XRS mainly
-        self._handpicked_lines = {}
+        self._handpicked_lines: dict[str, Any] = {}
 
-        self._calibration_dialog = None
+        self._calibration_dialog: CalibrationDialog | None = None
 
-    def clear(self):
+    def clear(self) -> None:
         # Make sure this is cleared
         self._handpicked_lines.clear()
 
-    def run(self):
+    def run(self) -> None:
         try:
             self.clear()
             self.validate()
             self.instr = create_hedm_instrument()
             self.choose_pick_method()
         except Exception as e:
-            QMessageBox.critical(self.parent, 'HEXRD', f'Error: {e}')
+            QMessageBox.critical(self._parent, 'HEXRD', f'Error: {e}')
             traceback.print_exc()
 
-    def validate(self):
+    def validate(self) -> None:
         if HexrdConfig().show_overlays and HexrdConfig().overlays:
             msg = (
                 'Overlays will be hidden during structureless calibration.\n\n'
                 'To turn them back on afterward, check "Show Overlays" in the '
                 'materials panel.'
             )
-            QMessageBox.information(self.parent, 'HEXRD', msg)
+            QMessageBox.information(self._parent, 'HEXRD', msg)
             HexrdConfig().show_overlays = False
 
         distortion_overlay = HexrdConfig().polar_tth_distortion_overlay
@@ -81,10 +93,10 @@ class StructurelessCalibrationRunner(QObject):
                 'is not supported during structureless calibration.\n\n'
                 'This will be disabled, but may be turned back on afterwards.'
             )
-            QMessageBox.information(self.parent, 'HEXRD', msg)
+            QMessageBox.information(self._parent, 'HEXRD', msg)
             HexrdConfig().polar_tth_distortion_object = None
 
-    def set_focus_mode(self, b):
+    def set_focus_mode(self, b: bool) -> None:
         # This will disable some widgets in the GUI during focus mode
         # Be very careful to make sure focus mode won't be set permanently
         # if an exception occurs, or else this will ruin the user's session.
@@ -92,7 +104,7 @@ class StructurelessCalibrationRunner(QObject):
         # such as when a dialog is showing, and turned off during processing.
         HexrdConfig().enable_canvas_focus_mode.emit(b)
 
-    def choose_pick_method(self):
+    def choose_pick_method(self) -> None:
         title = 'Pick Method for Structureless Calibration'
 
         pick_methods = {
@@ -105,29 +117,28 @@ class StructurelessCalibrationRunner(QObject):
         if not self.previous_picks_data:
             disable_list.append('Previous')
 
-        kwargs = {
-            'options': list(pick_methods),
-            'disable_list': disable_list,
-            'window_title': title,
-            'parent': self.canvas,
-        }
-        dialog = SelectItemDialog(**kwargs)
+        dialog = SelectItemDialog(
+            options=list(pick_methods),
+            disable_list=disable_list,
+            window_title=title,
+            parent=self.canvas,
+        )
         if not dialog.exec():
             # User canceled
             return
 
         pick_methods[dialog.selected_option]()
 
-    def use_previous_pick_points(self):
+    def use_previous_pick_points(self) -> None:
+        assert self.previous_picks_data is not None
         self.show_calibration_dialog(self.previous_picks_data)
 
-    def hand_pick_points(self):
-        kwargs = {
-            'canvas': self.canvas,
-            'parent': self.canvas,
-            'cycle_cursor_colors': True,
-        }
-        picker = LinePickerDialog(**kwargs)
+    def hand_pick_points(self) -> None:
+        picker = LinePickerDialog(
+            canvas=self.canvas,
+            parent=self.canvas,
+            cycle_cursor_colors=True,
+        )
 
         self.line_picker = picker
 
@@ -147,7 +158,7 @@ class StructurelessCalibrationRunner(QObject):
 
         ring_idx = 0
 
-        def increment_pick_label():
+        def increment_pick_label() -> None:
             nonlocal ring_idx
             ring_idx += 1
             text = f'Picking Debye-Scherrer ring: {ring_idx}'
@@ -163,7 +174,7 @@ class StructurelessCalibrationRunner(QObject):
         # This will be turned off automatically when the picker finishes
         self.set_focus_mode(True)
 
-    def switch_xray_source(self, xray_source: str):
+    def switch_xray_source(self, xray_source: str) -> None:
         # Update the polar view to use this xrs source
         HexrdConfig().active_beam_name = xray_source
 
@@ -185,7 +196,7 @@ class StructurelessCalibrationRunner(QObject):
 
         self.instr.active_beam_name = xray_source
 
-    def load_pick_points(self):
+    def load_pick_points(self) -> None:
         title = 'Load Picks for Structureless Calibration'
 
         # Loop until a valid file is chosen
@@ -209,7 +220,7 @@ class StructurelessCalibrationRunner(QObject):
                 )
                 validate_picks(calibration_lines, self.instr)
             except Exception as e:
-                QMessageBox.critical(self.parent, 'HEXRD', f'Error: {e}')
+                QMessageBox.critical(self._parent, 'HEXRD', f'Error: {e}')
                 traceback.print_exc()
                 # Try again
                 continue
@@ -218,7 +229,7 @@ class StructurelessCalibrationRunner(QObject):
 
         self.show_calibration_dialog(calibration_lines)
 
-    def _hand_picking_accepted(self):
+    def _hand_picking_accepted(self) -> None:
         data = self.line_picker.line_data
 
         # Remove any empty lines
@@ -227,11 +238,12 @@ class StructurelessCalibrationRunner(QObject):
         # These points are in tth, eta. Convert these to cartesian and assign
         # points to detectors.
         if HexrdConfig().has_multi_xrs:
-            beam_name = HexrdConfig().active_beam_name
+            beam_name: str | None = HexrdConfig().active_beam_name
         else:
             beam_name = HexrdConfig().beam_names[0]
 
-        entry = {beam_name: data}
+        assert beam_name is not None
+        entry: dict[str, Any] = {beam_name: data}
         calibrator_lines = polar_lines_to_cart(entry, self.instr)
         self._handpicked_lines.update(calibrator_lines)
 
@@ -249,13 +261,13 @@ class StructurelessCalibrationRunner(QObject):
         # Show the picked points!
         self.show_calibration_dialog(self._handpicked_lines)
 
-    def _hand_picking_finished(self):
+    def _hand_picking_finished(self) -> None:
         # Turn off focus mode until we get to the next step
         # This is just to ensure that if an exception occurs, the program
         # will not be left in an invalid state.
         self.set_focus_mode(False)
 
-    def show_calibration_dialog(self, calibrator_lines):
+    def show_calibration_dialog(self, calibrator_lines: dict[str, Any]) -> CalibrationDialog:
         self.previous_picks_data = calibrator_lines
 
         engineering_constraints = guess_engineering_constraints(self.instr)
@@ -272,7 +284,11 @@ class StructurelessCalibrationRunner(QObject):
 
         prefixes = tth_parameter_prefixes(self.instr)
 
-        def format_extra_params_func(params_dict, tree_dict, create_param_item):
+        def format_extra_params_func(
+            params_dict: dict[str, Any],
+            tree_dict: dict[str, Any],
+            create_param_item: Callable[..., dict[str, Any]],
+        ) -> None:
             # Make the debye scherrer ring means
             key = 'Debye-Scherrer ring means'
             base_dict = tree_dict.setdefault(key, {})
@@ -298,7 +314,7 @@ class StructurelessCalibrationRunner(QObject):
             'instr': self.instr,
             'params_dict': self.calibrator.params,
             'format_extra_params_func': format_extra_params_func,
-            'parent': self.parent,
+            'parent': self._parent,
             'engineering_constraints': engineering_constraints,
             'window_title': 'Structureless Calibration Dialog',
             'help_url': 'calibration/structureless',
@@ -324,7 +340,7 @@ class StructurelessCalibrationRunner(QObject):
         return dialog
 
     @property
-    def previous_picks_data(self):
+    def previous_picks_data(self) -> dict[str, Any] | None:
         name = '_previous_structureless_calibration_picks_data'
         picks = getattr(HexrdConfig(), name, None)
 
@@ -348,20 +364,20 @@ class StructurelessCalibrationRunner(QObject):
         return picks
 
     @previous_picks_data.setter
-    def previous_picks_data(self, v):
+    def previous_picks_data(self, v: dict[str, Any] | None) -> None:
         name = '_previous_structureless_calibration_picks_data'
         setattr(HexrdConfig(), name, v)
 
     @property
-    def file_dialog_parent(self):
+    def file_dialog_parent(self) -> QWidget:
         # Use the calibration dialog as the parent if possible.
         # Otherwise, just use our parent.
         dialog = self._calibration_dialog
         return dialog.ui if dialog else self.canvas
 
 
-def polar_lines_to_cart(data, instr):
-    ret = {}
+def polar_lines_to_cart(data: dict[str, Any], instr: Any) -> dict[str, Any]:
+    ret: dict[str, Any] = {}
     off_panel = []
     for xray_source, lines in data.items():
         # We do not switch x-ray source here because we want
@@ -375,10 +391,14 @@ def polar_lines_to_cart(data, instr):
 
             line = apply_tth_distortion_if_needed(line, in_degrees=True, reverse=True)
 
-            calibrator_line = {}
+            calibrator_line: dict[str, Any] = {}
             panel_found = np.zeros(line.shape[0], dtype=bool)
             for det_key, panel in instr.detectors.items():
-                points = angles_to_cart(line, panel, tvec_c=instr.tvec)
+                points = angles_to_cart(
+                    line,  # type: ignore[arg-type]
+                    panel,
+                    tvec_c=instr.tvec,
+                )
                 _, on_panel = panel.clip_to_panel(points)
                 points[~on_panel] = np.nan
                 valid_points = ~np.any(np.isnan(points), axis=1)
@@ -393,18 +413,18 @@ def polar_lines_to_cart(data, instr):
         ret[xray_source] = calibrator_lines
 
     if off_panel:
-        off_panel = np.vstack(off_panel)
+        off_panel_arr = np.vstack(off_panel)
         msg = (
             'Some of the points did not lie on a detector. '
-            f'These points will be ignored.\n\n{off_panel}'
+            f'These points will be ignored.\n\n{off_panel_arr}'
         )
         QMessageBox.warning(None, 'HEXRD', msg)
 
     return ret
 
 
-def cart_to_polar_lines(calibrator_lines, instr):
-    ret = {}
+def cart_to_polar_lines(calibrator_lines: dict[str, Any], instr: Any) -> dict[str, Any]:
+    ret: dict[str, Any] = {}
     for xray_source, lines in calibrator_lines.items():
         # We do not switch x-ray source here because we want
         # to convert the coordinates to use the *current x-ray source*
@@ -431,7 +451,7 @@ def cart_to_polar_lines(calibrator_lines, instr):
     return ret
 
 
-def validate_picks(picks, instr):
+def validate_picks(picks: dict[str, Any], instr: Any) -> None:
     for xray_source, lines in picks.items():
         if xray_source not in instr.beam_dict:
             msg = (
@@ -454,18 +474,21 @@ def validate_picks(picks, instr):
 
 class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self.edit_picks_dialog = None
-        self.edit_picks_dictionary = None
+        self.edit_picks_dialog: GenericPicksTreeViewDialog | None = None
+        self.edit_picks_dictionary: dict[str, Any] | None = None
 
     @property
-    def calibrator_lines(self):
+    def calibrator_lines(self) -> dict[str, Any]:
         return self.calibrator.data
 
-    def draw_picks_on_canvas(self):
-        line_settings = {
+    def draw_picks_on_canvas(self) -> None:
+        canvas = self.canvas
+        assert canvas is not None
+
+        line_settings: dict[str, Any] = {
             'marker': igor_marker,
             'markeredgecolor': 'black',
             'markersize': 16,
@@ -487,21 +510,21 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
 
             for points in lines:
                 color = next(color_cycler)
-                (artist,) = self.canvas.axis.plot(
+                (artist,) = canvas.axis.plot(
                     points[:, 0], points[:, 1], color=color, **line_settings
                 )
                 self.draw_picks_lines.append(artist)
 
-        self.canvas.draw_idle()
+        canvas.draw_idle()
 
-    def on_edit_picks_clicked(self):
+    def on_edit_picks_clicked(self) -> None:
         # Convert to polar lines
         data = cart_to_polar_lines(self.calibrator_lines, self.instr)
         disabled_paths = []
 
         # Now convert to a dictionary for the line labels
-        dictionary = {}
-        ring_indices = {}
+        dictionary: dict[str, Any] = {}
+        ring_indices: dict[str, int] = {}
         for xray_source, rings in data.items():
             this_xrs = dictionary.setdefault(xray_source, {})
             for ring_idx, v in enumerate(rings):
@@ -516,7 +539,7 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
             ):
                 disabled_paths.append((xray_source,))
 
-        def new_line_name_generator(path):
+        def new_line_name_generator(path: tuple[str, ...]) -> str:
             # Get the x-ray source
             xray_source = path[0]
             ring_indices[xray_source] += 1
@@ -525,8 +548,10 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         dialog = GenericPicksTreeViewDialog(
             dictionary, canvas=self.canvas, parent=self.canvas
         )
-        dialog.tree_view.new_line_name_generator = new_line_name_generator
-        dialog.tree_view.model().disabled_paths = disabled_paths
+        dialog.tree_view.new_line_name_generator = (
+            new_line_name_generator  # type: ignore[assignment]
+        )
+        dialog.tree_view.model().disabled_paths = disabled_paths  # type: ignore[assignment]
         dialog.accepted.connect(self.on_edit_picks_accepted)
         dialog.finished.connect(self.on_edit_picks_finished)
         dialog.show()
@@ -538,21 +563,22 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         self.clear_drawn_picks()
         self.dialog.hide()
 
-    def on_edit_picks_accepted(self):
-        lines = {}
+    def on_edit_picks_accepted(self) -> None:
+        lines: dict[str, Any] = {}
+        assert self.edit_picks_dictionary is not None
         for xray_source, ds_rings in self.edit_picks_dictionary.items():
             lines[xray_source] = list(ds_rings.values())
 
         cart = polar_lines_to_cart(lines, self.instr)
         self.set_picks(cart)
 
-    def save_picks_to_file(self, selected_file):
+    def save_picks_to_file(self, selected_file: str) -> None:
         save_picks_to_file(self.calibrator_lines, selected_file)
 
-    def load_picks_from_file(self, selected_file):
+    def load_picks_from_file(self, selected_file: str) -> dict[str, Any]:
         return load_picks_from_file(self.instr, selected_file)
 
-    def set_picks(self, picks):
+    def set_picks(self, picks: dict[str, Any]) -> None:
         self.validate_picks(picks)
         self.calibrator.data = picks
 
@@ -562,5 +588,5 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
 
         self.redraw_picks()
 
-    def validate_picks(self, picks):
+    def validate_picks(self, picks: dict[str, Any]) -> None:
         return validate_picks(picks, self.instr)
