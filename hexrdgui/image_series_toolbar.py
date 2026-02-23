@@ -51,7 +51,7 @@ class ImageSeriesInfoToolbar(QWidget):
         )
         assert isinstance(data, bytes)
         pixmap = QPixmap()
-        pixmap.loadFromData(data, b'svg')
+        pixmap.loadFromData(data, 'svg')  # type: ignore[call-overload]
         self.file_label = QLabel(self._parent_widget())
         self.file_label.setPixmap(pixmap)
         self.update_file_tooltip()

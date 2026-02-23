@@ -29,7 +29,7 @@ class AboutDialog(QObject):
         data = load_resource(hexrdgui.resources.icons, 'hexrd.ico', binary=True)
         assert isinstance(data, bytes)
         pixmap = QPixmap()
-        pixmap.loadFromData(data, b'ico')
+        pixmap.loadFromData(data, 'ico')  # type: ignore[call-overload]
         self.ui.image.setPixmap(pixmap)
 
     def _calculate_size(self, size: QSize) -> QSize:
@@ -61,7 +61,7 @@ class AboutDialog(QObject):
         assert isinstance(data, bytes)
 
         pixmap = QPixmap()
-        pixmap.loadFromData(data, b'png')
+        pixmap.loadFromData(data, 'png')  # type: ignore[call-overload]
         afrl = QLabel()
         pixmap = pixmap.scaled(self._calculate_size(pixmap.size()))
         afrl.setPixmap(pixmap)

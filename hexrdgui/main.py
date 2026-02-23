@@ -49,7 +49,7 @@ def main() -> None:
     )
     assert isinstance(data, bytes)
     pixmap = QPixmap()
-    pixmap.loadFromData(data, b'ico')
+    pixmap.loadFromData(data, 'ico')  # type: ignore[call-overload]
     icon = QIcon(pixmap)
     app.setWindowIcon(icon)
 
