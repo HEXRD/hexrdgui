@@ -21,7 +21,7 @@ from hexrd.rotations import (
     RotMatEuler,
     rotMatOfExpMap,
 )
-from hexrd.transforms.xfcapi import makeRotMatOfExpMap
+from hexrd.transforms.xfcapi import make_rmat_of_expmap
 from hexrd.utils.decorators import memoize
 from hexrd.utils.hkl import str_to_hkl
 from hexrd.utils.panel_buffer import panel_buffer_as_2d_array
@@ -59,7 +59,7 @@ def convert_tilt_convention(iconfig, old_convention, new_convention):
     for key in det_keys:
         tilts = iconfig['detectors'][key]['transform']['tilt']
         tilt = np.asarray(tilts)
-        rme.rmat = makeRotMatOfExpMap(tilt)
+        rme.rmat = make_rmat_of_expmap(tilt)
         # Use np.ndarray.tolist() to convert back to native python types
         tilts[:] = np.asarray(rme.angles).tolist()
 
@@ -78,7 +78,7 @@ def convert_angle_convention(angles, old_convention, new_convention):
 
     # Update to the new mapping
     rme = RotMatEuler(np.zeros(3), **new_convention)
-    rme.rmat = makeRotMatOfExpMap(np.array(angles))
+    rme.rmat = make_rmat_of_expmap(np.array(angles))
     return np.array(rme.angles).tolist()
 
 

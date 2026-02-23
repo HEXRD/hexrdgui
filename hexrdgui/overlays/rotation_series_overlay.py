@@ -1,7 +1,7 @@
 import numpy as np
 
 from hexrd.findorientations import _process_omegas
-from hexrd.transforms.xfcapi import mapAngle
+from hexrd.rotations import mapAngle
 
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.overlays.constants import (

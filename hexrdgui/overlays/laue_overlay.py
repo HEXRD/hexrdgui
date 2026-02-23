@@ -4,8 +4,8 @@ from enum import Enum
 from numba import njit
 import numpy as np
 
+from hexrd.rotations import mapAngle
 from hexrd.instrument import switch_xray_source
-from hexrd.transforms import xfcapi
 from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
@@ -253,27 +253,11 @@ class LaueOverlay(Overlay):
             point_groups[det_key]['hkls'] = hkls
 
             angles = angles[0][idx, :]  # these are in radians
-            angles[:, 1] = xfcapi.mapAngle(
+            angles[:, 1] = mapAngle(
                 angles[:, 1], np.radians(self.eta_period), units='radians'
             )
 
             energies = energy[0][idx]
-
-            """
-            # !!! apply offset corrections to angles
-            # convert to angles in LAB ref
-            angles_corr, _ = xfcapi.detectorXYToGvec(
-                xy_data, panel.rmat, HexrdConfig().sample_rmat,
-                panel.tvec, instr.tvec, constants.zeros_3,
-                beamVec=instr.beam_vector,
-                etaVec=instr.eta_vector
-            )
-            # FIXME modify output to be array
-            angles_corr = np.vstack(angles_corr).T
-            angles_corr[:, 1] = xfcapi.mapAngle(
-                angles_corr[:, 1], np.radians(self.eta_period), units='radians'
-            )
-            """
             if display_mode in (ViewType.polar, ViewType.stereo):
                 # If the polar view is being distorted, apply this tth
                 # distortion to the angles as well.
