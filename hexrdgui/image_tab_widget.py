@@ -194,6 +194,7 @@ class ImageTabWidget(QTabWidget):
             # The new one to add
             idx = len(self.toolbars)
             tb = NavigationToolbar(self.image_canvases[idx], parent, False)
+            self.image_canvases[idx]._nav_toolbar = tb
             tb.setVisible(False)
             # Current detector
             ims = self.ims_for_name(self.image_names[idx])
