@@ -298,8 +298,7 @@ class InstrumentViewer:
         dst = panel.cartToPixel(corners, pixels=True)
         dst = dst[:, ::-1]
 
-        tform3 = tf.ProjectiveTransform()
-        tform3.estimate(src, dst)
+        tform3 = tf.ProjectiveTransform.from_estimate(src, dst)
 
         res = tf.warp(
             img,
