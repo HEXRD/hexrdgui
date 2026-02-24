@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+
 from hexrd.fitting.calibration import (
     InstrumentCalibrator,
     LaueCalibrator,
@@ -10,8 +17,12 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 
 def make_calibrators_from_picks(
-    instr, processed_picks, materials, img_dict, euler_convention
-):
+    instr: HEDMInstrument,
+    processed_picks: Any,
+    materials: Any,
+    img_dict: Any,
+    euler_convention: Any,
+) -> list:
     calibrators = []
     for pick_data in processed_picks:
         if pick_data['type'] == 'powder':
@@ -43,7 +54,12 @@ def make_calibrators_from_picks(
     return calibrators
 
 
-def create_instrument_calibrator(picks, instr, img_dict, materials):
+def create_instrument_calibrator(
+    picks: Any,
+    instr: HEDMInstrument,
+    img_dict: Any,
+    materials: Any,
+) -> InstrumentCalibrator:
     euler_convention = HexrdConfig().euler_angle_convention
     engineering_constraints = guess_engineering_constraints(instr)
     calibrators = make_calibrators_from_picks(

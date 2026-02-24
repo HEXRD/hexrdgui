@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 import inspect
 import traceback
 import sys
+from typing import Any, Callable
 
 
 class AsyncWorkerSignals(QObject):
@@ -50,7 +51,7 @@ class AsyncWorker(QRunnable):
 
     '''
 
-    def __init__(self, fn, *args, **kwargs):
+    def __init__(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         super().__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -65,7 +66,7 @@ class AsyncWorker(QRunnable):
             self.kwargs['update_progress'] = self.signals.progress.emit
 
     @Slot()
-    def run(self):
+    def run(self) -> None:
         '''
         Initialise the runner function with passed args, kwargs.
         '''
@@ -73,7 +74,7 @@ class AsyncWorker(QRunnable):
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
-        except:
+        except Exception:
             if self.print_error_traceback:
                 traceback.print_exc()
 

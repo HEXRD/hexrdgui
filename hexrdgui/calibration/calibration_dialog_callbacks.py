@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 import copy
+from typing import Any, TYPE_CHECKING
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QFileDialog
@@ -14,6 +17,15 @@ from hexrd.fitting.calibration.lmfit_param_handling import (
     update_instrument_from_params,
 )
 from hexrd.instrument import HEDMInstrument
+
+if TYPE_CHECKING:
+    from matplotlib.artist import Artist
+
+    from hexrd.fitting.calibration.relative_constraints import RotationCenter
+
+    from hexrdgui.async_runner import AsyncRunner
+    from hexrdgui.calibration.calibration_dialog import CalibrationDialog
+    from hexrdgui.image_canvas import ImageCanvas
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict
@@ -32,7 +44,13 @@ class CalibrationDialogCallbacks(ABCQObject):
     # (which also happens after the other params are updated too)
     instrument_updated = Signal()
 
-    def __init__(self, dialog, calibrator, instr, async_runner):
+    def __init__(
+        self,
+        dialog: CalibrationDialog,
+        calibrator: Any,
+        instr: HEDMInstrument,
+        async_runner: AsyncRunner,
+    ) -> None:
         super().__init__(dialog.ui)
         self.dialog = dialog
         self.calibrator = calibrator
@@ -42,8 +60,8 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.drawing_picks = True
         self.showing_picks_from_all_xray_sources = False
 
-        self.draw_picks_lines = []
-        self.undo_stack = []
+        self.draw_picks_lines: list[Artist] = []
+        self.undo_stack: list[dict[str, Any]] = []
 
         self.round_param_numbers()
         # Make sure the tree view is updated
@@ -55,7 +73,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         # Trigger the instrument defaults to be set on the dialog
         self.dialog.set_instrument_defaults()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         dialog = self.dialog
 
         dialog.ui.draw_picks.setChecked(self.drawing_picks)
@@ -88,48 +106,48 @@ class CalibrationDialogCallbacks(ABCQObject):
         HexrdConfig().image_view_loaded.connect(self.on_image_view_loaded)
 
     @property
-    def canvas(self):
+    def canvas(self) -> ImageCanvas | None:
         return HexrdConfig().active_canvas
 
     @property
-    def euler_convention(self):
+    def euler_convention(self) -> dict[str, Any] | None:
         return HexrdConfig().euler_angle_convention
 
     @abstractmethod
-    def draw_picks_on_canvas(self):
+    def draw_picks_on_canvas(self) -> None:
         pass
 
     @abstractmethod
-    def on_edit_picks_clicked(self):
+    def on_edit_picks_clicked(self) -> None:
         pass
 
     @abstractmethod
-    def on_edit_picks_accepted(self):
+    def on_edit_picks_accepted(self) -> None:
         pass
 
     @abstractmethod
-    def save_picks_to_file(self):
+    def save_picks_to_file(self, filename: str) -> None:
         pass
 
     @abstractmethod
-    def load_picks_from_file(self):
+    def load_picks_from_file(self, filename: str) -> Any:
         pass
 
     @abstractmethod
-    def validate_picks(self, picks):
+    def validate_picks(self, picks: Any) -> None:
         pass
 
     @abstractmethod
-    def set_picks(self, picks):
+    def set_picks(self, picks: Any) -> None:
         pass
 
     @property
-    def calibrator_is_structureless(self):
+    def calibrator_is_structureless(self) -> bool:
         # The instrument calibrator will have a list of calibrators
         # The structureless calibrator will not
         return not hasattr(self.calibrator, 'calibrators')
 
-    def set_focus_mode(self, b):
+    def set_focus_mode(self, b: bool) -> None:
         # This will disable some widgets in the GUI during focus mode
         # Be very careful to make sure focus mode won't be set permanently
         # if an exception occurs, or else this will ruin the user's session.
@@ -137,15 +155,15 @@ class CalibrationDialogCallbacks(ABCQObject):
         # such as when a dialog is showing, and turned off during processing.
         HexrdConfig().enable_canvas_focus_mode.emit(b)
 
-    def on_image_view_loaded(self, img_dict):
+    def on_image_view_loaded(self, img_dict: dict[str, Any]) -> None:
         # If the image view is modified, it may have been because of
         # edits to tth distortion, so we should redraw the picks.
         self.redraw_picks()
 
-    def update_dialog_from_calibrator(self):
+    def update_dialog_from_calibrator(self) -> None:
         self.dialog.update_from_calibrator(self.calibrator)
 
-    def push_undo_stack(self):
+    def push_undo_stack(self) -> None:
         stack_item = {
             'relative_constraints': self.calibrator.relative_constraints,
             'engineering_constraints': self.calibrator.engineering_constraints,
@@ -165,7 +183,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.undo_stack.append(stack_item)
         self.update_undo_enable_state()
 
-    def pop_undo_stack(self):
+    def pop_undo_stack(self) -> None:
         if not self.undo_stack:
             # Sometimes, this gets called faster than we can update.
             # Just ignore invalid calls.
@@ -207,10 +225,10 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         self.update_undo_enable_state()
 
-    def update_undo_enable_state(self):
+    def update_undo_enable_state(self) -> None:
         self.dialog.undo_enabled = bool(self.undo_stack)
 
-    def on_relative_constraints_changed(self, new_constraint):
+    def on_relative_constraints_changed(self, new_constraint: RelativeConstraintsType) -> None:
         self.calibrator.relative_constraints_type = new_constraint
         self.restore_constraint_params()
         # Reset the tilt center of rotation in the dialog
@@ -219,10 +237,10 @@ class CalibrationDialogCallbacks(ABCQObject):
         )
         self.on_constraints_changed()
 
-    def on_reset_relative_params_to_zero_clicked(self):
+    def on_reset_relative_params_to_zero_clicked(self) -> None:
         self.reset_saved_constraint_params()
 
-    def save_constraint_params(self):
+    def save_constraint_params(self) -> None:
         constraints = self.calibrator.relative_constraints
         if constraints.type == RelativeConstraintsType.none:
             # Nothing to save... Just make sure the old one is cleared.
@@ -231,7 +249,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         HexrdConfig()._instrument_rigid_body_params = copy.deepcopy(constraints.params)
 
-    def restore_constraint_params(self):
+    def restore_constraint_params(self) -> None:
         constraints = self.calibrator.relative_constraints
         if constraints.type != RelativeConstraintsType.system:
             return
@@ -245,14 +263,14 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.round_param_numbers()
         self.update_dialog_from_calibrator()
 
-    def reset_saved_constraint_params(self):
+    def reset_saved_constraint_params(self) -> None:
         HexrdConfig()._instrument_rigid_body_params.clear()
         constraints = self.calibrator.relative_constraints
         constraints.reset_params()
         self.calibrator.reset_lmfit_params()
         self.update_dialog_from_calibrator()
 
-    def on_tilt_center_of_rotation_changed(self, new_center):
+    def on_tilt_center_of_rotation_changed(self, new_center: RotationCenter) -> None:
         relative_constraints = self.calibrator.relative_constraints
         if relative_constraints.rotation_center != new_center:
             # Some of the relative constraint types have a fixed getter
@@ -260,11 +278,11 @@ class CalibrationDialogCallbacks(ABCQObject):
             # if we are just setting it unnecessarily.
             relative_constraints.rotation_center = new_center
 
-    def on_engineering_constraints_changed(self, new_constraint):
+    def on_engineering_constraints_changed(self, new_constraint: str) -> None:
         self.calibrator.engineering_constraints = new_constraint
         self.on_constraints_changed()
 
-    def on_constraints_changed(self):
+    def on_constraints_changed(self) -> None:
         # Keep old settings in the dialog if they are present in the new params
         # Remember everything except the name (should be the same) and
         # the expression (which might be modified from the constraints).
@@ -298,7 +316,7 @@ class CalibrationDialogCallbacks(ABCQObject):
     def has_tardis_constraints(self) -> bool:
         return self.calibrator.engineering_constraints == 'TARDIS'
 
-    def on_pinhole_correction_settings_modified(self):
+    def on_pinhole_correction_settings_modified(self) -> None:
         self.update_tth_distortion_from_dialog()
 
         if self.dialog.pinhole_correction_editor.apply_to_polar_view:
@@ -307,25 +325,27 @@ class CalibrationDialogCallbacks(ABCQObject):
         if self.calibrator_is_structureless:
             self.redraw_picks()
 
-    def on_run_clicked(self):
+    def on_run_clicked(self) -> None:
         self.async_runner.progress_title = 'Running calibration...'
         self.async_runner.success_callback = self.on_calibration_finished
         self.async_runner.run(self.run_calibration)
 
-    def on_undo_run_clicked(self):
+    def on_undo_run_clicked(self) -> None:
         print('Undo changes')
         self.pop_undo_stack()
 
-    def clear_drawn_picks(self):
+    def clear_drawn_picks(self) -> None:
         while self.draw_picks_lines:
             remove_artist(self.draw_picks_lines.pop(0))
 
-        self.canvas.draw_idle()
+        canvas = self.canvas
+        assert canvas is not None
+        canvas.draw_idle()
 
-    def redraw_picks(self):
+    def redraw_picks(self) -> None:
         self.draw_picks(self.drawing_picks)
 
-    def draw_picks(self, b=True):
+    def draw_picks(self, b: bool = True) -> None:
         self.drawing_picks = b
         self.clear_drawn_picks()
 
@@ -334,11 +354,11 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         self.draw_picks_on_canvas()
 
-    def show_picks_from_all_xray_sources(self, b=True):
+    def show_picks_from_all_xray_sources(self, b: bool = True) -> None:
         self.showing_picks_from_all_xray_sources = b
         self.redraw_picks()
 
-    def run_calibration(self, **extra_kwargs):
+    def run_calibration(self, **extra_kwargs: Any) -> None:
         # Update the tth distortion on the calibrator from the dialog
         self.update_tth_distortion_from_dialog()
 
@@ -367,16 +387,13 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         self.results_message = results_message
 
-    def on_calibration_finished(self):
+    def on_calibration_finished(self) -> None:
         self.save_constraint_params()
         self.update_config_from_instrument()
         self.dialog.params_dict = self.calibrator.params
 
-    def update_config_from_instrument(self):
+    def update_config_from_instrument(self) -> None:
         output_dict = instr_to_internal_dict(self.instr)
-
-        # Save the previous iconfig to restore the statuses
-        prev_iconfig = HexrdConfig().config['instrument']
 
         # Update the config
         HexrdConfig().config['instrument'] = output_dict
@@ -390,12 +407,12 @@ class CalibrationDialogCallbacks(ABCQObject):
         # Update the drawn picks with their new locations
         self.redraw_picks()
 
-    def update_tth_distortion_from_dialog(self):
+    def update_tth_distortion_from_dialog(self) -> None:
         if self.calibrator_is_structureless:
             # Only do this for structureless calibration
             self.calibrator.tth_distortion = self.dialog.tth_distortion
 
-    def round_param_numbers(self):
+    def round_param_numbers(self) -> None:
         params_dict = self.calibrator.params
 
         attrs = [
@@ -407,12 +424,12 @@ class CalibrationDialogCallbacks(ABCQObject):
             for attr in attrs:
                 setattr(param, attr, round(getattr(param, attr), ROUND_DECIMALS))
 
-    def on_edit_picks_finished(self):
+    def on_edit_picks_finished(self) -> None:
         # Show this again
         self.dialog.show()
         self.redraw_picks()
 
-    def on_save_picks_clicked(self):
+    def on_save_picks_clicked(self) -> None:
         title = 'Save Picks'
 
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -425,7 +442,7 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         self.save_picks_to_file(selected_file)
 
-    def on_load_picks_clicked(self):
+    def on_load_picks_clicked(self) -> None:
         title = 'Load Picks'
 
         selected_file, selected_filter = QFileDialog.getOpenFileName(
@@ -439,7 +456,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         picks = self.load_picks_from_file(selected_file)
         self.set_picks(picks)
 
-    def on_finished(self):
+    def on_finished(self) -> None:
         self.draw_picks(False)
         # Ensure focus mode is off (even if it wasn't set)
         self.set_focus_mode(False)

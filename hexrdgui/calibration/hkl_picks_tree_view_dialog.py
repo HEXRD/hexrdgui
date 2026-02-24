@@ -1,5 +1,6 @@
 import copy
 from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
@@ -22,8 +23,12 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 class HKLPicksTreeViewDialog:
 
     def __init__(
-        self, dictionary, coords_type=ViewType.polar, canvas=None, parent=None
-    ):
+        self,
+        dictionary: dict,
+        coords_type: Any = ViewType.polar,
+        canvas: Any = None,
+        parent: Any = None,
+    ) -> None:
         self.ui = UiLoader().load_file('hkl_picks_tree_view_dialog.ui', parent)
 
         self.tree_view = HKLPicksTreeView(dictionary, coords_type, canvas, self.ui)
@@ -36,11 +41,11 @@ class HKLPicksTreeViewDialog:
         self.setup_connections()
 
     @property
-    def dictionary(self):
+    def dictionary(self) -> dict:
         return self.tree_view.model().config
 
     @dictionary.setter
-    def dictionary(self, v):
+    def dictionary(self, v: dict) -> None:
         # Our tree view is expecting lists rather than numpy arrays.
         # Go ahead and perform the conversion...
         v = copy.deepcopy(v)
@@ -49,7 +54,7 @@ class HKLPicksTreeViewDialog:
         self.tree_view.rebuild_tree()
         self.tree_view.expand_rows()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         # Use accepted/rejected so these are called before on_finished()
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_finished)
@@ -61,15 +66,15 @@ class HKLPicksTreeViewDialog:
 
         HexrdConfig().overlay_config_changed.connect(self.update_gui)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
         self.ui.show_all_picks.setChecked(self.tree_view.show_all_picks)
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         self.tree_view.on_accepted()
         self.on_finished()
 
-    def on_finished(self):
+    def on_finished(self) -> None:
         self.tree_view.clear_artists()
         self.tree_view.clear_highlights()
 
@@ -77,13 +82,13 @@ class HKLPicksTreeViewDialog:
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
-    def execlater(self):
+    def execlater(self) -> None:
         QTimer.singleShot(0, lambda: self.exec())
 
-    def export_picks_clicked(self):
+    def export_picks_clicked(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui,
             'Export Picks',
@@ -95,7 +100,7 @@ class HKLPicksTreeViewDialog:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
             return self.export_picks(selected_file)
 
-    def export_picks(self, filename):
+    def export_picks(self, filename: str) -> None:
         return self._export_dict_to_file(
             filename,
             {
@@ -104,7 +109,7 @@ class HKLPicksTreeViewDialog:
             },
         )
 
-    def export_picks_from_overlays(self, filename, overlays):
+    def export_picks_from_overlays(self, filename: str, overlays: list) -> None:
         # Export picks from overlays using the same export logic as
         # the regular dictionary.
         return self._export_dict_to_file(
@@ -115,7 +120,7 @@ class HKLPicksTreeViewDialog:
             },
         )
 
-    def _export_dict_to_file(self, filename: str, export_data: dict):
+    def _export_dict_to_file(self, filename: str | Path, export_data: dict) -> None:
         filename = Path(filename)
 
         if filename.exists():
@@ -127,7 +132,7 @@ class HKLPicksTreeViewDialog:
         with h5py.File(filename, 'w') as wf:
             unwrap_dict_to_h5(wf, export_data)
 
-    def import_picks_clicked(self):
+    def import_picks_clicked(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui,
             'Import Picks',
@@ -139,8 +144,8 @@ class HKLPicksTreeViewDialog:
             HexrdConfig().working_dir = str(Path(selected_file).parent)
             return self.import_picks(selected_file)
 
-    def import_picks(self, filename):
-        import_data = {}
+    def import_picks(self, filename: str) -> None:
+        import_data: dict[str, Any] = {}
         with h5py.File(filename, 'r') as rf:
             unwrap_h5_to_dict(rf, import_data)
 
@@ -148,7 +153,7 @@ class HKLPicksTreeViewDialog:
         self.validate_import_data(cart, filename)
         self.dictionary = picks_cartesian_to_angles(cart)
 
-    def validate_import_data(self, data, filename):
+    def validate_import_data(self, data: dict, filename: str) -> None:
         # The dict keys should match the config keys.
         if sorted(data) != sorted(self.dictionary):
             msg = (
@@ -177,31 +182,31 @@ class HKLPicksTreeViewDialog:
         data.clear()
         data.update(ret)
 
-    def show_all_picks_toggled(self):
+    def show_all_picks_toggled(self) -> None:
         self.tree_view.show_all_picks = self.ui.show_all_picks.isChecked()
 
     @property
-    def dict_with_cart_coords(self):
+    def dict_with_cart_coords(self) -> dict:
         return picks_angles_to_cartesian(self.dictionary)
 
     @property
-    def coords_type(self):
+    def coords_type(self) -> Any:
         return self.tree_view.coords_type
 
     @coords_type.setter
-    def coords_type(self, v):
+    def coords_type(self, v: Any) -> None:
         self.tree_view.coords_type = v
 
     @property
-    def button_box_visible(self):
+    def button_box_visible(self) -> bool:
         return self.ui.button_box.isVisible()
 
     @button_box_visible.setter
-    def button_box_visible(self, b):
+    def button_box_visible(self, b: bool) -> None:
         self.ui.button_box.setVisible(b)
 
 
-def convert_picks(picks, conversion_function):
+def convert_picks(picks: dict, conversion_function: Any) -> dict:
     instr = create_hedm_instrument()
     ret = copy.deepcopy(picks)
     for name, detectors in ret.items():
@@ -225,9 +230,9 @@ def convert_picks(picks, conversion_function):
     return ret
 
 
-def picks_angles_to_cartesian(picks):
+def picks_angles_to_cartesian(picks: dict) -> dict:
     # Create the conversion function
-    def func(angs, panel):
+    def func(angs: Any, panel: Any) -> np.ndarray:
         # Reverse the tth distortion first
         angs = apply_tth_distortion_if_needed(
             angs,
@@ -240,11 +245,11 @@ def picks_angles_to_cartesian(picks):
     return convert_picks(picks, func)
 
 
-def picks_cartesian_to_angles(picks):
+def picks_cartesian_to_angles(picks: dict) -> dict:
     # Create the conversion function
     eta_period = HexrdConfig().polar_res_eta_period
 
-    def func(xys, panel):
+    def func(xys: Any, panel: Any) -> np.ndarray:
         angs = cart_to_angles(xys, panel, eta_period=eta_period)
 
         # Apply tth distortion now as well
@@ -253,7 +258,7 @@ def picks_cartesian_to_angles(picks):
     return convert_picks(picks, func)
 
 
-def generate_picks_results(overlays, polar=True):
+def generate_picks_results(overlays: list, polar: bool = True) -> list:
     pick_results = []
 
     for overlay in overlays:
@@ -292,12 +297,12 @@ def generate_picks_results(overlays, polar=True):
     return pick_results
 
 
-def overlays_to_tree_format(overlays, polar=True):
+def overlays_to_tree_format(overlays: list, polar: bool = True) -> dict:
     picks = generate_picks_results(overlays, polar=polar)
     return picks_to_tree_format(picks)
 
 
-def picks_to_tree_format(all_picks):
+def picks_to_tree_format(all_picks: list) -> dict:
     tree_format = {}
     for entry in all_picks:
         tree_format[entry['name']] = entry['picks']
@@ -305,7 +310,7 @@ def picks_to_tree_format(all_picks):
     return tree_format
 
 
-def tree_format_to_picks(overlays: list, tree_format: dict):
+def tree_format_to_picks(overlays: list, tree_format: dict) -> list:
     # Make a dict with the names
     overlays_dict = {x.name: x for x in overlays}
 

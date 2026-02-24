@@ -1,4 +1,12 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+    from hexrd.material import Material
 
 from hexrd import constants
 from hexrd.rotations import make_rmat_euler
@@ -6,7 +14,12 @@ from hexrd.transforms.xfcapi import angles_to_gvec, angles_to_dvec, gvec_to_xy
 from hexrd.xrdutil.utils import _project_on_detector_cylinder, _dvec_to_angs
 
 
-def calc_chi(sample_tilt, panel, instr_tilt=0, origin=constants.zeros_3):
+def calc_chi(
+    sample_tilt: np.ndarray,
+    panel: Any,
+    instr_tilt: int = 0,
+    origin: np.ndarray = constants.zeros_3,
+) -> np.ndarray:
 
     rmat = make_rmat_euler(sample_tilt, 'xyz', extrinsic=True)
 
@@ -23,7 +36,11 @@ def calc_chi(sample_tilt, panel, instr_tilt=0, origin=constants.zeros_3):
     return chi.reshape(panel.shape)
 
 
-def get_panel_gvec(panel, chi=0.0, origin=constants.zeros_3):
+def get_panel_gvec(
+    panel: Any,
+    chi: float = 0.0,
+    origin: np.ndarray = constants.zeros_3,
+) -> np.ndarray:
 
     ang = panel.pixel_angles(origin=origin)
     angs = np.vstack(
@@ -37,7 +54,11 @@ def get_panel_gvec(panel, chi=0.0, origin=constants.zeros_3):
     return g_vec
 
 
-def angles_to_chi_vecs(const_chi, sample_tilt, panel):
+def angles_to_chi_vecs(
+    const_chi: float,
+    sample_tilt: np.ndarray,
+    panel: Any,
+) -> np.ndarray:
 
     eta = np.linspace(-np.pi, np.pi, 720)
     chi = np.array([np.radians(const_chi)] * eta.shape[0])
@@ -49,13 +70,22 @@ def angles_to_chi_vecs(const_chi, sample_tilt, panel):
     return chivec
 
 
-def chi_vecs_to_gvecs(chivec, sample_tilt, origin=constants.zeros_3):
+def chi_vecs_to_gvecs(
+    chivec: np.ndarray,
+    sample_tilt: np.ndarray,
+    origin: np.ndarray = constants.zeros_3,
+) -> np.ndarray:
     rmat = make_rmat_euler(sample_tilt, 'xyz', extrinsic=True)
     gvec = np.dot(rmat, chivec.T).T
     return gvec
 
 
-def gvec_to_ang(gvec, panel, wavelength, origin=constants.zeros_3):
+def gvec_to_ang(
+    gvec: np.ndarray,
+    panel: Any,
+    wavelength: float,
+    origin: np.ndarray = constants.zeros_3,
+) -> np.ndarray:
 
     bvec = panel.bvec
     sth = -np.dot(bvec, gvec.T)
@@ -77,7 +107,13 @@ def gvec_to_ang(gvec, panel, wavelength, origin=constants.zeros_3):
     return np.vstack((tth, eta, omg)).T
 
 
-def chi_to_angs(const_chi, sample_tilt, panel, wavelength, origin=constants.zeros_3):
+def chi_to_angs(
+    const_chi: float,
+    sample_tilt: np.ndarray,
+    panel: Any,
+    wavelength: float,
+    origin: np.ndarray = constants.zeros_3,
+) -> np.ndarray:
 
     chivecs = angles_to_chi_vecs(const_chi, sample_tilt, panel)
 
@@ -88,7 +124,7 @@ def chi_to_angs(const_chi, sample_tilt, panel, wavelength, origin=constants.zero
     return angs
 
 
-def calc_chi_map(sample_tilt, instr):
+def calc_chi_map(sample_tilt: np.ndarray, instr: HEDMInstrument) -> dict[str, np.ndarray]:
 
     chi = {}
     for det_name, panel in instr.detectors.items():
@@ -99,9 +135,13 @@ def calc_chi_map(sample_tilt, instr):
     return chi
 
 
-def generate_ring_points_chi(const_chi, sample_tilt, instr):
+def generate_ring_points_chi(
+    const_chi: float,
+    sample_tilt: np.ndarray,
+    instr: HEDMInstrument,
+) -> dict[str, np.ndarray]:
 
-    xys = dict.fromkeys(instr.detectors)
+    xys: dict[str, np.ndarray] = {}
 
     for det_name, panel in instr.detectors.items():
 
@@ -150,7 +190,7 @@ def generate_ring_points_chi(const_chi, sample_tilt, instr):
     return xys
 
 
-def calc_angles_for_fiber(mat, fiber_direction):
+def calc_angles_for_fiber(mat: Material, fiber_direction: Any) -> dict[str, np.ndarray]:
     sym_fib_dir = mat.unitcell.CalcStar(fiber_direction, 'r')
     nsym = sym_fib_dir.shape[0]
     hkls = mat.planeData.getHKLs()

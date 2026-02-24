@@ -1,37 +1,46 @@
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout
+from typing import Any
+
+from PySide6.QtWidgets import QDialog, QDialogButtonBox, QVBoxLayout, QWidget
 
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
 
 
 class SelectItemsDialog(QDialog):
-    def __init__(self, items, window_title='Select Items', parent=None):
+    def __init__(
+        self,
+        items: Any,
+        window_title: str = 'Select Items',
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.setWindowTitle(window_title)
         self.setLayout(QVBoxLayout(self))
+        layout = self.layout()
+        assert layout is not None
 
         self.select_items_widget = SelectItemsWidget(items, parent)
-        self.layout().addWidget(self.select_items_widget.ui)
+        layout.addWidget(self.select_items_widget.ui)
 
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         self.button_box = QDialogButtonBox(buttons, self)
-        self.layout().addWidget(self.button_box)
+        layout.addWidget(self.button_box)
 
         UiLoader().install_dialog_enter_key_filters(self)
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
     @property
-    def items(self):
+    def items(self) -> list:
         return self.select_items_widget.items
 
     @property
-    def selected_items(self):
+    def selected_items(self) -> list:
         return self.select_items_widget.selected_items
 
 
@@ -44,7 +53,7 @@ if __name__ == '__main__':
 
     dialog = SelectItemsDialog(items)
 
-    def selection_changed():
+    def selection_changed() -> None:
         print(f'Selection changed: {dialog.selected_items}')
 
     dialog.select_items_widget.selection_changed.connect(selection_changed)

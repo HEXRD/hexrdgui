@@ -1,6 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
 
 from matplotlib import patches
+from matplotlib.axes import Axes
+from matplotlib.backend_bases import KeyEvent, MouseEvent
 from matplotlib.path import Path
 from matplotlib.transforms import Affine2D
 
@@ -10,32 +16,43 @@ from hexrdgui.utils import has_nan
 from hexrdgui.utils.matplotlib import remove_artist
 from hexrdgui.utils.polygon import polygon_to_mask
 
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+    from hexrdgui.image_canvas import ImageCanvas
+
 
 class InteractiveTemplate:
-    def __init__(self, canvas, detector, axes=None, instrument=None):
+    def __init__(
+        self,
+        canvas: ImageCanvas,
+        detector: str,
+        axes: Axes | None = None,
+        instrument: HEDMInstrument | None = None,
+    ) -> None:
         self.current_canvas = canvas
-        self.img = None
-        self.shape = None
-        self.press = None
+        self.img: np.ndarray | None = None
+        self.shape: patches.Polygon | None = None
+        self.press: tuple[np.ndarray, float, float] | None = None
         self.total_rotation = 0.0
-        self.shape_styles = []
-        self.translation = [0, 0]
+        self.patches: list[patches.Patch] = []
+        self.shape_styles: list[dict[str, Any]] = []
+        self.translation: list[float] = [0, 0]
         self.complete = False
-        self.event_key = None
+        self.event_key: str | None = None
         self.detector = detector
         self.instrument = instrument
         self._static = True
         self.axis_image = axes.get_images()[0] if axes else canvas.axes_images[0]
         self._key_angle = KEY_ROTATE_ANGLE_FINE
 
-        self.button_press_cid = None
-        self.button_release_cid = None
-        self.motion_cid = None
-        self.key_press_cid = None
-        self.button_drag_cid = None
+        self.button_press_cid: int | None = None
+        self.button_release_cid: int | None = None
+        self.motion_cid: int | None = None
+        self.key_press_cid: int | None = None
+        self.button_drag_cid: int | None = None
 
     @property
-    def axis(self):
+    def axis(self) -> Axes:
         if not self.current_canvas.raw_axes:
             return self.current_canvas.axis
 
@@ -46,11 +63,11 @@ class InteractiveTemplate:
         return list(self.current_canvas.raw_axes.values())[0]
 
     @property
-    def static_mode(self):
+    def static_mode(self) -> bool:
         return self._static
 
     @static_mode.setter
-    def static_mode(self, mode):
+    def static_mode(self, mode: bool) -> None:
         if mode == self._static:
             return
 
@@ -61,24 +78,25 @@ class InteractiveTemplate:
             self.update_style(color='red')
 
     @property
-    def key_rotation_angle(self):
+    def key_rotation_angle(self) -> float:
         return self._key_angle
 
     @key_rotation_angle.setter
-    def key_rotation_angle(self, angle=None):
+    def key_rotation_angle(self, angle: float | None = None) -> None:
         if angle is None:
             angle = KEY_ROTATE_ANGLE_FINE
         self._key_angle = angle
 
-    def update_image(self, img):
+    def update_image(self, img: np.ndarray) -> None:
         self.img = img
 
-    def rotate_shape(self, angle):
+    def rotate_shape(self, angle: float) -> None:
+        assert self.shape is not None
         angle = np.radians(angle)
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
-    def create_polygon(self, verts, **polygon_kwargs):
+    def create_polygon(self, verts: np.ndarray, **polygon_kwargs: Any) -> None:
         self.complete = False
         self.shape = patches.Polygon(verts, **polygon_kwargs)
         if has_nan(verts):
@@ -91,7 +109,12 @@ class InteractiveTemplate:
         self.axis.add_patch(self.shape)
         self.redraw()
 
-    def update_style(self, style=None, width=None, color=None):
+    def update_style(
+        self,
+        style: str | None = None,
+        width: int | None = None,
+        color: str | None = None,
+    ) -> None:
         if not self.shape:
             return
 
@@ -109,13 +132,14 @@ class InteractiveTemplate:
         self.shape.set_fill(False)
         self.redraw()
 
-    def update_position(self):
+    def update_position(self) -> None:
         pos = None
         if self.instrument is not None:
             pos = HexrdConfig().boundary_position(self.instrument, self.detector)
         if pos is None:
             self.center = self.get_midpoint()
         else:
+            assert self.shape is not None
             dx, dy = pos.get('translation', [0, 0])
             self.translation = [dx, dy]
             self.translate_template(dx, dy)
@@ -125,16 +149,17 @@ class InteractiveTemplate:
             self.rotate_shape(angle=90)
 
     @property
-    def template(self):
+    def template(self) -> Any:
         return self.shape
 
     @property
-    def masked_image(self):
+    def masked_image(self) -> tuple[np.ndarray | None, np.ndarray]:
         mask = self.mask()
         return self.img, mask
 
     @property
-    def bounds(self):
+    def bounds(self) -> np.ndarray:
+        assert self.shape is not None
         l, r, b, t = self.axis_image.get_extent()
         x0, y0 = np.nanmin(self.shape.xy, axis=0)
         x1, y1 = np.nanmax(self.shape.xy, axis=0)
@@ -147,7 +172,9 @@ class InteractiveTemplate:
             ]
         ).astype(int)
 
-    def cropped_image(self, height, width):
+    def cropped_image(self, height: int, width: int) -> np.ndarray:
+        assert self.img is not None
+        assert self.shape is not None
         y0, y1, x0, x1 = self.bounds
         y1 = y0 + height if height else y1
         x1 = x0 + width if width else x1
@@ -156,37 +183,40 @@ class InteractiveTemplate:
         return self.img
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         return self.total_rotation
 
-    def clear(self):
-        if self.shape in self.axis.patches:
+    def clear(self) -> None:
+        if self.shape is not None and self.shape in self.axis.patches:
             remove_artist(self.shape)
             self.redraw()
         self.total_rotation = 0.0
 
-    def save_boundary(self, color):
+    def save_boundary(self, color: str) -> None:
+        assert self.shape is not None
         if self.shape in self.axis.patches:
             self.shape.set_linestyle('--')
             self.redraw()
 
-    def toggle_boundaries(self, show):
+    def toggle_boundaries(self, show: bool) -> None:
         if show:
             for patch, style in zip(self.patches, self.shape_styles):
                 shape = patches.Polygon(
-                    patch.xy,
+                    patch.xy,  # type: ignore[attr-defined]
                     fill=False,
                     ls='--',
                     lw=style['width'],
                     color=style['color'],
                 )
-                if has_nan(patch.xy):
+                if has_nan(patch.xy):  # type: ignore[attr-defined]
                     # This template contains more than one polygon and the last point
                     # should not be connected to the first. See Tardis IP for example.
                     shape.set_closed(False)
                 self.axis.add_patch(shape)
             if self.shape:
-                self.shape = self.axis.patches[-1]
+                last_patch = self.axis.patches[-1]
+                assert isinstance(last_patch, patches.Polygon)
+                self.shape = last_patch
                 remove_artist(self.shape)
                 self.shape.set_linestyle(self.shape_styles[-1]['line'])
                 self.axis.add_patch(self.shape)
@@ -198,14 +228,19 @@ class InteractiveTemplate:
             self.patches = [p for p in self.axis.patches]
         self.redraw()
 
-    def disconnect(self):
-        self.current_canvas.mpl_disconnect(self.button_press_cid)
-        self.current_canvas.mpl_disconnect(self.button_release_cid)
-        self.current_canvas.mpl_disconnect(self.motion_cid)
-        self.current_canvas.mpl_disconnect(self.key_press_cid)
-        self.current_canvas.mpl_disconnect(self.button_drag_cid)
+    def disconnect(self) -> None:
+        if self.button_press_cid is not None:
+            self.current_canvas.mpl_disconnect(self.button_press_cid)
+        if self.button_release_cid is not None:
+            self.current_canvas.mpl_disconnect(self.button_release_cid)
+        if self.motion_cid is not None:
+            self.current_canvas.mpl_disconnect(self.motion_cid)
+        if self.key_press_cid is not None:
+            self.current_canvas.mpl_disconnect(self.key_press_cid)
+        if self.button_drag_cid is not None:
+            self.current_canvas.mpl_disconnect(self.button_drag_cid)
 
-    def completed(self):
+    def completed(self) -> None:
         self.disconnect()
         self.img = None
         self.shape = None
@@ -213,7 +248,8 @@ class InteractiveTemplate:
         self.total_rotation = 0.0
         self.complete = True
 
-    def mask(self):
+    def mask(self) -> np.ndarray:
+        assert self.img is not None
         col, row = self.cropped_shape.T
         col_nans = np.where(np.isnan(col))[0]
         row_nans = np.where(np.isnan(row))[0]
@@ -228,28 +264,30 @@ class InteractiveTemplate:
         self.img[~master_mask] = 0
         return master_mask
 
-    def get_paths(self):
+    def get_paths(self) -> list[Path]:
+        assert self.shape is not None
         all_paths = []
-        points = []
-        codes = []
-        for coords in self.shape.get_path().vertices[:-1]:
+        points: list[np.ndarray] = []
+        codes: list[int] = []
+        for coords in self.shape.get_path().vertices[:-1]:  # type: ignore[union-attr, index]
             if np.isnan(coords).any():
-                codes[0] = Path.MOVETO
-                all_paths.append(Path(points, codes))
+                codes[0] = int(Path.MOVETO)
+                all_paths.append(Path(points, codes))  # type: ignore[arg-type]
                 codes = []
                 points = []
             else:
-                codes.append(Path.LINETO)
-                points.append(coords)
-        codes[0] = Path.MOVETO
-        all_paths.append(Path(points, codes))
+                codes.append(int(Path.LINETO))
+                points.append(coords)  # type: ignore[arg-type]
+        codes[0] = int(Path.MOVETO)
+        all_paths.append(Path(points, codes))  # type: ignore[arg-type]
 
         return all_paths
 
-    def redraw(self):
+    def redraw(self) -> None:
         self.current_canvas.draw_idle()
 
-    def scale_template(self, sx=1, sy=1):
+    def scale_template(self, sx: int = 1, sy: int = 1) -> None:
+        assert self.shape is not None
         xy = self.shape.xy
         # Scale the shape
         scaled_xy = Affine2D().scale(sx, sy).transform(xy)
@@ -261,7 +299,7 @@ class InteractiveTemplate:
         self.shape.set_xy(new_xy)
         self.redraw()
 
-    def on_press(self, event):
+    def on_press(self, event: MouseEvent) -> None:
         if self.static_mode:
             return
 
@@ -271,55 +309,57 @@ class InteractiveTemplate:
         elif event.key == 'shift':
             self.on_press_rotate(event)
 
-    def on_release(self, event):
+    def on_release(self, event: MouseEvent) -> None:
         if self.event_key is None:
             self.on_translate_release(event)
         elif self.event_key == 'shift':
             self.on_rotate_release(event)
 
-    def on_key(self, event):
+    def on_key(self, event: KeyEvent) -> None:
         if self.static_mode:
             return
 
-        if 'shift' in event.key:
+        if event.key is not None and 'shift' in event.key:
             self.on_key_rotate(event)
         else:
             self.on_key_translate(event)
 
-    def connect_translate_rotate(self):
+    def connect_translate_rotate(self) -> None:
         if self.static_mode:
             return
 
         self.disconnect()
 
         self.button_press_cid = self.current_canvas.mpl_connect(
-            'button_press_event', self.on_press
+            'button_press_event', self.on_press  # type: ignore[arg-type]
         )
         self.button_release_cid = self.current_canvas.mpl_connect(
-            'button_release_event', self.on_release
+            'button_release_event', self.on_release  # type: ignore[arg-type]
         )
         self.motion_cid = self.current_canvas.mpl_connect(
-            'motion_notify_event', self.on_translate
+            'motion_notify_event', self.on_translate  # type: ignore[arg-type]
         )
         self.key_press_cid = self.current_canvas.mpl_connect(
-            'key_press_event', self.on_key
+            'key_press_event', self.on_key  # type: ignore[arg-type]
         )
         self.button_drag_cid = self.current_canvas.mpl_connect(
-            'motion_notify_event', self.on_rotate
+            'motion_notify_event', self.on_rotate  # type: ignore[arg-type]
         )
-        self.axes_leave_cid = self.current_canvas.mpl_connect(
-            'axes_leave_event', self.on_release
+        self.axes_leave_cid: int = self.current_canvas.mpl_connect(
+            'axes_leave_event', self.on_release  # type: ignore[arg-type]
         )
         self.current_canvas.setFocus()
 
-    def translate_template(self, dx, dy):
+    def translate_template(self, dx: float, dy: float) -> None:
+        assert self.shape is not None
         self.shape.set_xy(self.shape.xy + np.array([dx, dy]))
         self.center = self.get_midpoint()
         self.redraw()
 
-    def on_key_translate(self, event):
+    def on_key_translate(self, event: KeyEvent) -> None:
+        assert self.shape is not None
         dx0, dy0 = self.translation
-        dx1, dy1 = 0, 0
+        dx1, dy1 = 0.0, 0.0
         delta = KEY_TRANSLATE_DELTA
         if event.key == 'right':
             dx1 = delta
@@ -336,18 +376,23 @@ class InteractiveTemplate:
         self.shape.set_xy(self.shape.xy + np.array([dx1, dy1]))
         self.redraw()
 
-    def on_press_translate(self, event):
+    def on_press_translate(self, event: MouseEvent) -> None:
+        assert self.shape is not None
         if event.inaxes != self.shape.axes or self.event_key == 'shift':
             return
 
-        self.press = self.shape.xy, event.xdata, event.ydata
+        self.press = self.shape.xy, event.xdata, event.ydata  # type: ignore[assignment]
 
-    def on_translate(self, event):
+    def on_translate(self, event: MouseEvent) -> None:
+        assert self.shape is not None
         if (
             self.press is None
             or event.inaxes != self.shape.axes
             or self.event_key == 'shift'
         ):
+            return
+
+        if event.xdata is None or event.ydata is None:
             return
 
         xy, xpress, ypress = self.press
@@ -357,8 +402,12 @@ class InteractiveTemplate:
         self.shape.set_xy(xy + np.array([dx, dy]))
         self.redraw()
 
-    def on_translate_release(self, event):
+    def on_translate_release(self, event: MouseEvent) -> None:
+        assert self.shape is not None
         if self.press is None or self.event_key == 'shift':
+            return
+
+        if event.xdata is None or event.ydata is None:
             return
 
         xy, xpress, ypress = self.press
@@ -370,32 +419,35 @@ class InteractiveTemplate:
         self.press = None
         self.redraw()
 
-    def on_press_rotate(self, event):
+    def on_press_rotate(self, event: MouseEvent) -> None:
+        assert self.shape is not None
         if event.inaxes != self.shape.axes or self.event_key != 'shift':
             return
 
         # FIXME: Need to come back to this to understand why we
         # need to set the press value twice
-        self.press = self.shape.xy, event.xdata, event.ydata
+        self.press = self.shape.xy, event.xdata, event.ydata  # type: ignore[assignment]
         self.center = self.get_midpoint()
         self.shape.set_transform(self.axis_image.axes.transData)
-        self.press = self.shape.xy, event.xdata, event.ydata
+        self.press = self.shape.xy, event.xdata, event.ydata  # type: ignore[assignment]
 
-    def rotate_template(self, points, angle):
+    def rotate_template(self, points: np.ndarray, angle: float) -> None:
+        assert self.shape is not None
         center = self.center
         canvas = self.current_canvas
         if canvas.mode == ViewType.polar:
             # We need to correct for the extent ratio and the aspect ratio
             # Make a copy to modify (we should *not* modify the original)
             points = np.array(points)
-            extent = canvas.iviewer.pv.extent
+            # iviewer is PolarViewer here (mode == ViewType.polar)
+            extent = canvas.iviewer.pv.extent  # type: ignore[union-attr]
 
             canvas_aspect = compute_aspect_ratio(canvas.axis)
             extent_aspect = (extent[2] - extent[3]) / (extent[1] - extent[0])
 
             aspect_ratio = extent_aspect * canvas_aspect
             points[:, 0] *= aspect_ratio
-            center = (center[0] * aspect_ratio, center[1])
+            center = [center[0] * aspect_ratio, center[1]]
 
         x = [np.cos(angle), np.sin(angle)]
         y = [-np.sin(angle), np.cos(angle)]
@@ -407,7 +459,8 @@ class InteractiveTemplate:
 
         self.shape.set_xy(verts)
 
-    def on_rotate(self, event):
+    def on_rotate(self, event: MouseEvent) -> None:
+        assert self.shape is not None
         if (
             self.press is None
             or event.inaxes != self.shape.axes
@@ -421,7 +474,8 @@ class InteractiveTemplate:
         self.rotate_template(xy, angle)
         self.redraw()
 
-    def on_key_rotate(self, event):
+    def on_key_rotate(self, event: KeyEvent) -> None:
+        assert self.shape is not None
         angle = self.key_rotation_angle
         # !!! only catch arrow keys
         if event.key == 'shift+left' or event.key == 'shift+up':
@@ -432,12 +486,13 @@ class InteractiveTemplate:
         self.rotate_template(self.shape.xy, angle)
         self.redraw()
 
-    def get_midpoint(self):
+    def get_midpoint(self) -> list[float]:
+        assert self.shape is not None
         x0, y0 = np.nanmin(self.shape.xy, axis=0)
         x1, y1 = np.nanmax(self.shape.xy, axis=0)
         return [(x1 + x0) / 2, (y1 + y0) / 2]
 
-    def mouse_position(self, e):
+    def mouse_position(self, e: MouseEvent) -> tuple[float, float]:
         xmin, xmax, ymin, ymax = self.axis_image.get_extent()
         x, y = self.get_midpoint()
         xdata = e.xdata
@@ -454,7 +509,8 @@ class InteractiveTemplate:
                 ydata = ymax
         return xdata, ydata
 
-    def get_angle(self, e):
+    def get_angle(self, e: MouseEvent) -> float:
+        assert self.press is not None
         xy, xdata, ydata = self.press
         v0 = np.array([xdata, ydata]) - np.array(self.center)
         v1 = np.array(self.mouse_position(e)) - np.array(self.center)
@@ -463,7 +519,7 @@ class InteractiveTemplate:
         angle = np.arctan2(np.linalg.det([v0_u, v1_u]), np.dot(v0_u, v1_u))
         return angle
 
-    def on_rotate_release(self, event):
+    def on_rotate_release(self, event: MouseEvent) -> None:
         if self.press is None or self.event_key != 'shift':
             return
         angle = self.get_angle(event)
@@ -475,8 +531,8 @@ class InteractiveTemplate:
         self.redraw()
 
 
-def compute_aspect_ratio(axis):
+def compute_aspect_ratio(axis: Axes) -> float:
     # Compute the aspect ratio of a matplotlib axis
-    ll, ur = axis.get_position() * axis.figure.get_size_inches()
+    ll, ur = axis.get_position() * axis.figure.get_size_inches()  # type: ignore[union-attr]
     width, height = ur - ll
     return width / height

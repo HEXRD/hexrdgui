@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QResizeEvent
@@ -21,19 +21,19 @@ class WaterfallPlot:
     with a waterfall plot
     """
 
-    def __init__(self, ax: Axes, line_data: LineData):
+    def __init__(self, ax: Axes, line_data: LineData) -> None:
         self.ax = ax
         self.create_lines(line_data)
 
-        self.currently_dragging = None
-        self._prev_mouse_coords = None
+        self.currently_dragging: int | None = None
+        self._prev_mouse_coords: np.ndarray | None = None
         self._shift_held = False
 
-        self._mpl_cids = []
+        self._mpl_cids: list[Any] = []
 
         self.connect()
 
-    def create_lines(self, line_data: LineData):
+    def create_lines(self, line_data: LineData) -> None:
         # Compute a default offset
         offset = np.nanmax([np.nanmax(y) for _, y in line_data])
         offset *= 1.05
@@ -61,7 +61,9 @@ class WaterfallPlot:
 
     @property
     def figure(self) -> Figure:
-        return self.ax.figure
+        fig = self.ax.figure
+        assert isinstance(fig, Figure)
+        return fig
 
     @property
     def canvas(self) -> FigureCanvasBase:
@@ -78,7 +80,7 @@ class WaterfallPlot:
             'scroll_event': self.on_scroll,
         }
 
-    def on_button_press(self, event: MouseEvent):
+    def on_button_press(self, event: MouseEvent) -> None:
         if event.inaxes is not self.ax:
             return
 
@@ -94,20 +96,20 @@ class WaterfallPlot:
         self._prev_mouse_coords = coords_clicked
         self.currently_dragging = closest_line_idx
 
-    def on_button_release(self, event: MouseEvent):
+    def on_button_release(self, event: MouseEvent) -> None:
         self.currently_dragging = None
         self._prev_mouse_coords = None
         self.canvas.draw_idle()
 
-    def on_key_press(self, event: KeyEvent):
+    def on_key_press(self, event: KeyEvent) -> None:
         if event.key == 'shift':
             self._shift_held = True
 
-    def on_key_release(self, event: KeyEvent):
+    def on_key_release(self, event: KeyEvent) -> None:
         if event.key == 'shift':
             self._shift_held = False
 
-    def on_motion(self, event: MouseEvent):
+    def on_motion(self, event: MouseEvent) -> None:
         if self.currently_dragging is None or event.inaxes is not self.ax:
             return
 
@@ -133,7 +135,7 @@ class WaterfallPlot:
 
         self._prev_mouse_coords = mouse_coords
 
-    def on_scroll(self, event: MouseEvent):
+    def on_scroll(self, event: MouseEvent) -> None:
         mouse_coords = np.array((event.xdata, event.ydata))
 
         # Find the closest line, and drag that one
@@ -174,12 +176,12 @@ class WaterfallPlot:
 
         return closest_line_idx
 
-    def connect(self):
+    def connect(self) -> None:
         for k, f in self._mpl_callbacks.items():
             cid = self.canvas.mpl_connect(k, f)
             self._mpl_cids.append(cid)
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         for cid in self._mpl_cids:
             self.canvas.mpl_disconnect(cid)
 
@@ -187,17 +189,17 @@ class WaterfallPlot:
 
 
 class WaterfallPlotDialog(QDialog):
-    def __init__(self, ax: Axes, line_data: LineData, parent: QWidget = None):
+    def __init__(self, ax: Axes, line_data: LineData, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.setWindowTitle('Waterfall Plot')
 
         # Add minimize, maximize, and close buttons
         self.setWindowFlags(
-            Qt.Tool
-            | Qt.WindowMinimizeButtonHint
-            | Qt.WindowMaximizeButtonHint
-            | Qt.WindowCloseButtonHint
+            Qt.WindowType.Tool
+            | Qt.WindowType.WindowMinimizeButtonHint
+            | Qt.WindowType.WindowMaximizeButtonHint
+            | Qt.WindowType.WindowCloseButtonHint
         )
 
         self.waterfall_plot = WaterfallPlot(ax, line_data)
@@ -216,22 +218,22 @@ class WaterfallPlotDialog(QDialog):
             'the intensities of that line'
         )
         for label in (label1, label2):
-            label.setAlignment(Qt.AlignCenter)
-            label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             layout.addWidget(label)
 
         # Add the canvas
         canvas.figure.tight_layout()
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        layout.addWidget(canvas)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)  # type: ignore[attr-defined]
+        layout.addWidget(canvas)  # type: ignore[arg-type]
 
         # Add a navigation toolbar too
         self.toolbar = NavigationToolbar(canvas, self)
-        self.toolbar.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+        self.toolbar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
         layout.addWidget(self.toolbar)
-        layout.setAlignment(self.toolbar, Qt.AlignCenter)
+        layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 
-    def resizeEvent(self, event: QResizeEvent):
+    def resizeEvent(self, event: QResizeEvent) -> None:
         # We override this function because we want the matplotlib canvas
         # to also resize whenever the dialog is resized.
         super().resizeEvent(event)
@@ -255,7 +257,7 @@ if __name__ == '__main__':
     for data in (data1, data2, data3):
         line_data.append((*data.T,))
 
-    label_kwargs = {
+    label_kwargs: dict[str, Any] = {
         'fontsize': 15,
         'family': 'serif',
     }

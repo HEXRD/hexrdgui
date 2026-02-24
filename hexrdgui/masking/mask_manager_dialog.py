@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import os
 import numpy as np
@@ -6,7 +8,7 @@ from itertools import groupby
 from operator import attrgetter
 import re
 
-from PySide6.QtCore import QObject, Qt, QTimer
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -16,45 +18,47 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTreeWidgetItem,
     QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtGui import QCursor, QFont
+from PySide6.QtGui import QContextMenuEvent, QCursor, QFont
 
 from hexrdgui.constants import ViewType
 from hexrdgui.utils import block_signals
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType, MaskStatus
 from hexrdgui.masking.mask_border_style_picker import MaskBorderStylePicker
-from hexrdgui.masking.mask_manager import MaskManager
+from hexrdgui.masking.mask_manager import Mask, MaskManager
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.dialog import add_help_url
 
 import matplotlib.pyplot as plt
+from typing import Any, Sequence
 
 
 class MaskManagerDialog(QObject):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.parent = parent
+        self._parent = parent
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_manager_dialog.ui', parent)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
-        self.mask_tree_items = {}
-        self.selected_masks = []
+        self.mask_tree_items: dict[str, QTreeWidgetItem] = {}
+        self.selected_masks: list[Mask] = []
 
         add_help_url(self.ui.button_box, 'configuration/masking/#managing-masks')
 
         self.create_tree()
         self.setup_connections()
 
-    def show(self):
+    def show(self) -> None:
         self.create_tree()
         self.ui.show()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.masks_tree.itemChanged.connect(self.update_mask_name)
         self.ui.masks_tree.customContextMenuRequested.connect(self.context_menu_event)
         self.ui.export_masks.clicked.connect(MaskManager().write_masks)
@@ -77,14 +81,19 @@ class MaskManagerDialog(QObject):
         self.ui.remove_selected.clicked.connect(self.remove_selected_masks)
         self.ui.finished.connect(self.ui.masks_tree.clearSelection)
 
-    def create_mode_source_string(self, mode, source):
+    def create_mode_source_string(self, mode: str | None, source: str | None) -> str:
         if mode is None:
             return 'Global'
         mode_str = f'{mode.capitalize()} Mode'
         source_str = f' - {source}' if source else ''
         return f'{mode_str}{source_str}'
 
-    def update_presentation_label(self, item, mask):
+    def update_presentation_label(
+        self,
+        item: QTreeWidgetItem,
+        mask: Mask,
+    ) -> None:
+        assert mask.name is not None
         mask_type = MaskManager().masks[mask.name].type
         status = []
         if mask.name in MaskManager().visible_masks:
@@ -98,16 +107,16 @@ class MaskManagerDialog(QObject):
                 status.append('Boundary')
         status_str = ' + '.join(status) if status else 'None'
         item.setText(1, status_str)
-        item.setTextAlignment(1, Qt.AlignCenter)
+        item.setTextAlignment(1, Qt.AlignmentFlag.AlignCenter)
 
-    def create_mode_item(self, mode, source):
+    def create_mode_item(self, mode: str | None, source: str | None) -> QTreeWidgetItem:
         text = self.create_mode_source_string(mode, source)
         mode_item = QTreeWidgetItem([text])
-        mode_item.setFlags(Qt.ItemIsEnabled)
+        mode_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
         mode_item.setFont(
             0,
             QFont(
-                mode_item.font(0).family(), mode_item.font(0).pointSize(), QFont.Bold
+                mode_item.font(0).family(), mode_item.font(0).pointSize(), QFont.Weight.Bold
             ),
         )
         self.ui.masks_tree.addTopLevelItem(mode_item)
@@ -115,23 +124,29 @@ class MaskManagerDialog(QObject):
         self.ui.masks_tree.expandItem(mode_item)
         return mode_item
 
-    def create_mask_item(self, parent_item, mask):
+    def create_mask_item(
+        self,
+        parent_item: QTreeWidgetItem,
+        mask: Mask,
+    ) -> None:
+        assert mask.name is not None
         mask_item = QTreeWidgetItem([mask.name])
-        mask_item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable)
+        mask_item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable)
         # Store the original mask name in the item's data
-        mask_item.setData(0, Qt.UserRole, mask.name)
+        mask_item.setData(0, Qt.ItemDataRole.UserRole, mask.name)
         parent_item.addChild(mask_item)
         self.mask_tree_items[mask.name] = mask_item
 
         # Add label to indicate current mask presentation
         self.update_presentation_label(mask_item, mask)
 
-    def update_mask_item(self, mask):
+    def update_mask_item(self, mask: Mask) -> None:
+        assert mask.name is not None
         item = self.mask_tree_items[mask.name]
         item.setText(0, mask.name)
         self.update_presentation_label(item, mask)
 
-    def remove_mask_item(self, name):
+    def remove_mask_item(self, name: str) -> None:
         if name not in MaskManager().mask_names:
             # Make sure it is a mask and not a mode item
             return
@@ -151,14 +166,14 @@ class MaskManagerDialog(QObject):
         MaskManager().masks_changed()
         self.ui.masks_tree.verticalScrollBar().setValue(scroll_value)
 
-    def _alphanumeric_sort(self, value):
+    def _alphanumeric_sort(self, value: str) -> list[Any]:
         # Split the string into text and number parts so that we
         # sort by string value lexicographically and the number
         # value numerically
         vals = re.split('([0-9]+)', value)
         return [int(v) if v.isdigit() else v.lower() for v in vals]
 
-    def update_tree(self):
+    def update_tree(self) -> None:
         if self.ui.masks_tree.topLevelItemCount() == 0:
             self.create_tree()
             return
@@ -184,7 +199,7 @@ class MaskManagerDialog(QObject):
                     # Update existing mask item
                     self.update_mask_item(mask)
 
-    def create_tree(self):
+    def create_tree(self) -> None:
         with block_signals(self.ui.masks_tree):
             self.ui.masks_tree.clear()
             # Sort masks by creation view mode and xray source
@@ -206,7 +221,8 @@ class MaskManagerDialog(QObject):
 
                 # Create items for each mask, sorted naturally by name
                 for mask in sorted(
-                    masks, key=lambda x: self._alphanumeric_sort(x.name)
+                    masks,
+                    key=lambda x: self._alphanumeric_sort(x.name or ''),
                 ):
                     self.create_mask_item(mode_item, mask)
 
@@ -218,7 +234,7 @@ class MaskManagerDialog(QObject):
         header.resizeSection(1, size_hint)
         header.resizeSection(0, header.width() - size_hint)
 
-    def change_mask_presentation(self, index, name):
+    def change_mask_presentation(self, index: int, name: str) -> None:
         match index:
             case MaskStatus.visible:
                 MaskManager().update_mask_visibility(name, True)
@@ -234,7 +250,7 @@ class MaskManagerDialog(QObject):
                 MaskManager().update_border_visibility(name, False)
         MaskManager().masks_changed()
 
-    def update_mask_name(self, item, column):
+    def update_mask_name(self, item: QTreeWidgetItem, column: int) -> None:
         if column != 0:
             # Only handle name changes (column 0)
             return
@@ -245,18 +261,18 @@ class MaskManagerDialog(QObject):
 
         new_name = item.text(0)
         # Get the old name from the mask item's data
-        old_name = item.data(0, Qt.UserRole)
+        old_name = item.data(0, Qt.ItemDataRole.UserRole)
         if old_name != new_name:
             if not new_name or new_name in MaskManager().mask_names:
                 # Prevent empty or duplicate mask names
                 item.setText(0, old_name)
                 return
             # Store the new name before updating the manager
-            item.setData(0, Qt.UserRole, new_name)
+            item.setData(0, Qt.ItemDataRole.UserRole, new_name)
             MaskManager().update_name(old_name, new_name)
             self.mask_tree_items[new_name] = self.mask_tree_items.pop(old_name)
 
-    def update_collapsed(self):
+    def update_collapsed(self) -> None:
         mode = MaskManager().view_mode
         if not HexrdConfig().has_multi_xrs:
             return
@@ -274,7 +290,7 @@ class MaskManagerDialog(QObject):
             else:
                 self.ui.masks_tree.collapseItem(item)
 
-    def context_menu_event(self, event):
+    def context_menu_event(self, event: QContextMenuEvent) -> None:
         item = self.ui.masks_tree.itemAt(event)
         if item and item.parent():  # Only for mask items, not mode items
             menu = QMenu(self.ui.masks_tree)
@@ -284,7 +300,7 @@ class MaskManagerDialog(QObject):
                 selections = self.ui.masks_tree.selectedItems()
                 MaskManager().write_masks([i.text(0) for i in selections])
 
-    def export_masks_to_file(self, data):
+    def export_masks_to_file(self, data: Any) -> None:
         output_file, _ = QFileDialog.getSaveFileName(
             self.ui, 'Save Mask', HexrdConfig().working_dir, 'HDF5 files (*.h5 *.hdf5)'
         )
@@ -298,7 +314,7 @@ class MaskManagerDialog(QObject):
             h5py_group = f.create_group('masks')
             MaskManager().write_masks_to_group(data, h5py_group)
 
-    def import_masks(self):
+    def import_masks(self) -> None:
         selected_file, _ = QFileDialog.getOpenFileName(
             self.ui,
             'Import Masks',
@@ -314,7 +330,7 @@ class MaskManagerDialog(QObject):
         with h5py.File(selected_file, 'r') as f:
             MaskManager().load_masks(f['masks'])
 
-    def masks_to_panel_buffer(self):
+    def masks_to_panel_buffer(self) -> None:
         show_dialog = False
         selection = 'Replace buffer'
         for det in HexrdConfig().detectors.values():
@@ -336,7 +352,7 @@ class MaskManagerDialog(QObject):
             options.addItem('Intersection of panel buffer and current masks')
             layout.addWidget(options)
 
-            buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+            buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
             button_box = QDialogButtonBox(buttons, dialog)
             button_box.accepted.connect(dialog.accept)
             button_box.rejected.connect(dialog.reject)
@@ -350,15 +366,16 @@ class MaskManagerDialog(QObject):
 
         MaskManager().masks_to_panel_buffer(selection)
         msg = 'Masks set as panel buffers.'
-        QMessageBox.information(self.parent, 'HEXRD', msg)
+        QMessageBox.information(self._parent, 'HEXRD', msg)
 
-    def show_masks(self):
+    def show_masks(self) -> None:
         num_dets = len(HexrdConfig().detector_names)
         cols = 2 if num_dets > 1 else 1
         rows = math.ceil(num_dets / cols)
 
         fig = plt.figure()
-        fig.canvas.manager.set_window_title('User Created Masks')
+        if fig.canvas.manager is not None:
+            fig.canvas.manager.set_window_title('User Created Masks')
         for i, det in enumerate(HexrdConfig().detector_names):
             axis = fig.add_subplot(rows, cols, i + 1)
             axis.set_title(det)
@@ -366,7 +383,7 @@ class MaskManagerDialog(QObject):
         fig.canvas.draw_idle()
         fig.show()
 
-    def update_presentation_selector(self):
+    def update_presentation_selector(self) -> None:
         with block_signals(self.ui.masks_tree):
             for i in range(self.ui.masks_tree.topLevelItemCount()):
                 mode_item = self.ui.masks_tree.topLevelItem(i)
@@ -381,35 +398,35 @@ class MaskManagerDialog(QObject):
                     status_str = ' + '.join(status) if status else 'None'
                     mask_item.setText(1, status_str)
 
-    def change_mask_visibility(self, mask_names, visible):
+    def change_mask_visibility(self, mask_names: Sequence[str], visible: bool) -> None:
         for name in mask_names:
             MaskManager().update_mask_visibility(name, visible)
 
-    def hide_all_masks(self):
+    def hide_all_masks(self) -> None:
         self.change_mask_visibility(MaskManager().mask_names, False)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def show_all_masks(self):
+    def show_all_masks(self) -> None:
         self.change_mask_visibility(MaskManager().mask_names, True)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def change_mask_boundaries(self, mask_names, visible):
+    def change_mask_boundaries(self, mask_names: Sequence[str], visible: bool) -> None:
         for name in mask_names:
             MaskManager().update_border_visibility(name, visible)
 
-    def hide_all_boundaries(self):
+    def hide_all_boundaries(self) -> None:
         self.change_mask_boundaries(MaskManager().mask_names, False)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def show_all_boundaries(self):
+    def show_all_boundaries(self) -> None:
         self.change_mask_boundaries(MaskManager().mask_names, True)
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def edit_style(self):
+    def edit_style(self) -> None:
         dialog = MaskBorderStylePicker(
             MaskManager().boundary_color,
             MaskManager().boundary_style,
@@ -426,7 +443,7 @@ class MaskManagerDialog(QObject):
             MaskManager().highlight_opacity = opacity
             MaskManager().masks_changed()
 
-    def selected_changed(self):
+    def selected_changed(self) -> None:
         with block_signals(self.ui.presentation_selector):
             selected = self.ui.masks_tree.selectedItems()
             self.ui.presentation_selector.setEnabled(len(selected) >= 1)
@@ -469,7 +486,7 @@ class MaskManagerDialog(QObject):
             else:
                 self.ui.presentation_selector.setCurrentIndex(0)
 
-    def change_presentation_for_selected(self, text):
+    def change_presentation_for_selected(self, text: str) -> None:
         if len(self.ui.masks_tree.selectedItems()) < 1:
             return
 
@@ -487,11 +504,11 @@ class MaskManagerDialog(QObject):
         self.update_presentation_selector()
         MaskManager().masks_changed()
 
-    def export_selected(self):
+    def export_selected(self) -> None:
         mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
         MaskManager().write_masks(mask_names)
 
-    def remove_selected_masks(self):
+    def remove_selected_masks(self) -> None:
         with block_signals(self.ui.masks_tree):
             mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
             for name in mask_names:

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import copy
 import os
 
 import numpy as np
+
+from typing import Any
 
 from hexrd.config.root import RootConfig
 from hexrd.config.material import MaterialConfig
@@ -11,18 +15,18 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 
 
-def get_indexing_material():
+def get_indexing_material() -> Any:
     indexing_config = HexrdConfig().indexing_config
     available_materials = list(HexrdConfig().materials)
     selected_material = indexing_config.get('_selected_material')
 
-    if selected_material not in available_materials:
+    if selected_material is None or selected_material not in available_materials:
         raise Exception(f'Selected material {selected_material} not available')
 
     return HexrdConfig().material(selected_material)
 
 
-def create_indexing_config():
+def create_indexing_config() -> Any:
     # Creates a hexrd.config class from the indexing configuration
 
     material = get_indexing_material()
@@ -73,7 +77,7 @@ def create_indexing_config():
     return config
 
 
-def validate_config(config):
+def validate_config(config: Any) -> None:
     # Perform any modifications to make sure this is a valid config
     try:
         config.working_dir
@@ -93,7 +97,7 @@ class OmegasNotFoundError(Exception):
     pass
 
 
-def disable_exclusions_reset(config):
+def disable_exclusions_reset(config: dict) -> None:
     # Disable exclusions reset for the provided config
     config['reset_exclusions'] = False
 

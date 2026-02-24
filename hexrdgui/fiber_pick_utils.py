@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from hexrd import constants as cnst
 from hexrd.rotations import discreteFiber
@@ -6,14 +13,14 @@ from hexrd.transforms import xfcapi
 
 
 def _pick_to_fiber(
-    pick_coords,
-    eta_ome_maps,
-    map_index,
-    step=0.5,
-    beam_vec=None,
-    chi=0.0,
-    as_expmap=True,
-):
+    pick_coords: Any,
+    eta_ome_maps: Any,
+    map_index: int,
+    step: float = 0.5,
+    beam_vec: Any = None,
+    chi: float = 0.0,
+    as_expmap: bool = True,
+) -> np.ndarray:
     """
     Returns the orientations for the specified fiber parameters.
 
@@ -81,7 +88,7 @@ def _pick_to_fiber(
         return qfib.T  # (4, ndiv)
 
 
-def _angles_from_orientation(instr, eta_ome_maps, orientation):
+def _angles_from_orientation(instr: HEDMInstrument, eta_ome_maps: Any, orientation: Any) -> list:
     """
     Return the (eta, omega) angles for a specified orientation consistent with
     input EtaOmeMaps.
@@ -147,13 +154,13 @@ def _angles_from_orientation(instr, eta_ome_maps, orientation):
         wavelength=None,
     )
 
-    rids = []
-    angs = []
+    rids_list: list[Any] = []
+    angs_list: list[Any] = []
     for sim in sim_dict.values():
-        rids.append(sim[0][0])
-        angs.append(sim[2][0])
-    rids = np.hstack(rids)
-    angs = np.vstack(angs)
+        rids_list.append(sim[0][0])
+        angs_list.append(sim[2][0])
+    rids = np.hstack(rids_list)
+    angs = np.vstack(angs_list)
 
     simulated_angles = []
     for rid in hklids:

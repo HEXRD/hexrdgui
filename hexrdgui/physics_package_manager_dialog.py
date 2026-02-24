@@ -1,9 +1,11 @@
 import copy
+from typing import Any, cast
+
 import h5py
 import numpy as np
 
 from matplotlib.patches import Rectangle, Polygon
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide6.QtWidgets import QSizePolicy, QWidget
@@ -28,16 +30,16 @@ from hexrd.rotations import rotMatOfExpMap
 
 class PhysicsPackageManagerDialog:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
-        self.additional_materials = {}
-        self.instrument_type = None
+        self.additional_materials: dict[str, Any] = {}
+        self.instrument_type: str | None = None
         self.delete_if_canceled = False
 
         canvas = FigureCanvas(Figure(tight_layout=True))
         # Get the canvas to take up the majority of the screen most of the time
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.diagram = PhysicsPackageDiagram(canvas)
         self.ui.diagram.addWidget(canvas)
 
@@ -45,7 +47,7 @@ class PhysicsPackageManagerDialog:
         self.update_instrument_type()
         self.setup_connections()
 
-    def show(self, delete_if_canceled=False):
+    def show(self, delete_if_canceled: bool = False) -> None:
         self.delete_if_canceled = delete_if_canceled
         self.setup_form()
         self.draw_diagram()
@@ -78,10 +80,10 @@ class PhysicsPackageManagerDialog:
         return {k: getattr(self.ui, f'{k}_material_input') for k in self.layer_names}
 
     @property
-    def density_inputs(self):
+    def density_inputs(self) -> dict[str, QWidget]:
         return {k: getattr(self.ui, f'{k}_density') for k in self.layer_names}
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         for k in self.non_sample_layer_names:
             w = getattr(self.ui, f'show_{k}')
             w.toggled.connect(lambda b, k=k: self.toggle_layer(b, k))
@@ -90,7 +92,7 @@ class PhysicsPackageManagerDialog:
         self.ui.button_box.accepted.connect(self.ui.accept)
         self.ui.button_box.rejected.connect(self.ui.reject)
         for k, w in self.material_selectors.items():
-            w.currentIndexChanged.connect(
+            w.currentIndexChanged.connect(  # type: ignore[attr-defined]
                 lambda index, k=k: self.material_changed(index, k)
             )
         HexrdConfig().instrument_config_loaded.connect(self.update_instrument_type)
@@ -107,38 +109,38 @@ class PhysicsPackageManagerDialog:
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         self.delete_if_canceled = False
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         if self.delete_if_canceled:
             HexrdConfig().physics_package = None
 
         self.delete_if_canceled = False
 
-    def on_euler_angle_convention_changed(self):
+    def on_euler_angle_convention_changed(self) -> None:
         self.update_tilt_suffixes()
         self.reset_sample_tilt()
 
     @property
-    def sample_tilt_widgets(self):
+    def sample_tilt_widgets(self) -> list:
         return [getattr(self.ui, f'sample_tilt_{i}') for i in range(3)]
 
     @property
-    def sample_normal_widgets(self):
+    def sample_normal_widgets(self) -> list:
         return [getattr(self.ui, f'sample_normal_{i}') for i in range(3)]
 
     @property
-    def sample_rmat(self):
+    def sample_rmat(self) -> Any:
         angles = [w.value() for w in self.sample_tilt_widgets]
         return rotMatOfExpMap(euler_angles_to_exp_map(angles))
 
-    def update_tilt_suffixes(self):
+    def update_tilt_suffixes(self) -> None:
         suffix = '' if HexrdConfig().euler_angle_convention is None else '°'
         for w in self.sample_tilt_widgets:
             w.setSuffix(suffix)
 
-    def reset_sample_tilt(self):
+    def reset_sample_tilt(self) -> None:
         angles = exp_map_to_euler_angles(HexrdConfig().sample_tilt)
         with block_signals(*self.sample_tilt_widgets):
             for w, v in zip(self.sample_tilt_widgets, angles):
@@ -146,18 +148,18 @@ class PhysicsPackageManagerDialog:
 
         self.update_sample_normal()
 
-    def save_sample_tilt(self):
+    def save_sample_tilt(self) -> None:
         angles = [w.value() for w in self.sample_tilt_widgets]
         HexrdConfig().sample_tilt = euler_angles_to_exp_map(angles)
 
-    def update_sample_normal(self):
+    def update_sample_normal(self) -> None:
         d = HexrdConfig().active_beam['vector']
         bvec = calc_beam_vec(d['azimuth'], d['polar_angle'])
         sample_normal = np.dot(self.sample_rmat, [0.0, 0.0, np.sign(bvec[2])])
         for w, v in zip(self.sample_normal_widgets, sample_normal):
             w.setValue(v)
 
-    def initialize_detector_coatings(self):
+    def initialize_detector_coatings(self) -> None:
         # Reset detector coatings to make sure they're in sync w/ current dets
         HexrdConfig().detector_coatings_dictified = {}
         for det in HexrdConfig().detector_names:
@@ -165,7 +167,7 @@ class PhysicsPackageManagerDialog:
             HexrdConfig().update_detector_coating(det)
             HexrdConfig().update_detector_phosphor(det)
 
-    def load_additional_materials(self):
+    def load_additional_materials(self) -> None:
         # Use a high dmin since we do not care about the HKLs here.
         dmin = _angstroms(2)
         energy = _kev(HexrdConfig().beam_energy)
@@ -182,7 +184,7 @@ class PhysicsPackageManagerDialog:
                         )
             self.additional_materials[key] = materials
 
-    def update_instrument_type(self):
+    def update_instrument_type(self) -> None:
         new_instr_type = guess_instrument_type(HexrdConfig().detector_names)
         if new_instr_type == self.instrument_type:
             return
@@ -200,23 +202,24 @@ class PhysicsPackageManagerDialog:
             HexrdConfig().create_default_physics_package()
         self.instrument_type = new_instr_type
 
-    def setup_form(self):
+    def setup_form(self) -> None:
         mat_names = list(HexrdConfig().materials.keys())
         all_options = {}
         for key, w in self.material_selectors.items():
             custom_mats = list(self.additional_materials.get(key, {}))
             options = ['Enter Manually', *custom_mats, *mat_names]
             all_options[key] = options
-            w.clear()
-            w.addItems(options)
-            w.insertSeparator(1)
-            w.insertSeparator(2 + len(custom_mats))
+            w.clear()  # type: ignore[attr-defined]
+            w.addItems(options)  # type: ignore[attr-defined]
+            w.insertSeparator(1)  # type: ignore[attr-defined]
+            w.insertSeparator(2 + len(custom_mats))  # type: ignore[attr-defined]
 
         # Set default values
         if not HexrdConfig().has_physics_package:
             return
 
         physics = HexrdConfig().physics_package
+        assert physics is not None
         # PINHOLE
         self.ui.pinhole_material.setCurrentText(physics.pinhole_material)
         self.ui.pinhole_density.setValue(physics.pinhole_density)
@@ -238,10 +241,10 @@ class PhysicsPackageManagerDialog:
             material = getattr(physics, f'{name}_material')
             if material not in all_options[name]:
                 w = material_inputs[name]
-                w.setText(material)
+                w.setText(material)  # type: ignore[attr-defined]
             else:
                 w = material_selectors[name]
-                w.setCurrentText(material)
+                w.setCurrentText(material)  # type: ignore[attr-defined]
 
             for key in ('density', 'thickness'):
                 attr = f'{name}_{key}'
@@ -252,11 +255,11 @@ class PhysicsPackageManagerDialog:
 
     def chemical_formula(self, layer_name: str) -> str | None:
         selector = self.material_selectors[layer_name]
-        if selector.currentIndex() == 0:
+        if selector.currentIndex() == 0:  # type: ignore[attr-defined]
             # Can't infer the chemical formula for materials entered manually
             return None
 
-        material_name = selector.currentText()
+        material_name = selector.currentText()  # type: ignore[attr-defined]
 
         to_try = [
             HexrdConfig().materials,
@@ -268,24 +271,24 @@ class PhysicsPackageManagerDialog:
 
         return None
 
-    def draw_diagram(self):
+    def draw_diagram(self) -> None:
         show_dict = {
             k: getattr(self.ui, f'show_{k}').isChecked()
             for k in self.non_sample_layer_names
         }
         self.diagram.update_diagram(show_dict)
 
-    def toggle_layer(self, enabled: bool, name: str):
+    def toggle_layer(self, enabled: bool, name: str) -> None:
         w = getattr(self.ui, f'{name}_tab')
         w.setEnabled(enabled)
         self.draw_diagram()
 
-    def update_layer_enable_states(self):
+    def update_layer_enable_states(self) -> None:
         for name in self.non_sample_layer_names:
             enable = self.layer_thickness(name) != 0.0
             self.set_layer_enabled(name, enable)
 
-    def set_layer_enabled(self, name: str, enable: bool):
+    def set_layer_enabled(self, name: str, enable: bool) -> None:
         w = getattr(self.ui, f'show_{name}')
         w.setChecked(enable)
 
@@ -303,8 +306,8 @@ class PhysicsPackageManagerDialog:
     def layer_density(self, name: str) -> float:
         return getattr(self.ui, f'{name}_density').value()
 
-    def material_changed(self, index, category):
-        material = self.material_selectors[category].currentText()
+    def material_changed(self, index: int, category: str) -> None:
+        material = self.material_selectors[category].currentText()  # type: ignore[attr-defined]
 
         self.material_inputs[category].setEnabled(index == 0)
         self.density_inputs[category].setEnabled(index == 0)
@@ -312,26 +315,26 @@ class PhysicsPackageManagerDialog:
             self.ui.absorption_length.setEnabled(index == 0)
 
         if index > 0:
-            self.material_inputs[category].setText('')
+            self.material_inputs[category].setText('')  # type: ignore[attr-defined]
             try:
                 material = HexrdConfig().materials[material]
             except KeyError:
                 material = self.additional_materials[category][material]
             density = getattr(material.unitcell, 'density', 0)
-            self.density_inputs[category].setValue(density)
+            self.density_inputs[category].setValue(density)  # type: ignore[attr-defined]
         else:
-            self.density_inputs[category].setValue(0.0)
+            self.density_inputs[category].setValue(0.0)  # type: ignore[attr-defined]
 
         if HexrdConfig().has_physics_package:
             self.ui.absorption_length.setValue(HexrdConfig().absorption_length())
 
-    def accept_changes(self):
+    def accept_changes(self) -> None:
         materials = {}
         for key, selector in self.material_selectors.items():
-            if selector.currentIndex() == 0:
-                materials[key] = self.material_inputs[key].text()
+            if selector.currentIndex() == 0:  # type: ignore[attr-defined]
+                materials[key] = self.material_inputs[key].text()  # type: ignore[attr-defined]
             else:
-                materials[key] = selector.currentText()
+                materials[key] = selector.currentText()  # type: ignore[attr-defined]
 
         kwargs = {
             'pinhole_diameter': self.ui.pinhole_diameter.value(),
@@ -402,20 +405,20 @@ class PhysicsPackageDiagram:
         ),
     }
 
-    def __init__(self, canvas):
+    def __init__(self, canvas: Any) -> None:
         self.fig = canvas.figure
         self.ax = self.fig.add_subplot()
         self.ax.set_axis_off()
         self.ax.set_aspect(1)
 
-    def clear(self):
+    def clear(self) -> None:
         for text, patch in zip(self.ax.texts, self.ax.patches):
             remove_artist(text)
             remove_artist(patch)
 
-    def add_text(self, patch, label):
+    def add_text(self, patch: Any, label: str) -> None:
         if isinstance(patch, Polygon):
-            xy = patch.get_path().vertices
+            xy = np.asarray(patch.get_path().vertices)
             x = (np.min(xy[:, 0]) + np.max(xy[:, 0])) / 2
             y = (np.min(xy[:, 1]) + np.max(xy[:, 1])) / 2
             if label == 'VISAR':
@@ -423,12 +426,12 @@ class PhysicsPackageDiagram:
                 # positioned over another layer
                 x = (np.min(xy[:, 0]) + np.max(xy[:, 0])) / 1.5
         else:
-            x, y = patch.get_center()
+            x, y = patch.get_center()  # type: ignore[union-attr]
         self.ax.text(
             x, y, label, ha='center', va='center', rotation=90, fontsize='small'
         )
 
-    def update_diagram(self, show_dict: dict[str, bool]):
+    def update_diagram(self, show_dict: dict[str, bool]) -> None:
         self.clear()
         count = 0
         offset = 0
@@ -440,10 +443,10 @@ class PhysicsPackageDiagram:
             if not show_dict.get(key, True):
                 # Compute width of the patch and adjust the offset
                 if isinstance(p, Polygon):
-                    xy = p.get_xy()
+                    xy = np.asarray(p.get_xy())
                     width = xy[:, 0].max() - xy[:, 0].min()
                 else:
-                    width = p.get_width()
+                    width = cast(Rectangle, p).get_width()
 
                 offset -= width
                 continue

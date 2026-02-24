@@ -1,7 +1,13 @@
+from __future__ import annotations
+
 import copy
 import traceback
+from typing import Any, Callable, TYPE_CHECKING
 
 import yaml
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QMessageBox, QSpinBox
@@ -54,21 +60,23 @@ class CalibrationDialog(QObject):
 
     def __init__(
         self,
-        instr,
-        params_dict,
-        format_extra_params_func=None,
-        parent=None,
-        relative_constraints=None,
-        engineering_constraints=None,
-        window_title='Calibration Dialog',
-        help_url='calibration/',
-    ):
+        instr: HEDMInstrument,
+        params_dict: Any,
+        format_extra_params_func: Callable[..., Any] | None = None,
+        parent: QObject | None = None,
+        relative_constraints: RelativeConstraintsType | None = None,
+        engineering_constraints: str | None = None,
+        window_title: str = 'Calibration Dialog',
+        help_url: str = 'calibration/',
+    ) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('calibration_dialog.ui', parent)
+        self.ui = loader.load_file(
+            'calibration_dialog.ui', parent  # type: ignore[arg-type]
+        )
 
-        self.ui.setWindowFlags(self.ui.windowFlags() | Qt.Tool)
+        self.ui.setWindowFlags(self.ui.windowFlags() | Qt.WindowType.Tool)
         add_help_url(self.ui.button_box, help_url)
         self.ui.setWindowTitle(window_title)
 
@@ -108,7 +116,7 @@ class CalibrationDialog(QObject):
         self.update_relative_constraint_visibilities()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.draw_picks.toggled.connect(self.on_draw_picks_toggled)
         self.ui.active_beam.currentIndexChanged.connect(self.on_active_beam_changed)
         self.ui.show_picks_from_all_xray_sources.toggled.connect(
@@ -142,17 +150,17 @@ class CalibrationDialog(QObject):
 
         HexrdConfig().active_beam_switched.connect(self.on_active_beam_switched)
 
-    def show(self):
+    def show(self) -> None:
         self.update_visibility_states()
         self.ui.show()
 
-    def hide(self):
+    def hide(self) -> None:
         self.ui.hide()
 
-    def load_settings(self):
+    def load_settings(self) -> None:
         pass
 
-    def populate_relative_constraint_options(self):
+    def populate_relative_constraint_options(self) -> None:
         # We are skipping group constraints until it is actually implemented
         options = [
             RelativeConstraintsType.none,
@@ -164,14 +172,14 @@ class CalibrationDialog(QObject):
         for option in options:
             w.addItem(RELATIVE_CONSTRAINT_LABELS[option], option)
 
-    def populate_tilt_rotation_center_options(self):
+    def populate_tilt_rotation_center_options(self) -> None:
         # We are skipping group constraints until it is actually implemented
         w = self.ui.tilt_center_of_rotation
         w.clear()
         for label in ROTATION_CENTER_LABELS.values():
             w.addItem(label)
 
-    def set_instrument_defaults(self):
+    def set_instrument_defaults(self) -> None:
         # This function should only be called after the Callbacks have been
         # connected, because the changes here may also affect the Calibrator
         # classes.
@@ -189,7 +197,7 @@ class CalibrationDialog(QObject):
         elif instr_type == 'EIGER_COMPOSITE':
             self.relative_constraints = RelativeConstraintsType.system
 
-    def update_edit_picks_enable_state(self):
+    def update_edit_picks_enable_state(self) -> None:
         is_polar = HexrdConfig().image_mode == ViewType.polar
 
         polar_tooltip = ''
@@ -199,7 +207,7 @@ class CalibrationDialog(QObject):
         self.ui.edit_picks_button.setEnabled(is_polar)
         self.ui.edit_picks_button.setToolTip(tooltip)
 
-    def initialize_advanced_options(self):
+    def initialize_advanced_options(self) -> None:
         self.ui.advanced_options_group.setVisible(
             self.ui.show_advanced_options.isChecked()
         )
@@ -207,7 +215,7 @@ class CalibrationDialog(QObject):
         self.advanced_options = self.default_advanced_options
 
     @property
-    def default_advanced_options(self):
+    def default_advanced_options(self) -> dict[str, Any]:
         return {
             "ftol": 1e-8,
             "xtol": 1e-8,
@@ -221,13 +229,13 @@ class CalibrationDialog(QObject):
         }
 
     @property
-    def advanced_options(self):
+    def advanced_options(self) -> dict[str, Any]:
         options = {}
         for key in self.default_advanced_options:
             # Widget name is the same name as the key
             w = getattr(self.ui, key)
             if isinstance(w, (QSpinBox, QDoubleSpinBox)):
-                v = w.value()
+                v: Any = w.value()
             elif isinstance(w, QComboBox):
                 v = w.currentText()
             else:
@@ -238,7 +246,7 @@ class CalibrationDialog(QObject):
         return options
 
     @advanced_options.setter
-    def advanced_options(self, odict):
+    def advanced_options(self, odict: dict[str, Any]) -> None:
         for key in self.default_advanced_options:
             if key not in odict:
                 continue
@@ -252,7 +260,7 @@ class CalibrationDialog(QObject):
             else:
                 raise NotImplementedError(w)
 
-    def update_visibility_states(self):
+    def update_visibility_states(self) -> None:
         has_multi_xrs = HexrdConfig().has_multi_xrs
         self.ui.active_beam.setVisible(has_multi_xrs)
         self.ui.active_beam_label.setVisible(has_multi_xrs)
@@ -261,7 +269,7 @@ class CalibrationDialog(QObject):
         has_physics_package = HexrdConfig().physics_package is not None
         self.ui.pinhole_distortion_group.setVisible(has_physics_package)
 
-    def update_relative_constraint_visibilities(self):
+    def update_relative_constraint_visibilities(self) -> None:
         visible = self.relative_constraints != RelativeConstraintsType.none
 
         tilt_center_widgets = [
@@ -272,29 +280,29 @@ class CalibrationDialog(QObject):
         for w in tilt_center_widgets:
             w.setVisible(visible)
 
-    def on_draw_picks_toggled(self, b):
+    def on_draw_picks_toggled(self, b: bool) -> None:
         self.draw_picks_toggled.emit(b)
 
-    def on_show_picks_from_all_xray_sources_toggled(self, b):
+    def on_show_picks_from_all_xray_sources_toggled(self, b: bool) -> None:
         self.show_picks_from_all_xray_sources_toggled.emit(b)
 
-    def on_active_beam_switched(self):
+    def on_active_beam_switched(self) -> None:
         # Update the active beam on the instrument
         self.instr.active_beam_name = HexrdConfig().active_beam_name
 
         # This will also update the combo box to reflect the new active name
         self.update_beam_names()
 
-    def update_beam_names(self):
+    def update_beam_names(self) -> None:
         with block_signals(self.ui.active_beam):
             self.ui.active_beam.clear()
             self.ui.active_beam.addItems(HexrdConfig().beam_names)
             self.ui.active_beam.setCurrentText(HexrdConfig().active_beam_name)
 
-    def on_active_beam_changed(self):
+    def on_active_beam_changed(self) -> None:
         HexrdConfig().active_beam_name = self.ui.active_beam.currentText()
 
-    def on_run_button_clicked(self):
+    def on_run_button_clicked(self) -> None:
         if self.delta_boundaries:
             # If delta boundaries are being used, set the min/max according to
             # the delta boundaries. Lmfit requires min/max to run.
@@ -306,18 +314,18 @@ class CalibrationDialog(QObject):
             traceback.print_exc()
             msg = 'Parameter settings are invalid!\n\n' + str(e)
             print(msg)
-            QMessageBox.critical(self.parent(), 'Invalid Parameters', msg)
+            QMessageBox.critical(self.parent(), 'Invalid Parameters', msg)  # type: ignore[arg-type]
             return
 
         self.run.emit()
 
-    def on_undo_run_button_clicked(self):
+    def on_undo_run_button_clicked(self) -> None:
         self.undo_run.emit()
 
-    def finish(self):
+    def finish(self) -> None:
         self.finished.emit()
 
-    def apply_delta_boundaries(self):
+    def apply_delta_boundaries(self) -> None:
         # lmfit only uses min/max, not delta
         # So if we used a delta, apply that to the min/max
 
@@ -325,7 +333,7 @@ class CalibrationDialog(QObject):
             # We don't actually need to apply delta boundaries...
             return
 
-        def recurse(cur):
+        def recurse(cur: dict[str, Any]) -> None:
             for k, v in cur.items():
                 if '_param' in v:
                     param = v['_param']
@@ -338,7 +346,7 @@ class CalibrationDialog(QObject):
 
         recurse(self.tree_view.model().config)
 
-    def validate_parameters(self):
+    def validate_parameters(self) -> None:
         # Recursively look through the tree dict, and add on errors
         config = self.tree_view.model().config
         errors = []
@@ -347,7 +355,7 @@ class CalibrationDialog(QObject):
         has_tardis_constraints = self.has_tardis_constraints
         tardis_ip4_y_path = self.tardis_ip4_y_path
 
-        def recurse(cur):
+        def recurse(cur: dict[str, Any]) -> None:
             for k, v in cur.items():
                 path.append(k)
                 if '_param' in v:
@@ -388,20 +396,20 @@ class CalibrationDialog(QObject):
             raise Exception(error_str)
 
     @property
-    def params_dict(self):
+    def params_dict(self) -> Any:
         return self._params_dict
 
     @params_dict.setter
-    def params_dict(self, v):
+    def params_dict(self, v: Any) -> None:
         self._params_dict = v
         self.update_tree_view()
 
     @property
-    def undo_enabled(self):
+    def undo_enabled(self) -> bool:
         return self.ui.undo_run_button.isEnabled()
 
     @undo_enabled.setter
-    def undo_enabled(self, b):
+    def undo_enabled(self, b: bool) -> None:
         self.ui.undo_run_button.setEnabled(b)
 
     @property
@@ -410,7 +418,7 @@ class CalibrationDialog(QObject):
         return ret if ret is not None else RelativeConstraintsType.none
 
     @relative_constraints.setter
-    def relative_constraints(self, v: RelativeConstraintsType):
+    def relative_constraints(self, v: RelativeConstraintsType) -> None:
         v = v if v is not None else RelativeConstraintsType.none
         w = self.ui.relative_constraints
         w.setCurrentText(RELATIVE_CONSTRAINT_LABELS[v])
@@ -423,17 +431,17 @@ class CalibrationDialog(QObject):
         return ROTATION_CENTER_LABELS_R[w.currentText()]
 
     @tilt_center_of_rotation.setter
-    def tilt_center_of_rotation(self, v: RotationCenter):
+    def tilt_center_of_rotation(self, v: RotationCenter) -> None:
         w = self.ui.tilt_center_of_rotation
         text = ROTATION_CENTER_LABELS[v]
         w.setCurrentText(text)
 
     @property
-    def engineering_constraints(self):
+    def engineering_constraints(self) -> str:
         return self.ui.engineering_constraints.currentText()
 
     @engineering_constraints.setter
-    def engineering_constraints(self, v):
+    def engineering_constraints(self, v: str | None) -> None:
         v = str(v)
         w = self.ui.engineering_constraints
         options = [w.itemText(i) for i in range(w.count())]
@@ -443,28 +451,28 @@ class CalibrationDialog(QObject):
         w.setCurrentText(v)
 
     @property
-    def delta_boundaries(self):
+    def delta_boundaries(self) -> bool:
         return self.ui.delta_boundaries.isChecked()
 
     @delta_boundaries.setter
-    def delta_boundaries(self, b):
+    def delta_boundaries(self, b: bool) -> None:
         self.ui.delta_boundaries.setChecked(b)
 
-    def on_edit_picks_clicked(self):
+    def on_edit_picks_clicked(self) -> None:
         self.edit_picks_clicked.emit()
 
-    def on_save_picks_clicked(self):
+    def on_save_picks_clicked(self) -> None:
         self.save_picks_clicked.emit()
 
-    def on_load_picks_clicked(self):
+    def on_load_picks_clicked(self) -> None:
         self.load_picks_clicked.emit()
 
     @property
-    def tth_distortion(self):
+    def tth_distortion(self) -> Any:
         return self.pinhole_correction_editor.create_object_dict(self.instr)
 
     @tth_distortion.setter
-    def tth_distortion(self, v):
+    def tth_distortion(self, v: Any) -> None:
         if v is None:
             self.pinhole_correction_editor.correction_type = None
             return
@@ -473,10 +481,10 @@ class CalibrationDialog(QObject):
         first = next(iter(v.values()))
         self.pinhole_correction_editor.update_from_object(first)
 
-    def on_reset_relative_params_to_zero_clicked(self):
+    def on_reset_relative_params_to_zero_clicked(self) -> None:
         self.reset_relative_params_to_zero_clicked.emit()
 
-    def on_relative_constraints_changed(self):
+    def on_relative_constraints_changed(self) -> None:
         # If the relative constraints is not None, then the engineering
         # constraints must be set to None
         enable = self.relative_constraints == RelativeConstraintsType.none
@@ -491,14 +499,14 @@ class CalibrationDialog(QObject):
         self.reinitialize_tree_view()
         self.update_relative_constraint_visibilities()
 
-    def on_tilt_center_of_rotation_changed(self):
+    def on_tilt_center_of_rotation_changed(self) -> None:
         self.tilt_center_of_rotation_changed.emit(self.tilt_center_of_rotation)
 
-    def on_engineering_constraints_changed(self):
+    def on_engineering_constraints_changed(self) -> None:
         self.update_disabled_editor_paths()
         self.engineering_constraints_changed.emit(self.engineering_constraints)
 
-    def update_disabled_editor_paths(self):
+    def update_disabled_editor_paths(self) -> None:
         uneditable_paths = self.tree_view.model().uneditable_paths
         disabled_paths = self.tree_view.disabled_editor_paths
 
@@ -518,11 +526,11 @@ class CalibrationDialog(QObject):
         self.update_tree_view()
 
     @property
-    def has_tardis_constraints(self):
+    def has_tardis_constraints(self) -> bool:
         return self.engineering_constraints == 'TARDIS'
 
     @property
-    def tardis_ip4_y_path(self) -> tuple[str]:
+    def tardis_ip4_y_path(self) -> tuple[str, ...]:
         return (
             'detectors',
             'IMAGE-PLATE-4',
@@ -531,11 +539,11 @@ class CalibrationDialog(QObject):
             'Y',
         )
 
-    def on_delta_boundaries_toggled(self, b):
+    def on_delta_boundaries_toggled(self, b: bool) -> None:
         # The columns have changed, so we need to reinitialize the tree view
         self.reinitialize_tree_view()
 
-    def mirror_constraints_from_first_detector(self):
+    def mirror_constraints_from_first_detector(self) -> None:
         instr = self.instr
         config = self.tree_view.model().config
         detector_iterator = iter(config['detectors'])
@@ -608,7 +616,7 @@ class CalibrationDialog(QObject):
 
         self.tree_view.reset_gui()
 
-    def update_from_calibrator(self, calibrator):
+    def update_from_calibrator(self, calibrator: Any) -> None:
         is_structureless = not hasattr(calibrator, 'calibrators')
 
         self.relative_constraints = calibrator.relative_constraints_type
@@ -620,23 +628,23 @@ class CalibrationDialog(QObject):
 
         self.params_dict = calibrator.params
 
-    def load_tree_view_mapping(self):
+    def load_tree_view_mapping(self) -> None:
         module = hexrdgui.resources.calibration
         filename = 'calibration_params_tree_view.yml'
         text = resource_loader.load_resource(module, filename)
         self.tree_view_mapping = yaml.safe_load(text)
 
     @property
-    def tree_view_dict_of_params(self):
+    def tree_view_dict_of_params(self) -> dict[str, Any]:
         params_dict = self.params_dict
 
-        tree_dict = {}
+        tree_dict: dict[str, Any] = {}
         template_dict = copy.deepcopy(self.tree_view_mapping)
 
         # Keep track of which params have been used.
         used_params = []
 
-        def create_param_item(param):
+        def create_param_item(param: Any) -> dict[str, Any]:
             used_params.append(param.name)
             d = {
                 '_param': param,
@@ -669,7 +677,10 @@ class CalibrationDialog(QObject):
             'Debye-Scherrer ring means',
         ]
 
-        def recursively_set_items(this_config, this_template):
+        def recursively_set_items(
+            this_config: dict[str, Any],
+            this_template: dict[str, Any],
+        ) -> bool:
             param_set = False
             for k, v in this_template.items():
                 if k in special_cases:
@@ -721,7 +732,11 @@ class CalibrationDialog(QObject):
         euler_convention = HexrdConfig().euler_angle_convention
         euler_normalized = normalize_euler_convention(euler_convention)
 
-        def recursively_format_det(det, this_config, this_template):
+        def recursively_format_det(
+            det: str,
+            this_config: dict[str, Any],
+            this_template: dict[str, Any],
+        ) -> None:
             for k, v in this_template.items():
                 if isinstance(v, dict):
                     this_config.setdefault(k, {})
@@ -758,7 +773,10 @@ class CalibrationDialog(QObject):
                     if v in params_dict:
                         this_config[k] = create_param_item(params_dict[v])
 
-        def _format_relative_constraints(this_dict: dict, prefix: str):
+        def _format_relative_constraints(
+            this_dict: dict[str, Any],
+            prefix: str,
+        ) -> None:
             tvec_names = [
                 f'{prefix}_tvec_x',
                 f'{prefix}_tvec_y',
@@ -813,7 +831,7 @@ class CalibrationDialog(QObject):
 
         return tree_dict
 
-    def initialize_tree_view(self):
+    def initialize_tree_view(self) -> None:
         if hasattr(self, 'tree_view'):
             # It has already been initialized
             return
@@ -822,7 +840,7 @@ class CalibrationDialog(QObject):
         self.tree_view = MultiColumnDictTreeView(
             tree_dict,
             self.tree_view_columns,
-            parent=self.parent(),
+            parent=self.parent(),  # type: ignore[arg-type]
             model_class=self.tree_view_model_class,
         )
         self.tree_view.check_selection_index = 2
@@ -833,7 +851,7 @@ class CalibrationDialog(QObject):
 
         self.update_disabled_editor_paths()
 
-    def reinitialize_tree_view(self):
+    def reinitialize_tree_view(self) -> None:
         # Keep the same scroll position
         scrollbar = self.tree_view.verticalScrollBar()
         scroll_value = scrollbar.value()
@@ -846,7 +864,7 @@ class CalibrationDialog(QObject):
         # Restore scroll bar position
         self.tree_view.verticalScrollBar().setValue(scroll_value)
 
-    def update_tree_view(self):
+    def update_tree_view(self) -> None:
         if self._ignore_next_tree_view_update:
             # Sometimes this is necessary when updating multiple
             # parameters at once.
@@ -857,23 +875,23 @@ class CalibrationDialog(QObject):
         self.tree_view.model().config = tree_dict
         self.tree_view.reset_gui()
 
-    def on_pinhole_correction_settings_modified(self):
+    def on_pinhole_correction_settings_modified(self) -> None:
         self.pinhole_correction_settings_modified.emit()
 
-    def clear_polar_view_tth_correction(self, show_warning=True):
+    def clear_polar_view_tth_correction(self, show_warning: bool = True) -> None:
         editor = self.pinhole_correction_editor
         if editor.apply_to_polar_view:
             if show_warning:
                 msg = 'Polar view correction will be disabled for this operation'
-                QMessageBox.information(self.parent(), 'HEXRD', msg)
+                QMessageBox.information(self.parent(), 'HEXRD', msg)  # type: ignore[arg-type]
             editor.apply_to_polar_view = False
 
     @property
-    def tree_view_columns(self):
+    def tree_view_columns(self) -> Any:
         return self.tree_view_model_class.COLUMNS
 
     @property
-    def tree_view_model_class(self):
+    def tree_view_model_class(self) -> Any:
         if self.delta_boundaries:
             return DeltaCalibrationTreeItemModel
         else:
@@ -899,7 +917,7 @@ ROTATION_CENTER_LABELS = {
 ROTATION_CENTER_LABELS_R = {v: k for k, v in ROTATION_CENTER_LABELS.items()}
 
 
-def guess_engineering_constraints(instr) -> str | None:
+def guess_engineering_constraints(instr: HEDMInstrument) -> str | None:
     # First guess the instrument type.
     instr_type = guess_instrument_type(instr.detectors)
 

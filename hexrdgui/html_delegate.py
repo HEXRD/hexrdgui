@@ -1,16 +1,16 @@
-from PySide6.QtCore import QModelIndex, QSize, Qt
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QSize, Qt
 from PySide6.QtGui import QFontMetrics, QPainter, QTextDocument
-from PySide6.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem
+from PySide6.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem, QWidget
 
 
 class HtmlDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         # Store the custom stylesheet.
         self._stylesheet = ''
         self._document_margin = 4.0
 
-    def set_stylesheet(self, css_string: str):
+    def set_stylesheet(self, css_string: str) -> None:
         """Sets the custom CSS stylesheet to be used for all items."""
         self._stylesheet = css_string
 
@@ -22,8 +22,8 @@ class HtmlDelegate(QStyledItemDelegate):
             '</html>'
         )
 
-    def _get_display_string(self, index: QModelIndex):
-        data = index.data(Qt.DisplayRole)
+    def _get_display_string(self, index: QModelIndex | QPersistentModelIndex) -> str | None:
+        data = index.data(Qt.ItemDataRole.DisplayRole)
         if data is not None and not isinstance(data, str):
             # Ensure it is a string
             data = str(data)
@@ -33,8 +33,8 @@ class HtmlDelegate(QStyledItemDelegate):
         self,
         painter: QPainter,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
-    ):
+        index: QModelIndex | QPersistentModelIndex,
+    ) -> None:
         data = self._get_display_string(index)
         if not data:
             return
@@ -45,16 +45,16 @@ class HtmlDelegate(QStyledItemDelegate):
         plain_text = temp_doc.toPlainText()
 
         # Check if the plain text needs to be truncated with an ellipsis.
-        font_metrics = QFontMetrics(option.font)
+        font_metrics = QFontMetrics(option.font)  # type: ignore[attr-defined]
         text_width = font_metrics.horizontalAdvance(plain_text)
 
         # Allow for a small margin.
-        available_width = option.rect.width() - 4
+        available_width = option.rect.width() - 4  # type: ignore[attr-defined]
 
         # If text is too long, elide it.
         if text_width > available_width:
             elided_text = font_metrics.elidedText(
-                plain_text, Qt.ElideRight, available_width
+                plain_text, Qt.TextElideMode.ElideRight, available_width
             )
             # Re-wrap the elided text in a simple HTML structure to preserve
             # formatting.
@@ -67,19 +67,19 @@ class HtmlDelegate(QStyledItemDelegate):
         full_html = self._add_stylesheet(html_content)
         doc = QTextDocument()
         doc.setHtml(full_html)
-        doc.setDefaultFont(option.font)
+        doc.setDefaultFont(option.font)  # type: ignore[attr-defined]
         doc.setDocumentMargin(self._document_margin)
 
         # Draw the text document.
         painter.save()
-        painter.setClipRect(option.rect)
+        painter.setClipRect(option.rect)  # type: ignore[attr-defined]
 
         # Handle item selection state
-        if option.state & QStyle.State_Selected:
-            painter.fillRect(option.rect, option.palette.highlight())
+        if option.state & QStyle.StateFlag.State_Selected:  # type: ignore[attr-defined]
+            painter.fillRect(option.rect, option.palette.highlight())  # type: ignore[attr-defined]
 
         # Move the painter to the correct position for the text document.
-        painter.translate(option.rect.x(), option.rect.y())
+        painter.translate(option.rect.x(), option.rect.y())  # type: ignore[attr-defined]
 
         # Align the text within the item.
         # text_option = doc.defaultTextOption()
@@ -88,14 +88,14 @@ class HtmlDelegate(QStyledItemDelegate):
 
         doc.drawContents(
             painter,
-            option.rect.translated(-option.rect.x(), -option.rect.y()),
+            option.rect.translated(-option.rect.x(), -option.rect.y()),  # type: ignore[attr-defined]
         )
         painter.restore()
 
     def sizeHint(
         self,
         option: QStyleOptionViewItem,
-        index: QModelIndex,
+        index: QModelIndex | QPersistentModelIndex,
     ) -> QSize:
         data = self._get_display_string(index)
         if not data:
@@ -103,10 +103,10 @@ class HtmlDelegate(QStyledItemDelegate):
 
         doc = QTextDocument()
         doc.setHtml(self._add_stylesheet(data))
-        doc.setDefaultFont(option.font)
+        doc.setDefaultFont(option.font)  # type: ignore[attr-defined]
         doc.setDocumentMargin(self._document_margin)
 
-        return QSize(doc.idealWidth(), doc.size().height())
+        return QSize(int(doc.idealWidth()), int(doc.size().height()))
 
 
 def _stacked_notation_table_stylesheet() -> str:

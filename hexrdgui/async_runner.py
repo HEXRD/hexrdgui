@@ -1,5 +1,7 @@
+from typing import Any, Callable
+
 from PySide6.QtCore import QThreadPool, QTimer
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QWidget
 
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.progress_dialog import ProgressDialog
@@ -7,7 +9,7 @@ from hexrdgui.progress_dialog import ProgressDialog
 
 class AsyncRunner:
 
-    def __init__(self, parent):
+    def __init__(self, parent: QWidget) -> None:
         self.parent = parent
 
         self.progress_dialog = ProgressDialog(parent)
@@ -18,7 +20,7 @@ class AsyncRunner:
 
         self.reset_callbacks()
 
-    def run(self, f, *args, **kwargs):
+    def run(self, f: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         worker = AsyncWorker(f, *args, **kwargs)
 
         if self.success_callback:
@@ -41,31 +43,31 @@ class AsyncRunner:
 
         self.progress_dialog.exec()
 
-    def on_worker_finished(self):
+    def on_worker_finished(self) -> None:
         self.reset_callbacks()
         # Sometimes the progress dialog seems to hang around for no apparent
         # reason, unless we close it in the next iteration of the event loop.
         # So don't close it yet, but close it soon.
         QTimer.singleShot(0, self.progress_dialog.accept)
 
-    def reset_callbacks(self):
-        self.success_callback = None
-        self.error_callback = None
+    def reset_callbacks(self) -> None:
+        self.success_callback: Callable[..., Any] | None = None
+        self.error_callback: Callable[..., Any] | None = None
 
     @property
-    def progress_title(self):
-        return self.progress_dialog.windowTitle()
+    def progress_title(self) -> str:
+        return self.progress_dialog.ui.windowTitle()
 
     @progress_title.setter
-    def progress_title(self, title):
+    def progress_title(self, title: str) -> None:
         self.progress_dialog.setWindowTitle(title)
 
-    def on_async_error(self, t):
+    def on_async_error(self, t: Any) -> None:
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
-        msg_box = QMessageBox(QMessageBox.Critical, 'Error', msg)
+        msg_box = QMessageBox(QMessageBox.Icon.Critical, 'Error', msg)
         msg_box.exec()
 
     @property
-    def thread_pool(self):
+    def thread_pool(self) -> QThreadPool:
         return QThreadPool.globalInstance()

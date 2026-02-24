@@ -1,7 +1,9 @@
 import numpy as np
 from pathlib import Path
 
-from PySide6.QtWidgets import QDialog, QFileDialog
+from typing import Any
+
+from PySide6.QtWidgets import QDialog, QFileDialog, QWidget
 from PySide6.QtCore import QTimer, Qt
 
 from hexrdgui.async_worker import AsyncWorker
@@ -12,7 +14,7 @@ from hexrdgui.utils.dialog import add_help_url
 
 class RerunClusteringDialog(QDialog):
 
-    def __init__(self, indexing_runner, parent=None):
+    def __init__(self, indexing_runner: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -26,7 +28,7 @@ class RerunClusteringDialog(QDialog):
         self.setup_gui()
         self.setup_connections()
 
-    def setup_gui(self):
+    def setup_gui(self) -> None:
         idx_cfg = HexrdConfig().indexing_config['find_orientations']
         clustering_data = idx_cfg['clustering']
         self.ui.radius.setValue(clustering_data['radius'])
@@ -35,14 +37,14 @@ class RerunClusteringDialog(QDialog):
         self.ui.min_samples.setValue(self.indexing_runner.min_samples)
         self.update_min_samples_enable_state()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.load_file.clicked.connect(self.load_file)
         self.ui.button_box.accepted.connect(self.accept)
         self.ui.algorithms.currentIndexChanged.connect(
             self.update_min_samples_enable_state
         )
 
-    def update_min_samples_enable_state(self):
+    def update_min_samples_enable_state(self) -> None:
         indexing_config = HexrdConfig().indexing_config
         visible = (
             indexing_config['find_orientations']['use_quaternion_grid'] is None
@@ -52,7 +54,7 @@ class RerunClusteringDialog(QDialog):
         self.ui.min_samples_label.setVisible(visible)
         self.ui.min_samples.setVisible(visible)
 
-    def load_file(self):
+    def load_file(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui,
             'Load Scored Orientations File',
@@ -67,7 +69,7 @@ class RerunClusteringDialog(QDialog):
                 self.qfib = data['test_quaternions']
                 self.completeness = data['score']
 
-    def save_input(self):
+    def save_input(self) -> None:
         idx_cfg = HexrdConfig().indexing_config
         clustering = idx_cfg['find_orientations']['clustering']
         clustering['radius'] = self.ui.radius.value()
@@ -80,7 +82,7 @@ class RerunClusteringDialog(QDialog):
         if self.completeness is not None:
             self.indexing_runner.completeness = self.completeness
 
-    def accept(self):
+    def accept(self) -> None:
         self.save_input()
 
         runner = self.indexing_runner
@@ -90,18 +92,18 @@ class RerunClusteringDialog(QDialog):
 
         worker.signals.result.connect(
             self._on_run_cluster_finished,
-            Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
         )
         runner.indexing_results_rejected.connect(
             self._on_indexing_results_rejected,
-            Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
         )
         worker.signals.error.connect(runner.on_async_error)
         runner.progress_dialog.exec()
 
         super().accept()
 
-    def _on_run_cluster_finished(self):
+    def _on_run_cluster_finished(self) -> None:
         # This function was previously a nested function, but for some reason,
         # in the latest version of Qt (Qt 6.8.1), a queued connection on a
         # nested function no longer seems to work (the application freezes).
@@ -116,7 +118,7 @@ class RerunClusteringDialog(QDialog):
             # The previous step must have failed. Show again.
             QTimer.singleShot(0, self.exec)
 
-    def _on_indexing_results_rejected(self):
+    def _on_indexing_results_rejected(self) -> None:
         # This function was previously a nested function, but for some reason,
         # in the latest version of Qt (Qt 6.8.1), a queued connection on a
         # nested function no longer seems to work (the application freezes).
@@ -126,6 +128,6 @@ class RerunClusteringDialog(QDialog):
         self.indexing_runner.accept_progress()
         self.exec()
 
-    def exec(self):
+    def exec(self) -> None:  # type: ignore[override]
         self.setup_gui()
         self.ui.exec()

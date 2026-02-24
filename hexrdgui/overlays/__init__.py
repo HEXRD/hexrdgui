@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+
 from hexrdgui.constants import OverlayType
 
 from . import compatibility
@@ -15,20 +22,20 @@ type_dict = {
 }
 
 
-def create_overlay(material_name, type, **kwargs):
+def create_overlay(material_name: str, type: Any, **kwargs: Any) -> Any:
     if type not in type_dict:
         raise Exception(f'Unknown overlay type: {type}')
 
     return type_dict[type](material_name, **kwargs)
 
 
-def to_dict(overlay):
+def to_dict(overlay: Any) -> dict:
     # Route the call through the compatibilty module to take care
     # of versioning.
     return compatibility.to_dict(overlay)
 
 
-def from_dict(d):
+def from_dict(d: Any) -> Any:
     type = OverlayType(d.pop('type'))
     if type not in type_dict:
         raise Exception(f'Unknown overlay type: {type}')
@@ -39,10 +46,10 @@ def from_dict(d):
     return compatibility.from_dict(cls, d)
 
 
-def update_overlay_data(instr, display_mode):
+def update_overlay_data(instr: HEDMInstrument, display_mode: Any) -> None:
     from hexrdgui.hexrd_config import HexrdConfig
 
-    def flag_update(overlay):
+    def flag_update(overlay: Any) -> None:
         overlay.instrument = instr
         overlay.display_mode = display_mode
         overlay.update_needed = True

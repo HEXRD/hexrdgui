@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 import numpy as np
@@ -17,12 +19,18 @@ class SelectGrainsDialog(QObject):
     accepted = Signal()
     rejected = Signal()
 
-    def __init__(self, num_requested_grains: int | None = 1, parent=None):
+    def __init__(
+        self,
+        num_requested_grains: int | None = 1,
+        parent: QObject | None = None,
+    ) -> None:
         super().__init__(parent)
         self.ignore_errors = False
 
         loader = UiLoader()
-        self.ui = loader.load_file('select_grains_dialog.ui', parent)
+        self.ui = loader.load_file(
+            'select_grains_dialog.ui', parent  # type: ignore[arg-type]
+        )
 
         self.num_requested_grains = num_requested_grains
 
@@ -52,7 +60,7 @@ class SelectGrainsDialog(QObject):
         self.update_enable_states()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.select_file_button.pressed.connect(self.select_file)
         self.ui.file_name.editingFinished.connect(self.file_name_changed)
         self.ui.method.currentIndexChanged.connect(self.method_index_changed)
@@ -61,22 +69,22 @@ class SelectGrainsDialog(QObject):
         self.ui.table_view.selection_changed.connect(self.update_enable_states)
         self.ui.plot_grains.clicked.connect(self.plot_grains)
 
-    def show(self):
+    def show(self) -> None:
         return self.ui.show()
 
     @property
-    def hedm_calibration_grains_table(self):
+    def hedm_calibration_grains_table(self) -> np.ndarray | None:
         return HexrdConfig().hedm_calibration_output_grains_table
 
     @property
-    def find_orientations_grains_table(self):
+    def find_orientations_grains_table(self) -> np.ndarray | None:
         return HexrdConfig().find_orientations_grains_table
 
     @property
-    def fit_grains_grains_table(self):
+    def fit_grains_grains_table(self) -> np.ndarray | None:
         return HexrdConfig().fit_grains_grains_table
 
-    def setup_methods(self):
+    def setup_methods(self) -> None:
         hc_grains_table = self.hedm_calibration_grains_table
         fo_grains_table = self.find_orientations_grains_table
         fg_grains_table = self.fit_grains_grains_table
@@ -93,17 +101,17 @@ class SelectGrainsDialog(QObject):
         enable_list = list(methods_and_enable.values())
         set_combobox_enabled_items(self.ui.method, enable_list)
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         self.update_config()
         self.accepted.emit()
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         self.rejected.emit()
 
-    def select_file(self):
+    def select_file(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'grains.out', HexrdConfig().working_dir, 'Grains.out files (*.out)'
         )
@@ -113,15 +121,15 @@ class SelectGrainsDialog(QObject):
             self.file_name = selected_file
 
     @property
-    def file_name(self):
+    def file_name(self) -> str:
         return self.ui.file_name.text()
 
     @file_name.setter
-    def file_name(self, v):
+    def file_name(self, v: str) -> None:
         self.ui.file_name.setText(v)
         self.file_name_changed()
 
-    def file_name_changed(self):
+    def file_name_changed(self) -> None:
         file_name = self.file_name
         if not file_name:
             self.grains_table = None
@@ -136,21 +144,21 @@ class SelectGrainsDialog(QObject):
                 QMessageBox.critical(self.ui, 'HEXRD', msg)
             self.grains_table = None
 
-    def load_hc_grains_table(self):
+    def load_hc_grains_table(self) -> None:
         self.grains_table = self.hedm_calibration_grains_table
 
-    def load_fo_grains_table(self):
+    def load_fo_grains_table(self) -> None:
         self.grains_table = self.find_orientations_grains_table
 
-    def load_fg_grains_table(self):
+    def load_fg_grains_table(self) -> None:
         self.grains_table = self.fit_grains_grains_table
 
     @property
-    def grains_table(self):
+    def grains_table(self) -> np.ndarray | None:
         return self.ui.table_view.grains_table
 
     @grains_table.setter
-    def grains_table(self, v):
+    def grains_table(self, v: np.ndarray | None) -> None:
         # We make a new GrainsTableModel each time for now to save
         # dev time, since the model wasn't designed to be mutable.
         # FIXME: in the future, make GrainsTableModel grains mutable,
@@ -176,12 +184,12 @@ class SelectGrainsDialog(QObject):
             and len(v) == self.num_requested_grains
         ):
             selection_model = view.selectionModel()
-            command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+            command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
             for i in range(len(v)):
                 model_index = selection_model.model().index(i, 0)
                 selection_model.select(model_index, command)
 
-    def update_grains_table(self):
+    def update_grains_table(self) -> None:
         functions = {
             'hedm_calibration_output': self.load_hc_grains_table,
             'find_orientations_output': self.load_fo_grains_table,
@@ -194,16 +202,17 @@ class SelectGrainsDialog(QObject):
         functions[self.method_name]()
 
     @property
-    def selected_grain(self):
+    def selected_grain(self) -> np.ndarray | None:
         if self.num_requested_grains != 1:
             msg = 'selected_grain() called, but one grain was not requested!'
             raise Exception(msg)
 
         if self.num_selected_grains == 1:
             return self.selected_grains[0]
+        return None
 
     @property
-    def selected_grains(self):
+    def selected_grains(self) -> np.ndarray | list:
         grains = self.ui.table_view.selected_grains
         if grains is None:
             return []
@@ -211,10 +220,10 @@ class SelectGrainsDialog(QObject):
         return grains
 
     @property
-    def num_selected_grains(self):
+    def num_selected_grains(self) -> int:
         return len(self.selected_grains)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         indexing_config = HexrdConfig().indexing_config
         key = '_loaded_crystal_params_file'
         self.file_name = indexing_config.get(key, '')
@@ -222,20 +231,20 @@ class SelectGrainsDialog(QObject):
         self.update_method_tab()
         self.update_enable_states()
 
-    def update_config(self):
+    def update_config(self) -> None:
         indexing_config = HexrdConfig().indexing_config
         indexing_config['_loaded_crystal_params_file'] = self.file_name
 
     @property
-    def num_grains_loaded(self):
+    def num_grains_loaded(self) -> int:
         if self.grains_table is None:
             return 0
 
         return len(self.grains_table)
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         button_box = self.ui.button_box
-        ok_button = button_box.button(QDialogButtonBox.Ok)
+        ok_button = button_box.button(QDialogButtonBox.StandardButton.Ok)
         if ok_button:
             enable = (
                 self.num_requested_grains is None
@@ -247,18 +256,18 @@ class SelectGrainsDialog(QObject):
         self.ui.plot_grains.setEnabled(grains_loaded)
 
     @property
-    def method_name(self):
+    def method_name(self) -> str:
         return label_to_name(self.ui.method.currentText())
 
     @method_name.setter
-    def method_name(self, v):
+    def method_name(self, v: str) -> None:
         self.ui.method.setCurrentText(name_to_label(v))
 
-    def method_index_changed(self):
+    def method_index_changed(self) -> None:
         self.update_method_tab()
         self.update_grains_table()
 
-    def update_method_tab(self):
+    def update_method_tab(self) -> None:
         # Take advantage of the naming scheme...
         method_tab = getattr(self.ui, self.method_name + '_tab')
         self.ui.tab_widget.setCurrentWidget(method_tab)
@@ -266,13 +275,13 @@ class SelectGrainsDialog(QObject):
         visible = self.method_name == 'file'
         self.ui.tab_widget.setVisible(visible)
 
-    def plot_grains(self):
+    def plot_grains(self) -> None:
         plot_grains(self.grains_table, None, parent=self.ui)
 
 
-def name_to_label(s):
+def name_to_label(s: str) -> str:
     return ' '.join(x.capitalize() for x in s.split('_'))
 
 
-def label_to_name(s):
+def label_to_name(s: str) -> str:
     return '_'.join(x.lower() for x in s.split())

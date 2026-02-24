@@ -1,38 +1,40 @@
+from PySide6.QtWidgets import QWidget
+
 from hexrdgui.ui_loader import UiLoader
 
 
 class RangeWidget:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('range_widget.ui', parent)
 
     @property
-    def min(self):
+    def min(self) -> float:
         return self.ui.min.value()
 
     @min.setter
-    def min(self, v):
+    def min(self, v: float) -> None:
         self.ui.min.setValue(v)
 
     @property
-    def max(self):
+    def max(self) -> float:
         return self.ui.max.value()
 
     @max.setter
-    def max(self, v):
+    def max(self, v: float) -> None:
         self.ui.max.setValue(v)
 
     @property
-    def range(self):
+    def range(self) -> tuple:
         return (self.min, self.max)
 
     @property
-    def bounds(self):
+    def bounds(self) -> tuple:
         return (self.ui.min.minimum(), self.ui.max.maximum())
 
     @bounds.setter
-    def bounds(self, v):
+    def bounds(self, v: tuple) -> None:
         self.ui.min.setMinimum(v[0])
         self.ui.max.setMaximum(v[1])
 

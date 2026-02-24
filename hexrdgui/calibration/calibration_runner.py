@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 import copy
 from functools import partial
 import itertools
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Generator
 
 import h5py
 import numpy as np
 
 from PySide6.QtCore import QCoreApplication, QObject, Signal
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 from hexrd.fitting.calibration import LaueCalibrator, PowderCalibrator
 from hexrd.instrument import unwrap_h5_to_dict
@@ -45,25 +48,34 @@ from hexrdgui.utils import (
 )
 from hexrdgui.utils.dicts import ndarrays_to_lists
 
+if TYPE_CHECKING:
+    from hexrdgui.async_runner import AsyncRunner
+    from hexrdgui.image_canvas import ImageCanvas
+
 
 class CalibrationRunner(QObject):
 
     calibration_finished = Signal()
 
-    def __init__(self, canvas, async_runner, parent=None):
+    def __init__(
+        self,
+        canvas: ImageCanvas,
+        async_runner: AsyncRunner,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.canvas = canvas
         self.current_overlay_ind = -1
         self.overlay_data_index = -1
 
-        self.line_picker = None
-        self.overlay_picks = {}
+        self.line_picker: LinePickerDialog | None = None
+        self.overlay_picks: dict[str, Any] = {}
 
         self.async_runner = async_runner
-        self.parent = parent
+        self._parent = parent
 
-    def run(self):
+    def run(self) -> None:
         # The active overlays will be the ones that are visible when we start
         self.active_overlays = self.visible_overlays
 
@@ -71,7 +83,7 @@ class CalibrationRunner(QObject):
         self.pad_overlay_picks()
         self.pick_next_line()
 
-    def validate(self):
+    def validate(self) -> None:
         active_overlays = self.active_overlays
         if not active_overlays:
             raise Exception('No visible overlays')
@@ -100,12 +112,12 @@ class CalibrationRunner(QObject):
                 'Visible overlays must have widths enabled for calibration.'
                 f'\n\nSetting "{overlay.name}" widths to: {default_str}'
             )
-            QMessageBox.warning(self.parent, 'HEXRD', msg)
+            QMessageBox.warning(self._parent, 'HEXRD', msg)
 
         if any_updates:
             HexrdConfig().overlay_config_changed.emit()
 
-    def enable_focus_mode(self, b):
+    def enable_focus_mode(self, b: bool) -> None:
         # FIXME: We must avoid using focus mode until we can be sure
         # that this issue will not happen again:
         # https://github.com/HEXRD/hexrdgui/issues/1556
@@ -115,31 +127,31 @@ class CalibrationRunner(QObject):
         # HexrdConfig().enable_canvas_toolbar.emit(not b)
         pass
 
-    def clear_all_overlay_picks(self):
+    def clear_all_overlay_picks(self) -> None:
         for overlay in self.active_overlays:
             overlay.reset_calibration_picks()
             overlay.pad_picks_data()
 
     @property
-    def overlays(self):
+    def overlays(self) -> list:
         return HexrdConfig().overlays
 
     @property
-    def visible_overlays(self):
+    def visible_overlays(self) -> list:
         return [x for x in self.overlays if x.visible]
 
-    def next_overlay(self):
+    def next_overlay(self) -> Overlay | None:
         self.current_overlay_ind += 1
         return self.active_overlay
 
     @property
-    def active_overlay(self):
+    def active_overlay(self) -> Any:
         if self.current_overlay_ind >= len(self.active_overlays):
             return None
 
         return self.active_overlays[self.current_overlay_ind]
 
-    def pick_next_line(self):
+    def pick_next_line(self) -> None:
         overlay = self.next_overlay()
         if overlay is None:
             # No more overlays to do. Move on.
@@ -148,7 +160,7 @@ class CalibrationRunner(QObject):
 
         self.pick_this_line()
 
-    def pick_this_line(self):
+    def pick_this_line(self) -> None:
         overlay = self.active_overlay
         title = f'Pick Method for "{overlay.name}"'
 
@@ -163,13 +175,12 @@ class CalibrationRunner(QObject):
         if not overlay.has_picks_data:
             disable_list.append('Current')
 
-        kwargs = {
-            'options': list(pick_methods.keys()),
-            'disable_list': disable_list,
-            'window_title': title,
-            'parent': self.canvas,
-        }
-        dialog = SelectItemDialog(**kwargs)
+        dialog = SelectItemDialog(
+            options=list(pick_methods.keys()),
+            disable_list=disable_list,
+            window_title=title,
+            parent=self.canvas,
+        )
         if not dialog.exec():
             # User canceled
             self.restore_state()
@@ -177,11 +188,11 @@ class CalibrationRunner(QObject):
 
         pick_methods[dialog.selected_option]()
 
-    def use_current_pick_points(self):
+    def use_current_pick_points(self) -> None:
         self.reset_overlay_picks()
         self.finish_line()
 
-    def hand_pick_points(self):
+    def hand_pick_points(self) -> None:
         overlay = self.active_overlay
         overlay.reset_calibration_picks()
         overlay.pad_picks_data()
@@ -201,15 +212,10 @@ class CalibrationRunner(QObject):
         self.reset_overlay_data_index_map()
         self.increment_overlay_data_index()
 
-        kwargs = {
-            'canvas': self.canvas,
-            'parent': self.canvas,
-            'single_line_mode': overlay.is_laue,
-        }
-
+        line_settings: dict[str, Any] | None = None
         if overlay.is_laue:
             # Set the line settings to use a circle
-            kwargs['line_settings'] = {
+            line_settings = {
                 'marker': 'o',
                 'fillstyle': 'none',
                 'markersize': 8,
@@ -217,7 +223,12 @@ class CalibrationRunner(QObject):
                 'linewidth': 0,
             }
 
-        picker = LinePickerDialog(**kwargs)
+        picker = LinePickerDialog(
+            canvas=self.canvas,
+            parent=self.canvas,
+            single_line_mode=overlay.is_laue,
+            line_settings=line_settings,
+        )
 
         self.line_picker = picker
         picker.ui.setWindowTitle(title)
@@ -238,7 +249,7 @@ class CalibrationRunner(QObject):
         # Enable focus mode during line picking
         self.enable_focus_mode(True)
 
-    def switch_xray_source(self, xray_source: str):
+    def switch_xray_source(self, xray_source: str) -> None:
         # Update the polar view to use this xrs source
         HexrdConfig().active_beam_name = xray_source
 
@@ -258,7 +269,7 @@ class CalibrationRunner(QObject):
 
         progress_dialog.hide()
 
-    def load_pick_points(self):
+    def load_pick_points(self) -> None:
         overlay = self.active_overlay
 
         title = f'Load Picks for {overlay.name}'
@@ -274,7 +285,7 @@ class CalibrationRunner(QObject):
 
         HexrdConfig().working_dir = str(Path(selected_file).parent)
 
-        import_data = {}
+        import_data: dict[str, Any] = {}
         with h5py.File(selected_file, 'r') as rf:
             unwrap_h5_to_dict(rf, import_data)
 
@@ -302,19 +313,19 @@ class CalibrationRunner(QObject):
 
         dialog = self.view_picks_table()
 
-        def on_rejected():
+        def on_rejected() -> None:
             dialog.tree_view.clear_artists()
             self.pick_this_line()
 
         dialog.ui.accepted.connect(self.finish_line)
         dialog.ui.rejected.connect(on_rejected)
 
-    def on_view_picks_clicked(self):
+    def on_view_picks_clicked(self) -> None:
         # Save the overlay picks so that they will be displayed in the table
         self.save_overlay_picks()
         self.view_picks_table()
 
-    def view_picks_table(self):
+    def view_picks_table(self) -> HKLPicksTreeViewDialog:
         # Backup some settings
         if self.active_overlay and self.active_overlay.has_highlights:
             highlighting = copy.deepcopy(self.active_overlay.highlights)
@@ -325,31 +336,36 @@ class CalibrationRunner(QObject):
         self.restore_overlay_visibilities()
         self.disable_line_picker()
 
-        kwargs = {
-            'dictionary': overlays_to_tree_format(self.active_overlays),
-            'coords_type': ViewType.polar,
-            'canvas': self.canvas,
-            'parent': self.canvas,
-        }
-        dialog = HKLPicksTreeViewDialog(**kwargs)
+        dialog = HKLPicksTreeViewDialog(
+            dictionary=overlays_to_tree_format(self.active_overlays),
+            coords_type=ViewType.polar,
+            canvas=self.canvas,
+            parent=self.canvas,
+        )
         dialog.button_box_visible = True
         dialog.ui.show()
-
-        kwargs = {
-            'dialog': dialog,
-            'highlighting': highlighting,
-            'prev_visibilities': prev_visibilities,
-        }
 
         # We need to ensure the finished func is called before any
         # accepted/rejected connections are called. finished() is
         # normally called after accepted/rejected, so we will connect
         # to accepted/rejected directly.
         dialog.ui.accepted.connect(
-            partial(self.view_picks_finished, accepted=True, **kwargs)
+            partial(
+                self.view_picks_finished,
+                accepted=True,
+                dialog=dialog,
+                highlighting=highlighting,
+                prev_visibilities=prev_visibilities,
+            )
         )
         dialog.ui.rejected.connect(
-            partial(self.view_picks_finished, accepted=False, **kwargs)
+            partial(
+                self.view_picks_finished,
+                accepted=False,
+                dialog=dialog,
+                highlighting=highlighting,
+                prev_visibilities=prev_visibilities,
+            )
         )
 
         # Make sure focus mode is enabled while viewing the picks
@@ -357,7 +373,13 @@ class CalibrationRunner(QObject):
 
         return dialog
 
-    def view_picks_finished(self, accepted, dialog, highlighting, prev_visibilities):
+    def view_picks_finished(
+        self,
+        accepted: bool,
+        dialog: HKLPicksTreeViewDialog,
+        highlighting: list[Any] | None,
+        prev_visibilities: list,
+    ) -> None:
         # Turn off focus mode (which may be turned back on if the line picker
         # will reappear)
         self.enable_focus_mode(False)
@@ -389,26 +411,26 @@ class CalibrationRunner(QObject):
         # picked points are animated too...
         self.canvas.draw_idle()
 
-    def finish_line(self):
+    def finish_line(self) -> None:
         self.save_overlay_picks()
         self.pick_next_line()
 
-    def generate_picks_results(self, polar=True):
+    def generate_picks_results(self, polar: bool = True) -> list[dict[str, Any]]:
         return generate_picks_results(self.active_overlays, polar=polar)
 
     @property
-    def pick_materials(self):
+    def pick_materials(self) -> dict:
         mats = [o.material for o in self.active_overlays]
         return {x.name: x for x in mats}
 
-    def dump_results(self):
+    def dump_results(self) -> None:
         # This dumps out all results to files for testing
         # It is mostly intended for debug purposes
         import json
         import pickle
 
         class NumpyEncoder(json.JSONEncoder):
-            def default(self, obj):
+            def default(self, obj: object) -> Any:
                 if isinstance(obj, np.ndarray):
                     return obj.tolist()
                 return json.JSONEncoder.default(self, obj)
@@ -423,22 +445,22 @@ class CalibrationRunner(QObject):
         pick_results = self.generate_picks_results()
         out_file = 'calibration_picks.json'
         print(f'Writing out picks to {out_file}')
-        with open(out_file, 'w') as wf:
-            json.dump(pick_results, wf, cls=NumpyEncoder)
+        with open(out_file, 'w') as tf:
+            json.dump(pick_results, tf, cls=NumpyEncoder)
 
         # Dump out the instrument as well
         instr = create_hedm_instrument()
         print('Writing out instrument to instrument.pkl')
-        with open('instrument.pkl', 'wb') as wf:
-            pickle.dump(instr, wf)
+        with open('instrument.pkl', 'wb') as bf:
+            pickle.dump(instr, bf)
 
-    def finish(self):
+    def finish(self) -> None:
         # Ensure the line picker is disabled and gone
         self.disable_line_picker()
         self.line_picker = None
         self.show_calibration_dialog()
 
-    def show_calibration_dialog(self):
+    def show_calibration_dialog(self) -> CalibrationDialog:
         # These picks need to be in cartesian
         picks = self.generate_picks_results(polar=False)
         materials = self.pick_materials
@@ -459,7 +481,7 @@ class CalibrationRunner(QObject):
             'instr': instr,
             'params_dict': self.ic.params,
             'format_extra_params_func': format_extra_params_func,
-            'parent': self.parent,
+            'parent': self._parent,
             'engineering_constraints': self.ic.engineering_constraints,
             'window_title': 'Composite Calibration',
             'help_url': 'calibration/composite_laue_and_powder',
@@ -483,7 +505,7 @@ class CalibrationRunner(QObject):
 
         return dialog
 
-    def on_calibration_finished(self):
+    def on_calibration_finished(self) -> None:
         overlays = self.active_overlays
         for overlay, calibrator in zip(overlays, self.ic.calibrators):
             modified = any(
@@ -505,23 +527,23 @@ class CalibrationRunner(QObject):
         HexrdConfig().update_overlay_editor.emit()
         self.calibration_finished.emit()
 
-    def set_exclusive_overlay_visibility(self, overlay):
+    def set_exclusive_overlay_visibility(self, overlay: Overlay) -> None:
         self.overlay_visibilities = [overlay is x for x in self.overlays]
 
-    def calibration_line_picker_finished(self):
+    def calibration_line_picker_finished(self) -> None:
         self.restore_state()
 
-    def restore_state(self):
+    def restore_state(self) -> None:
         self.enable_focus_mode(False)
         self.restore_overlay_visibilities()
         self.remove_all_highlighting()
 
-    def restore_overlay_visibilities(self):
+    def restore_overlay_visibilities(self) -> None:
         is_visible = [x in self.active_overlays for x in self.overlays]
         self.overlay_visibilities = is_visible
         HexrdConfig().overlay_config_changed.emit()
 
-    def set_highlighting(self, highlighting):
+    def set_highlighting(self, highlighting: list[Any]) -> None:
         # Disable the zoom canvas to prevent the highlight from
         # strangely switching back and forth (which is just caused
         # by the fact that we did not re-use the canvas's blit manager
@@ -531,26 +553,26 @@ class CalibrationRunner(QObject):
             HexrdConfig().flag_overlay_updates_for_all_materials()
             HexrdConfig().overlay_config_changed.emit()
 
-    def remove_all_highlighting(self):
+    def remove_all_highlighting(self) -> None:
         for overlay in self.overlays:
             overlay.clear_highlights()
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
     @property
-    def overlay_visibilities(self):
+    def overlay_visibilities(self) -> list:
         return [x.visible for x in self.overlays]
 
     @overlay_visibilities.setter
-    def overlay_visibilities(self, visibilities):
+    def overlay_visibilities(self, visibilities: list) -> None:
         for o, v in zip(self.overlays, visibilities):
             o.visible = v
         HexrdConfig().overlay_config_changed.emit()
 
     @property
-    def overlay_picks_with_hkls(self):
+    def overlay_picks_with_hkls(self) -> dict:
         # Add the hkls before returning
-        with_hkls = {}
+        with_hkls: dict[str, Any] = {}
         for det_key, hkls in self.active_overlay.hkls.items():
             with_hkls[det_key] = {}
             for i, hkl in enumerate(hkls):
@@ -560,9 +582,9 @@ class CalibrationRunner(QObject):
         return with_hkls
 
     @overlay_picks_with_hkls.setter
-    def overlay_picks_with_hkls(self, v):
+    def overlay_picks_with_hkls(self, v: dict) -> None:
         # Remove the hkls before setting to `self.overlay_picks`
-        without_hkls = {}
+        without_hkls: dict[str, Any] = {}
         for det_key, hkls in self.active_overlay.hkls.items():
             without_hkls[det_key] = []
             for hkl in hkls:
@@ -574,11 +596,11 @@ class CalibrationRunner(QObject):
 
         self.overlay_picks = without_hkls
 
-    def reset_overlay_picks(self):
+    def reset_overlay_picks(self) -> None:
         calibration_picks = self.active_overlay.calibration_picks_polar
         self.overlay_picks_with_hkls = copy.deepcopy(calibration_picks)
 
-    def reset_overlay_data_index_map(self):
+    def reset_overlay_data_index_map(self) -> None:
         self.overlay_data_index = -1
 
         data_key_map = {
@@ -655,13 +677,13 @@ class CalibrationRunner(QObject):
 
         self.overlay_data_index_map = data_map
 
-    def save_overlay_picks(self):
+    def save_overlay_picks(self) -> None:
         self.active_overlay.calibration_picks_polar = copy.deepcopy(
             self.overlay_picks_with_hkls
         )
 
     @property
-    def current_data_path(self):
+    def current_data_path(self) -> tuple | None:
         idx = self.overlay_data_index
         if not 0 <= idx < len(self.overlay_data_index_map):
             return None
@@ -669,7 +691,8 @@ class CalibrationRunner(QObject):
         return self.overlay_data_index_map[idx]
 
     @property
-    def current_data_list(self):
+    def current_data_list(self) -> list:
+        assert self.current_data_path is not None
         key, _, val = self.current_data_path
         root_list = self.overlay_picks.setdefault(key, [])
         if self.active_overlay.is_powder:
@@ -686,13 +709,13 @@ class CalibrationRunner(QObject):
 
         raise Exception(f'Not implemented: {self.active_overlay.type}')
 
-    def pad_overlay_picks(self):
+    def pad_overlay_picks(self) -> None:
         for overlay in self.active_overlays:
             overlay.pad_picks_data()
 
         self.reset_overlay_picks()
 
-    def increment_overlay_data_index(self):
+    def increment_overlay_data_index(self) -> None:
         self.overlay_data_index += 1
         data_path = self.current_data_path
         if data_path is None:
@@ -710,7 +733,7 @@ class CalibrationRunner(QObject):
         # Update the hkl label
         self.update_current_hkl_label()
 
-    def decrement_overlay_data_index(self):
+    def decrement_overlay_data_index(self) -> None:
         if self.overlay_data_index == 0:
             # Can't go back any further
             return
@@ -719,11 +742,12 @@ class CalibrationRunner(QObject):
         data_path = self.current_data_path
         self.set_highlighting([data_path])
 
-    def point_picked(self, x, y):
+    def point_picked(self, x: float, y: float) -> None:
         data = (x, y)
         if self.active_overlay.is_powder:
             self.current_data_list.append(data)
         elif self.active_overlay.is_laue:
+            assert self.current_data_path is not None
             _, _, ind = self.current_data_path
             self.current_data_list[ind] = data
             self.increment_overlay_data_index()
@@ -732,10 +756,10 @@ class CalibrationRunner(QObject):
             # during Laue picking, so we force it here.
             self.update_lines_from_picks()
 
-    def line_completed(self):
+    def line_completed(self) -> None:
         self.increment_overlay_data_index()
 
-    def last_point_removed(self):
+    def last_point_removed(self) -> None:
         if self.active_overlay.is_powder:
             if len(self.current_data_list) == 0:
                 # Go back one line
@@ -747,6 +771,7 @@ class CalibrationRunner(QObject):
             self.current_data_list.pop()
         elif self.active_overlay.is_laue:
             self.decrement_overlay_data_index()
+            assert self.current_data_path is not None
             _, _, ind = self.current_data_path
             if 0 <= ind < len(self.current_data_list):
                 self.current_data_list[ind] = [np.nan, np.nan]
@@ -755,7 +780,7 @@ class CalibrationRunner(QObject):
             # during Laue picking, so we force it here.
             self.update_lines_from_picks()
 
-    def last_line_restored(self):
+    def last_line_restored(self) -> None:
         # This should only be called for powder overlays, because
         # Laue overlays are single-line
         while self.current_data_list:
@@ -764,7 +789,7 @@ class CalibrationRunner(QObject):
         # Go back one line
         self.decrement_overlay_data_index()
 
-    def disable_line_picker(self, b=True):
+    def disable_line_picker(self, b: bool = True) -> None:
         if self.line_picker:
             self.line_picker.disabled = b
             self.line_picker.ui.setVisible(not b)
@@ -772,14 +797,15 @@ class CalibrationRunner(QObject):
             # Make sure focus mode is enabled while the line picker is visible
             self.enable_focus_mode(not b)
 
-    def enable_line_picker(self):
+    def enable_line_picker(self) -> None:
         self.disable_line_picker(False)
 
-    def update_current_hkl_label(self):
+    def update_current_hkl_label(self) -> None:
         if not self.line_picker or not self.active_overlay:
             return
 
         overlay = self.active_overlay
+        assert self.current_data_path is not None
         path = list(self.current_data_path)
         path[1] = 'hkls'
         cur = overlay.data
@@ -797,7 +823,7 @@ class CalibrationRunner(QObject):
 
         self.line_picker.current_pick_label = label
 
-    def update_lines_from_picks(self):
+    def update_lines_from_picks(self) -> None:
         if not self.line_picker or not self.line_picker.lines:
             return
 
@@ -826,7 +852,7 @@ class CalibrationRunner(QObject):
 
         picker.canvas.draw_idle()
 
-    def auto_pick_points(self):
+    def auto_pick_points(self) -> None:
         overlay = self.active_overlay
 
         funcs = {
@@ -841,7 +867,7 @@ class CalibrationRunner(QObject):
         overlay.pad_picks_data()
         return funcs[overlay.type]()
 
-    def auto_pick_powder_points(self):
+    def auto_pick_powder_points(self) -> None:
         overlay = self.active_overlay
         material = overlay.material
         dialog = PowderCalibrationDialog(material, self.canvas)
@@ -874,12 +900,12 @@ class CalibrationRunner(QObject):
         self.auto_pc = PowderCalibrator(**kwargs)
         self.auto_pick_powder_lines()
 
-    def auto_pick_powder_lines(self):
+    def auto_pick_powder_lines(self) -> None:
         self.async_runner.progress_title = 'Auto picking points...'
         self.async_runner.success_callback = self.auto_powder_pick_finished
         self.async_runner.run(self.run_auto_powder_pick)
 
-    def run_auto_powder_pick(self):
+    def run_auto_powder_pick(self) -> dict[str, Any]:
         options = HexrdConfig().config['calibration']['powder']
         kwargs = {
             'fit_tth_tol': options['fit_tth_tol'],
@@ -894,21 +920,21 @@ class CalibrationRunner(QObject):
         # Convert to calibration picks
         return self.auto_pc.calibration_picks
 
-    def auto_powder_pick_finished(self, auto_picks):
+    def auto_powder_pick_finished(self, auto_picks: dict[str, Any]) -> None:
         self.active_overlay.calibration_picks = auto_picks
         self.reset_overlay_picks()
 
         # View the picks and ask the user to accept them
         dialog = self.view_picks_table()
 
-        def on_rejected():
+        def on_rejected() -> None:
             dialog.tree_view.clear_artists()
             self.pick_this_line()
 
         dialog.ui.accepted.connect(self.finish_line)
         dialog.ui.rejected.connect(on_rejected)
 
-    def auto_pick_laue_points(self):
+    def auto_pick_laue_points(self) -> None:
         overlay = self.active_overlay
         dialog = LaueAutoPickerDialog(overlay, self.canvas)
         if not dialog.exec():
@@ -931,12 +957,12 @@ class CalibrationRunner(QObject):
         self.laue_auto_picker = LaueCalibrator(**init_kwargs)
         self.auto_pick_laue_spots()
 
-    def auto_pick_laue_spots(self):
+    def auto_pick_laue_spots(self) -> None:
         self.async_runner.progress_title = 'Auto picking points...'
         self.async_runner.success_callback = self.auto_laue_pick_finished
         self.async_runner.run(self.run_auto_laue_pick)
 
-    def run_auto_laue_pick(self):
+    def run_auto_laue_pick(self) -> dict[str, Any]:
         img_dict = HexrdConfig().masked_images_dict
 
         # These are the options the user chose earlier...
@@ -951,7 +977,7 @@ class CalibrationRunner(QObject):
         # Convert to calibration picks
         return self.laue_auto_picker.calibration_picks
 
-    def auto_laue_pick_finished(self, auto_picks):
+    def auto_laue_pick_finished(self, auto_picks: dict[str, Any]) -> None:
         self.active_overlay.calibration_picks = auto_picks
         self.active_overlay.pad_picks_data()
 
@@ -961,7 +987,7 @@ class CalibrationRunner(QObject):
         # View the picks and ask the user to accept them
         dialog = self.view_picks_table()
 
-        def on_rejected():
+        def on_rejected() -> None:
             dialog.tree_view.clear_artists()
             self.pick_this_line()
 
@@ -971,15 +997,17 @@ class CalibrationRunner(QObject):
 
 class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
-    def __init__(self, overlays, *args, **kwargs):
+    def __init__(self, overlays: list, *args: Any, **kwargs: Any) -> None:
         self.overlays = overlays
 
         # Use the hkl picks tree view dialog for drawing picks
-        self.edit_picks_dialog = self.create_hkl_picks_tree_view_dialog()
+        self.edit_picks_dialog: HKLPicksTreeViewDialog = (
+            self.create_hkl_picks_tree_view_dialog()
+        )
 
         super().__init__(overlays, *args, **kwargs)
 
-    def draw_picks_on_canvas(self):
+    def draw_picks_on_canvas(self) -> None:
         self.update_edit_picks_dictionary()
         tree_view = self.edit_picks_dialog.tree_view
 
@@ -1001,10 +1029,10 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         tree_view.draw_picks()
 
-    def clear_drawn_picks(self):
+    def clear_drawn_picks(self) -> None:
         self.edit_picks_dialog.tree_view.clear_artists()
 
-    def on_edit_picks_clicked(self):
+    def on_edit_picks_clicked(self) -> None:
         dialog = self.edit_picks_dialog
         tree_view = dialog.tree_view
         model = tree_view.model()
@@ -1012,7 +1040,7 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         dialog.button_box_visible = True
 
-        def on_finished():
+        def on_finished() -> None:
             self.dialog.show()
             self.redraw_picks()
 
@@ -1037,12 +1065,12 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         dialog.ui.show()
 
-    def save_picks_to_file(self, selected_file):
+    def save_picks_to_file(self, selected_file: str) -> None:
         # Reuse the same logic from the HKLPicksTreeViewDialog
         d = self.edit_picks_dialog
         d.export_picks_from_overlays(selected_file, self.overlays)
 
-    def load_picks_from_file(self, selected_file):
+    def load_picks_from_file(self, selected_file: str) -> dict[str, Any]:
         # Reuse the same logic from the HKLPicksTreeViewDialog
         dialog = self.edit_picks_dialog
         dialog.import_picks(selected_file)
@@ -1050,7 +1078,7 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
 
 @contextmanager
-def zoom_canvas_disabled(line_picker):
+def zoom_canvas_disabled(line_picker: LinePickerDialog | None) -> Generator[None, None, None]:
     if line_picker:
         prev = line_picker.zoom_canvas.disabled
         line_picker.zoom_canvas.disabled = True

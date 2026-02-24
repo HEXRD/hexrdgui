@@ -1,3 +1,5 @@
+from typing import Any
+
 from PySide6.QtCore import QObject, Qt
 
 from hexrdgui import constants
@@ -7,12 +9,14 @@ from hexrdgui.ui_loader import UiLoader
 
 class EditColormapListDialog(QObject):
 
-    def __init__(self, parent, cmap_editor):
+    def __init__(self, parent: QObject, cmap_editor: Any) -> None:
         super().__init__(parent)
         loader = UiLoader()
-        self.ui = loader.load_file('edit_colormaps_dialog.ui', parent)
+        self.ui = loader.load_file(
+            'edit_colormaps_dialog.ui', parent  # type: ignore[arg-type]
+        )
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         self.user_colormaps = HexrdConfig().limited_cmaps_list
         self.default = HexrdConfig().default_cmap
@@ -21,10 +25,10 @@ class EditColormapListDialog(QObject):
         self.setup_connections()
         self.setup_gui()
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.add.clicked.connect(self.add_cmap)
         self.ui.remove.clicked.connect(self.remove_cmap)
         self.ui.unused_colormaps.clicked.connect(self.cmap_selected)
@@ -32,7 +36,7 @@ class EditColormapListDialog(QObject):
         self.ui.make_default.clicked.connect(self.set_new_default)
         self.ui.button_box.accepted.connect(self.finalize)
 
-    def setup_gui(self):
+    def setup_gui(self) -> None:
         all_cmaps = constants.ALL_CMAPS
         used_list = HexrdConfig().limited_cmaps_list
         unused_list = [cmap for cmap in all_cmaps if cmap not in used_list]
@@ -40,20 +44,20 @@ class EditColormapListDialog(QObject):
         if not used_list:
             used_list = [
                 self.ui.unused_colormaps.findItems(
-                    HexrdConfig().default_cmap, Qt.MatchExactly
+                    HexrdConfig().default_cmap, Qt.MatchFlag.MatchExactly
                 )[0].text()
             ]
         self.ui.user_colormaps.addItems(used_list)
         self.ui.default_colormap_text.setText(self.default)
 
-    def add_cmap(self):
+    def add_cmap(self) -> None:
         selected_rows = self.ui.unused_colormaps.selectedIndexes()
         selected = [i.text() for i in self.ui.unused_colormaps.selectedItems()]
         self.ui.user_colormaps.addItems(selected)
         for item in selected_rows:
             self.ui.unused_colormaps.takeItem(item.row())
 
-    def remove_cmap(self):
+    def remove_cmap(self) -> None:
         selected_rows = self.ui.user_colormaps.selectedIndexes()
         selected = [i.text() for i in self.ui.user_colormaps.selectedItems()]
         self.ui.unused_colormaps.addItems(selected)
@@ -63,7 +67,7 @@ class EditColormapListDialog(QObject):
             self.ui.user_colormaps.takeItem(item.row())
         self.ui.remove.setEnabled(False)
 
-    def update_button_statuses(self):
+    def update_button_statuses(self) -> None:
         add_enabled = len(self.ui.unused_colormaps.selectedItems())
         user_cmaps = self.ui.user_colormaps.selectedItems()
         if (remove_enabled := len(user_cmaps)) == 1:
@@ -73,15 +77,15 @@ class EditColormapListDialog(QObject):
         self.ui.remove.setEnabled(remove_enabled)
         self.ui.make_default.setEnabled(default_enabled)
 
-    def cmap_selected(self):
+    def cmap_selected(self) -> None:
         self.ui.user_colormaps.clearSelection()
         self.update_button_statuses()
 
-    def default_cmap_selected(self):
+    def default_cmap_selected(self) -> None:
         self.ui.unused_colormaps.clearSelection()
         self.update_button_statuses()
 
-    def set_new_default(self):
+    def set_new_default(self) -> None:
         if selections := self.ui.user_colormaps.selectedItems():
             default = selections[0].text()
         self.default = default
@@ -90,7 +94,7 @@ class EditColormapListDialog(QObject):
         self.ui.unused_colormaps.clearSelection()
         self.update_button_statuses()
 
-    def finalize(self):
+    def finalize(self) -> None:
         self.user_colormaps.clear()
         for i in range(self.ui.user_colormaps.count()):
             self.user_colormaps.append(self.ui.user_colormaps.item(i).text())

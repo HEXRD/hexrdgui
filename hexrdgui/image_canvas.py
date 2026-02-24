@@ -1,17 +1,20 @@
+from __future__ import annotations
+
 import copy
 import math
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QThreadPool, QTimer, Signal, Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QProgressDialog, QWidget
 
 from matplotlib.axes import Axes
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle, Polygon
-from matplotlib.ticker import AutoLocator, AutoMinorLocator, FuncFormatter
+from matplotlib.ticker import AutoLocator, AutoMinorLocator, Formatter, FuncFormatter
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -46,6 +49,31 @@ from hexrdgui.utils.conversions import (
 from hexrdgui.utils.matplotlib import remove_artist
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 from hexrdgui.waterfall_plot import WaterfallPlotDialog
+from collections.abc import Callable
+from typing import Any, Sequence, cast
+
+if TYPE_CHECKING:
+    from matplotlib.collections import PathCollection
+
+    from hexrd.instrument import Detector
+
+    from hexrdgui.calibration.cartesian_plot import (
+        InstrumentViewer as CartesianViewer,
+    )
+    from hexrdgui.calibration.polar_plot import (
+        InstrumentViewer as PolarViewer,
+    )
+    from hexrdgui.calibration.raw_iviewer import (
+        InstrumentViewer as RawViewer,
+    )
+    from hexrdgui.calibration.stereo_plot import (
+        InstrumentViewer as StereoViewer,
+    )
+    from hexrdgui.overlays.overlay import Overlay
+    from hexrdgui.overlays.powder_overlay import PowderOverlay
+    from hexrdgui.polar_distortion_object import PolarDistortionObject
+
+    IViewer = RawViewer | PolarViewer | CartesianViewer | StereoViewer
 
 # Increase these font sizes (compared to the global font) by the specified
 # amounts.
@@ -60,38 +88,44 @@ class ImageCanvas(FigureCanvas):
 
     _update_waterfall_plot_progress = Signal()
 
-    def __init__(self, parent=None, image_names=None):
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        image_names: Sequence[str] | None = None,
+    ) -> None:
         self.figure = Figure(tight_layout=True)
         super().__init__(self.figure)
 
-        self.raw_axes = {}  # only used for raw currently
-        self.axes_images = []
-        self.cached_detector_borders = []
-        self.saturation_texts = []
-        self.cmap = HexrdConfig().default_cmap
-        self.norm = None
-        self.iviewer = None
-        self.azimuthal_integral_axis = None
-        self.azimuthal_line_artist = None
-        self.wppf_plot = None
-        self.wppf_background_plot = None
-        self.wppf_amorphous_plot = None
-        self.wppf_tds_plot = None
-        self.wppf_difference_plot = None
-        self.auto_picked_data_artists = []
-        self.beam_marker_artists = []
+        self.raw_axes: dict[str, Axes] = {}  # only used for raw currently
+        self.axes_images: list[Any] = []
+        self.cached_detector_borders: list[Line2D] = []
+        self.saturation_texts: list[Any] = []
+        self.cmap: str | mpl.colors.Colormap = HexrdConfig().default_cmap
+        self.norm: mpl.colors.Normalize | None = None
+        self.iviewer: IViewer | None = None
+        self.azimuthal_integral_axis: Axes | None = None
+        self.azimuthal_line_artist: Line2D | None = None
+        self.wppf_plot: PathCollection | None = None
+        self.wppf_background_plot: Line2D | None = None
+        self.wppf_amorphous_plot: Line2D | None = None
+        self.wppf_tds_plot: Line2D | None = None
+        self.wppf_difference_plot: Line2D | None = None
+        self.wppf_difference_axis: Axes | None = None
+        self.auto_picked_data_artists: list[Any] = []
+        self.beam_marker_artists: list[Any] = []
         self._transform = lambda x: x
         self._last_stereo_size = None
-        self.stereo_border_artists = []
-        self.azimuthal_overlay_artists = []
+        self.stereo_border_artists: list[Any] = []
+        self.azimuthal_overlay_artists: list[Any] = []
         self.blit_manager = BlitManager(self)
-        self.raw_view_images_dict = {}
-        self._mask_boundary_artists = []
-        self._latest_compute_view_worker = None
-        self._waterfall_plot_dialog = None
+        self.raw_view_images_dict: dict[str, np.ndarray] = {}
+        self._mask_boundary_artists: list[Any] = []
+        self._latest_compute_view_worker: AsyncWorker | None = None
+        self._create_waterfall_progress: QProgressDialog | None = None
+        self._waterfall_plot_dialog: WaterfallPlotDialog | None = None
 
         # Track the current mode so that we can more lazily clear on change.
-        self.mode = None
+        self.mode: str | None = None
 
         # Track the pixel size
         self.cartesian_res_config = HexrdConfig().config['image']['cartesian'].copy()
@@ -100,11 +134,11 @@ class ImageCanvas(FigureCanvas):
         if image_names is not None:
             self.load_images(image_names)
 
-        self.setFocusPolicy(Qt.ClickFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         HexrdConfig().overlay_config_changed.connect(self.update_overlays)
         HexrdConfig().show_saturation_level_changed.connect(self.show_saturation)
         HexrdConfig().show_stereo_border_changed.connect(self.draw_stereo_border)
@@ -145,19 +179,19 @@ class ImageCanvas(FigureCanvas):
         # crash the application on Mac.
         self._update_waterfall_plot_progress.connect(
             self._update_waterfall_plot_progress_slot,
-            Qt.QueuedConnection,
+            Qt.ConnectionType.QueuedConnection,
         )
 
     @property
-    def thread_pool(self):
+    def thread_pool(self) -> QThreadPool:
         return QThreadPool.globalInstance()
 
     @property
-    def fontsize_label(self):
+    def fontsize_label(self) -> int:
         return HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE
 
     @property
-    def fontsize_label_polar_y(self):
+    def fontsize_label_polar_y(self) -> int:
         # Reduce label fontsize by 2 if we are in polar and have
         # at least 5 gridspec rows.
         addend = 0
@@ -167,25 +201,25 @@ class ImageCanvas(FigureCanvas):
         return HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE + addend
 
     @property
-    def fontsize_ticks(self):
+    def fontsize_ticks(self) -> int:
         return HexrdConfig().font_size + FONTSIZE_TICKS_INCREASE
 
     @property
-    def label_kwargs(self):
+    def label_kwargs(self) -> dict:
         return {
             'fontsize': self.fontsize_label,
             'family': 'serif',
         }
 
     @property
-    def label_kwargs_polar_y(self):
+    def label_kwargs_polar_y(self) -> dict:
         return {
             'fontsize': self.fontsize_label_polar_y,
             'family': 'serif',
         }
 
     @property
-    def major_tick_kwargs(self):
+    def major_tick_kwargs(self) -> dict:
         return {
             'left': True,
             'right': True,
@@ -198,24 +232,24 @@ class ImageCanvas(FigureCanvas):
         }
 
     @property
-    def minor_tick_kwargs(self):
+    def minor_tick_kwargs(self) -> dict:
         return {
             **self.major_tick_kwargs,
             'which': 'minor',
             'length': 2,
         }
 
-    def __del__(self):
+    def __del__(self) -> None:
         # This is so that the figure can be cleaned up
         plt.close(self.figure)
 
-    def clear(self):
+    def clear(self) -> None:
         self.iviewer = None
         self.mode = None
         self.raw_view_images_dict = {}
         self.clear_figure()
 
-    def clear_figure(self):
+    def clear_figure(self) -> None:
         self.remove_all_overlay_artists()
         self.figure.clear()
         self.raw_axes.clear()
@@ -223,14 +257,14 @@ class ImageCanvas(FigureCanvas):
         self.clear_azimuthal_integral_axis()
         self.mode = None
 
-    def clear_azimuthal_integral_axis(self):
+    def clear_azimuthal_integral_axis(self) -> None:
         self.clear_wppf_plot()
         self.azimuthal_integral_axis = None
         self.azimuthal_line_artist = None
         self.clear_azimuthal_overlay_artists()
         HexrdConfig().last_unscaled_azimuthal_integral_data = None
 
-    def clear_wppf_plot(self):
+    def clear_wppf_plot(self) -> None:
         if self.wppf_plot:
             remove_artist(self.wppf_plot)
             self.wppf_plot = None
@@ -251,11 +285,11 @@ class ImageCanvas(FigureCanvas):
             remove_artist(self.wppf_difference_plot)
             self.wppf_difference_plot = None
 
-    def clear_auto_picked_data_artists(self):
+    def clear_auto_picked_data_artists(self) -> None:
         while self.auto_picked_data_artists:
             remove_artist(self.auto_picked_data_artists.pop(0))
 
-    def load_images(self, image_names):
+    def load_images(self, image_names: Sequence[str]) -> None:
         HexrdConfig().emit_update_status_bar('Loading image view...')
 
         if self.mode != ViewType.raw or len(image_names) != len(self.axes_images):
@@ -296,11 +330,13 @@ class ImageCanvas(FigureCanvas):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
 
+        assert self.iviewer is not None
         if MaskManager().contains_border_only_masks:
             # Create a computed version for the images dict
             computed_images_dict = self.scaled_image_dict
             if HexrdConfig().stitch_raw_roi_images:
-                computed_images_dict = self.iviewer.raw_images_to_stitched(
+                iviewer = cast('RawViewer', self.iviewer)
+                computed_images_dict = iviewer.raw_images_to_stitched(
                     image_names, computed_images_dict
                 )
         else:
@@ -330,11 +366,13 @@ class ImageCanvas(FigureCanvas):
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def create_raw_view_images(self, image_names):
+    def create_raw_view_images(self, image_names: Sequence[str]) -> dict:
         images_dict = self.scaled_display_image_dict
         if HexrdConfig().stitch_raw_roi_images:
             # The image_names is actually a list of group names
-            images_dict = self.iviewer.raw_images_to_stitched(image_names, images_dict)
+            assert self.iviewer is not None
+            iviewer = cast('RawViewer', self.iviewer)
+            images_dict = iviewer.raw_images_to_stitched(image_names, images_dict)
 
             # We also apply the scaling manually here
             for k, img in images_dict.items():
@@ -342,36 +380,39 @@ class ImageCanvas(FigureCanvas):
 
         return images_dict
 
-    def create_image_dict(self, display=False):
+    def create_image_dict(self, display: bool = False) -> dict:
         # Returns a dict of the unscaled computation images
         if self.mode == ViewType.raw:
             return HexrdConfig().create_masked_images_dict(
-                fill_value=np.nan, display=display
+                fill_value=np.nan,  # type: ignore[arg-type]
+                display=display,
             )
         else:
             # Masks are already applied...
-            img = self.iviewer.display_img if display else self.iviewer.img
+            assert self.iviewer is not None
+            iviewer = cast('PolarViewer | CartesianViewer | StereoViewer', self.iviewer)
+            img = iviewer.display_img if display else iviewer.img
             return {'img': img}
 
     @property
-    def unscaled_image_dict(self):
+    def unscaled_image_dict(self) -> dict:
         return self.create_image_dict(display=False)
 
     @property
-    def unscaled_display_image_dict(self):
+    def unscaled_display_image_dict(self) -> dict:
         return self.create_image_dict(display=True)
 
     @property
-    def unscaled_images(self):
+    def unscaled_images(self) -> list:
         # Returns a list of the unscaled computation images
         return list(self.unscaled_image_dict.values())
 
     @property
-    def unscaled_display_images(self):
+    def unscaled_display_images(self) -> list:
         # Returns a list of the unscaled display images
         return list(self.unscaled_display_image_dict.values())
 
-    def create_scaled_image_dict(self, display=False):
+    def create_scaled_image_dict(self, display: bool = False) -> dict:
         if display:
             unscaled = self.unscaled_display_image_dict
         else:
@@ -379,21 +420,21 @@ class ImageCanvas(FigureCanvas):
         return {k: self.transform(v) for k, v in unscaled.items()}
 
     @property
-    def scaled_image_dict(self):
+    def scaled_image_dict(self) -> dict:
         # Returns a dict of the scaled computation images
         return self.create_scaled_image_dict(display=False)
 
     @property
-    def scaled_display_image_dict(self):
+    def scaled_display_image_dict(self) -> dict:
         # Returns a dict of the scaled display images
         return self.create_scaled_image_dict(display=True)
 
     @property
-    def scaled_images(self):
+    def scaled_images(self) -> list:
         return list(self.scaled_image_dict.values())
 
     @property
-    def scaled_display_images(self):
+    def scaled_display_images(self) -> list:
         return list(self.scaled_display_image_dict.values())
 
     @property
@@ -401,25 +442,25 @@ class ImageCanvas(FigureCanvas):
         return self.iviewer is not None
 
     @property
-    def blit_artists(self):
+    def blit_artists(self) -> dict:
         return self.blit_manager.artists
 
     @property
-    def overlay_artists(self):
+    def overlay_artists(self) -> dict:
         return self.blit_artists.setdefault('overlays', {})
 
     @property
-    def mask_highlight_artists(self):
+    def mask_highlight_artists(self) -> dict:
         return self.blit_artists.setdefault('mask_highlights', {})
 
-    def remove_all_overlay_artists(self):
+    def remove_all_overlay_artists(self) -> None:
         self.blit_manager.remove_artists('overlays')
         self.blit_manager.artists['overlays'] = {}
 
-    def remove_overlay_artists(self, key):
+    def remove_overlay_artists(self, key: str) -> None:
         self.blit_manager.remove_artists('overlays', key)
 
-    def prune_overlay_artists(self):
+    def prune_overlay_artists(self) -> None:
         # Remove overlay artists that no longer have an overlay associated
         # with them
         overlay_names = [x.name for x in HexrdConfig().overlays]
@@ -427,18 +468,20 @@ class ImageCanvas(FigureCanvas):
             if key not in overlay_names:
                 self.remove_overlay_artists(key)
 
-    def overlay_renamed(self, old_name, new_name):
+    def overlay_renamed(self, old_name: str, new_name: str) -> None:
         if old_name in self.overlay_artists:
             self.overlay_artists[new_name] = self.overlay_artists[old_name]
             self.overlay_artists.pop(old_name)
 
-    def overlay_axes_data(self, overlay):
+    def overlay_axes_data(self, overlay: Overlay) -> list:
         # Return the axes and data for drawing the overlay
         if not overlay.data:
             return []
 
         if self.mode == ViewType.raw:
-            data = self.iviewer.create_overlay_data(overlay)
+            assert self.iviewer is not None
+            iviewer = cast('RawViewer', self.iviewer)
+            data = iviewer.create_overlay_data(overlay)
 
             # If it's raw, there is data for each axis.
             # The title of each axis should match the detector key.
@@ -452,7 +495,7 @@ class ImageCanvas(FigureCanvas):
         # Use the same axis for all of the data
         return [(self.axis, k, v) for k, v in overlay.data.items()]
 
-    def overlay_draw_func(self, type):
+    def overlay_draw_func(self, type: OverlayType) -> Callable:
         overlay_funcs = {
             OverlayType.powder: self.draw_powder_overlay,
             OverlayType.laue: self.draw_laue_overlay,
@@ -465,7 +508,7 @@ class ImageCanvas(FigureCanvas):
 
         return overlay_funcs[type]
 
-    def draw_overlay(self, overlay):
+    def draw_overlay(self, overlay: Overlay) -> None:
         if not overlay.visible:
             return
 
@@ -490,18 +533,18 @@ class ImageCanvas(FigureCanvas):
             self.overlay_draw_func(type)(**kwargs)
 
         if self.mode == ViewType.polar and overlay.type == OverlayType.powder:
-            self.draw_azimuthal_powder_lines(overlay)
+            self.draw_azimuthal_powder_lines(cast('PowderOverlay', overlay))
 
     def draw_powder_overlay(
         self,
-        artist_key,
-        det_key,
-        axis,
-        data,
-        style,
-        highlight_indices,
-        highlight_style,
-    ):
+        artist_key: str,
+        det_key: str,
+        axis: Axes,
+        data: dict,
+        style: dict,
+        highlight_indices: list,
+        highlight_style: dict,
+    ) -> None:
         rings = data['rings']
         ranges = data['rbnds']
         rbnd_indices = data['rbnd_indices']
@@ -516,7 +559,7 @@ class ImageCanvas(FigureCanvas):
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
         artists = overlay_artists.setdefault(det_key, {})
 
-        def split(data):
+        def split(data: list) -> tuple[list, list]:
             if not highlight_indices or len(data) == 0:
                 return [], data
 
@@ -548,7 +591,7 @@ class ImageCanvas(FigureCanvas):
 
             found = False
 
-        def plot(data, key, kwargs):
+        def plot(data: list, key: str, kwargs: dict) -> None:
             # This logic was repeated
             if len(data) != 0:
                 (artists[key],) = axis.plot(*np.vstack(data).T, animated=True, **kwargs)
@@ -561,7 +604,7 @@ class ImageCanvas(FigureCanvas):
         # Highlighting goes after merged ranges to get precedence
         plot(h_ranges, 'h_ranges', highlight_style['ranges'])
 
-    def draw_azimuthal_powder_lines(self, overlay):
+    def draw_azimuthal_powder_lines(self, overlay: PowderOverlay) -> None:
         if (
             HexrdConfig().has_multi_xrs
             and overlay.xray_source is not None
@@ -600,7 +643,7 @@ class ImageCanvas(FigureCanvas):
                 else:
                     ranges.extend(joined)
 
-        def az_plot(data, key, kwargs):
+        def az_plot(data: list, key: str, kwargs: dict) -> None:
             if len(data) == 0:
                 return
 
@@ -619,14 +662,14 @@ class ImageCanvas(FigureCanvas):
 
     def draw_laue_overlay(
         self,
-        artist_key,
-        det_key,
-        axis,
-        data,
-        style,
-        highlight_indices,
-        highlight_style,
-    ):
+        artist_key: str,
+        det_key: str,
+        axis: Axes,
+        data: dict,
+        style: dict,
+        highlight_indices: list,
+        highlight_style: dict,
+    ) -> None:
         spots = data['spots']
         ranges = data['ranges']
         labels = data['labels']
@@ -636,7 +679,7 @@ class ImageCanvas(FigureCanvas):
         ranges_style = style['ranges']
         label_style = style['labels']
 
-        def split(data):
+        def split(data: list) -> tuple[list, list]:
             if not highlight_indices or len(data) == 0:
                 return [], data
 
@@ -649,14 +692,14 @@ class ImageCanvas(FigureCanvas):
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
         artists = overlay_artists.setdefault(det_key, {})
 
-        def scatter(data, key, kwargs):
+        def scatter(data: list, key: str, kwargs: dict) -> None:
             # This logic was repeated
             if len(data) != 0:
                 artists[key] = axis.scatter(
                     *np.asarray(data).T, animated=True, **kwargs
                 )
 
-        def plot(data, key, kwargs):
+        def plot(data: list, key: str, kwargs: dict) -> None:
             # This logic was repeated
             if len(data) != 0:
                 (artists[key],) = axis.plot(*np.vstack(data).T, animated=True, **kwargs)
@@ -672,7 +715,9 @@ class ImageCanvas(FigureCanvas):
         # Draw labels and highlighted labels
         if len(labels) or len(h_labels):
 
-            def plot_label(x, y, label, style):
+            def plot_label(
+                x: float, y: float, label: str, style: dict
+            ) -> mpl.text.Text:
                 kwargs = {
                     'x': x + label_offsets[0],
                     'y': y + label_offsets[1],
@@ -697,14 +742,14 @@ class ImageCanvas(FigureCanvas):
 
     def draw_rotation_series_overlay(
         self,
-        artist_key,
-        det_key,
-        axis,
-        data,
-        style,
-        highlight_indices,
-        highlight_style,
-    ):
+        artist_key: str,
+        det_key: str,
+        axis: Axes,
+        data: dict,
+        style: dict,
+        highlight_indices: list,
+        highlight_style: dict,
+    ) -> None:
         is_aggregated = HexrdConfig().is_aggregated
         ome_range = HexrdConfig().omega_ranges
         aggregated = data['aggregated'] or is_aggregated or ome_range is None
@@ -712,10 +757,12 @@ class ImageCanvas(FigureCanvas):
         # Compute the indices that are in range for the current omega value
         ome_points = data['omegas']
 
+        slicer: Any
         if aggregated:
             # This means we will keep all
             slicer = slice(None)
         else:
+            assert ome_range is not None
             ome_width = data['omega_width']
             ome_mean = np.mean(ome_range)
             ome_min = ome_mean - ome_width / 2
@@ -744,26 +791,28 @@ class ImageCanvas(FigureCanvas):
 
         sliced_ranges = np.asarray(ranges)[slicer]
         (artists['ranges'],) = axis.plot(
-            *np.vstack(sliced_ranges).T, animated=True, **ranges_style
+            *np.vstack(list(sliced_ranges)).T,
+            animated=True,
+            **ranges_style,
         )
 
     def draw_const_chi_overlay(
         self,
-        artist_key,
-        det_key,
-        axis,
-        data,
-        style,
-        highlight_indices,
-        highlight_style,
-    ):
+        artist_key: str,
+        det_key: str,
+        axis: Axes,
+        data: dict,
+        style: dict,
+        highlight_indices: list,
+        highlight_style: dict,
+    ) -> None:
         points = data['data']
         data_style = style['data']
 
         overlay_artists = self.overlay_artists.setdefault(artist_key, {})
         artists = overlay_artists.setdefault(det_key, {})
 
-        def split(data):
+        def split(data: list) -> tuple[list, list]:
             if not highlight_indices or len(data) == 0:
                 return [], data
 
@@ -771,7 +820,7 @@ class ImageCanvas(FigureCanvas):
 
         h_points, points = split(points)
 
-        def plot(data, key, kwargs):
+        def plot(data: list, key: str, kwargs: dict) -> None:
             # This logic was repeated
             if len(data) != 0:
                 (artists[key],) = axis.plot(*np.vstack(data).T, animated=True, **kwargs)
@@ -779,14 +828,14 @@ class ImageCanvas(FigureCanvas):
         plot(points, 'points', data_style)
         plot(h_points, 'h_points', highlight_style['data'])
 
-    def redraw_overlay(self, overlay):
+    def redraw_overlay(self, overlay: Overlay) -> None:
         # Remove the artists for this overlay
         self.remove_overlay_artists(overlay.name)
 
         # Redraw the overlay
         self.draw_overlay(overlay)
 
-    def update_overlays(self):
+    def update_overlays(self) -> None:
         if HexrdConfig().loading_state:
             # Skip the request if we are loading state
             return
@@ -819,13 +868,13 @@ class ImageCanvas(FigureCanvas):
 
         self.blit_manager.update()
 
-    def clear_detector_borders(self):
+    def clear_detector_borders(self) -> None:
         while self.cached_detector_borders:
             remove_artist(self.cached_detector_borders.pop(0))
 
         self.draw_idle()
 
-    def draw_detector_borders(self):
+    def draw_detector_borders(self) -> None:
         self.clear_detector_borders()
 
         # Need an iviewer
@@ -836,20 +885,21 @@ class ImageCanvas(FigureCanvas):
         if not HexrdConfig().show_detector_borders:
             return
 
-        borders = self.iviewer.all_detector_borders
+        iviewer = cast('PolarViewer | CartesianViewer | StereoViewer', self.iviewer)
+        borders = iviewer.all_detector_borders
         for border in borders.values():
             # Draw each line in the border
             for line in border:
                 (plot,) = self.axis.plot(*line, color='y', lw=2)
                 self.cached_detector_borders.append(plot)
 
-    def clear_stereo_border_artists(self):
+    def clear_stereo_border_artists(self) -> None:
         while self.stereo_border_artists:
             remove_artist(self.stereo_border_artists.pop(0))
 
         self.draw_idle()
 
-    def draw_stereo_border(self):
+    def draw_stereo_border(self) -> None:
         self.clear_stereo_border_artists()
 
         skip = self.mode != ViewType.stereo or not HexrdConfig().stereo_show_border
@@ -873,21 +923,21 @@ class ImageCanvas(FigureCanvas):
         artist = self.axis.add_patch(circle)
         self.stereo_border_artists.append(artist)
 
-    def draw_wppf(self):
+    def draw_wppf(self) -> None:
         self.update_wppf_plot()
         self.draw_idle()
 
-    def draw_auto_picked_data(self):
+    def draw_auto_picked_data(self) -> None:
         self.update_auto_picked_data()
         self.draw_idle()
 
-    def clear_saturation(self):
+    def clear_saturation(self) -> None:
         for t in self.saturation_texts:
             remove_artist(t)
         self.saturation_texts.clear()
         self.draw_idle()
 
-    def show_saturation(self):
+    def show_saturation(self) -> None:
         self.clear_saturation()
 
         # Do not proceed without config approval
@@ -904,7 +954,7 @@ class ImageCanvas(FigureCanvas):
         # Use the unscaled image data to determine saturation
         images_dict = self.unscaled_image_dict
 
-        def compute_saturation_and_size(detector_name):
+        def compute_saturation_and_size(detector_name: str) -> tuple[int, int]:
             detector = HexrdConfig().detector(detector_name)
             saturation_level = detector['saturation_level']
 
@@ -924,7 +974,9 @@ class ImageCanvas(FigureCanvas):
 
             if HexrdConfig().stitch_raw_roi_images:
                 # The axes title is the group name
-                det_keys = self.iviewer.roi_groups[axes_title]
+                assert self.iviewer is not None
+                iviewer = cast('RawViewer', self.iviewer)
+                det_keys = iviewer.roi_groups[axes_title]
                 results = [compute_saturation_and_size(x) for x in det_keys]
                 num_sat = sum(x[0] for x in results)
                 size = sum(x[1] for x in results)
@@ -946,11 +998,11 @@ class ImageCanvas(FigureCanvas):
 
         self.draw_idle()
 
-    def clear_beam_marker(self):
+    def clear_beam_marker(self) -> None:
         while self.beam_marker_artists:
             remove_artist(self.beam_marker_artists.pop(0))
 
-    def update_beam_marker(self):
+    def update_beam_marker(self) -> None:
         self.clear_beam_marker()
 
         # Need an iviewer
@@ -973,6 +1025,7 @@ class ImageCanvas(FigureCanvas):
                 # right canvas for this detector...
                 continue
 
+            assert self.mode is not None
             func = transform_from_plain_cartesian_func(self.mode)
             cart_beam_position = panel.clip_to_panel(
                 panel.beam_position, buffer_edges=False
@@ -987,8 +1040,9 @@ class ImageCanvas(FigureCanvas):
             if self.mode == ViewType.raw:
                 if HexrdConfig().stitch_raw_roi_images:
                     # Need to convert these to stitched coordinates
-                    beam_position = self.iviewer.raw_to_stitched(
-                        [beam_position[::-1]], det_key
+                    raw_iviewer_ = cast('RawViewer', self.iviewer)
+                    beam_position = raw_iviewer_.raw_to_stitched(
+                        np.array([beam_position[::-1]]), det_key
                     )[0][0][::-1]
 
             (artist,) = axis.plot(*beam_position, **style)
@@ -996,7 +1050,7 @@ class ImageCanvas(FigureCanvas):
 
         self.draw_idle()
 
-    def beam_vector_changed(self):
+    def beam_vector_changed(self) -> None:
         if self.mode == ViewType.polar or self.is_stereo_from_polar:
             # Polar needs a complete re-draw
             # Only emit this once every 100 milliseconds or so to avoid
@@ -1031,7 +1085,7 @@ class ImageCanvas(FigureCanvas):
         self.update_overlays()
         self.update_beam_marker()
 
-    def beam_energy_correction_changed(self):
+    def beam_energy_correction_changed(self) -> None:
         # Only overlay updates are needed
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
             return
@@ -1046,7 +1100,7 @@ class ImageCanvas(FigureCanvas):
 
         self.update_overlays()
 
-    def oscillation_stage_changed(self):
+    def oscillation_stage_changed(self) -> None:
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
             return
 
@@ -1059,7 +1113,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().clear_overlay_data()
         self.update_overlays()
 
-    def on_panel_distortion_changed(self, det_name):
+    def on_panel_distortion_changed(self, det_name: str) -> None:
         if not self.iviewer or not hasattr(self.iviewer, 'instr'):
             return
 
@@ -1079,7 +1133,7 @@ class ImageCanvas(FigureCanvas):
         HexrdConfig().clear_overlay_data()
         self.update_overlays()
 
-    def on_azimuthal_lineout_detectors_modified(self):
+    def on_azimuthal_lineout_detectors_modified(self) -> None:
         self.update_azimuthal_integral_plot()
         self.update_polar_axis_xlabel()
 
@@ -1092,7 +1146,7 @@ class ImageCanvas(FigureCanvas):
 
         return names
 
-    def show_cartesian(self):
+    def show_cartesian(self) -> None:
         HexrdConfig().emit_update_status_bar('Loading Cartesian view...')
         if self.mode != ViewType.cartesian:
             self.clear()
@@ -1109,7 +1163,7 @@ class ImageCanvas(FigureCanvas):
         # Run the view generation in a background thread
         worker = AsyncWorker(cartesian_viewer)
         worker.print_error_traceback = False
-        worker.signals._image_mode = self.mode
+        worker.signals._image_mode = self.mode  # type: ignore[attr-defined]
         self.thread_pool.start(worker)
         self._latest_compute_view_worker = worker
 
@@ -1117,7 +1171,8 @@ class ImageCanvas(FigureCanvas):
         worker.signals.result.connect(self.finish_show_cartesian)
         worker.signals.error.connect(self.async_worker_error)
 
-    def finish_show_cartesian(self, iviewer):
+    def finish_show_cartesian(self, iviewer: CartesianViewer) -> None:
+        assert self._latest_compute_view_worker is not None
         if self.sender() is not self._latest_compute_view_worker.signals:
             # A new calculation must have been started while this was running.
             # Forget this one...
@@ -1167,7 +1222,7 @@ class ImageCanvas(FigureCanvas):
         msg = 'Cartesian view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def show_polar(self):
+    def show_polar(self) -> None:
         HexrdConfig().emit_update_status_bar('Loading polar view...')
         if self.mode != ViewType.polar:
             self.clear()
@@ -1184,7 +1239,7 @@ class ImageCanvas(FigureCanvas):
         # Run the view generation in a background thread
         worker = AsyncWorker(polar_viewer)
         worker.print_error_traceback = False
-        worker.signals._image_mode = self.mode
+        worker.signals._image_mode = self.mode  # type: ignore[attr-defined]
         self.thread_pool.start(worker)
         self._latest_compute_view_worker = worker
 
@@ -1192,7 +1247,8 @@ class ImageCanvas(FigureCanvas):
         worker.signals.result.connect(self.finish_show_polar)
         worker.signals.error.connect(self.async_worker_error)
 
-    def finish_show_polar(self, iviewer):
+    def finish_show_polar(self, iviewer: PolarViewer) -> None:
+        assert self._latest_compute_view_worker is not None
         if self.sender() is not self._latest_compute_view_worker.signals:
             # A new calculation must have been started while this was running.
             # Forget this one...
@@ -1205,13 +1261,14 @@ class ImageCanvas(FigureCanvas):
         self.iviewer = iviewer
         self.render_polar()
 
-    def render_polar(self):
+    def render_polar(self) -> None:
         if self.iviewer is None or self.mode != ViewType.polar:
             # Can't do anything
             return
 
+        polar_iviewer = cast('PolarViewer', self.iviewer)
         (img,) = self.scaled_display_images
-        extent = self.iviewer._extent
+        extent = polar_iviewer._extent
 
         rescale_image = True
 
@@ -1257,7 +1314,7 @@ class ImageCanvas(FigureCanvas):
         self.update_mask_highlights(self.axis)
 
         # Get the "tth" vector
-        angular_grid = self.iviewer.angular_grid
+        angular_grid = polar_iviewer.angular_grid
         tth = np.degrees(angular_grid[1][0])
 
         if self.azimuthal_integral_axis is None:
@@ -1311,14 +1368,14 @@ class ImageCanvas(FigureCanvas):
         msg = 'Polar view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def force_rerender_polar(self):
+    def force_rerender_polar(self) -> None:
         self.figure.clf()
         self.azimuthal_integral_axis = None
         # Clear the axes images so we force re-create the polar figure
         self.axes_images.clear()
         self.render_polar()
 
-    def show_stereo(self):
+    def show_stereo(self) -> None:
         HexrdConfig().emit_update_status_bar('Loading stereo view...')
 
         stereo_size = HexrdConfig().config['image']['stereo']['stereo_size']
@@ -1334,7 +1391,7 @@ class ImageCanvas(FigureCanvas):
         # Run the view generation in a background thread
         worker = AsyncWorker(stereo_viewer)
         worker.print_error_traceback = False
-        worker.signals._image_mode = self.mode
+        worker.signals._image_mode = self.mode  # type: ignore[attr-defined]
         self.thread_pool.start(worker)
         self._latest_compute_view_worker = worker
 
@@ -1342,7 +1399,8 @@ class ImageCanvas(FigureCanvas):
         worker.signals.result.connect(self.finish_show_stereo)
         worker.signals.error.connect(self.async_worker_error)
 
-    def finish_show_stereo(self, iviewer):
+    def finish_show_stereo(self, iviewer: StereoViewer) -> None:
+        assert self._latest_compute_view_worker is not None
         if self.sender() is not self._latest_compute_view_worker.signals:
             # A new calculation must have been started while this was running.
             # Forget this one...
@@ -1392,7 +1450,7 @@ class ImageCanvas(FigureCanvas):
         msg = 'Stereo view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
 
-    def on_beam_energy_modified(self):
+    def on_beam_energy_modified(self) -> None:
         # Update the beam energy on our instrument if we have one
         if not self.iviewer:
             # No need to do anything
@@ -1401,7 +1459,7 @@ class ImageCanvas(FigureCanvas):
         # Update the beam energy on the instrument
         self.iviewer.instr.beam_energy = HexrdConfig().beam_energy
 
-    def _setup_polar_axis(self, axis: Axes, is_bottom=True):
+    def _setup_polar_axis(self, axis: Axes, is_bottom: bool = True) -> None:
         # Set up formatting for the x-axis
         # This is important in case "Q" is on the x axis instead
         # of two theta.
@@ -1423,7 +1481,7 @@ class ImageCanvas(FigureCanvas):
 
         # Set up the grids
         # These are default kwargs for the grids.
-        default_kwargs = {
+        default_kwargs: dict[str, Any] = {
             'visible': True,
             'linewidth': 0.075,
             'linestyle': '--',
@@ -1462,17 +1520,17 @@ class ImageCanvas(FigureCanvas):
         )
 
     @property
-    def polar_x_axis_type(self):
+    def polar_x_axis_type(self) -> str:
         return HexrdConfig().polar_x_axis_type
 
-    def on_polar_x_axis_type_changed(self):
+    def on_polar_x_axis_type_changed(self) -> None:
         # Update the x-label
         self.update_polar_axis_xlabel()
 
         # Still need to draw if the x-label was modified
         self.draw_idle()
 
-    def format_polar_x_major_ticks(self, x, pos=None):
+    def format_polar_x_major_ticks(self, x: float, pos: int | None = None) -> str:
         if self.mode != ViewType.polar or not self.iviewer:
             # No need to do anything
             return ''
@@ -1480,43 +1538,48 @@ class ImageCanvas(FigureCanvas):
         x_axis_type = self.polar_x_axis_type
         if x_axis_type == PolarXAxisType.tth:
             # Use the default formatter.
+            assert self.azimuthal_integral_axis is not None
             xaxis = self.azimuthal_integral_axis.xaxis
             formatter = xaxis.get_major_formatter()
-            return formatter.default_formatter(x, pos)
+            return formatter.default_formatter(x, pos)  # type: ignore[attr-defined]
         elif x_axis_type == PolarXAxisType.q:
+            assert self.iviewer is not None
             q = tth_to_q(x, self.iviewer.instr.beam_energy)
             return f'{q:0.4g}'
 
         raise NotImplementedError(x_axis_type)
 
-    def polar_tth_to_x_type(self, array):
+    def polar_tth_to_x_type(self, array: Any) -> Any:
         x_axis_type = self.polar_x_axis_type
         if x_axis_type == PolarXAxisType.tth:
             # Nothing to do
             return array
         elif x_axis_type == PolarXAxisType.q:
+            assert self.iviewer is not None
             return tth_to_q(array, self.iviewer.instr.beam_energy)
 
         raise NotImplementedError(x_axis_type)
 
-    def polar_x_type_to_tth(self, array):
+    def polar_x_type_to_tth(self, array: Any) -> Any:
         x_axis_type = self.polar_x_axis_type
         if x_axis_type == PolarXAxisType.tth:
             # Nothing to do
             return array
         elif x_axis_type == PolarXAxisType.q:
+            assert self.iviewer is not None
             return q_to_tth(array, self.iviewer.instr.beam_energy)
 
         raise NotImplementedError(x_axis_type)
 
     @property
-    def polar_xlabel_subscript(self):
+    def polar_xlabel_subscript(self) -> str:
         obj = HexrdConfig().polar_tth_distortion_object
         if obj is None:
             return 'nom'
 
-        if obj.pinhole_distortion_type == 'LayerDistortion':
-            layer_type = obj.pinhole_distortion_kwargs.get(
+        pdo = cast('PolarDistortionObject', obj)
+        if pdo.pinhole_distortion_type == 'LayerDistortion':
+            layer_type = pdo.pinhole_distortion_kwargs.get(
                 'layer_type',
                 'sample',
             )
@@ -1525,17 +1588,19 @@ class ImageCanvas(FigureCanvas):
             return 'pin'
 
     @property
-    def polar_xlabel_suffix(self):
+    def polar_xlabel_suffix(self) -> str:
         obj = HexrdConfig().polar_tth_distortion_object
-        if obj and obj.pinhole_distortion_type == 'LayerDistortion':
-            standoff = obj.pinhole_distortion_kwargs.get('layer_standoff', None)
-            if standoff is not None:
-                return f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
+        if obj:
+            pdo = cast('PolarDistortionObject', obj)
+            if pdo.pinhole_distortion_type == 'LayerDistortion':
+                standoff = pdo.pinhole_distortion_kwargs.get('layer_standoff', None)
+                if standoff is not None:
+                    return f'@{standoff * 1e3:.5g}' + r'${\mu}m$'
 
         return ''
 
     @property
-    def polar_xlabel(self):
+    def polar_xlabel(self) -> str:
         subscript = self.polar_xlabel_subscript
         suffix = self.polar_xlabel_suffix
         post_suffix = ''
@@ -1555,14 +1620,16 @@ class ImageCanvas(FigureCanvas):
 
         raise NotImplementedError(x_axis_type)
 
-    def update_polar_axis_xlabel(self):
+    def update_polar_axis_xlabel(self) -> None:
+        if self.bottom_polar_axis is None:
+            return
         self.bottom_polar_axis.set_xlabel(
             self.polar_xlabel,
             **self.label_kwargs,
         )
 
     @property
-    def bottom_polar_axis(self):
+    def bottom_polar_axis(self) -> Axes | None:
         if self.wppf_difference_axis:
             return self.wppf_difference_axis
 
@@ -1577,14 +1644,14 @@ class ImageCanvas(FigureCanvas):
         return 4
 
     @property
-    def is_stereo_from_polar(self):
-        return (
+    def is_stereo_from_polar(self) -> bool:
+        return bool(
             self.mode == ViewType.stereo
             and self.iviewer
-            and self.iviewer.project_from_polar
+            and cast('StereoViewer', self.iviewer).project_from_polar
         )
 
-    def mask_highlights_changed(self):
+    def mask_highlights_changed(self) -> None:
         if not self.iviewer:
             return
 
@@ -1599,7 +1666,7 @@ class ImageCanvas(FigureCanvas):
             self.update_mask_highlights(self.axis)
             self.blit_manager.update()
 
-    def polar_masks_changed(self):
+    def polar_masks_changed(self) -> None:
         skip = (
             not self.iviewer
             or self.mode not in (ViewType.polar, ViewType.stereo)
@@ -1610,7 +1677,9 @@ class ImageCanvas(FigureCanvas):
 
         self.update_mask_boundaries(self.axis)
         self.update_mask_highlights(self.axis)
-        self.iviewer.reapply_masks()
+        assert self.iviewer is not None
+        iviewer = cast('PolarViewer | StereoViewer', self.iviewer)
+        iviewer.reapply_masks()
         img = self.scaled_display_images[0]
         self.axes_images[0].set_data(img)
         self.update_azimuthal_integral_plot()
@@ -1619,7 +1688,8 @@ class ImageCanvas(FigureCanvas):
 
         HexrdConfig().polar_masks_reapplied.emit(img)
 
-    def async_worker_error(self, error):
+    def async_worker_error(self, error: tuple) -> None:
+        assert self._latest_compute_view_worker is not None
         if self.sender() is not self._latest_compute_view_worker.signals:
             # A new calculation must have been started while this was running.
             # This error doesn't matter anymore...
@@ -1640,7 +1710,7 @@ class ImageCanvas(FigureCanvas):
         self.clear_figure()
         self.draw_idle()
 
-    def transform(self, img):
+    def transform(self, img: np.ndarray) -> np.ndarray:
         if self.mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
             # We actually perform the transformation manually later.
             # Don't do it now.
@@ -1648,7 +1718,7 @@ class ImageCanvas(FigureCanvas):
 
         return self._transform(img)
 
-    def set_scaling(self, transform):
+    def set_scaling(self, transform: Callable[[np.ndarray], np.ndarray]) -> None:
         # Apply the scaling, and set the data
         self._transform = transform
         if self.mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
@@ -1668,21 +1738,21 @@ class ImageCanvas(FigureCanvas):
         self.draw_idle()
         self.transform_modified.emit()
 
-    def set_cmap(self, cmap):
+    def set_cmap(self, cmap: str | mpl.colors.Colormap) -> None:
         self.cmap = cmap
         for axes_image in self.axes_images:
             axes_image.set_cmap(cmap)
         self.draw_idle()
         self.cmap_modified.emit()
 
-    def set_norm(self, norm):
+    def set_norm(self, norm: mpl.colors.Normalize) -> None:
         self.norm = norm
         for axes_image in self.axes_images:
             axes_image.set_norm(norm)
         self.draw_idle()
         self.norm_modified.emit()
 
-    def compute_azimuthal_integral_sum(self, scaled=True):
+    def compute_azimuthal_integral_sum(self, scaled: bool = True) -> np.ndarray:
         # grab the polar image
         # !!! NOTE: currently not a masked image; just nans
         if scaled and HexrdConfig().polar_apply_scaling_to_lineout:
@@ -1707,7 +1777,9 @@ class ImageCanvas(FigureCanvas):
             return pimg
 
         pimg = pimg.copy()
-        panel_has_data = self.iviewer.pv.panel_has_data
+        polar_iviewer = cast('PolarViewer', self.iviewer)
+        assert polar_iviewer.pv is not None
+        panel_has_data = polar_iviewer.pv.panel_has_data
 
         for det_key in self.iviewer.instr.detectors:
             if det_key not in keep_detectors:
@@ -1719,16 +1791,16 @@ class ImageCanvas(FigureCanvas):
         # !!! NOTE: visible polar masks have already been applied
         #           in polarview.py
         offset = HexrdConfig().azimuthal_offset
-        masked = np.ma.masked_array(pimg, mask=np.isnan(pimg))
+        masked: np.ma.MaskedArray = np.ma.masked_array(pimg, mask=np.isnan(pimg))
         return masked.sum(axis=0) / np.sum(~masked.mask, axis=0) + offset
 
-    def clear_azimuthal_overlay_artists(self):
+    def clear_azimuthal_overlay_artists(self) -> None:
         while self.azimuthal_overlay_artists:
             item = self.azimuthal_overlay_artists.pop(0)
             for artist in item['artists'].values():
                 remove_artist(artist)
 
-    def save_azimuthal_plot(self):
+    def save_azimuthal_plot(self) -> None:
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
             return
@@ -1743,15 +1815,16 @@ class ImageCanvas(FigureCanvas):
         # Find and invert the physical inches from the bottom left corner
         size = self.figure.dpi_scale_trans.inverted()
         # Get the bbox for the second plot
+        assert self.azimuthal_integral_axis is not None
         extent = self.azimuthal_integral_axis.get_window_extent().transformed(size)
         # The bbox does not include the axis so manually scale it up so it does
         new_extent = extent.from_extents(
-            [[0, 0], [extent.xmax * 1.05, extent.ymax * 1.05]]
+            0, 0, extent.xmax * 1.05, extent.ymax * 1.05
         )
         # Save the clipped region of the figure
         self.figure.savefig(selected_file, bbox_inches=new_extent)
 
-    def update_azimuthal_plot_overlays(self):
+    def update_azimuthal_plot_overlays(self) -> None:
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
             return
@@ -1759,7 +1832,11 @@ class ImageCanvas(FigureCanvas):
         self.clear_azimuthal_overlay_artists()
 
         # Apply new, visible overlays
-        tth, sum = HexrdConfig().last_unscaled_azimuthal_integral_data
+        data = HexrdConfig().last_unscaled_azimuthal_integral_data
+        if data is None:
+            return
+        assert self.azimuthal_integral_axis is not None
+        tth, sum = data
         for overlay in HexrdConfig().azimuthal_overlays:
             if not overlay['visible']:
                 continue
@@ -1789,12 +1866,12 @@ class ImageCanvas(FigureCanvas):
             )
         if HexrdConfig().show_azimuthal_legend and len(self.azimuthal_overlay_artists):
             self.azimuthal_integral_axis.legend()
-        elif (axis := self.azimuthal_integral_axis) and axis.get_legend():
+        elif (axis := self.azimuthal_integral_axis) and (legend := axis.get_legend()):
             # Only remove the legend if the axis exists and it has a legend
-            remove_artist(axis.get_legend())
+            remove_artist(legend)
         self.draw_idle()
 
-    def update_azimuthal_integral_plot(self):
+    def update_azimuthal_integral_plot(self) -> None:
         if self.mode != ViewType.polar:
             # Nothing to do. Just return.
             return
@@ -1805,8 +1882,13 @@ class ImageCanvas(FigureCanvas):
             # Nothing to do. Just return.
             return
 
+        assert axis is not None
+        assert line is not None
+        assert self.iviewer is not None
+
         # Get the "tth" vector
-        tth = np.degrees(self.iviewer.angular_grid[1][0])
+        polar_iviewer = cast('PolarViewer', self.iviewer)
+        tth = np.degrees(polar_iviewer.angular_grid[1][0])
 
         # Set the new data
         data = (tth, self.compute_azimuthal_integral_sum())
@@ -1825,13 +1907,16 @@ class ImageCanvas(FigureCanvas):
         axis.relim()
         axis.autoscale_view(scalex=False)
 
-    def update_wppf_plot(self):
+    def update_wppf_plot(self) -> None:
         self.clear_wppf_plot()
 
         axis = self.azimuthal_integral_axis
         line = self.azimuthal_line_artist
         if any(x is None for x in (axis, line)):
             return
+
+        assert axis is not None
+        assert line is not None
 
         wppf_data = HexrdConfig().wppf_data
         if HexrdConfig().display_wppf_plot and wppf_data:
@@ -1903,7 +1988,7 @@ class ImageCanvas(FigureCanvas):
         # Update the difference label even if there's no data
         self.update_wppf_difference_labels()
 
-    def update_wppf_difference_labels(self):
+    def update_wppf_difference_labels(self) -> None:
         axis = self.wppf_difference_axis
         if not axis:
             return
@@ -1915,9 +2000,10 @@ class ImageCanvas(FigureCanvas):
 
         axis.set_ylabel(label, **self.label_kwargs_polar_y)
 
-    def detector_axis(self, detector_name):
+    def detector_axis(self, detector_name: str) -> Axes | None:
         if self.mode == ViewType.raw:
             if HexrdConfig().stitch_raw_roi_images:
+                assert self.iviewer is not None
                 axes_name = self.iviewer.instr.detectors[detector_name].group
             else:
                 axes_name = detector_name
@@ -1930,7 +2016,7 @@ class ImageCanvas(FigureCanvas):
             # Only one axis for all detectors...
             return self.axis
 
-    def update_auto_picked_data(self):
+    def update_auto_picked_data(self) -> None:
         self.clear_auto_picked_data_artists()
 
         xys = HexrdConfig().auto_picked_data
@@ -1949,13 +2035,15 @@ class ImageCanvas(FigureCanvas):
                 # Nothing to draw...
                 continue
 
+            assert self.mode is not None
             transform_func = transform_from_plain_cartesian_func(self.mode)
             rijs = transform_func(data, panel, self.iviewer)
 
             if self.mode == ViewType.raw:
                 if HexrdConfig().stitch_raw_roi_images:
                     # Need to convert these to stitched coordinates
-                    rijs = self.iviewer.raw_to_stitched(rijs[:, ::-1], det_key)[0][
+                    raw_iviewer_ = cast('RawViewer', self.iviewer)
+                    rijs = raw_iviewer_.raw_to_stitched(rijs[:, ::-1], det_key)[0][
                         :, ::-1
                     ]
 
@@ -1965,7 +2053,7 @@ class ImageCanvas(FigureCanvas):
             (artist,) = axis.plot(rijs[:, 0], rijs[:, 1], 'm+')
             self.auto_picked_data_artists.append(artist)
 
-    def on_detector_transforms_modified(self, detectors):
+    def on_detector_transforms_modified(self, detectors: list[str]) -> None:
         if HexrdConfig().loading_state:
             # Skip the request if we are loading state
             return
@@ -1973,7 +2061,8 @@ class ImageCanvas(FigureCanvas):
         if self.mode is None:
             return
 
-        self.iviewer.update_detectors(detectors)
+        assert self.iviewer is not None
+        self.iviewer.update_detectors(detectors)  # type: ignore[union-attr]
 
         if self.mode == ViewType.raw:
             # Only overlays need to be updated
@@ -1992,13 +2081,14 @@ class ImageCanvas(FigureCanvas):
         self.axes_images[0].set_data(self.scaled_display_images[0])
         if self.mode == ViewType.cartesian:
             old_extent = self.axes_images[0].get_extent()
-            new_extent = self.iviewer.extent
+            iviewer = cast('CartesianViewer | StereoViewer', self.iviewer)
+            new_extent = iviewer.extent
             # If the extents have changed, that means the detector was
             # interactively moved out of bounds, and we need to relimit.
             if not np.allclose(old_extent, new_extent):
                 self.axes_images[0].set_extent(new_extent)
-                self.axis.set_xlim(new_extent[:2])
-                self.axis.set_ylim(new_extent[2:])
+                self.axis.set_xlim(new_extent[0], new_extent[1])
+                self.axis.set_ylim(new_extent[2], new_extent[3])
                 # Need to update overlays as well. They wouldn't have been
                 # drawn in the expanded region yet.
                 HexrdConfig().flag_overlay_updates_for_all_materials()
@@ -2017,7 +2107,7 @@ class ImageCanvas(FigureCanvas):
             HexrdConfig().flag_overlay_updates_for_all_materials()
             self.update_overlays()
 
-    def export_current_plot(self, filename):
+    def export_current_plot(self, filename: str) -> None:
         allowed_view_types = [
             ViewType.cartesian,
             ViewType.polar,
@@ -2030,9 +2120,10 @@ class ImageCanvas(FigureCanvas):
         if not self.iviewer:
             raise Exception('No iviewer. Cannot export')
 
-        self.iviewer.write_image(filename)
+        iviewer = cast('PolarViewer | CartesianViewer | StereoViewer', self.iviewer)
+        iviewer.write_image(filename)
 
-    def create_waterfall_plot(self):
+    def create_waterfall_plot(self) -> None:
         if self.mode != ViewType.polar:
             msg = 'Cannot create waterfall plot if we are not in polar mode'
             raise Exception(msg)
@@ -2052,7 +2143,7 @@ class ImageCanvas(FigureCanvas):
         # generating intensities...
         progress = QProgressDialog(
             'Generating azimuthal lineouts...',
-            None,
+            '',
             0,
             num_lineouts,
             self,
@@ -2063,7 +2154,7 @@ class ImageCanvas(FigureCanvas):
         # No close button in the corner
         flags = progress.windowFlags()
         progress.setWindowFlags(
-            (flags | Qt.CustomizeWindowHint) & ~Qt.WindowCloseButtonHint
+            (flags | Qt.WindowType.CustomizeWindowHint) & ~Qt.WindowType.WindowCloseButtonHint
         )
 
         self._create_waterfall_progress = progress
@@ -2073,7 +2164,7 @@ class ImageCanvas(FigureCanvas):
         self.thread_pool.start(worker)
         self._latest_compute_view_worker = worker
 
-        def on_finished():
+        def on_finished() -> None:
             progress.reject()
 
         # Get the results and close the progress dialog when finished
@@ -2082,24 +2173,25 @@ class ImageCanvas(FigureCanvas):
 
         progress.exec()
 
-    def _update_waterfall_plot_progress_slot(self):
+    def _update_waterfall_plot_progress_slot(self) -> None:
         progress = self._create_waterfall_progress
         if progress is None:
             return
 
         progress.setValue(progress.value() + 1)
 
-    def _create_waterfall_lineouts(self) -> list[np.ndarray]:
+    def _create_waterfall_lineouts(self) -> list[np.ndarray | None]:
         # Determine the number of lineouts
         num_lineouts = HexrdConfig().imageseries_length
-        lineouts = [None] * num_lineouts
+        lineouts: list[np.ndarray | None] = [None] * num_lineouts
 
         # We can already compute the lineout for the current frame
         current_idx = HexrdConfig().current_imageseries_idx
         lineouts[current_idx] = self.compute_azimuthal_integral_sum()
 
         # Make a deep copy of the iviewer, since we will modify it
-        iviewer = copy.deepcopy(self.iviewer)
+        iviewer = cast('PolarViewer', copy.deepcopy(self.iviewer))
+        assert iviewer.pv is not None
 
         # Now generate the lineouts for the other frames
         for i in range(num_lineouts):
@@ -2139,16 +2231,20 @@ class ImageCanvas(FigureCanvas):
 
         return lineouts
 
-    def _finish_create_waterfall(self, lineouts: list[np.ndarray]):
+    def _finish_create_waterfall(self, lineouts: list[np.ndarray | None]) -> None:
         # Now create the waterfall plot dialog with the lineouts
         # Create a matplotlib figure and set up everything
         figure = plt.figure()
         ax = figure.add_subplot()
 
         # Grab tth
-        angular_grid = self.iviewer.angular_grid
+        assert self.iviewer is not None
+        polar_iviewer = cast('PolarViewer', self.iviewer)
+        angular_grid = polar_iviewer.angular_grid
         tth = np.degrees(angular_grid[1][0])
-        line_data = [(tth, lineout.filled(np.nan)) for lineout in lineouts]
+        line_data = [
+            (tth, np.ma.MaskedArray(lineout).filled(np.nan)) for lineout in lineouts
+        ]
 
         # Set the labels
         ax.set_xlabel(self.polar_xlabel, **self.label_kwargs)
@@ -2165,7 +2261,7 @@ class ImageCanvas(FigureCanvas):
         dialog.show()
         self._waterfall_plot_dialog = dialog
 
-    def export_to_maud(self, filename):
+    def export_to_maud(self, filename: str) -> None:
         if self.mode != ViewType.polar:
             msg = 'Must be in polar mode. Cannot export.'
             raise Exception(msg)
@@ -2173,9 +2269,10 @@ class ImageCanvas(FigureCanvas):
         if not self.iviewer:
             raise Exception('No iviewer. Cannot export')
 
-        self.iviewer.write_maud(filename)
+        polar_iviewer = cast('PolarViewer', self.iviewer)
+        polar_iviewer.write_maud(filename)
 
-    def _polar_reset_needed(self, new_polar_config):
+    def _polar_reset_needed(self, new_polar_config: dict) -> bool:
         # If any of the entries on this list were changed, a reset is needed
         reset_needed_list = [
             'pixel_size_tth',
@@ -2192,7 +2289,7 @@ class ImageCanvas(FigureCanvas):
 
         return False
 
-    def polar_show_snip1d(self):
+    def polar_show_snip1d(self) -> None:
         if self.mode != ViewType.polar:
             print('snip1d may only be shown in polar mode!')
             return
@@ -2201,47 +2298,52 @@ class ImageCanvas(FigureCanvas):
             print('No instrument viewer! Cannot generate snip1d!')
             return
 
-        if self.iviewer.img is None:
+        polar_iviewer = cast('PolarViewer', self.iviewer)
+
+        if polar_iviewer.img is None:
             print('No image! Cannot generate snip1d!')
             return
 
-        extent = self.iviewer._extent
+        extent = polar_iviewer._extent
 
-        if self.iviewer.snip_background is not None:
-            background = self.iviewer.snip_background
+        if polar_iviewer.snip_background is not None:
+            background = polar_iviewer.snip_background
         else:
             # We have to run it ourselves...
-            img = self.iviewer.raw_img.data
+            assert polar_iviewer.raw_img is not None
+            img = polar_iviewer.raw_img.data
 
             no_nan_methods = [utils.SnipAlgorithmType.Fast_SNIP_1D]
             if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[self.iviewer.warp_mask] = np.nan
+                img[polar_iviewer.warp_mask] = np.nan
 
             background = utils.run_snip1d(img)
 
         self._snip_viewer_dialog = SnipViewerDialog(background, extent)
         self._snip_viewer_dialog.show()
 
-    def update_mask_boundaries(self, axis):
+    def update_mask_boundaries(self, axis: Axes) -> None:
         # Update is a clear followed by a draw
         self.clear_mask_boundaries()
         self.draw_mask_boundaries(axis)
 
-    def clear_mask_boundaries(self):
+    def clear_mask_boundaries(self) -> None:
         for artist in self._mask_boundary_artists:
             remove_artist(artist)
 
         self._mask_boundary_artists.clear()
 
-    def update_mask_highlights(self, axis):
+    def update_mask_highlights(self, axis: Axes) -> None:
         # Update is a clear followed by a draw
         self.clear_mask_highlights()
         self.highlight_masks(axis)
 
-    def clear_mask_highlights(self):
+    def clear_mask_highlights(self) -> None:
         self.remove_all_mask_highlight_artists()
 
-    def get_mask_verts(self, visible_attr, det=None):
+    def get_mask_verts(
+        self, visible_attr: str, det: str | None = None
+    ) -> list[np.ndarray]:
         # Create an instrument once that we will re-use
         instr = create_view_hedm_instrument()
         all_verts = []
@@ -2254,8 +2356,10 @@ class ImageCanvas(FigureCanvas):
             verts = None
             if self.mode == ViewType.raw:
                 if HexrdConfig().stitch_raw_roi_images:
+                    assert self.iviewer is not None
+                    raw_iviewer_ = cast('RawViewer', self.iviewer)
                     # Find masks to keep
-                    dets_to_keep = self.iviewer.roi_info['groups'][det]
+                    dets_to_keep = raw_iviewer_.roi_info['groups'][det]
                     masks_to_keep = []
                     for k, v in mask.data:
                         if k in dets_to_keep:
@@ -2264,7 +2368,7 @@ class ImageCanvas(FigureCanvas):
                     # Convert the vertices to their stitched versions.
                     verts = []
                     for k, v in masks_to_keep:
-                        ij, _ = self.iviewer.raw_to_stitched(v[:, [1, 0]], k)
+                        ij, _ = raw_iviewer_.raw_to_stitched(v[:, [1, 0]], k)
                         verts.append(ij[:, [1, 0]])
                 else:
                     # Do not try to draw boundaries for threshold masks
@@ -2299,10 +2403,12 @@ class ImageCanvas(FigureCanvas):
 
                     if self.mode == ViewType.stereo:
                         # Now convert from polar to stereo
+                        assert self.iviewer is not None
+                        stereo_iviewer = cast('StereoViewer', self.iviewer)
                         for i, vert in enumerate(verts):
                             verts[i] = angles_to_stereo(
                                 np.radians(vert),
-                                self.iviewer.instr_pv,
+                                stereo_iviewer.instr_pv,
                                 HexrdConfig().stereo_size,
                             )
 
@@ -2316,12 +2422,12 @@ class ImageCanvas(FigureCanvas):
 
         return all_verts
 
-    def draw_mask_boundaries(self, axis, det=None):
+    def draw_mask_boundaries(self, axis: Axes, det: str | None = None) -> None:
         all_verts = self.get_mask_verts('boundaries', det)
         if not all_verts:
             return
 
-        kwargs = {
+        kwargs: dict[str, Any] = {
             'lw': MaskManager().boundary_width,
             'ls': MaskManager().boundary_style,
             'color': MaskManager().boundary_color,
@@ -2331,14 +2437,14 @@ class ImageCanvas(FigureCanvas):
             **kwargs,
         )
 
-    def highlight_masks(self, axis, det=None):
+    def highlight_masks(self, axis: Axes, det: str | None = None) -> None:
         # Don't update the blit manager here, so we can better control
         # it elsewhere
         all_verts = self.get_mask_verts('highlights', det)
         if not all_verts:
             return
 
-        kwargs = {
+        polygon_kwargs: dict[str, Any] = {
             'facecolor': MaskManager().highlight_color,
             'alpha': MaskManager().highlight_opacity,
             'edgecolor': 'none',
@@ -2348,16 +2454,16 @@ class ImageCanvas(FigureCanvas):
         highlight_artists = self.mask_highlight_artists.setdefault(det or 'default', [])
 
         for vert in all_verts:
-            polygon = Polygon(vert, **kwargs)
+            polygon = Polygon(vert, **polygon_kwargs)
             polygon.set_animated(True)
             axis.add_patch(polygon)
             highlight_artists.append(polygon)
 
-    def remove_all_mask_highlight_artists(self):
+    def remove_all_mask_highlight_artists(self) -> None:
         self.blit_manager.remove_artists('mask_highlights')
         self.blit_manager.artists['mask_highlights'] = {}
 
-    def remove_mask_highlight_artists(self, key):
+    def remove_mask_highlight_artists(self, key: str) -> None:
         self.blit_manager.remove_artists('mask_highlights', key)
 
 
@@ -2370,18 +2476,20 @@ class PolarXAxisTickLocator(AutoLocator):
     For instance, for Q, we want to see `1, 2, 3, 4, ...`.
     """
 
-    def __init__(self, canvas, *args, **kwargs):
+    def __init__(self, canvas: 'ImageCanvas', *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._hexrdgui_canvas = canvas
 
-    def tick_values(self, vmin, vmax):
+    def tick_values(  # type: ignore[override]
+        self, vmin: float, vmax: float
+    ) -> np.ndarray:
         canvas = self._hexrdgui_canvas
         # Convert to our current x type
         vmin, vmax = canvas.polar_tth_to_x_type([vmin, vmax])
         # Get the tick values for our x type range
         values = super().tick_values(vmin, vmax)
         # Convert back to tth
-        return canvas.polar_x_type_to_tth(values)
+        return np.asarray(canvas.polar_x_type_to_tth(values))
 
 
 class PolarXAxisMinorTickLocator(AutoMinorLocator):
@@ -2394,32 +2502,35 @@ class PolarXAxisMinorTickLocator(AutoMinorLocator):
     major ticks
     """
 
-    def __init__(self, canvas, *args, **kwargs):
+    ndivs: int | str | None  # type: ignore[assignment]
+
+    def __init__(self, canvas: 'ImageCanvas', *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._hexrdgui_canvas = canvas
 
-    def __call__(self):
+    def __call__(self) -> np.ndarray:  # type: ignore[override]
         canvas = self._hexrdgui_canvas
-        if self.axis.get_scale() == 'log':
+        if self.axis.get_scale() == 'log':  # type: ignore[union-attr]
             logging.warning(
-                'PolarXAxisMinorTickLocator does not work on logarithmic ' 'scales'
+                'PolarXAxisMinorTickLocator does not work' ' on logarithmic scales'
             )
-            return []
+            return np.array([])
 
-        majorlocs = np.unique(self.axis.get_majorticklocs())
+        majorlocs = np.unique(self.axis.get_majorticklocs())  # type: ignore[union-attr]
         if len(majorlocs) < 2:
-            # Need at least two major ticks to find minor tick locations.
-            return []
+            # Need at least two major ticks to find minor tick
+            # locations.
+            return np.array([])
 
         # Convert to our current x type
         majorlocs = canvas.polar_tth_to_x_type(majorlocs)
         majorstep = majorlocs[1] - majorlocs[0]
 
         if self.ndivs is None:
-            self.ndivs = mpl.rcParams[
+            self.ndivs = mpl.rcParams[  # type: ignore[assignment]
                 (
                     'ytick.minor.ndivs'
-                    if self.axis.axis_name == 'y'
+                    if self.axis.axis_name == 'y'  # type: ignore[union-attr]
                     else 'xtick.minor.ndivs'
                 )
             ]  # for x and z axis
@@ -2431,11 +2542,11 @@ class PolarXAxisMinorTickLocator(AutoMinorLocator):
             else:
                 ndivs = 4
         else:
-            ndivs = self.ndivs
+            ndivs = int(self.ndivs)
 
         minorstep = majorstep / ndivs
 
-        vmin, vmax = sorted(self.axis.get_view_interval())
+        vmin, vmax = sorted(self.axis.get_view_interval())  # type: ignore[union-attr]
         # Convert to our current x type
         vmin, vmax = canvas.polar_tth_to_x_type([vmin, vmax])
         t0 = majorlocs[0]
@@ -2446,7 +2557,7 @@ class PolarXAxisMinorTickLocator(AutoMinorLocator):
         # Convert back to tth
         locs = canvas.polar_x_type_to_tth(locs)
 
-        return self.raise_if_exceeds(locs)
+        return self.raise_if_exceeds(locs)  # type: ignore[return-value]
 
 
 class PolarXAxisFormatter(FuncFormatter):
@@ -2456,31 +2567,35 @@ class PolarXAxisFormatter(FuncFormatter):
     the default formatter as well.
     """
 
-    def __init__(self, default_formatter, func):
+    def __init__(
+        self,
+        default_formatter: Formatter,
+        func: Callable[[float, int | None], str],
+    ) -> None:
         super().__init__(func)
         self.default_formatter = default_formatter
 
-    def set_locs(self, *args, **kwargs):
+    def set_locs(self, locs: np.ndarray) -> None:  # type: ignore[override]
         # Make sure the default formatter is updated as well
-        self.default_formatter.set_locs(*args, **kwargs)
-        super().set_locs(*args, **kwargs)
+        self.default_formatter.set_locs(locs)  # type: ignore[arg-type]
+        super().set_locs(locs)  # type: ignore[arg-type]
 
 
-def transform_from_plain_cartesian_func(mode):
+def transform_from_plain_cartesian_func(mode: str) -> Callable:
     # Get a function to transform from plain cartesian coordinates
     # to whatever type of view we are in.
 
     # The functions all have arguments like the following:
     # xys, panel, iviewer
 
-    def to_pixels(xys, panel, iviewer):
+    def to_pixels(xys: np.ndarray, panel: Detector, iviewer: IViewer) -> np.ndarray:
         return cart_to_pixels(xys, panel)
 
-    def transform_cart(xys, panel, iviewer):
-        dplane = iviewer.dplane
+    def transform_cart(xys: np.ndarray, panel: Detector, iviewer: IViewer) -> np.ndarray:
+        dplane = iviewer.dplane  # type: ignore[union-attr]
         return panel.map_to_plane(xys, dplane.rmat, dplane.tvec)
 
-    def to_angles(xys, panel, iviewer):
+    def to_angles(xys: np.ndarray, panel: Detector, iviewer: IViewer) -> np.ndarray:
         kwargs = {
             'xys': xys,
             'panel': panel,
@@ -2489,7 +2604,7 @@ def transform_from_plain_cartesian_func(mode):
         }
         return cart_to_angles(**kwargs)
 
-    def to_stereo(xys, panel, iviewer):
+    def to_stereo(xys: np.ndarray, panel: Detector, iviewer: IViewer) -> np.ndarray:
         # First convert to angles, then to stereo from there
         angs = np.radians(to_angles(xys, panel, iviewer))
         return angles_to_stereo(

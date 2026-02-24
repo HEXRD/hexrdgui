@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 
 from hexrdgui.matrix_editor import MatrixEditor
@@ -6,7 +8,7 @@ from hexrdgui.utils import apply_symmetric_constraint
 
 
 class ThermalFactorEditor:
-    def __init__(self, value, parent=None):
+    def __init__(self, value: Any, parent: Any = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('thermal_factor_editor.ui', parent)
 
@@ -14,33 +16,35 @@ class ThermalFactorEditor:
 
         self.tensor_editor = MatrixEditor(np.zeros((3, 3)), parent)
         self.tensor_editor.enabled_elements = list(zip(*np.triu_indices(3)))
-        self.tensor_editor.apply_constraints_func = apply_symmetric_constraint
+        self.tensor_editor.apply_constraints_func = (
+            apply_symmetric_constraint  # type: ignore[assignment]
+        )
         self.ui.tensor_editor_layout.addWidget(self.tensor_editor)
 
         self.value = value
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.is_tensor.toggled.connect(self.update_tab_widget)
 
-    def update_tab_widget(self):
+    def update_tab_widget(self) -> None:
         prefix = 'tensor' if self.is_tensor else 'scalar'
         tab = getattr(self.ui, f'{prefix}_tab')
         self.ui.tab_widget.setCurrentWidget(tab)
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
     @property
-    def value(self):
+    def value(self) -> Any:
         if self.is_tensor:
             return compress_symmetric_tensor(self.tensor_editor.data)
         else:
             return self.ui.scalar_value.value()
 
     @value.setter
-    def value(self, v):
+    def value(self, v: Any) -> None:
         if isinstance(v, (int, float)):
             self.is_tensor = False
             self.ui.scalar_value.setValue(v)
@@ -53,11 +57,11 @@ class ThermalFactorEditor:
             raise Exception(f'Unrecognized type: {type(v)}')
 
     @property
-    def is_tensor(self):
+    def is_tensor(self) -> bool:
         return self.ui.is_tensor.isChecked()
 
     @is_tensor.setter
-    def is_tensor(self, v):
+    def is_tensor(self, v: bool) -> None:
         self.ui.is_tensor.setChecked(v)
 
 
@@ -71,7 +75,7 @@ thermal_factor_tensor_mapping = {
 }
 
 
-def expand_symmetric_tensor(x):
+def expand_symmetric_tensor(x: np.ndarray) -> np.ndarray:
     ret = np.zeros((3, 3), dtype=np.float64)
 
     for k, v in thermal_factor_tensor_mapping.items():
@@ -81,7 +85,7 @@ def expand_symmetric_tensor(x):
     return ret
 
 
-def compress_symmetric_tensor(x):
+def compress_symmetric_tensor(x: np.ndarray) -> np.ndarray:
     ret = np.zeros(6, dtype=np.float64)
 
     for k, v in thermal_factor_tensor_mapping.items():

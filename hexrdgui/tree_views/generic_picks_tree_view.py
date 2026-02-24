@@ -1,11 +1,21 @@
+from __future__ import annotations
+
 from functools import partial
 from itertools import cycle
+from typing import Any
 
 import matplotlib.pyplot as plt
 
 from PySide6.QtCore import QModelIndex, Qt, Signal
-from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QCheckBox, QDialog, QDialogButtonBox, QMenu, QVBoxLayout
+from PySide6.QtGui import QContextMenuEvent, QCursor, QKeyEvent
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QMenu,
+    QVBoxLayout,
+    QWidget,
+)
 
 from hexrdgui.constants import ViewType
 from hexrdgui.line_picker_dialog import LinePickerDialog
@@ -27,7 +37,12 @@ Y_COL = X_COL + 1
 
 class GenericPicksTreeItemModel(BaseDictTreeItemModel):
 
-    def __init__(self, dictionary, coords_type=ViewType.polar, parent=None):
+    def __init__(
+        self,
+        dictionary: dict[str, Any],
+        coords_type: str = ViewType.polar,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(dictionary, parent)
 
         self.root_item = TreeItem([''] * 3)
@@ -59,16 +74,16 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
         self.rebuild_tree()
 
     @property
-    def coords_type(self):
+    def coords_type(self) -> str:
         return self._coords_type
 
     @coords_type.setter
-    def coords_type(self, v):
+    def coords_type(self, v: str) -> None:
         self._coords_type = v
         self.update_root_item()
 
-    def update_root_item(self):
-        options = {
+    def update_root_item(self) -> None:
+        options: dict[str, list[str]] = {
             ViewType.raw: ['i', 'j'],
             ViewType.cartesian: ['x', 'y'],
             ViewType.polar: ['2θ', 'η'],
@@ -85,8 +100,12 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
             index = self.createIndex(row, col, self.root_item)
             self.dataChanged.emit(index, index)
 
-    def recursive_add_tree_items(self, cur_config, cur_tree_item):
-        def is_coords(x):
+    def recursive_add_tree_items(
+        self,
+        cur_config: Any,
+        cur_tree_item: TreeItem,
+    ) -> None:
+        def is_coords(x: object) -> bool:
             return (
                 isinstance(x, (tuple, list))
                 and len(x) == 2
@@ -99,7 +118,7 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
             cur_tree_item.set_data(Y_COL, y)
             return
         elif isinstance(cur_config, dict):
-            keys = cur_config.keys()
+            keys: Any = cur_config.keys()
         elif isinstance(cur_config, (list, tuple)):
             keys = range(len(cur_config))
         else:
@@ -115,7 +134,11 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
             tree_item = self.add_tree_item(data, cur_tree_item)
             self.recursive_add_tree_items(cur_config[key], tree_item)
 
-    def path_to_value(self, tree_item, column):
+    def path_to_value(
+        self,
+        tree_item: TreeItem,
+        column: int,
+    ) -> list[str | int]:
         return self.path_to_item(tree_item) + [column - 1]
 
 
@@ -123,26 +146,29 @@ class GenericPicksTreeView(BaseDictTreeView):
 
     dict_modified = Signal(QModelIndex)
 
+    def model(self) -> GenericPicksTreeItemModel:
+        return super().model()  # type: ignore[return-value]
+
     def __init__(
         self,
-        dictionary,
-        coords_type=ViewType.polar,
-        canvas=None,
-        parent=None,
-        model_class=GenericPicksTreeItemModel,
-        model_class_kwargs=None,
-    ):
+        dictionary: dict[str, Any],
+        coords_type: str = ViewType.polar,
+        canvas: Any = None,
+        parent: QWidget | None = None,
+        model_class: type[GenericPicksTreeItemModel] = GenericPicksTreeItemModel,
+        model_class_kwargs: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.canvas = canvas
         self.allow_hand_picking = True
-        self.all_picks_line_artists = []
-        self.selected_picks_line_artists = []
+        self.all_picks_line_artists: list[Any] = []
+        self.selected_picks_line_artists: list[Any] = []
         self.is_deleting_picks = False
         self._show_all_picks = True
         self.new_line_name_generator = None
-        self._current_picker = None
-        self.skip_pick_item_list = []
+        self._current_picker: LinePickerDialog | None = None
+        self.skip_pick_item_list: list[TreeItem] = []
 
         if model_class_kwargs is None:
             model_class_kwargs = {}
@@ -166,11 +192,11 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self.draw_picks()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.selection_changed.connect(self.selection_was_changed)
         self.model().dict_modified.connect(self.data_was_modified)
 
-    def selection_was_changed(self):
+    def selection_was_changed(self) -> None:
         if self.is_deleting_picks:
             # Don't re-highlight and re-draw for every pick that is deleted
             return
@@ -178,15 +204,15 @@ class GenericPicksTreeView(BaseDictTreeView):
         self.highlight_selected_lines()
         self.draw_picks()
 
-    def highlight_selected_lines(self):
+    def highlight_selected_lines(self) -> None:
         # Do nothing by default
         pass
 
-    def data_was_modified(self, index):
+    def data_was_modified(self, index: QModelIndex) -> None:
         self.draw_picks()
         self.dict_modified.emit(index)
 
-    def delete_selected_picks(self):
+    def delete_selected_picks(self) -> None:
         self.is_deleting_picks = True
         try:
             self._delete_selected_picks()
@@ -195,7 +221,7 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self.selection_was_changed()
 
-    def _delete_selected_picks(self):
+    def _delete_selected_picks(self) -> None:
         model = self.model()
         items_to_remove = []
         for item in self.selected_items:
@@ -211,21 +237,21 @@ class GenericPicksTreeView(BaseDictTreeView):
         return self.model().num_layers_nested
 
     @property
-    def show_all_picks(self):
+    def show_all_picks(self) -> bool:
         return self._show_all_picks
 
     @show_all_picks.setter
-    def show_all_picks(self, b):
+    def show_all_picks(self, b: bool) -> None:
         if self.show_all_picks == b:
             return
 
         self._show_all_picks = b
         self.draw_picks()
 
-    def set_show_all_picks(self, b):
+    def set_show_all_picks(self, b: bool) -> None:
         self.show_all_picks = b
 
-    def draw_picks(self):
+    def draw_picks(self) -> None:
         self.clear_artists()
         if not self.canvas:
             return
@@ -234,22 +260,24 @@ class GenericPicksTreeView(BaseDictTreeView):
         self.draw_selected_picks()
 
     @property
-    def all_pick_items(self):
+    def all_pick_items(self) -> list[TreeItem]:
         # Take self.all_pick_items_grouped and flatten them out
-        items = []
+        items: list[TreeItem] = []
         for group in self.all_pick_items_grouped.values():
             items.extend(group)
         return items
 
     @property
-    def all_pick_items_grouped(self):
+    def all_pick_items_grouped(
+        self,
+    ) -> dict[TreeItem, list[TreeItem]]:
         # Recurse through all items and pull out all pick items
         # We assume an item is a pick item if it is not the root, and
         # it doesn't contain any None values.
         # These items will be grouped by parent.
-        items = {}
+        items: dict[TreeItem, list[TreeItem]] = {}
 
-        def recurse(parent):
+        def recurse(parent: TreeItem) -> None:
             group = []
             for child in parent.child_items:
                 if child in self.skip_pick_item_list:
@@ -267,22 +295,27 @@ class GenericPicksTreeView(BaseDictTreeView):
         return items
 
     @property
-    def selected_items_grouped(self):
+    def selected_items_grouped(
+        self,
+    ) -> dict[TreeItem, list[TreeItem]]:
         selected_items = self.selected_items
         if not selected_items:
             # Return early
             return {}
 
-        # Use all the same keys as all_pick_items_grouped so that the colors
-        # from the cycler match up.
-        selected_grouped = {key: [] for key in self.all_pick_items_grouped}
+        # Use all the same keys as all_pick_items_grouped
+        # so that the colors from the cycler match up.
+        selected_grouped: dict[TreeItem, list[TreeItem]] = {
+            key: [] for key in self.all_pick_items_grouped
+        }
         for item in selected_items:
+            assert item.parent_item is not None
             selected_grouped[item.parent_item].append(item)
 
         return selected_grouped
 
     @property
-    def default_artist_settings(self):
+    def default_artist_settings(self) -> dict[str, Any]:
         return {
             'line': {
                 'marker': igor_marker,
@@ -300,7 +333,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         }
 
     @property
-    def highlighted_artist_settings(self):
+    def highlighted_artist_settings(self) -> dict[str, Any]:
         return {
             'line': {
                 'marker': igor_marker,
@@ -317,16 +350,16 @@ class GenericPicksTreeView(BaseDictTreeView):
             },
         }
 
-    def create_color_cycler(self):
+    def create_color_cycler(self) -> Any:
         prop_cycle = plt.rcParams['axes.prop_cycle']
         return cycle(prop_cycle.by_key()['color'])
 
-    def item_type(self, tree_item):
+    def item_type(self, tree_item: TreeItem) -> str:
         # Assume 'line' always for generic calibration.
         # Subclasses can add logic to change type to 'spot' as well.
         return 'line'
 
-    def draw_all_picks(self):
+    def draw_all_picks(self) -> None:
         if not self.show_all_picks:
             return
 
@@ -351,7 +384,7 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self.canvas.draw_idle()
 
-    def draw_selected_picks(self):
+    def draw_selected_picks(self) -> None:
         if not self.selected_items:
             return
 
@@ -386,7 +419,7 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self.canvas.draw_idle()
 
-    def clear_artists(self):
+    def clear_artists(self) -> None:
         while self.all_picks_line_artists:
             remove_artist(self.all_picks_line_artists.pop(0))
 
@@ -395,12 +428,15 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self.canvas.draw_idle()
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Delete:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Delete:
             self.delete_selected_picks()
         return super().keyPressEvent(event)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(
+        self,
+        event: QContextMenuEvent,
+    ) -> None:
         actions = {}
 
         index = self.indexAt(event.pos())
@@ -425,29 +461,29 @@ class GenericPicksTreeView(BaseDictTreeView):
         menu = QMenu(self)
 
         # Helper functions
-        def add_actions(d: dict):
+        def add_actions(d: dict) -> None:
             actions.update({menu.addAction(k): v for k, v in d.items()})
 
-        def add_separator():
+        def add_separator() -> None:
             if not actions:
                 return
             menu.addSeparator()
 
         # Context menu methods
-        def insert_item():
+        def insert_item() -> None:
             if line_name_clicked:
-                position = 0
-                parent_item = item
+                position: int = 0
+                parent_item: TreeItem = item
             elif point_clicked:
-                position = path[-1]
-                parent_item = item.parent_item
+                position = int(path[-1])
+                parent_item = item.parent_item  # type: ignore[assignment]
             else:
                 raise NotImplementedError
 
             pick_label = f'Inserting points into: {line_name}'
             return self._insert_picks(parent_item, position, pick_label)
 
-        def hand_pick_item():
+        def hand_pick_item() -> None:
             self.hand_pick_point(item, line_name)
 
         # Action logic
@@ -478,7 +514,12 @@ class GenericPicksTreeView(BaseDictTreeView):
         # Run the function for the action that was chosen
         actions[action_chosen]()
 
-    def _insert_picks(self, parent_item, position, pick_label):
+    def _insert_picks(
+        self,
+        parent_item: TreeItem,
+        position: int,
+        pick_label: str,
+    ) -> None:
         model = self.model()
 
         if not self.is_hand_pickable:
@@ -501,11 +542,11 @@ class GenericPicksTreeView(BaseDictTreeView):
         picker.ui.view_picks.setVisible(False)
         picker.start()
 
-        def on_line_completed():
+        def on_line_completed() -> None:
             # Just accept it
             picker.ui.accept()
 
-        def on_accepted():
+        def on_accepted() -> None:
             nonlocal position
             original_position = position
             new_line = picker.line_data[0]
@@ -527,18 +568,22 @@ class GenericPicksTreeView(BaseDictTreeView):
         self._current_picker = picker
 
     @property
-    def has_canvas(self):
+    def has_canvas(self) -> bool:
         return self.canvas is not None
 
     @property
-    def is_hand_pickable(self):
+    def is_hand_pickable(self) -> bool:
         return self.allow_hand_picking and self.has_canvas
 
     @property
-    def can_add_lines(self):
-        return self.new_line_name_generator and self.has_canvas
+    def can_add_lines(self) -> bool:
+        return bool(self.new_line_name_generator and self.has_canvas)
 
-    def hand_pick_point(self, item, pick_label=''):
+    def hand_pick_point(
+        self,
+        item: TreeItem,
+        pick_label: str = '',
+    ) -> None:
         kwargs = {
             'canvas': self.canvas,
             'parent': self,
@@ -555,7 +600,12 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self._current_picker = picker
 
-    def point_picked(self, x, y, item):
+    def point_picked(
+        self,
+        x: float,
+        y: float,
+        item: TreeItem,
+    ) -> None:
         model = self.model()
         left = model.createIndex(item.row(), 1, item)
         right = model.createIndex(item.row(), 2, item)
@@ -566,7 +616,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         # Flag it as changed
         model.dataChanged.emit(left, right)
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         # Check if the line picker should be accepted
         picker = self._current_picker
         if (
@@ -576,9 +626,13 @@ class GenericPicksTreeView(BaseDictTreeView):
             and picker.line_data[0].size != 0
         ):
             # Accept the line
-            self._current_picker.ui.accept()
+            picker.ui.accept()
 
-    def append_new_line(self, path):
+    def append_new_line(
+        self,
+        path: list[str | int],
+    ) -> None:
+        assert self.new_line_name_generator is not None
         name = self.new_line_name_generator(path)
         config = self.model().config_path(path)
 
@@ -598,7 +652,7 @@ class GenericPicksTreeView(BaseDictTreeView):
         picker.ui.view_picks.setVisible(False)
         picker.start()
 
-        def on_line_completed():
+        def on_line_completed() -> None:
             # Just accept it
             picker.ui.accept()
 
@@ -610,7 +664,12 @@ class GenericPicksTreeView(BaseDictTreeView):
 
         self._current_picker = picker
 
-    def finished_appending_new_line(self, path, name, picker):
+    def finished_appending_new_line(
+        self,
+        path: list[str | int],
+        name: str,
+        picker: Any,
+    ) -> None:
         new_line = picker.line_data[0]
         config = self.model().config_path(path)
 
@@ -620,11 +679,11 @@ class GenericPicksTreeView(BaseDictTreeView):
         self.expand_rows()
 
     @property
-    def coords_type(self):
+    def coords_type(self) -> str:
         return self.model().coords_type
 
     @coords_type.setter
-    def coords_type(self, v):
+    def coords_type(self, v: str) -> None:
         self.model().coords_type = v
 
 
@@ -633,33 +692,39 @@ class GenericPicksTreeViewDialog(QDialog):
     dict_modified = Signal(QModelIndex)
 
     def __init__(
-        self, dictionary, coords_type=ViewType.polar, canvas=None, parent=None
-    ):
+        self,
+        dictionary: dict[str, Any],
+        coords_type: str = ViewType.polar,
+        canvas: Any = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.setWindowTitle('Edit Picks')
 
         self.setLayout(QVBoxLayout(self))
+        layout = self.layout()
+        assert layout is not None
 
         self.tree_view = GenericPicksTreeView(dictionary, coords_type, canvas, self)
-        self.layout().addWidget(self.tree_view)
+        layout.addWidget(self.tree_view)
 
         # Add a checkbox for showing all
         cb = QCheckBox('Show all picks', self)
         cb.setChecked(self.tree_view.show_all_picks)
         cb.toggled.connect(self.tree_view.set_show_all_picks)
-        self.layout().addWidget(cb)
+        layout.addWidget(cb)
 
         # Add a button box for accept/cancel
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         self.button_box = QDialogButtonBox(buttons, self)
-        self.layout().addWidget(self.button_box)
+        layout.addWidget(self.button_box)
 
         self.resize(500, 500)
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.tree_view.dict_modified.connect(self.dict_modified.emit)
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
@@ -668,12 +733,12 @@ class GenericPicksTreeViewDialog(QDialog):
         self.accepted.connect(self.on_accepted)
         self.rejected.connect(self.on_rejected)
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         self.tree_view.on_accepted()
         self.on_finished()
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         self.on_finished()
 
-    def on_finished(self):
+    def on_finished(self) -> None:
         self.tree_view.clear_artists()

@@ -1,4 +1,11 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -10,7 +17,12 @@ from hexrdgui.utils.polygon import polygon_to_mask
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
-def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
+def convert_raw_to_polar(
+    instr: HEDMInstrument,
+    det: str,
+    line: np.ndarray,
+    apply_tth_distortion: bool = True,
+) -> list[np.ndarray] | None:
     # This accepts an instrument rather than creating one for performance
 
     # Make sure there at least 500 sample points so that the conversion
@@ -40,13 +52,13 @@ def convert_raw_to_polar(instr, det, line, apply_tth_distortion=True):
     return [line] if line.size else None
 
 
-def create_polar_mask(line_data):
+def create_polar_mask(line_data: list[np.ndarray]) -> np.ndarray:
     from hexrdgui.calibration.polarview import PolarView
     from hexrdgui.masking.mask_manager import MaskManager
 
     # Calculate current image dimensions
     # If we pass `None` to the polar view, it is a dummy polar view
-    kwargs = {'instrument': None}
+    kwargs: dict[str, Any] = {'instrument': None}
     if MaskManager().view_mode == ViewType.stereo:
         kwargs.update(
             {
@@ -111,7 +123,11 @@ def create_polar_mask(line_data):
     return final_mask
 
 
-def _pixel_perimeter_to_mask(r, c, shape):
+def _pixel_perimeter_to_mask(
+    r: np.ndarray,
+    c: np.ndarray,
+    shape: tuple[int, int],
+) -> np.ndarray:
     polygon = np.vstack([c, r]).T
     if polygon.size < 2:
         return np.ones(shape, dtype=bool)
@@ -119,13 +135,22 @@ def _pixel_perimeter_to_mask(r, c, shape):
     return polygon_to_mask(polygon, shape)
 
 
-def _split_coords_1d(x, gap1, gap2):
+def _split_coords_1d(
+    x: np.ndarray,
+    gap1: int,
+    gap2: int,
+) -> tuple[np.ndarray, np.ndarray]:
     coords1 = np.hstack((x[gap2:], x[:gap1]))
     coords2 = x[gap1:gap2]
     return coords1, coords2
 
 
-def _buffer_coords_1d(coords1, coords2, min_val, max_val):
+def _buffer_coords_1d(
+    coords1: np.ndarray,
+    coords2: np.ndarray,
+    min_val: float,
+    max_val: float,
+) -> tuple[np.ndarray, np.ndarray]:
     # Buffer the coords with whichever is closer on the sides,
     # min_val or max_val
     if max_val - coords1[0] < coords1[0] - min_val:
@@ -144,7 +169,10 @@ def _buffer_coords_1d(coords1, coords2, min_val, max_val):
     return coords1, coords2
 
 
-def _interpolate_split_coords_1d(coords1, coords2):
+def _interpolate_split_coords_1d(
+    coords1: np.ndarray,
+    coords2: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
     # Buffer the coords with interpolation between values.
     if abs(coords1[0] - coords2[-1]) < abs(coords1[0] - coords2[0]):
         # coords1[0] and coords2[-1] are attached
@@ -164,7 +192,11 @@ def _interpolate_split_coords_1d(coords1, coords2):
     return coords1, coords2
 
 
-def create_polar_line_data_from_raw(instr, value, apply_tth_distortion=True):
+def create_polar_line_data_from_raw(
+    instr: HEDMInstrument,
+    value: list[tuple[str, np.ndarray]],
+    apply_tth_distortion: bool = True,
+) -> list[np.ndarray]:
     # This accepts an instrument rather than creating one for performance
     line_data = []
     for det, data in value:
@@ -178,7 +210,11 @@ def create_polar_line_data_from_raw(instr, value, apply_tth_distortion=True):
     return line_data
 
 
-def create_polar_mask_from_raw(value, instr=None, apply_tth_distortion=True):
+def create_polar_mask_from_raw(
+    value: list[tuple[str, np.ndarray]],
+    instr: HEDMInstrument | None = None,
+    apply_tth_distortion: bool = True,
+) -> np.ndarray:
     if instr is None:
         # An instrument can be passed for improved performance.
         # If one wasn't passed, create one.
@@ -192,7 +228,7 @@ def create_polar_mask_from_raw(value, instr=None, apply_tth_distortion=True):
     return create_polar_mask(line_data)
 
 
-def rebuild_polar_masks():
+def rebuild_polar_masks() -> None:
     from hexrdgui.masking.mask_manager import MaskManager
 
     for mask in MaskManager().masks.values():

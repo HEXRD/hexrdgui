@@ -1,19 +1,27 @@
+from __future__ import annotations
+
 import copy
 from functools import partial
 import os
 from pathlib import Path
 import sys
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from mpl_toolkits.mplot3d import Axes3D, proj3d  # noqa: F401 unused import
 import matplotlib
 import matplotlib.ticker as ticker
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from PySide6.QtCore import QObject, QTimer, Qt, Signal
 from PySide6.QtWidgets import QFileDialog, QMenu, QMessageBox, QSizePolicy
+
+if TYPE_CHECKING:
+    from matplotlib.backend_bases import PickEvent
+    from matplotlib.colors import Colormap
+    from hexrd.material import Material
 
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.rotations import rotMatOfExpMap
@@ -41,7 +49,13 @@ COLOR_ORIENTATIONS_IND = 23
 class FitGrainsResultsDialog(QObject):
     finished = Signal()
 
-    def __init__(self, data, material=None, parent=None, allow_export_workflow=True):
+    def __init__(
+        self,
+        data: np.ndarray,
+        material: Material | None = None,
+        parent: QObject | None = None,
+        allow_export_workflow: bool = True,
+    ) -> None:
         super().__init__(parent)
 
         if material is None:
@@ -54,21 +68,23 @@ class FitGrainsResultsDialog(QObject):
                     f'Assuming material of {material.name} for needed ' 'computations'
                 )
 
-        self.async_runner = AsyncRunner(parent)
+        self.async_runner = AsyncRunner(parent)  # type: ignore[arg-type]
 
-        self.ax = None
-        self.cmap = HexrdConfig().default_cmap
+        self.ax: Axes3D | None = None
+        self.cmap: str | Colormap = HexrdConfig().default_cmap
         self.data = data
         self.data_model = GrainsTableModel(data)
         self.material = material
-        self.canvas = None
-        self.fig = None
-        self.scatter_artist = None
-        self.highlight_artist = None
-        self.colorbar = None
+        self.canvas: FigureCanvas | None = None
+        self.fig: Figure | None = None
+        self.scatter_artist: Any = None
+        self.highlight_artist: Any = None
+        self.colorbar: Any = None
 
         loader = UiLoader()
-        self.ui = loader.load_file('fit_grains_results_dialog.ui', parent)
+        self.ui = loader.load_file(
+            'fit_grains_results_dialog.ui', parent  # type: ignore[arg-type]
+        )
 
         url = 'hedm/fit_grains/#fit-grains-results'
         add_help_url(self.ui.button_box, url)
@@ -92,7 +108,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.setup_gui()
 
-    def add_extra_data_columns(self):
+    def add_extra_data_columns(self) -> None:
         # Add columns for equivalent strain and hydrostatic strain
         eqv_strain = np.zeros(self.num_grains)
         hydrostatic_strain = np.zeros(self.num_grains)
@@ -105,7 +121,7 @@ class FitGrainsResultsDialog(QObject):
         self.data = np.hstack((self.data, eqv_strain[:, np.newaxis]))
         self.data = np.hstack((self.data, hydrostatic_strain[:, np.newaxis]))
 
-    def setup_gui(self):
+    def setup_gui(self) -> None:
         self.update_selectors()
         self.setup_plot()
         self.setup_toolbar()
@@ -122,11 +138,11 @@ class FitGrainsResultsDialog(QObject):
         self.ui.export_stresses.setVisible(False)
 
     @property
-    def num_grains(self):
+    def num_grains(self) -> int:
         return self.data.shape[0]
 
     @property
-    def converted_data(self):
+    def converted_data(self) -> np.ndarray:
         # Perform conversions on the data to the specified types.
         # For instance, use stress instead of strain if that is set.
         tensor_type = self.tensor_type
@@ -161,21 +177,21 @@ class FitGrainsResultsDialog(QObject):
         return data
 
     @property
-    def axes_labels(self):
+    def axes_labels(self) -> tuple[str, str, str]:
         if self.cylindrical_reference:
             return ('ρ', 'φ', 'Y')
         return ('X', 'Y', 'Z')
 
     @property
-    def cylindrical_reference(self):
+    def cylindrical_reference(self) -> bool:
         return self.ui.cylindrical_reference.isChecked()
 
     @cylindrical_reference.setter
-    def cylindrical_reference(self, v):
+    def cylindrical_reference(self, v: bool) -> None:
         self.ui.cylindricalreference.setChecked(v)
 
     @property
-    def stiffness(self):
+    def stiffness(self) -> np.ndarray | None:
         try:
             # Any of these could be an attribute error
             return self.material.unitcell.stiffness
@@ -183,7 +199,7 @@ class FitGrainsResultsDialog(QObject):
             return None
 
     @property
-    def compliance(self):
+    def compliance(self) -> np.ndarray | None:
         try:
             # Any of these could be an attribute error
             return self.material.unitcell.compliance
@@ -191,17 +207,17 @@ class FitGrainsResultsDialog(QObject):
             return None
 
     @property
-    def color_by_column(self):
+    def color_by_column(self) -> int:
         return self.ui.plot_color_option.currentData()
 
     @property
-    def colors(self):
+    def colors(self) -> np.ndarray:
         data = self._converted_data
         column = self.color_by_column
         if column < END_COLUMNS_IND:
             return data[:, column]
 
-        def to_colors():
+        def to_colors() -> np.ndarray:
             exp_maps = data[:, 3:6]
             rmats = np.array([rotMatOfExpMap(x) for x in exp_maps])
             return self.material.unitcell.color_orientations(rmats)
@@ -212,11 +228,11 @@ class FitGrainsResultsDialog(QObject):
 
         return funcs[column]()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         has_stiffness = self.stiffness is not None
         self.ui.convert_strain_to_stress.setEnabled(has_stiffness)
 
-    def clear_artists(self):
+    def clear_artists(self) -> None:
         # Colorbar must be removed before the scatter artist
         if self.colorbar is not None:
             remove_artist(self.colorbar)
@@ -230,14 +246,14 @@ class FitGrainsResultsDialog(QObject):
             remove_artist(self.highlight_artist)
             self.highlight_artist = None
 
-    def on_colorby_changed(self):
+    def on_colorby_changed(self) -> None:
         self.update_plot()
 
     @property
-    def glyph_size(self):
+    def glyph_size(self) -> int:
         return self.ui.glyph_size_slider.value()
 
-    def update_plot(self):
+    def update_plot(self) -> None:
         data = self.converted_data
         colors = self.colors
 
@@ -253,20 +269,22 @@ class FitGrainsResultsDialog(QObject):
             'depthshade': self.depth_shading,
             'picker': True,
         }
+        assert self.ax is not None
         self.scatter_artist = self.ax.scatter3D(*coords, **kwargs)
         self.update_color_settings()
         self.highlight_selected_grains()
         self.draw_idle()
 
-    def update_color_settings(self):
+    def update_color_settings(self) -> None:
         color_map_needed = self.color_by_column != COLOR_ORIENTATIONS_IND
         self.ui.color_map_label.setEnabled(color_map_needed)
         self.ui.color_maps.setEnabled(color_map_needed)
 
         if color_map_needed:
+            assert self.fig is not None
             self.colorbar = self.fig.colorbar(self.scatter_artist, shrink=0.8)
 
-    def on_export_button_pressed(self):
+    def on_export_button_pressed(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui,
             'Export Fit-Grains Results',
@@ -282,7 +300,7 @@ class FitGrainsResultsDialog(QObject):
 
             self.data_model.save(selected_file)
 
-    def on_export_stresses_button_pressed(self):
+    def on_export_stresses_button_pressed(self) -> None:
         if self.tensor_type != 'stress':
             raise Exception('Tensor type must be stress')
 
@@ -305,27 +323,28 @@ class FitGrainsResultsDialog(QObject):
         np.savez_compressed(selected_file, stresses=stresses)
 
     @property
-    def depth_shading(self):
+    def depth_shading(self) -> bool:
         return self.ui.depth_shading.isChecked()
 
     @depth_shading.setter
-    def depth_shading(self, v):
+    def depth_shading(self, v: bool) -> None:
         self.ui.depth_shading.setChecked(v)
 
     @property
-    def projection(self):
+    def projection(self) -> str:
         name_map = {'Perspective': 'persp', 'Orthographic': 'ortho'}
         return name_map[self.ui.projection.currentText()]
 
-    def projection_changed(self):
+    def projection_changed(self) -> None:
+        assert self.ax is not None
         self.ax.set_proj_type(self.projection)
         self.draw_idle()
 
-    def cylindrical_reference_toggled(self):
+    def cylindrical_reference_toggled(self) -> None:
         self.update_axes_labels()
         self.update_plot()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.export_button.clicked.connect(self.on_export_button_pressed)
         self.ui.export_stresses.clicked.connect(self.on_export_stresses_button_pressed)
         self.ui.projection.currentIndexChanged.connect(self.projection_changed)
@@ -358,14 +377,14 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.table_view.selection_changed.connect(self.selection_changed)
 
-    def setup_plot(self):
+    def setup_plot(self) -> None:
         # Create the figure and axes to use
         canvas = FigureCanvas(Figure(tight_layout=True))
 
         # Get the canvas to take up the majority of the screen most of the time
-        canvas.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        canvas.mpl_connect('pick_event', self.point_picked)
+        canvas.mpl_connect('pick_event', self.point_picked)  # type: ignore[arg-type]
 
         kwargs = {
             'projection': '3d',
@@ -389,7 +408,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.update_axes_labels()
 
-    def point_picked(self, event):
+    def point_picked(self, event: PickEvent) -> None:
         # Unfortunately, in matplotlib 3d, the indices change
         # depending on the current orientation of the plot.
         # We can find the picked point, however, by transforming
@@ -402,6 +421,7 @@ class FitGrainsResultsDialog(QObject):
         xx = event.mouseevent.x
         yy = event.mouseevent.y
 
+        assert self.ax is not None
         proj = self.ax.get_proj()
         data = self.converted_data[:, COORDS_SLICE]
 
@@ -411,7 +431,7 @@ class FitGrainsResultsDialog(QObject):
             # Transform the 3D data points into 2D points on the screen,
             # then find the closest point.
             x2, y2, z2 = proj3d.proj_transform(x, y, z, proj)
-            x3, y3 = self.ax.transData.transform((x2, y2))
+            x3, y3 = self.ax.transData.transform((x2, y2))  # type: ignore[union-attr]
 
             # Compute the distance
             d = np.sqrt((x3 - xx) ** 2 + (y3 - yy) ** 2)
@@ -422,7 +442,7 @@ class FitGrainsResultsDialog(QObject):
 
         self.select_grain_in_table(ind)
 
-    def select_grain_in_table(self, grain_id):
+    def select_grain_in_table(self, grain_id: int) -> None:
         table_model = self.ui.table_view.model()
         for i in range(self.data_model.rowCount()):
             if grain_id == table_model.index(i, 0).data():
@@ -430,7 +450,7 @@ class FitGrainsResultsDialog(QObject):
 
         raise Exception(f'Failed to find grain_id {grain_id} in table')
 
-    def select_row(self, i):
+    def select_row(self, i: int | None) -> None:
         if i is None or i >= self.data_model.rowCount():
             # Out of range. Don't do anything.
             return
@@ -438,10 +458,10 @@ class FitGrainsResultsDialog(QObject):
         # Select the row
         self.ui.table_view.selectRow(i)
 
-    def selection_changed(self):
+    def selection_changed(self) -> None:
         self.highlight_selected_grains()
 
-    def highlight_selected_grains(self):
+    def highlight_selected_grains(self) -> None:
         selected_grain_ids = self.ui.table_view.selected_grain_ids
 
         if self.highlight_artist is not None:
@@ -459,16 +479,17 @@ class FitGrainsResultsDialog(QObject):
             # Make sure the highlighted glyphs are always in front
             'zorder': 1e10,
         }
+        assert self.ax is not None
         self.highlight_artist = self.ax.scatter3D(*data, **kwargs)
         self.draw_idle()
 
-    def setup_toolbar(self):
+    def setup_toolbar(self) -> None:
         # These don't work for 3D plots
         # "None" removes the separators
         button_blacklist = [None, 'Pan', 'Zoom', 'Subplots', 'Customize']
         self.toolbar = NavigationToolbar(self.canvas, self.ui, False, button_blacklist)
         self.ui.toolbar_layout.addWidget(self.toolbar)
-        self.ui.toolbar_layout.setAlignment(self.toolbar, Qt.AlignCenter)
+        self.ui.toolbar_layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 
         # Make sure our ranges editor gets updated any time matplotlib
         # might have modified the ranges underneath.
@@ -476,7 +497,7 @@ class FitGrainsResultsDialog(QObject):
         self.toolbar.after_back_callback = self.update_ranges_gui
         self.toolbar.after_forward_callback = self.update_ranges_gui
 
-    def setup_view_direction_options(self):
+    def setup_view_direction_options(self) -> None:
         b = self.ui.set_view_direction
 
         m = QMenu(b)
@@ -488,7 +509,7 @@ class FitGrainsResultsDialog(QObject):
 
         b.setMenu(m)
 
-    def reset_view(self, direction):
+    def reset_view(self, direction: str) -> None:
         # The adjustment is to force the tick markers and label to
         # appear on one side.
         adjust = 1.0e-5
@@ -498,6 +519,7 @@ class FitGrainsResultsDialog(QObject):
             'y': (0, 90 - adjust),
             'z': (90 - adjust, -90 - adjust),
         }
+        assert self.ax is not None
         self.ax.view_init(*angles_map[direction])
 
         # Temporarily hide the labels of the axis perpendicular to the
@@ -512,7 +534,7 @@ class FitGrainsResultsDialog(QObject):
         if self.axes_visible:
             self.show_axis(direction)
 
-    def set_axis_visible(self, name, visible):
+    def set_axis_visible(self, name: str, visible: bool) -> None:
         ax = getattr(self.ax, f'{name}axis')
         set_label_func = getattr(self.ax, f'set_{name}label')
         if visible:
@@ -522,30 +544,30 @@ class FitGrainsResultsDialog(QObject):
             ax.set_ticks([])
             set_label_func('')
 
-    def hide_axis(self, name):
+    def hide_axis(self, name: str) -> None:
         self.set_axis_visible(name, False)
 
-    def show_axis(self, name):
+    def show_axis(self, name: str) -> None:
         self.set_axis_visible(name, True)
 
     @property
-    def axes_visible(self):
+    def axes_visible(self) -> bool:
         return not self.ui.hide_axes.isChecked()
 
-    def update_axis_visibility(self):
+    def update_axis_visibility(self) -> None:
         for name in ('x', 'y', 'z'):
             self.set_axis_visible(name, self.axes_visible)
 
         self.draw_idle()
 
-    def update_axes_labels(self):
+    def update_axes_labels(self) -> None:
         axes = ('x', 'y', 'z')
         labels = self.axes_labels
         for axis, label in zip(axes, labels):
             func = getattr(self.ax, f'set_{axis}label')
             func(label)
 
-    def update_selectors(self):
+    def update_selectors(self) -> None:
         tensor_type = self.tensor_type.capitalize()
 
         # Build combo boxes in code to assign columns in grains data
@@ -578,7 +600,7 @@ class FitGrainsResultsDialog(QObject):
             index = self.ui.plot_color_option.findData(EQUIVALENT_IND)
             self.ui.plot_color_option.setCurrentIndex(index)
 
-    def setup_tableview(self):
+    def setup_tableview(self) -> None:
         view = self.ui.table_view
 
         # Update the variables on the table view
@@ -586,21 +608,21 @@ class FitGrainsResultsDialog(QObject):
         view.material = self.material
         view.can_modify_grains = True
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def show_later(self):
+    def show_later(self) -> None:
         # Call this if you might not be running on the GUI thread, so
         # show() will be called on the GUI thread.
         QTimer.singleShot(0, lambda: self.show())
 
     @property
-    def tensor_type(self):
+    def tensor_type(self) -> str:
         stress = self.ui.convert_strain_to_stress.isChecked()
         return 'stress' if stress else 'strain'
 
     @property
-    def range_widgets(self):
+    def range_widgets(self) -> list[Any]:
         widgets = []
         for name in ('x', 'y', 'z'):
             for i in range(2):
@@ -609,18 +631,18 @@ class FitGrainsResultsDialog(QObject):
         return widgets
 
     @property
-    def ranges_gui(self):
+    def ranges_gui(self) -> list[float]:
         return [w.value() for w in self.range_widgets]
 
     @ranges_gui.setter
-    def ranges_gui(self, v):
+    def ranges_gui(self, v: list[float]) -> None:
         self.remove_range_constraints()
         for x, w in zip(v, self.range_widgets):
             w.setValue(round(x, 5))
         self.update_range_constraints()
 
     @property
-    def ranges_mpl(self):
+    def ranges_mpl(self) -> list[float]:
         vals = []
         for name in ('x', 'y', 'z'):
             lims_func = getattr(self.ax, f'get_{name}lim')
@@ -628,7 +650,7 @@ class FitGrainsResultsDialog(QObject):
         return vals
 
     @ranges_mpl.setter
-    def ranges_mpl(self, v):
+    def ranges_mpl(self, v: list[float]) -> None:
         for i, name in enumerate(('x', 'y', 'z')):
             lims = (v[i * 2], v[i * 2 + 1])
             set_func = getattr(self.ax, f'set_{name}lim')
@@ -640,66 +662,69 @@ class FitGrainsResultsDialog(QObject):
 
         self.draw_idle()
 
-    def update_ranges_mpl(self):
+    def update_ranges_mpl(self) -> None:
         self.ranges_mpl = self.ranges_gui
 
-    def update_ranges_gui(self):
+    def update_ranges_gui(self) -> None:
         with block_signals(*self.range_widgets):
             self.ranges_gui = self.ranges_mpl
 
-    def backup_ranges(self):
+    def backup_ranges(self) -> None:
         self._ranges_backup = self.ranges_mpl
 
-    def reset_ranges(self):
+    def reset_ranges(self) -> None:
         self.ranges_mpl = self._ranges_backup
         self.update_ranges_gui()
 
-    def convert_strain_to_stress_toggled(self):
+    def convert_strain_to_stress_toggled(self) -> None:
         self.update_selectors()
         self.update_plot()
 
-    def remove_range_constraints(self):
+    def remove_range_constraints(self) -> None:
         widgets = self.range_widgets
         for w1, w2 in zip(widgets[0::2], widgets[1::2]):
             w1.setMaximum(sys.float_info.max)
             w2.setMinimum(sys.float_info.min)
 
-    def update_range_constraints(self):
+    def update_range_constraints(self) -> None:
         widgets = self.range_widgets
         for w1, w2 in zip(widgets[0::2], widgets[1::2]):
             w1.setMaximum(w2.value())
             w2.setMinimum(w1.value())
 
-    def load_cmaps(self):
+    def load_cmaps(self) -> None:
         cmaps = constants.ALL_CMAPS
         self.ui.color_maps.addItems(cmaps)
 
         # Set the combobox to be the default
         self.ui.color_maps.setCurrentText(HexrdConfig().default_cmap)
 
-    def update_cmap(self):
+    def update_cmap(self) -> None:
         # Get the Colormap object from the name
-        self.cmap = matplotlib.colormaps.get_cmap(self.ui.color_maps.currentText())
+        self.cmap = matplotlib.colormaps.get_cmap(
+            self.ui.color_maps.currentText()
+        )
         self.update_plot()
 
-    def reset_glyph_size(self, update_plot=True):
+    def reset_glyph_size(self, update_plot: bool = True) -> None:
         default = matplotlib.rcParams['lines.markersize'] ** 3
         self.ui.glyph_size_slider.setSliderPosition(default)
         if update_plot:
             self.update_plot()
 
-    def draw_idle(self):
+    def draw_idle(self) -> None:
+        assert self.canvas is not None
         self.canvas.draw_idle()
 
-    def on_grains_table_modified(self):
+    def on_grains_table_modified(self) -> None:
         # Update our grains table
         self.data = self.data_model.full_grains_table
         self.add_extra_data_columns()
         self.update_plot()
 
-    def _save_workflow_files(self, selected_directory):
+    def _save_workflow_files(self, selected_directory: str) -> None:
 
-        def full_path(file_name):
+        def full_path(file_name: str) -> str:
             # Convenience function to generate full path via pathlib
             return str(Path(selected_directory) / file_name)
 
@@ -714,9 +739,10 @@ class FitGrainsResultsDialog(QObject):
         )
 
         ims_dict = HexrdConfig().unagg_images
+        assert ims_dict is not None
         for det in HexrdConfig().detector_names:
             path = full_path(f'{det}.npz')
-            kwargs = {
+            kwargs: dict[str, Any] = {
                 'ims': ims_dict.get(det),
                 'name': det,
                 'write_file': path,
@@ -726,7 +752,7 @@ class FitGrainsResultsDialog(QObject):
             }
             HexrdConfig().save_imageseries(**kwargs)
 
-    def on_export_workflow_clicked(self):
+    def on_export_workflow_clicked(self) -> None:
         selected_directory = QFileDialog.getExistingDirectory(
             self.ui, 'Select Directory', HexrdConfig().working_dir
         )
@@ -752,8 +778,8 @@ class FitGrainsResultsDialog(QObject):
             msg = 'The following files will be overwritten:\n\n'
             msg += '\n'.join(overwrite_files)
             msg += '\n\nProceed?'
-            response = QMessageBox.question(self.parent(), 'WARNING', msg)
-            if response == QMessageBox.No:
+            response = QMessageBox.question(self.parent(), 'WARNING', msg)  # type: ignore[arg-type]
+            if response == QMessageBox.StandardButton.No:
                 return
 
         self.async_runner.progress_title = 'Saving workflow configuration'
@@ -772,7 +798,7 @@ if __name__ == '__main__':
         print()
         sys.exit(-1)
 
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+    QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
     app = QApplication(sys.argv)
 
     data = np.loadtxt(sys.argv[1], ndmin=2)
@@ -781,7 +807,7 @@ if __name__ == '__main__':
 
     # For the sample, don't make it a Qt tool
     flags = dialog.ui.windowFlags()
-    dialog.ui.setWindowFlags(flags & ~Qt.Tool)
+    dialog.ui.setWindowFlags(flags & ~Qt.WindowType.Tool)
 
     dialog.ui.resize(1200, 800)
     dialog.finished.connect(app.quit)

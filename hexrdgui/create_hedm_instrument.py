@@ -5,7 +5,7 @@ from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 
 
-def create_hedm_instrument():
+def create_hedm_instrument() -> HEDMInstrument:
     # Ensure that the panel buffer sizes match the pixel sizes.
     # If not, clear the panel buffer and print a warning.
     # It would be nice to avoid this check, but it is sometimes difficult to
@@ -40,7 +40,7 @@ def create_hedm_instrument():
     return HEDMInstrument(**kwargs)
 
 
-def create_view_hedm_instrument():
+def create_view_hedm_instrument() -> HEDMInstrument:
     # Some views use a modified version of the HEDM instrument.
     # This ensures the correct instrument for the view is used.
     instr = create_hedm_instrument()

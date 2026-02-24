@@ -1,4 +1,18 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
 from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtWidgets import QWidget
+
+import numpy as np
+
+if TYPE_CHECKING:
+    from matplotlib.axes import Axes
+    from matplotlib.backend_bases import (
+        LocationEvent,
+        MouseEvent,
+    )
 
 from hexrdgui.masking.create_raw_mask import convert_polar_to_raw
 from hexrdgui.interactive_template import InteractiveTemplate
@@ -18,25 +32,26 @@ class MaskRegionsDialog(QObject):
     # Emitted when new images are loaded
     new_mask_added = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self.parent = parent
-        self.canvas_ids = []
-        self.axes = None
+        self._parent = parent
+        self.canvas_ids: list[int] = []
+        self.axes: Axes | None = None
         self.bg_cache = None
-        self.press = []
-        self.added_templates = []
-        self.interactive_templates = {}
-        self.canvas = parent.image_tab_widget.active_canvas
+        self.press: list[float] = []
+        self.added_templates: list[Any] = []
+        self.interactive_templates: dict[str, Any] = {}
+        self.canvas = parent.image_tab_widget.active_canvas  # type: ignore[union-attr]
         self.image_mode = None
-        self.raw_mask_coords = []
-        self.drawing_axes = None
+        self.raw_mask_coords: list[Any] = []
+        self.drawing_axes: Axes | None = None
+        self.det: str | None = None
 
         loader = UiLoader()
         self.ui = loader.load_file('mask_regions_dialog.ui', parent)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         add_help_url(self.ui.button_box, 'configuration/masking/#ellipse-and-rectangle')
 
@@ -44,16 +59,16 @@ class MaskRegionsDialog(QObject):
         self.setup_ui_connections()
         self.select_shape()
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def disconnect(self):
+    def disconnect_all(self) -> None:
         for id in self.canvas_ids:
             self.canvas.mpl_disconnect(id)
         self.canvas_ids.clear()
 
-    def setup_canvas_connections(self):
-        self.disconnect()
+    def setup_canvas_connections(self) -> None:
+        self.disconnect_all()
 
         self.canvas_ids.append(
             self.canvas.mpl_connect('button_press_event', self.button_pressed)
@@ -71,55 +86,59 @@ class MaskRegionsDialog(QObject):
             self.canvas.mpl_connect('axes_leave_event', self.axes_exited)
         )
 
-    def setup_ui_connections(self):
+    def setup_ui_connections(self) -> None:
         self.ui.button_box.accepted.connect(self.apply_masks)
         self.ui.button_box.rejected.connect(self.cancel)
         self.ui.rejected.connect(self.cancel)
         self.ui.shape.currentIndexChanged.connect(self.select_shape)
         self.ui.undo.clicked.connect(self.undo_selection)
 
-    def update_undo_enable_state(self):
+    def update_undo_enable_state(self) -> None:
         enabled = bool(len(self.added_templates))
         self.ui.undo.setEnabled(enabled)
 
-    def select_shape(self):
+    def select_shape(self) -> None:
         self.selection = self.ui.shape.currentText()
-        self.interactive_template = None
+        self.interactive_template: InteractiveTemplate | None = None
 
-    def create_interactive_template(self):
+    def create_interactive_template(self) -> None:
         kwargs = {
             'fill': False,
             'animated': True,
         }
+        assert self.det is not None
         self.interactive_template = InteractiveTemplate(
             self.canvas, self.det, axes=self.axes
         )
-        self.interactive_template.create_polygon([[0, 0]], **kwargs)
+        self.interactive_template.create_polygon(np.array([[0, 0]]), **kwargs)
         self.interactive_template.update_style(color='red')
         self.interactive_template.key_rotation_angle = KEY_ROTATE_ANGLE_COARSE
         self.added_templates.append(self.det)
 
-    def update_interactive_template(self, event):
+    def update_interactive_template(self, event: MouseEvent) -> None:
         x0, y0 = self.press
+        assert event.ydata is not None and event.xdata is not None
         height = event.ydata - y0
         width = event.xdata - x0
+        shape: patches.Rectangle | patches.Ellipse
         if self.selection == 'Rectangle':
-            shape = patches.Rectangle(self.press, width, height)
+            shape = patches.Rectangle(tuple(self.press), width, height)  # type: ignore[arg-type]
         if self.selection == 'Ellipse':
-            center = [(width / 2 + x0), (height / 2 + y0)]
+            center = ((width / 2 + x0), (height / 2 + y0))
             shape = patches.Ellipse(center, width, height)
-        verts = shape.get_verts()
-        verts = add_sample_points(verts, 300)
+        verts = shape.get_verts()  # type: ignore[arg-type]
+        verts = add_sample_points(verts, 300)  # type: ignore[arg-type]
+        assert self.interactive_template is not None
         self.interactive_template.template.set_xy(verts)
         self.interactive_template.center = self.interactive_template.get_midpoint()
 
-    def discard_interactive_template(self):
+    def discard_interactive_template(self) -> None:
         det = self.added_templates.pop()
         it = self.interactive_templates[det].pop()
         it.disconnect()
         it.clear()
 
-    def undo_selection(self):
+    def undo_selection(self) -> None:
         if not self.added_templates:
             return
 
@@ -128,7 +147,7 @@ class MaskRegionsDialog(QObject):
         self.update_undo_enable_state()
         self.interactive_template = None
 
-    def axes_entered(self, event):
+    def axes_entered(self, event: LocationEvent) -> None:
         self.image_mode = self.canvas.mode
 
         if event.inaxes is self.canvas.azimuthal_integral_axis:
@@ -137,13 +156,13 @@ class MaskRegionsDialog(QObject):
 
         self.axes = event.inaxes
 
-    def axes_exited(self, event):
+    def axes_exited(self, event: LocationEvent) -> None:
         # If we are drawing a rectangle and we are close to the canvas edges,
         # snap it into place.
-        self.snap_rectangle_to_edges(event)
+        self.snap_rectangle_to_edges(event)  # type: ignore[arg-type]
         self.axes = None
 
-    def snap_rectangle_to_edges(self, event):
+    def snap_rectangle_to_edges(self, event: MouseEvent) -> None:
         if not self.drawing_axes or self.selection != 'Rectangle':
             # We are either not still drawing or it is not a rectangle
             return
@@ -185,7 +204,7 @@ class MaskRegionsDialog(QObject):
             # Trigger another drag motion event where we move the borders
             self.drag_motion(event)
 
-    def check_pick(self, event):
+    def check_pick(self, event: MouseEvent) -> bool:
         pick_found = False
         for templates in self.interactive_templates.values():
             for it in templates:
@@ -198,7 +217,7 @@ class MaskRegionsDialog(QObject):
                     and it.template.contains_point(transformed_click)
                     and (
                         self.image_mode == ViewType.polar
-                        or event.inaxes.get_title() == it.detector
+                        or (event.inaxes is not None and event.inaxes.get_title() == it.detector)
                     )
                 ):
                     if self.interactive_template:
@@ -209,7 +228,7 @@ class MaskRegionsDialog(QObject):
                     pick_found = True
         return pick_found
 
-    def button_pressed(self, event):
+    def button_pressed(self, event: MouseEvent) -> None:
         if self.image_mode not in (ViewType.raw, ViewType.polar):
             print('Masking must be done in raw or polar view')
             return
@@ -236,7 +255,7 @@ class MaskRegionsDialog(QObject):
             ):
                 return
 
-            self.press = [event.xdata, event.ydata]
+            self.press = [event.xdata, event.ydata]  # type: ignore[list-item]
             self.det = self.axes.get_title()
             if not self.det:
                 self.det = self.image_mode
@@ -248,10 +267,11 @@ class MaskRegionsDialog(QObject):
 
             self.drawing_axes = self.axes
 
-    def drag_motion(self, event):
+    def drag_motion(self, event: MouseEvent) -> None:
         if not self.axes or not self.press or self.axes is not self.drawing_axes:
             return
 
+        assert self.interactive_template is not None
         if not self.interactive_template.static_mode:
             return
 
@@ -262,7 +282,7 @@ class MaskRegionsDialog(QObject):
         self.axes.draw_artist(self.interactive_template.template)
         self.canvas.blit(self.axes.bbox)
 
-    def save_line_data(self):
+    def save_line_data(self) -> None:
         for det, its in self.interactive_templates.items():
             for it in its:
                 data_coords = it.template.get_patch_transform().transform(
@@ -278,7 +298,7 @@ class MaskRegionsDialog(QObject):
                 elif self.image_mode == ViewType.polar:
                     self.raw_mask_coords.append([data_coords])
 
-    def create_masks(self):
+    def create_masks(self) -> None:
         for data in self.raw_mask_coords:
             if self.image_mode == 'raw':
                 coords = [data]
@@ -290,14 +310,17 @@ class MaskRegionsDialog(QObject):
             'raw': MaskManager().raw_masks_changed,
             'polar': MaskManager().polar_masks_changed,
         }
+        assert self.image_mode is not None
         masks_changed_signal[self.image_mode].emit()
 
-    def button_released(self, event):
+    def button_released(self, event: MouseEvent) -> None:
+        assert self.interactive_template is not None
         if not self.press or not self.interactive_template.static_mode:
             return
 
         # Save it
         self.interactive_template.update_style(color='black')
+        assert self.det is not None
         self.interactive_templates.setdefault(self.det, []).append(
             self.interactive_template
         )
@@ -312,34 +335,34 @@ class MaskRegionsDialog(QObject):
 
         self.update_undo_enable_state()
 
-    def apply_masks(self):
+    def apply_masks(self) -> None:
         if not self.interactive_templates:
             return
 
         self.save_line_data()
-        self.disconnect()
+        self.disconnect_all()
         self.create_masks()
         while self.added_templates:
             self.discard_interactive_template()
         self.new_mask_added.emit(self.image_mode)
-        self.disconnect()
+        self.disconnect_all()
         self.reset_all()
 
-    def cancel(self):
+    def cancel(self) -> None:
         while self.added_templates:
             self.discard_interactive_template()
 
-        self.disconnect()
+        self.disconnect_all()
         if self.canvas is not None:
             self.canvas.draw_idle()
 
-    def canvas_changed(self, canvas):
+    def canvas_changed(self, canvas: Any) -> None:
         self.apply_masks()
         self.canvas = canvas
         if self.ui.isVisible():
             self.setup_canvas_connections()
 
-    def reset_all(self):
+    def reset_all(self) -> None:
         self.press.clear()
         self.added_templates.clear()
         for key in self.interactive_templates.keys():

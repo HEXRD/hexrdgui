@@ -1,8 +1,9 @@
 import copy
+from typing import Any, Callable
 import numpy as np
 
 from PySide6.QtCore import QItemSelectionModel, QObject, Signal
-from PySide6.QtWidgets import QSizePolicy
+from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from hexrdgui.scientificspinbox import ScientificDoubleSpinBox
 from hexrdgui.ui_loader import UiLoader
@@ -13,26 +14,26 @@ class RangesTableEditor(QObject):
 
     data_modified = Signal()
 
-    def __init__(self, data=None, parent=None):
+    def __init__(self, data: Any = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('ranges_table_editor.ui', parent)
 
-        self._data = self._validate_data(data)
-        self._suffix = '°'
-        self.data_to_gui_func = np.degrees
-        self.gui_to_data_func = np.radians
-        self._min = -360.0
-        self._max = 360.0
+        self._data: Any = self._validate_data(data)
+        self._suffix: str = '°'
+        self.data_to_gui_func: Callable[[Any], Any] | None = np.degrees
+        self.gui_to_data_func: Callable[[Any], Any] | None = np.radians
+        self._min: float = -360.0
+        self._max: float = 360.0
 
-        self.spin_boxes = []
+        self.spin_boxes: list[ScientificDoubleSpinBox] = []
 
         self.setup_connections()
         self.update_enable_states()
         self.update_table()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.add.pressed.connect(self.add_row)
         self.ui.remove.pressed.connect(self.remove_row)
 
@@ -40,58 +41,58 @@ class RangesTableEditor(QObject):
             self.update_enable_states
         )
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         enable_remove = self.num_rows > 1 and self.selected_row is not None
         self.ui.remove.setEnabled(enable_remove)
 
     @property
-    def data(self):
+    def data(self) -> Any:
         return copy.deepcopy(self._data)
 
     @data.setter
-    def data(self, v):
+    def data(self, v: Any) -> None:
         self._data = self._validate_data(v)
         self.update_table()
 
     @staticmethod
-    def _validate_data(v):
+    def _validate_data(v: Any) -> Any:
         if isinstance(v, np.ndarray):
             return v.tolist()
         else:
             return copy.deepcopy(v)
 
     @property
-    def suffix(self):
+    def suffix(self) -> str:
         return self._suffix
 
     @suffix.setter
-    def suffix(self, v):
+    def suffix(self, v: str) -> None:
         self._suffix = v
         self.update_table()
 
     @property
-    def min(self):
+    def min(self) -> float:
         return self._min
 
     @min.setter
-    def min(self, v):
+    def min(self, v: float) -> None:
         self._min = v
         self.update_table()
 
     @property
-    def max(self):
+    def max(self) -> float:
         return self._max
 
     @max.setter
-    def max(self, v):
+    def max(self, v: float) -> None:
         self._max = v
         self.update_table()
 
     @property
-    def num_rows(self):
+    def num_rows(self) -> int:
         return self.ui.table.rowCount()
 
-    def select_row(self, i):
+    def select_row(self, i: int) -> None:
         if i is None or i >= self.ui.table.rowCount():
             # Out of range. Don't do anything.
             return
@@ -101,15 +102,15 @@ class RangesTableEditor(QObject):
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
         selection_model.select(model_index, command)
 
     @property
-    def selected_row(self):
+    def selected_row(self) -> int | None:
         selected = self.ui.table.selectionModel().selectedRows()
         return selected[0].row() if selected else None
 
-    def add_row(self):
+    def add_row(self) -> None:
         if not self._data:
             # We are assuming there must always be data in this widget
             return
@@ -119,7 +120,7 @@ class RangesTableEditor(QObject):
         self.update_table()
         self.data_modified.emit()
 
-    def remove_row(self):
+    def remove_row(self) -> None:
         selected_row = self.selected_row
         if selected_row is None:
             return
@@ -128,7 +129,7 @@ class RangesTableEditor(QObject):
         self.update_table()
         self.data_modified.emit()
 
-    def create_double_spin_box(self, v):
+    def create_double_spin_box(self, v: float) -> ScientificDoubleSpinBox:
         sb = ScientificDoubleSpinBox(self.ui.table)
         sb.setKeyboardTracking(False)
         sb.setSuffix(self.suffix)
@@ -137,17 +138,17 @@ class RangesTableEditor(QObject):
         sb.setValue(v)
         sb.valueChanged.connect(self.update_data)
 
-        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sb.setSizePolicy(size_policy)
 
         self.spin_boxes.append(sb)
         return sb
 
-    def clear_table(self):
+    def clear_table(self) -> None:
         self.spin_boxes.clear()
         self.ui.table.clearContents()
 
-    def update_table(self):
+    def update_table(self) -> None:
         self.clear_table()
         if self._data is None:
             return
@@ -177,18 +178,18 @@ class RangesTableEditor(QObject):
             # Just in case the selection actually changed...
             self.update_enable_states()
 
-    def table_data(self, row, column):
+    def table_data(self, row: int, column: int) -> Any:
         val = self.ui.table.cellWidget(row, column).value()
         if self.gui_to_data_func is not None:
             return self.gui_to_data_func(val)
         return val
 
-    def update_data(self):
+    def update_data(self) -> None:
         for i in range(self.ui.table.rowCount()):
             for j in range(self.ui.table.columnCount()):
                 self._data[i][j] = self.table_data(i, j)
 
         self.data_modified.emit()
 
-    def set_title(self, title):
+    def set_title(self, title: str) -> None:
         self.ui.main_label.setText(title)

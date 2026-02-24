@@ -1,10 +1,17 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import copy
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.utils import array_index_in_list
+
+if TYPE_CHECKING:
+    from hexrd.material import Material
+    from hexrd.material import PlaneData
 
 
 class Overlay(ABC):
@@ -12,84 +19,84 @@ class Overlay(ABC):
     # Abstract methods
     @property
     @abstractmethod
-    def type(self):
+    def type(self) -> OverlayType:
         pass
 
     @property
     @abstractmethod
-    def child_attributes_to_save(self):
+    def child_attributes_to_save(self) -> list[str]:
         pass
 
     @abstractmethod
-    def generate_overlay(self):
-        pass
-
-    @property
-    @abstractmethod
-    def has_widths(self):
+    def generate_overlay(self) -> dict[str, Any]:
         pass
 
     @property
     @abstractmethod
-    def refinement_labels(self):
+    def has_widths(self) -> bool:
         pass
 
     @property
     @abstractmethod
-    def default_refinements(self):
+    def refinement_labels(self) -> list[str]:
         pass
 
     @property
     @abstractmethod
-    def default_style(self):
+    def default_refinements(self) -> list[bool] | np.ndarray:
         pass
 
     @property
     @abstractmethod
-    def default_highlight_style(self):
+    def default_style(self) -> dict[str, Any]:
         pass
 
     @property
     @abstractmethod
-    def has_picks_data(self):
+    def default_highlight_style(self) -> dict[str, Any]:
         pass
 
     @property
     @abstractmethod
-    def calibration_picks_polar(self):
+    def has_picks_data(self) -> bool:
+        pass
+
+    @property
+    @abstractmethod
+    def calibration_picks_polar(self) -> dict[str, Any] | list[Any]:
         pass
 
     @calibration_picks_polar.setter
     @abstractmethod
-    def calibration_picks_polar(self, picks):
+    def calibration_picks_polar(self, picks: dict[str, Any] | list[Any]) -> None:
         pass
 
     @property
     @abstractmethod
-    def data_key(self):
+    def data_key(self) -> str | None:
         pass
 
     @property
     @abstractmethod
-    def ranges_key(self):
+    def ranges_key(self) -> str | None:
         pass
 
     # Concrete methods
-    data_key = None
-    ranges_key = None
-    ranges_indices_key = None
+    data_key = None  # type: ignore[assignment]  # noqa: F811
+    ranges_key = None  # type: ignore[assignment]  # noqa: F811
+    ranges_indices_key: str | None = None
 
     def __init__(
         self,
-        material_name,
-        name=None,
-        refinements=None,
-        calibration_picks=None,
-        xray_source=None,
-        style=None,
-        highlight_style=None,
-        visible=True,
-    ):
+        material_name: str,
+        name: str | None = None,
+        refinements: list[bool] | np.ndarray | None = None,
+        calibration_picks: dict[str, Any] | None = None,
+        xray_source: str | None = None,
+        style: dict[str, Any] | None = None,
+        highlight_style: dict[str, Any] | None = None,
+        visible: bool = True,
+    ) -> None:
 
         self._material_name = material_name
 
@@ -116,20 +123,20 @@ class Overlay(ABC):
         self.highlight_style = highlight_style
         self._visible = visible
         self._display_mode = ViewType.raw
-        self._data = {}
-        self._highlights = []
+        self._data: dict[str, Any] = {}
+        self._highlights: list[Any] = []
         self.instrument = None
         self.update_needed = True
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         from hexrdgui.image_load_manager import ImageLoadManager
 
         ImageLoadManager().new_images_loaded.connect(self.on_new_images_loaded)
 
     @property
-    def plot_data_keys(self):
+    def plot_data_keys(self) -> tuple[str, ...]:
         # These are the data keys that are intended to be plotted.
         # This will be used to perform any needed transforms (such as
         # converting to/from stitched coordinates for ROI instruments).
@@ -139,17 +146,17 @@ class Overlay(ABC):
         )
         return tuple(x for x in keys if x is not None)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         d = {k: getattr(self, k) for k in self.attributes_to_save}
         d['type'] = self.type.value
         return d
 
     @property
-    def attributes_to_save(self):
+    def attributes_to_save(self) -> list[str]:
         return self.base_attributes_to_save + self.child_attributes_to_save
 
     @property
-    def base_attributes_to_save(self):
+    def base_attributes_to_save(self) -> list[str]:
         # These names must be identical here, as attributes, and as
         # arguments to the __init__ method.
         return [
@@ -164,10 +171,10 @@ class Overlay(ABC):
         ]
 
     @property
-    def _non_unique_name(self):
+    def _non_unique_name(self) -> str:
         return f'{self.material_name} {self.type.value}'
 
-    def _generate_unique_name(self):
+    def _generate_unique_name(self) -> str:
         from hexrdgui.hexrd_config import HexrdConfig
 
         name = self._non_unique_name
@@ -185,7 +192,7 @@ class Overlay(ABC):
         return name
 
     @staticmethod
-    def from_name(name):
+    def from_name(name: str) -> 'Overlay':
         from hexrdgui.hexrd_config import HexrdConfig
 
         for overlay in HexrdConfig().overlays:
@@ -195,11 +202,11 @@ class Overlay(ABC):
         raise Exception(f'{name=} was not found in overlays!')
 
     @property
-    def material_name(self):
+    def material_name(self) -> str:
         return self._material_name
 
     @material_name.setter
-    def material_name(self, v):
+    def material_name(self, v: str) -> None:
         if self.material_name == v:
             return
 
@@ -213,27 +220,27 @@ class Overlay(ABC):
             self.name = self._generate_unique_name()
 
     @property
-    def material(self):
+    def material(self) -> Material:
         from hexrdgui.hexrd_config import HexrdConfig
 
         return HexrdConfig().material(self.material_name)
 
     @property
-    def plane_data(self):
+    def plane_data(self) -> PlaneData:
         return self.material.planeData
 
     @property
-    def eta_period(self):
+    def eta_period(self) -> np.ndarray:
         from hexrdgui.hexrd_config import HexrdConfig
 
         return HexrdConfig().polar_res_eta_period
 
     @property
-    def style(self):
+    def style(self) -> dict[str, Any]:
         return self._style
 
     @style.setter
-    def style(self, v):
+    def style(self, v: dict[str, Any]) -> None:
         if hasattr(self, '_style') and self.style == v:
             return
 
@@ -247,11 +254,11 @@ class Overlay(ABC):
         self.update_needed = True
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         return self._visible
 
     @visible.setter
-    def visible(self, v):
+    def visible(self, v: bool) -> None:
         if self.visible == v:
             return
 
@@ -259,11 +266,11 @@ class Overlay(ABC):
         self.update_needed = True
 
     @property
-    def display_mode(self):
+    def display_mode(self) -> str:
         return self._display_mode
 
     @display_mode.setter
-    def display_mode(self, v):
+    def display_mode(self, v: str) -> None:
         if self.display_mode == v:
             return
 
@@ -271,38 +278,38 @@ class Overlay(ABC):
         self.update_needed = True
 
     @property
-    def instrument(self):
+    def instrument(self) -> Any:
         return self._instrument
 
     @instrument.setter
-    def instrument(self, v):
+    def instrument(self, v: Any) -> None:
         self._instrument = v
         self.update_needed = True
 
     @property
-    def refinements(self):
+    def refinements(self) -> np.ndarray:
         return self._refinements
 
     @refinements.setter
-    def refinements(self, v):
+    def refinements(self, v: list[bool] | np.ndarray) -> None:
         self._refinements = np.asarray(v)
 
     @property
-    def refinements_with_labels(self):
+    def refinements_with_labels(self) -> list[tuple[str, bool]]:
         ret = []
         for label, refine in zip(self.refinement_labels, self.refinements):
             ret.append((label, refine))
         return ret
 
     @property
-    def hkls(self):
+    def hkls(self) -> dict[str, list[Any]]:
         return {
             key: np.array(val.get('hkls', [])).tolist()
             for key, val in self.data.items()
         }
 
     @property
-    def data(self):
+    def data(self) -> dict[str, Any]:
         if self.update_needed:
             if self.instrument is None or self.display_mode is None:
                 # Cannot generate data. Raise an exception.
@@ -321,21 +328,21 @@ class Overlay(ABC):
         return self._data
 
     @property
-    def highlights(self):
+    def highlights(self) -> list[Any]:
         return self._highlights
 
     @highlights.setter
-    def highlights(self, v):
+    def highlights(self, v: list[Any]) -> None:
         self._highlights = v
 
     @property
-    def has_highlights(self):
+    def has_highlights(self) -> bool:
         return bool(self.highlights)
 
-    def clear_highlights(self):
+    def clear_highlights(self) -> None:
         self._highlights.clear()
 
-    def path_to_hkl_data(self, detector_key, hkl):
+    def path_to_hkl_data(self, detector_key: str, hkl: np.ndarray) -> tuple[str, str | None, int]:
         data_key = self.data_key
         detector_data = self.data[detector_key]
         ind = array_index_in_list(hkl, detector_data['hkls'])
@@ -344,42 +351,42 @@ class Overlay(ABC):
 
         return (detector_key, data_key, ind)
 
-    def highlight_hkl(self, detector_key, hkl):
+    def highlight_hkl(self, detector_key: str, hkl: np.ndarray) -> None:
         path = self.path_to_hkl_data(detector_key, hkl)
         self.highlights.append(path)
 
     @property
-    def is_powder(self):
+    def is_powder(self) -> bool:
         return self.type == OverlayType.powder
 
     @property
-    def is_laue(self):
+    def is_laue(self) -> bool:
         return self.type == OverlayType.laue
 
     @property
-    def is_rotation_series(self):
+    def is_rotation_series(self) -> bool:
         return self.type == OverlayType.rotation_series
 
     @property
-    def is_const_chi(self):
+    def is_const_chi(self) -> bool:
         return self.type == OverlayType.const_chi
 
-    def on_new_images_loaded(self):
+    def on_new_images_loaded(self) -> None:
         # Do nothing by default. Subclasses can re-implement.
         pass
 
     @property
-    def calibration_picks(self):
+    def calibration_picks(self) -> dict[str, Any]:
         return self._calibration_picks
 
     @calibration_picks.setter
-    def calibration_picks(self, picks):
+    def calibration_picks(self, picks: dict[str, Any]) -> None:
         self._validate_picks(picks)
 
         self.reset_calibration_picks()
         self.calibration_picks.update(picks)
 
-    def _validate_picks(self, picks):
+    def _validate_picks(self, picks: dict[str, Any]) -> None:
         if self.display_mode != ViewType.cartesian:
             # In Cartesian mode, a fake instrument is used, and thus
             # we cannot validate the picks keys as easily.
@@ -391,10 +398,10 @@ class Overlay(ABC):
                     )
                     raise Exception(msg)
 
-    def reset_calibration_picks(self):
+    def reset_calibration_picks(self) -> None:
         # Make an empty list for each detector
         self._calibration_picks.clear()
 
-    def pad_picks_data(self):
+    def pad_picks_data(self) -> None:
         # Subclasses only need to override this if they actually need it
         pass

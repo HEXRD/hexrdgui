@@ -1,14 +1,20 @@
-import copy
+from __future__ import annotations
+
 import functools
 import os
 import time
 import glob
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, Future
+from typing import Any, TYPE_CHECKING
+from collections.abc import Callable
 
 import numpy as np
 
 from PySide6.QtCore import QObject, QThreadPool, Signal
 from PySide6.QtWidgets import QMessageBox
+
+if TYPE_CHECKING:
+    from PySide6.QtWidgets import QWidget
 
 from hexrd import imageseries
 from hexrd.imageseries.omega import OmegaImageSeries
@@ -17,7 +23,22 @@ from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.progress_dialog import ProgressDialog
-from hexrdgui.constants import *
+from hexrdgui.constants import (
+    UI_AGG_INDEX_MAXIMUM,
+    UI_AGG_INDEX_MEDIAN,
+    UI_DARK_INDEX_AVERAGE,
+    UI_DARK_INDEX_EMPTY_FRAMES,
+    UI_DARK_INDEX_FILE,
+    UI_DARK_INDEX_MAXIMUM,
+    UI_DARK_INDEX_MEDIAN,
+    UI_DARK_INDEX_NONE,
+    UI_TRANS_INDEX_FLIP_HORIZONTALLY,
+    UI_TRANS_INDEX_FLIP_VERTICALLY,
+    UI_TRANS_INDEX_NONE,
+    UI_TRANS_INDEX_ROTATE_180,
+    UI_TRANS_INDEX_ROTATE_90,
+    UI_TRANS_INDEX_TRANSPOSE,
+)
 from hexrdgui.singletons import QSingleton
 
 
@@ -37,23 +58,23 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     enable_transforms = Signal()
     omegas_updated = Signal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(None)
         self.transformed_images = False
 
     @property
-    def thread_pool(self):
+    def thread_pool(self) -> QThreadPool:
         return QThreadPool.globalInstance()
 
     @property
-    def naming_options(self):
+    def naming_options(self) -> list[str]:
         dets = HexrdConfig().detector_names
         if HexrdConfig().instrument_has_roi:
-            groups = [HexrdConfig().detector_group(d) for d in dets]
+            groups: list[Any] = [HexrdConfig().detector_group(d) for d in dets]
             dets.extend([g for g in groups if g is not None])
         return dets
 
-    def load_images(self, fnames):
+    def load_images(self, fnames: list) -> tuple[list, bool]:
         files = self.explict_selection(fnames)
         manual = False
         if not files:
@@ -64,7 +85,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                 files = [[fname] for fname in fnames]
         return files, manual
 
-    def check_success(self, files):
+    def check_success(self, files: list) -> bool:
         dets = HexrdConfig().detector_names
         options = self.naming_options
         # Make sure there are the same number of files for each detector
@@ -79,10 +100,10 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         # to be manually matched
         return all(any(o in f for o in options) for f in files[0])
 
-    def explict_selection(self, fnames):
+    def explict_selection(self, fnames: list) -> list:
         # Assume the user has selected all of the files they would like to load
         dets = HexrdConfig().detector_names
-        files = [[] for i in range(len(dets))]
+        files: list[Any] = [[] for i in range(len(dets))]
         for fname in fnames:
             path, f = os.path.split(fname)
             matches = [i for i, det in enumerate(dets) if det in f]
@@ -94,7 +115,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         else:
             return []
 
-    def match_files(self, fnames):
+    def match_files(self, fnames: list) -> list:
         dets = HexrdConfig().detector_names
         options = self.naming_options
         # Look for files that match everything except detector name
@@ -122,9 +143,9 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             files = self.match_selected_files(options, revised_search)
         return files
 
-    def match_selected_files(self, options, search):
+    def match_selected_files(self, options: list, search: Any) -> list:
         dets = HexrdConfig().detector_names
-        files = [[] for i in range(len(dets))]
+        files: list[Any] = [[] for i in range(len(dets))]
         results = [f for f in search if glob.glob(f, recursive=True)]
         results = [glob.glob(f, recursive=True) for f in results]
         if results:
@@ -140,7 +161,13 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                         files[idx].append('/'.join([path, f]))
         return files
 
-    def read_data(self, files=None, data=None, ui_parent=None, **kwargs):
+    def read_data(
+        self,
+        files: Any = None,
+        data: Any = None,
+        ui_parent: QWidget | None = None,
+        **kwargs: Any,
+    ) -> None:
         # Make sure this is reset to zero when data is being read
         HexrdConfig().current_imageseries_idx = 0
 
@@ -156,7 +183,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         self.set_state(kwargs.get('state', None))
         self.begin_processing(kwargs.get('postprocess', False))
 
-    def begin_processing(self, postprocess=False):
+    def begin_processing(self, postprocess: bool = False) -> None:
         self.update_status = HexrdConfig().live_update
         self.live_update_status.emit(False)
 
@@ -177,14 +204,21 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         worker.signals.finished.connect(progress_dialog.accept)
         progress_dialog.exec()
 
-    def set_state(self, state=None):
+    def set_state(
+        self,
+        state: dict[str, Any] | None = None,
+    ) -> None:
         if state is None:
             self.state = HexrdConfig().load_panel_state
         else:
             self.state = state
         self.state_updated.emit()
 
-    def process_ims(self, postprocess, update_progress):
+    def process_ims(
+        self,
+        postprocess: bool,
+        update_progress: Callable[[int], None],
+    ) -> None:
         self.update_progress = update_progress
         self.update_progress(0)
 
@@ -224,7 +258,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         self.update_progress(100)
 
-    def finish_processing_ims(self):
+    def finish_processing_ims(self) -> None:
         # Display processed images on completion
         self.new_images_loaded.emit()
         self.enable_transforms.emit()
@@ -234,13 +268,13 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         if self.transformed_images:
             HexrdConfig().deep_rerender_needed.emit()
 
-    def on_process_ims_error(self, error):
+    def on_process_ims_error(self, error: tuple) -> None:
         exctype, value, tb = error
         msg = f'Failed to process imageseries.\n\n{value}'
         QMessageBox.critical(None, 'Error', msg)
         HexrdConfig().logger.critical(tb)
 
-    def get_dark_aggr_op(self, ims, idx):
+    def get_dark_aggr_op(self, ims: Any, idx: int) -> tuple:
         """
         Returns a tuple of the form (function, frames), where func is the
         function to be applied and frames is the number of frames to aggregate.
@@ -270,7 +304,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         return (f, frames, ims)
 
-    def get_dark_aggr_ops(self, ims_dict):
+    def get_dark_aggr_ops(self, ims_dict: dict) -> dict:
         """
         Returns a dict of tuples of the form (function, frames), where func is the
         function to be applied and frames is the number of frames to aggregate.
@@ -296,7 +330,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         return ops
 
-    def apply_operations(self, ims_dict):
+    def apply_operations(self, ims_dict: dict) -> None:
         # First perform dark aggregation if we need to
         dark_aggr_ops = {}
         if 'dark' in self.state:
@@ -310,7 +344,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         # Apply the operations to the imageseries
         for idx, key in enumerate(ims_dict.keys()):
-            ops = []
+            ops: list[Any] = []
 
             # Apply dark subtraction
             if key in dark_images:
@@ -339,7 +373,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         self.images_transformed.emit()
 
-    def display_aggregation(self, ims_dict):
+    def display_aggregation(self, ims_dict: dict) -> None:
         self.update_progress_text('Aggregating images...')
         # Remember unaggregated images
         HexrdConfig().set_unagg_images()
@@ -361,7 +395,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         ):
             ims_dict[key] = ImageFileManager().open_file(aggr_img)
 
-    def add_omega_metadata(self, ims_dict, data=None):
+    def add_omega_metadata(self, ims_dict: dict, data: Any = None) -> None:
         # Add on the omega metadata if there is any
         data = self.data if data is None else data
         files = self.data['yml_files'] if 'yml_files' in self.data else self.files
@@ -389,7 +423,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
                 ims_dict[key].metadata['omega'] = omw.omegas
             ims_dict[key] = OmegaImageSeries(ims_dict[key])
 
-    def get_range(self, ims):
+    def get_range(self, ims: Any) -> list:
         start = 0
         nsteps = sum(self.data.get('nsteps', [len(ims)]))
         if len(ims) != nsteps:
@@ -402,7 +436,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         # Convert to a list of python integers, which cannot overflow.
         return np.arange(start, len(ims)).tolist()
 
-    def get_flip_op(self, oplist, idx):
+    def get_flip_op(self, oplist: list, idx: int) -> None:
         if self.data:
             idx = self.data.get('idx', idx)
         # Change the image orientation
@@ -425,10 +459,10 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         oplist.append(('flip', key))
 
-    def get_dark_op(self, oplist, dark):
+    def get_dark_op(self, oplist: list, dark: Any) -> None:
         oplist.append(('dark', dark))
 
-    def setup_progress_variables(self):
+    def setup_progress_variables(self) -> None:
         self.current_progress_step = 0
 
         ims_dict = HexrdConfig().imageseries_dict
@@ -447,13 +481,13 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         self.progress_macro_steps = progress_macro_steps
 
-    def increment_progress_step(self):
+    def increment_progress_step(self) -> None:
         self.current_progress_step += 1
 
-    def update_progress_text(self, text):
+    def update_progress_text(self, text: str) -> None:
         self.progress_text.emit(text)
 
-    def calculate_nchunk(self, num_ims, frames):
+    def calculate_nchunk(self, num_ims: int, frames: int) -> int:
         """
         Calculate the number of chunks
 
@@ -469,7 +503,13 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         return nchunk
 
-    def aggregate_images(self, key, ims, agg_func, progress_dict):
+    def aggregate_images(
+        self,
+        key: str,
+        ims: Any,
+        agg_func: Callable[..., np.ndarray],
+        progress_dict: dict,
+    ) -> list:
         frames = len(ims)
         num_ims = len(progress_dict)
         nchunk = self.calculate_nchunk(num_ims, frames)
@@ -479,7 +519,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         return [img]
 
-    def wait_with_progress(self, futures, progress_dict):
+    def wait_with_progress(self, futures: list[Future], progress_dict: dict) -> None:
         """
         Wait for futures to be resolved and update progress using the progress
         dict.
@@ -492,7 +532,11 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             self.update_progress(orig_progress + progress)
             time.sleep(0.1)
 
-    def aggregate_images_multithread(self, f, ims_dict):
+    def aggregate_images_multithread(
+        self,
+        f: Callable[..., Any],
+        ims_dict: dict,
+    ) -> list:
         """
         Use ThreadPoolExecutor to aggregate images
 
@@ -511,7 +555,14 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         return [f.result() for f in futures]
 
-    def aggregate_dark(self, key, func, ims, frames, progress_dict):
+    def aggregate_dark(
+        self,
+        key: str,
+        func: Callable[..., np.ndarray],
+        ims: Any,
+        frames: int,
+        progress_dict: dict,
+    ) -> tuple:
         """
         Generate aggregated dark image.
 
@@ -528,15 +579,18 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
 
         return (key, darkimg)
 
-    def aggregate_dark_multithread(self, aggr_op_dict):
+    def aggregate_dark_multithread(self, aggr_op_dict: dict) -> dict:
         """
         Use ThreadPoolExecutor to dark aggregation. Returns a dict mapping the
         detector name to dark image.
 
-        :param aggr_op_dict: A dict mapping the detector name to a tuple of the form
-                            (func, frames, ims), where func is the function to use to do
-                            the aggregation, frames is number of images to aggregate, and
-                            ims is the image series to perform the aggregation on.
+        :param aggr_op_dict: A dict mapping the detector name to a
+                            tuple of the form (func, frames, ims),
+                            where func is the function to use to do
+                            the aggregation, frames is number of
+                            images to aggregate, and ims is the
+                            image series to perform the aggregation
+                            on.
         """
         max_workers = HexrdConfig().max_cpus
 

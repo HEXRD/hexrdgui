@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 
 
-def polygon_to_mask(coords, mask_shape):
+def polygon_to_mask(coords: np.ndarray, mask_shape: tuple) -> np.ndarray:
     # This comes out very slightly different than scikit-image's polygon
     # method, with the only differences being along the edges (plus or minus
     # a pixel).

@@ -1,3 +1,4 @@
+import argparse
 import atexit
 import gc
 import os
@@ -20,7 +21,7 @@ from hexrdgui.main_window import MainWindow
 import hexrdgui.resources.icons
 
 
-def main():
+def main() -> None:
     # Create the argument parser, and parse the args. This will cause the
     # program to exit early if `--help` is passed.
     parser = ArgumentParser()
@@ -29,7 +30,7 @@ def main():
     # Kill the program when ctrl-c is used
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+    QCoreApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
     QCoreApplication.setOrganizationName('hexrd')
     QCoreApplication.setApplicationName('hexrd')
@@ -46,8 +47,9 @@ def main():
     data = resource_loader.load_resource(
         hexrdgui.resources.icons, 'hexrd.ico', binary=True
     )
+    assert isinstance(data, bytes)
     pixmap = QPixmap()
-    pixmap.loadFromData(data, 'ico')
+    pixmap.loadFromData(data, 'ico')  # type: ignore[call-overload]
     icon = QIcon(pixmap)
     app.setWindowIcon(icon)
 
@@ -62,7 +64,7 @@ def main():
     sys.exit(app.exec())
 
 
-def apply_parsed_args_to_hexrd_config(parsed_args):
+def apply_parsed_args_to_hexrd_config(parsed_args: argparse.Namespace) -> None:
     # Map some of the parsed arguments to attributes on the HexrdConfig object.
     to_set = {
         'ncpus': 'max_cpus',
@@ -73,7 +75,7 @@ def apply_parsed_args_to_hexrd_config(parsed_args):
         setattr(hexrd_config, v, getattr(parsed_args, k))
 
 
-def cleanup_widgets():
+def cleanup_widgets() -> None:
     """Clean up Qt widgets before Python shutdown
 
     This is necessary for newer versions of Qt (>= 6.8),
@@ -86,7 +88,7 @@ def cleanup_widgets():
     app = QApplication.instance()
     if app:
         # Close all top-level widgets
-        for widget in app.topLevelWidgets()[:]:
+        for widget in app.topLevelWidgets()[:]:  # type: ignore[attr-defined]
             try:
                 widget.close()
                 widget.deleteLater()

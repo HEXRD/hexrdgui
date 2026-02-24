@@ -1,7 +1,9 @@
+from typing import Any
+
 import numpy as np
 
 from PySide6.QtCore import QItemSelectionModel, QObject, Qt, Signal
-from PySide6.QtWidgets import QTableWidgetItem
+from PySide6.QtWidgets import QTableWidgetItem, QWidget
 
 from hexrd.rotations import quatOfExpMap
 
@@ -16,7 +18,13 @@ class HandPickedFibersWidget(QObject):
 
     fiber_step_modified = Signal(float)
 
-    def __init__(self, data, canvas, ax, parent=None):
+    def __init__(
+        self,
+        data: Any,
+        canvas: Any,
+        ax: Any,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -28,19 +36,19 @@ class HandPickedFibersWidget(QObject):
 
         self._active = True
 
-        self.cached_picked_spots = {}
+        self.cached_picked_spots: dict[int, Any] = {}
         self.generated = np.empty((0,))
         self.picked = np.empty((0, 3))
 
         self.current_hkl_index = 0
-        self.current_spots = np.empty((0,))
-        self.last_eta = None
-        self.last_ome = None
-        self.last_hkl_index = None
+        self.current_spots: np.ndarray | list[Any] = np.empty((0,))
+        self.last_eta: float | None = None
+        self.last_ome: float | None = None
+        self.last_hkl_index: int | None = None
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.current_slider.valueChanged.connect(self.current_slider_value_changed)
 
         self.ui.current_angle.valueChanged.connect(self.current_angle_value_changed)
@@ -57,16 +65,16 @@ class HandPickedFibersWidget(QObject):
 
         self.canvas.mpl_connect('button_press_event', self.plot_clicked)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         self.ui.current_slider.setRange(0, self.num_picked - 1)
         self.ui.current_angle.setSingleStep(self.fiber_step)
 
     @property
-    def active(self):
+    def active(self) -> bool:
         return self._active
 
     @active.setter
-    def active(self, v):
+    def active(self, v: bool) -> None:
         if self._active == v:
             return
 
@@ -76,7 +84,7 @@ class HandPickedFibersWidget(QObject):
         self.clear_selected_artists()
         self.select_rows([])
 
-    def clear_generated(self):
+    def clear_generated(self) -> None:
         # Reset the latest picks to None
         self.last_eta = None
         self.last_ome = None
@@ -88,7 +96,7 @@ class HandPickedFibersWidget(QObject):
         # so it's okay to run it twice.
         self.update_current()
 
-    def plot_clicked(self, event):
+    def plot_clicked(self, event: Any) -> None:
         if not self.active:
             # If this widget is inactive, just return
             return
@@ -103,7 +111,7 @@ class HandPickedFibersWidget(QObject):
 
         self.recreate_generated()
 
-    def recreate_generated(self):
+    def recreate_generated(self) -> None:
         pick_coords = (self.last_eta, self.last_ome)
         if any(x is None for x in pick_coords):
             # No picked coords. Just return.
@@ -132,7 +140,7 @@ class HandPickedFibersWidget(QObject):
         # so it's okay to run it twice.
         self.update_current()
 
-    def update_current(self):
+    def update_current(self) -> None:
         enable = len(self.generated) > 0
 
         enable_list = [
@@ -156,7 +164,7 @@ class HandPickedFibersWidget(QObject):
         self.generate_current_spots()
         self.update_current_plot()
 
-    def generate_current_spots(self):
+    def generate_current_spots(self) -> None:
         if self.current_index >= len(self.generated):
             fibers = []
         else:
@@ -164,7 +172,7 @@ class HandPickedFibersWidget(QObject):
 
         self.current_spots = self.general_spots(fibers)
 
-    def general_spots(self, fibers):
+    def general_spots(self, fibers: Any) -> np.ndarray | list[Any]:
         if len(fibers) == 0:
             return np.empty((0,))
 
@@ -175,12 +183,12 @@ class HandPickedFibersWidget(QObject):
         }
         return _angles_from_orientation(**kwargs)
 
-    def clear_current_plot(self):
+    def clear_current_plot(self) -> None:
         if hasattr(self, '_current_lines'):
             remove_artist(self._current_lines)
             del self._current_lines
 
-    def update_current_plot(self):
+    def update_current_plot(self) -> None:
         self.clear_current_plot()
         hkl_idx = self.current_hkl_index
         if len(self.current_spots) <= hkl_idx:
@@ -201,20 +209,20 @@ class HandPickedFibersWidget(QObject):
         self.draw()
 
     @property
-    def current_orientation(self):
+    def current_orientation(self) -> np.ndarray:
         if len(self.generated) == 0:
             return np.array([0, 0, 0])
 
         return self.generated[self.current_index]
 
     @property
-    def current_index(self):
+    def current_index(self) -> int:
         return self.ui.current_slider.value()
 
-    def current_slider_value_changed(self):
+    def current_slider_value_changed(self) -> None:
         self.update_current()
 
-    def current_angle_value_changed(self, v):
+    def current_angle_value_changed(self, v: float) -> None:
         new_slider_index = round(v / self.fiber_step)
         self.ui.current_slider.setValue(new_slider_index)
 
@@ -223,7 +231,7 @@ class HandPickedFibersWidget(QObject):
         angle = self.current_index * self.fiber_step
         self.ui.current_angle.setValue(angle)
 
-    def add_current(self):
+    def add_current(self) -> None:
         to_stack = (self.picked, self.current_orientation)
         self.picked = np.vstack(to_stack)
         self.update_picked_table()
@@ -234,7 +242,7 @@ class HandPickedFibersWidget(QObject):
         last_row = table.rowCount() - 1
         self.select_rows([last_row])
 
-    def update_picked_table(self):
+    def update_picked_table(self) -> None:
         table = self.ui.picked_table
         table.clearContents()
         table.setColumnCount(3)
@@ -242,12 +250,12 @@ class HandPickedFibersWidget(QObject):
         for i, orientation in enumerate(self.picked):
             for j in range(3):
                 item = QTableWidgetItem(f'{orientation[j]:.4f}')
-                item.setTextAlignment(Qt.AlignCenter)
-                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 table.setItem(i, j, item)
 
     @property
-    def picked_quaternions(self):
+    def picked_quaternions(self) -> np.ndarray:
         # We store these as 3D exp maps. Convert and return as quaternions.
         quats = quatOfExpMap(self.picked.T)
         if quats.ndim == 1:
@@ -257,33 +265,33 @@ class HandPickedFibersWidget(QObject):
         return quats
 
     @property
-    def picked(self):
+    def picked(self) -> np.ndarray:
         return self._picked
 
     @picked.setter
-    def picked(self, v):
+    def picked(self, v: np.ndarray) -> None:
         self._picked = v
         # Clear the cache for hand picked spots
         self.cached_picked_spots.clear()
 
-    def clear_selected_artists(self):
+    def clear_selected_artists(self) -> None:
         lines = getattr(self, '_selected_artists', [])
         while lines:
             remove_artist(lines.pop(0))
 
     @property
-    def selected_rows(self):
+    def selected_rows(self) -> list[int]:
         selected = self.ui.picked_table.selectionModel().selectedRows()
         selected = [] if None else selected
         return [x.row() for x in selected]
 
-    def picked_table_selection_changed(self):
+    def picked_table_selection_changed(self) -> None:
         self.draw_selected()
 
         enable_delete = len(self.selected_rows) > 0
         self.ui.delete_selected.setEnabled(enable_delete)
 
-    def spots_for_hand_picked_quaternion(self, i):
+    def spots_for_hand_picked_quaternion(self, i: int) -> np.ndarray | None:
         if i >= len(self.picked):
             return None
 
@@ -299,7 +307,7 @@ class HandPickedFibersWidget(QObject):
 
         return cache[i][self.current_hkl_index]
 
-    def draw_selected(self):
+    def draw_selected(self) -> None:
         self.clear_selected_artists()
 
         artists = []
@@ -322,13 +330,13 @@ class HandPickedFibersWidget(QObject):
         self._selected_artists = artists
         self.draw()
 
-    def select_rows(self, rows):
+    def select_rows(self, rows: list[int]) -> None:
         table = self.ui.picked_table
         selection_model = table.selectionModel()
 
         with block_signals(selection_model):
             selection_model.clearSelection()
-            command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+            command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
 
             for i in rows:
                 if i is None or i >= table.rowCount():
@@ -341,13 +349,13 @@ class HandPickedFibersWidget(QObject):
 
         self.picked_table_selection_changed()
 
-    def deleted_selected_rows(self):
+    def deleted_selected_rows(self) -> None:
         self.picked = np.delete(self.picked, self.selected_rows, 0)
         # There should be no selection now
         self.select_rows([])
         self.update_picked_table()
 
-    def fiber_step_value_changed(self, v):
+    def fiber_step_value_changed(self, v: float) -> None:
         prev_angle = self.ui.current_angle.value()
 
         self.ui.current_slider.setRange(0, self.num_picked - 1)
@@ -362,16 +370,16 @@ class HandPickedFibersWidget(QObject):
         self.fiber_step_modified.emit(v)
 
     @property
-    def fiber_step(self):
+    def fiber_step(self) -> float:
         return self.ui.fiber_step.value()
 
     @fiber_step.setter
-    def fiber_step(self, v):
+    def fiber_step(self, v: float) -> None:
         self.ui.fiber_step.setValue(v)
 
     @property
-    def num_picked(self):
+    def num_picked(self) -> int:
         return round(360 / self.fiber_step)
 
-    def draw(self):
+    def draw(self) -> None:
         self.canvas.draw()

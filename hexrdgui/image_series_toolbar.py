@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Any, cast, TYPE_CHECKING
+
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
     QGridLayout,
@@ -11,6 +15,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QFontMetrics, QPixmap
 from hexrdgui import resource_loader
 
+if TYPE_CHECKING:
+    from hexrdgui.image_tab_widget import ImageTabWidget
+
 import hexrdgui.resources.icons
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import block_signals
@@ -18,29 +25,34 @@ from hexrdgui.utils import block_signals
 
 class ImageSeriesInfoToolbar(QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
-        self.layout = None
-        self.widget = None
-        self.file_label = None
+        self.layout: QGridLayout | None = None  # type: ignore[assignment]
+        self.widget: QWidget | None = None
+        self.file_label: QLabel | None = None
 
         self.create_widget()
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         HexrdConfig().recent_images_changed.connect(self.update_file_tooltip)
 
-    def create_widget(self):
-        self.widget = QWidget(self.parent())
+    def _parent_widget(self) -> QWidget | None:
+        parent = self.parent()
+        return cast(QWidget, parent) if parent is not None else None
+
+    def create_widget(self) -> None:
+        self.widget = QWidget(self._parent_widget())
 
         data = resource_loader.load_resource(
             hexrdgui.resources.icons, 'file.svg', binary=True
         )
+        assert isinstance(data, bytes)
         pixmap = QPixmap()
-        pixmap.loadFromData(data, 'svg')
-        self.file_label = QLabel(self.parent())
+        pixmap.loadFromData(data, 'svg')  # type: ignore[call-overload]
+        self.file_label = QLabel(self._parent_widget())
         self.file_label.setPixmap(pixmap)
         self.update_file_tooltip()
 
@@ -49,10 +61,12 @@ class ImageSeriesInfoToolbar(QWidget):
 
         self.widget.setLayout(self.layout)
 
-    def set_visible(self, b=False):
+    def set_visible(self, b: bool = False) -> None:
+        assert self.widget is not None
         self.widget.setVisible(b)
 
-    def update_file_tooltip(self):
+    def update_file_tooltip(self) -> None:
+        assert self.file_label is not None
         tips = []
         for det, images in HexrdConfig().recent_images.items():
             fnames = [Path(img).name for img in images]
@@ -62,45 +76,56 @@ class ImageSeriesInfoToolbar(QWidget):
 
 class ImageSeriesToolbar(QWidget):
 
-    def __init__(self, ims, parent=None):
+    def __init__(self, ims: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.ims = ims
-        self.slider = None
-        self.frame = None
-        self.back_button = None
-        self.forward_button = None
-        self.layout = None
-        self.widget = None
+        self.slider: QSlider | None = None
+        self.frame: QLineEdit | None = None
+        self.back_button: QPushButton | None = None
+        self.forward_button: QPushButton | None = None
+        self.layout: QGridLayout | None = None  # type: ignore[assignment]
+        self.widget: QWidget | None = None
+        self.omega_label: QLabel | None = None
 
-        self.show = False
+        self._show = False
 
         self.create_widget()
         self.set_range()
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
+        assert self.slider is not None
+        assert self.frame is not None
+        assert self.back_button is not None
+        assert self.forward_button is not None
         self.slider.valueChanged.connect(self.val_changed)
         self.slider.valueChanged.connect(lambda i: self.frame.setText(str(i)))
         self.frame.editingFinished.connect(self.on_frame_edited)
         self.back_button.clicked.connect(lambda: self.shift_frame(-1))
         self.forward_button.clicked.connect(lambda: self.shift_frame(1))
 
-    def text_width(self, text):
-        metrics = QFontMetrics(QCoreApplication.instance().font())
+    def text_width(self, text: str) -> int:
+        app = QCoreApplication.instance()
+        assert app is not None
+        metrics = QFontMetrics(app.font())  # type: ignore[attr-defined]
         return metrics.boundingRect(text).width()
 
-    def create_widget(self):
-        self.slider = QSlider(Qt.Horizontal, self.parent())
-        self.frame = QLineEdit(self.parent())
+    def _parent_widget(self) -> QWidget | None:
+        parent = self.parent()
+        return cast(QWidget, parent) if parent is not None else None
+
+    def create_widget(self) -> None:
+        self.slider = QSlider(Qt.Orientation.Horizontal, self._parent_widget())
+        self.frame = QLineEdit(self._parent_widget())
         self.back_button = QPushButton('<<')
         self.back_button.setFixedSize(35, 22)
         self.forward_button = QPushButton('>>')
         self.forward_button.setFixedSize(35, 22)
 
-        self.widget = QWidget(self.parent())
-        self.omega_label = QLabel(self.parent())
+        self.widget = QWidget(self._parent_widget())
+        self.omega_label = QLabel(self._parent_widget())
         self.omega_label.setVisible(False)
 
         # Compute the text width for the maximum size label we will have
@@ -110,7 +135,7 @@ class ImageSeriesToolbar(QWidget):
         example_label_text = omega_label_text(359.999, 359.999)
         text_width = self.text_width(example_label_text)
         self.omega_label.setFixedWidth(text_width)
-        self.frame.setAlignment(Qt.AlignCenter)
+        self.frame.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.layout = QGridLayout(self.widget)
         self.layout.addWidget(self.slider, 0, 0, 1, 7)
@@ -122,23 +147,29 @@ class ImageSeriesToolbar(QWidget):
         self.widget.setLayout(self.layout)
 
         if self.ims and len(self.ims) > 1:
-            self.show = True
-        self.widget.setVisible(self.show)
+            self._show = True
+        self.widget.setVisible(self._show)
 
-    def set_range(self, current_tab=False):
+    def set_range(self, current_tab: bool = False) -> None:
+        assert self.frame is not None
+        assert self.widget is not None
+        assert self.slider is not None
+        assert self.back_button is not None
         if self.ims:
             size = len(self.ims) - 1
             # Compute the text width for the maximum size label based on the
             # maximum number of frames. Multiply by 100 to add a little padding
             frame_text_width = self.text_width(str(size * 100))
             self.frame.setFixedWidth(frame_text_width)
-            if (not size or not current_tab) and self.show:
-                self.show = False
-            elif size and not self.show and current_tab:
-                self.show = True
-            self.widget.setVisible(self.show)
+            if (not size or not current_tab) and self._show:
+                self._show = False
+            elif size and not self._show and current_tab:
+                self._show = True
+            self.widget.setVisible(self._show)
             if not self.slider.minimumWidth():
-                self.slider.setMinimumWidth(self.parent().width() // 2)
+                parent = self._parent_widget()
+                if parent is not None:
+                    self.slider.setMinimumWidth(parent.width() // 2)
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setToolTip(f'Max: {size}')
@@ -147,33 +178,38 @@ class ImageSeriesToolbar(QWidget):
                 self.frame.setText(str(self.slider.value()))
                 self.back_button.setEnabled(False)
         else:
-            self.show = False
-            self.widget.setVisible(self.show)
+            self._show = False
+            self.widget.setVisible(self._show)
 
         self.update_omega_label_text()
 
-    def update_range(self, current_tab):
+    def update_range(self, current_tab: bool) -> None:
         self.set_range(current_tab)
 
+        assert self.slider is not None
         if self.slider.value() != HexrdConfig().current_imageseries_idx:
             self.val_changed(self.slider.value())
 
-    def update_ims(self, ims):
+    def update_ims(self, ims: Any) -> None:
         self.ims = ims
 
-    def set_visible(self, b=False):
+    def set_visible(self, b: bool = False) -> None:
+        assert self.widget is not None
         self.widget.setVisible(b and len(self.ims) > 1)
         self.update_omega_label_text()
 
-    def setEnabled(self, b):
+    def setEnabled(self, b: bool) -> None:
+        assert self.widget is not None
         self.widget.setEnabled(b)
 
-    def val_changed(self, pos):
-        self.parent().change_ims_image(pos)
+    def val_changed(self, pos: int) -> None:
+        parent = cast('ImageTabWidget', self.parent())
+        parent.change_ims_image(pos)
         self.update_back_forward_buttons(pos)
         self.update_omega_label_text()
 
-    def update_omega_label_text(self):
+    def update_omega_label_text(self) -> None:
+        assert self.omega_label is not None
         is_aggregated = HexrdConfig().is_aggregated
         ome_range = HexrdConfig().omega_ranges
 
@@ -182,20 +218,27 @@ class ImageSeriesToolbar(QWidget):
         if not enable:
             return
 
-        self.omega_label.setText(omega_label_text(*ome_range))
+        self.omega_label.setText(omega_label_text(*ome_range))  # type: ignore[misc]
 
-    def update_back_forward_buttons(self, val):
+    def update_back_forward_buttons(self, val: int) -> None:
+        assert self.back_button is not None
+        assert self.forward_button is not None
+        assert self.slider is not None
         self.back_button.setEnabled(self.slider.minimum() != val)
         self.forward_button.setEnabled(self.slider.maximum() != val)
 
-    def shift_frame(self, value):
+    def shift_frame(self, value: int) -> None:
+        assert self.frame is not None
+        assert self.slider is not None
         with block_signals(self.frame, self.slider):
             new_frame = int(self.frame.text()) + value
             self.frame.setText(str(new_frame))
             self.slider.setSliderPosition(new_frame)
         self.val_changed(new_frame)
 
-    def on_frame_edited(self):
+    def on_frame_edited(self) -> None:
+        assert self.frame is not None
+        assert self.slider is not None
         try:
             val = int(self.frame.text())
         except ValueError:
@@ -214,7 +257,7 @@ class ImageSeriesToolbar(QWidget):
         self.slider.setSliderPosition(val)
 
 
-def omega_label_text(ome_min, ome_max):
+def omega_label_text(ome_min: float, ome_max: float) -> str:
     # We will display 6 digits at most, because omegas go up to 360
     # degrees (so up to 3 digits before the decimal place), and we
     # will always show at least 3 digits after the decimal place.

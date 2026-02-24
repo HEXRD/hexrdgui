@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import copy
 from enum import Enum
+from typing import Any, Sequence, cast
 
 from numba import njit
 import numpy as np
@@ -27,17 +30,18 @@ class LaueOverlay(Overlay):
 
     def __init__(
         self,
-        material_name,
-        crystal_params=None,
-        min_energy=5,
-        max_energy=35,
-        tth_width=None,
-        eta_width=None,
-        width_shape=None,
-        label_type=None,
-        label_offsets=None,
-        **overlay_kwargs,
-    ):
+        material_name: str,
+        crystal_params: np.ndarray | list[float] | None = None,
+        min_energy: int = 5,
+        max_energy: int = 35,
+        tth_width: float | None = None,
+        eta_width: float | None = None,
+        width_shape: LaueRangeShape | None = None,
+        label_type: LaueLabelType | None = None,
+        label_offsets: list[float] | None = None,
+        **overlay_kwargs: Any,
+    ) -> None:
+        self._xray_source: str | None = None
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -59,7 +63,7 @@ class LaueOverlay(Overlay):
         self.label_offsets = label_offsets
 
     @property
-    def child_attributes_to_save(self):
+    def child_attributes_to_save(self) -> list[str]:
         # These names must be identical here, as attributes, and as
         # arguments to the __init__ method.
         return [
@@ -74,7 +78,7 @@ class LaueOverlay(Overlay):
         ]
 
     @property
-    def xray_source(self):
+    def xray_source(self) -> str | None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         if self._xray_source is None and HexrdConfig().has_multi_xrs:
@@ -84,7 +88,7 @@ class LaueOverlay(Overlay):
         return self._xray_source
 
     @xray_source.setter
-    def xray_source(self, v):
+    def xray_source(self, v: str | None) -> None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         if v is None and HexrdConfig().has_multi_xrs:
@@ -94,65 +98,65 @@ class LaueOverlay(Overlay):
             self._xray_source = v
 
     @property
-    def has_widths(self):
+    def has_widths(self) -> bool:
         widths = ['tth_width', 'eta_width']
         return all(getattr(self, x) is not None for x in widths)
 
     @property
-    def plane_data_no_exclusions(self):
+    def plane_data_no_exclusions(self) -> Any:  # hexrd PlaneData
         plane_data = copy.deepcopy(self.plane_data)
         # For Laue overlays, we will use all hkl values
         plane_data.exclusions = None
         return plane_data
 
     @property
-    def crystal_params(self):
+    def crystal_params(self) -> np.ndarray:
         return self._crystal_params
 
     @crystal_params.setter
-    def crystal_params(self, x):
+    def crystal_params(self, x: np.ndarray | list[float]) -> None:
         assert len(x) == 12, 'input must be array-like with length 12'
         self._crystal_params = np.array(x)
 
     @property
-    def min_energy(self):
+    def min_energy(self) -> int:
         return self._min_energy
 
     @min_energy.setter
-    def min_energy(self, x):
+    def min_energy(self, x: int) -> None:
         assert x < self.max_energy
         self._min_energy = x
 
     @property
-    def max_energy(self):
+    def max_energy(self) -> int:
         return self._max_energy
 
     @max_energy.setter
-    def max_energy(self, x):
+    def max_energy(self, x: int) -> None:
         assert x > self.min_energy
         self._max_energy = x
 
     @property
-    def widths_enabled(self):
+    def widths_enabled(self) -> bool:
         widths = ['tth_width', 'eta_width']
         return all(getattr(self, x) is not None for x in widths)
 
     @property
-    def refinement_labels(self):
+    def refinement_labels(self) -> list[str]:
         return crystal_refinement_labels()
 
     @property
-    def default_refinements(self):
+    def default_refinements(self) -> np.ndarray:
         return default_crystal_refinements()
 
-    def pad_picks_data(self):
+    def pad_picks_data(self) -> None:
         for k, v in self.data.items():
             current = self.calibration_picks.setdefault(k, {})
             for hkl in self.data[k]['hkls']:
                 current.setdefault(hkl_to_str(hkl), [np.nan, np.nan])
 
     @property
-    def has_picks_data(self):
+    def has_picks_data(self) -> bool:
         for det_key, hkl_dict in self.calibration_picks.items():
             for hkl_str, hkl_list in hkl_dict.items():
                 if hkl_list and not np.min(np.isnan(hkl_list)):
@@ -161,7 +165,7 @@ class LaueOverlay(Overlay):
         return False
 
     @property
-    def calibration_picks_polar(self):
+    def calibration_picks_polar(self) -> dict:
         # Convert from cartesian to polar
         from hexrdgui.hexrd_config import HexrdConfig
 
@@ -188,7 +192,7 @@ class LaueOverlay(Overlay):
         return picks
 
     @calibration_picks_polar.setter
-    def calibration_picks_polar(self, picks):
+    def calibration_picks_polar(self, picks: dict) -> None:
         self._validate_picks(picks)
 
         # Convert from polar to cartesian
@@ -201,19 +205,21 @@ class LaueOverlay(Overlay):
                     picks[det_key][hkl_str] = [np.nan, np.nan]
                 else:
                     angles = apply_tth_distortion_if_needed(
-                        [hkl_picks], in_degrees=True, reverse=True
+                        np.array([hkl_picks]), in_degrees=True, reverse=True
                     )
-                    picks[det_key][hkl_str] = angles_to_cart(angles, panel)[0].tolist()
+                    picks[det_key][hkl_str] = angles_to_cart(
+                        cast(Sequence[float], angles), panel
+                    )[0].tolist()
 
         self.calibration_picks = picks
 
-    def generate_overlay(self):
+    def generate_overlay(self) -> dict:
         from hexrdgui.hexrd_config import HexrdConfig
 
         instr = self.instrument
         display_mode = self.display_mode
 
-        point_groups = {}
+        point_groups: dict[str, Any] = {}
         keys = ['spots', 'ranges', 'hkls', 'labels', 'label_offsets']
         for det_key in instr.detectors:
             point_groups[det_key] = {key: [] for key in keys}
@@ -311,11 +317,12 @@ class LaueOverlay(Overlay):
 
         return point_groups
 
-    def range_corners(self, spots):
+    def range_corners(self, spots: np.ndarray) -> list:
         # spots should be in degrees
         if not self.widths_enabled:
             return []
 
+        assert self.tth_width is not None and self.eta_width is not None
         widths = (self.tth_width, self.eta_width)
         # Put the first point at the end to complete the square
         tol_box = np.array(
@@ -329,12 +336,12 @@ class LaueOverlay(Overlay):
         return ranges
 
     @property
-    def tvec_c(self):
+    def tvec_c(self) -> np.ndarray | None:
         if self.crystal_params is None:
             return None
         return self.crystal_params[3:6].reshape(3, 1)
 
-    def range_data(self, spots, display_mode, panel):
+    def range_data(self, spots: np.ndarray, display_mode: str, panel: Any) -> list:
         if not self.widths_enabled:
             return []
 
@@ -354,11 +361,11 @@ class LaueOverlay(Overlay):
 
         return data
 
-    def rectangular_range_data(self, spots, display_mode, panel):
+    def rectangular_range_data(self, spots: np.ndarray, display_mode: str, panel: Any) -> list:
         range_corners = self.range_corners(spots)
         if display_mode == ViewType.polar:
             # All done...
-            return np.degrees(range_corners)
+            return np.degrees(range_corners).tolist()
 
         if display_mode == ViewType.stereo:
             from hexrdgui.hexrd_config import HexrdConfig
@@ -379,24 +386,25 @@ class LaueOverlay(Overlay):
         results = []
         with switch_xray_source(self.instrument, self.xray_source):
             for corners in range_corners:
-                data = []
+                data_list: list[Any] = []
                 for i in range(len(corners) - 1):
                     tmp = np.linspace(corners[i], corners[i + 1])
-                    data.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
+                    data_list.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
 
-                data = np.array(data)
+                data_arr = np.array(data_list)
                 if display_mode == ViewType.raw:
-                    data = panel.cartToPixel(data)
-                    data[:, [0, 1]] = data[:, [1, 0]]
+                    data_arr = panel.cartToPixel(data_arr)
+                    data_arr[:, [0, 1]] = data_arr[:, [1, 0]]
 
-                results.append(data)
+                results.append(data_arr)
 
         return results
 
-    def ellipsoidal_range_data(self, spots, display_mode, panel):
+    def ellipsoidal_range_data(self, spots: np.ndarray, display_mode: str, panel: Any) -> list:
         from hexrdgui.hexrd_config import HexrdConfig
 
         num_points = 300
+        assert self.tth_width is not None and self.eta_width is not None
         a = self.tth_width / 2
         b = self.eta_width / 2
         results = []
@@ -405,7 +413,7 @@ class LaueOverlay(Overlay):
             results.append(ellipse)
 
         if display_mode == ViewType.polar:
-            return np.degrees(results)
+            return np.degrees(results).tolist()
 
         if display_mode == ViewType.stereo:
             # Convert the angles to stereo ij
@@ -435,7 +443,7 @@ class LaueOverlay(Overlay):
         return results
 
     @property
-    def default_style(self):
+    def default_style(self) -> dict:
         return {
             'data': {'c': '#00ffff', 'marker': 'o', 's': 2.0},  # Cyan
             'ranges': {'c': '#00ff00', 'ls': 'dotted', 'lw': 1.0},  # Green
@@ -447,7 +455,7 @@ class LaueOverlay(Overlay):
         }
 
     @property
-    def default_highlight_style(self):
+    def default_highlight_style(self) -> dict:
         return {
             'data': {'c': '#ff00ff', 'marker': 'o', 's': 4.0},  # Magenta
             'ranges': {'c': '#ff00ff', 'ls': 'dotted', 'lw': 3.0},  # Magenta
@@ -460,7 +468,13 @@ class LaueOverlay(Overlay):
 
 
 @njit(cache=True, nogil=True)
-def ellipse_points(h, k, a, b, num_points=30):
+def ellipse_points(
+    h: float,
+    k: float,
+    a: float,
+    b: float,
+    num_points: int = 30,
+) -> np.ndarray:
     # skimage.draw.ellipse_perimeter could work instead, but it is
     # intended to work with indices, and it doesn't sort points.
     # We'll just do our own here using float values and sorting...

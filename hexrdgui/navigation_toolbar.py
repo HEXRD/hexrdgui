@@ -1,3 +1,5 @@
+from typing import Any
+
 from matplotlib import rc_context
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT
 
@@ -10,12 +12,12 @@ class NavigationToolbar(NavigationToolbar2QT):
 
     def __init__(
         self,
-        canvas,
-        parent,
-        coordinates=True,
-        button_blacklist=None,
-        tight_savefig=True,
-    ):
+        canvas: Any,
+        parent: Any,
+        coordinates: bool = True,
+        button_blacklist: list | None = None,
+        tight_savefig: bool = True,
+    ) -> None:
         # This adds the option to blacklist some of the buttons for the
         # toolbar. Options are currently: Home, Back, Forward, Pan, Zoom,
         # Subplots, Save.
@@ -41,18 +43,18 @@ class NavigationToolbar(NavigationToolbar2QT):
         self.tight_savefig = tight_savefig
 
     @wrap_with_callbacks
-    def home(self, *args):
+    def home(self, *args: Any) -> None:
         super().home(*args)
 
     @wrap_with_callbacks
-    def back(self, *args):
+    def back(self, *args: Any) -> None:
         super().back(*args)
 
     @wrap_with_callbacks
-    def forward(self, *args):
+    def forward(self, *args: Any) -> None:
         super().back(*args)
 
-    def save_figure(self, *args, **kwargs):
+    def save_figure(self, *args: Any, **kwargs: Any) -> Any:
         context = {}
         if self.tight_savefig:
             context['savefig.bbox'] = 'tight'

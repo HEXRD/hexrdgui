@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import copy
 import os
+from typing import Any
 
 from PySide6.QtCore import Signal, QObject, Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,7 +32,7 @@ class PanelBufferDialog(QObject):
     rejected = Signal()
     finished = Signal(int)
 
-    def __init__(self, detector, parent=None):
+    def __init__(self, detector: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.detector = detector
@@ -40,7 +43,7 @@ class PanelBufferDialog(QObject):
 
         # Keep the dialog in front
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         add_help_url(self.ui.button_box, 'configuration/instrument/#panel-buffer')
 
@@ -53,7 +56,7 @@ class PanelBufferDialog(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.config_mode.currentIndexChanged.connect(self.update_mode_tab)
         self.ui.file_name.editingFinished.connect(self.update_enable_states)
         self.ui.select_file_button.clicked.connect(self.select_file)
@@ -62,7 +65,7 @@ class PanelBufferDialog(QObject):
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
-    def setup_combo_box_data(self):
+    def setup_combo_box_data(self) -> None:
         item_data = [
             CONFIG_MODE_BORDER,
             CONFIG_MODE_NUMPY,
@@ -71,15 +74,15 @@ class PanelBufferDialog(QObject):
         for i, data in enumerate(item_data):
             self.ui.config_mode.setItemData(i, data)
 
-    def setup_valid_names(self):
+    def setup_valid_names(self) -> None:
         w = self.ui.selected_name
         w.clear()
         w.addItems(valid_panel_buffer_names())
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def on_accepted(self):
+    def on_accepted(self) -> None:
         if self.mode == CONFIG_MODE_NUMPY and self.file_name == '':
             msg = 'Please select a NumPy array file'
             print(msg)
@@ -92,11 +95,11 @@ class PanelBufferDialog(QObject):
             HexrdConfig().rerender_needed.emit()
             self.finished.emit(self.ui.result())
 
-    def on_rejected(self):
+    def on_rejected(self) -> None:
         self.rejected.emit()
         self.finished.emit(self.ui.result())
 
-    def select_file(self):
+    def select_file(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui, 'Load Panel Buffer', HexrdConfig().working_dir, 'NPY files (*.npy)'
         )
@@ -106,24 +109,24 @@ class PanelBufferDialog(QObject):
             self.file_name = selected_file
 
     @property
-    def file_name(self):
+    def file_name(self) -> str:
         return self.ui.file_name.text()
 
     @file_name.setter
-    def file_name(self, v):
+    def file_name(self, v: str) -> None:
         self.ui.file_name.setText(v)
         self.update_enable_states()
 
     @property
-    def x_border(self):
+    def x_border(self) -> float:
         return self.ui.border_x_spinbox.value()
 
     @property
-    def y_border(self):
+    def y_border(self) -> float:
         return self.ui.border_y_spinbox.value()
 
     @property
-    def widgets(self):
+    def widgets(self) -> list[QWidget]:
         return [
             self.ui.file_name,
             self.ui.border_x_spinbox,
@@ -132,7 +135,7 @@ class PanelBufferDialog(QObject):
         ]
 
     @property
-    def current_editing_buffer_value(self):
+    def current_editing_buffer_value(self) -> Any:
         if self.mode == CONFIG_MODE_BORDER:
             return [self.x_border, self.y_border]
         elif self.mode == CONFIG_MODE_NAME:
@@ -161,19 +164,19 @@ class PanelBufferDialog(QObject):
         return array
 
     @property
-    def current_saved_buffer_value(self):
+    def current_saved_buffer_value(self) -> Any:
         return self.detector_config.get('buffer', self.default_buffer)
 
     @property
-    def detector_config(self):
+    def detector_config(self) -> dict[str, Any]:
         return HexrdConfig().detector(self.detector)
 
     @property
-    def detector_shape(self):
+    def detector_shape(self) -> tuple[int, int]:
         pixels = self.detector_config['pixels']
         return (pixels['rows'], pixels['columns'])
 
-    def update_config(self):
+    def update_config(self) -> bool:
         # Set the new config options on the internal config
         value = self.current_editing_buffer_value
         if value is None:
@@ -186,7 +189,7 @@ class PanelBufferDialog(QObject):
             # If so, ask if the user wants to apply this setting
             # to all detectors in this group.
             group = HexrdConfig().detector_group(self.detector)
-            if HexrdConfig().instrument_has_roi and group:
+            if HexrdConfig().instrument_has_roi and isinstance(group, str) and group:
                 det_keys = HexrdConfig().detectors_in_group(group)
                 if len(det_keys) > 1:
                     title = 'Apply to Other Detectors?'
@@ -195,14 +198,14 @@ class PanelBufferDialog(QObject):
                         f'detectors in the group "{group}"?'
                     )
                     response = QMessageBox.question(self.ui, title, msg)
-                    if response == QMessageBox.Yes:
+                    if response == QMessageBox.StandardButton.Yes:
                         for det_key in det_keys:
                             config = HexrdConfig().detector(det_key)
                             config['buffer'] = value
 
         return True
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         with block_signals(*self.widgets):
             if 'buffer' in self.detector_config:
                 buffer = self.detector_config['buffer']
@@ -214,7 +217,7 @@ class PanelBufferDialog(QObject):
 
                     if buffer.size in (1, 2):
                         self.mode = CONFIG_MODE_BORDER
-                        if np.array_equal(buffer, None):
+                        if np.array_equal(buffer, np.asarray(None)):
                             buffer = np.asarray([0])
 
                         if buffer.size == 1:
@@ -230,11 +233,11 @@ class PanelBufferDialog(QObject):
         self.update_enable_states()
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         return self.ui.config_mode.currentData()
 
     @mode.setter
-    def mode(self, v):
+    def mode(self, v: str) -> None:
         w = self.ui.config_mode
         for i in range(w.count()):
             if v == w.itemData(i):
@@ -243,12 +246,12 @@ class PanelBufferDialog(QObject):
 
         raise Exception(f'Unable to set config mode: {v}')
 
-    def update_mode_tab(self):
+    def update_mode_tab(self) -> None:
         mode_tab = getattr(self.ui, self.mode + '_tab')
         self.ui.tab_widget.setCurrentWidget(mode_tab)
         self.update_enable_states()
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         has_numpy_array = False
         if not isinstance(self.current_editing_buffer_value, str):
             buffer = np.asarray(self.current_editing_buffer_value)
@@ -256,17 +259,17 @@ class PanelBufferDialog(QObject):
 
         self.ui.show_panel_buffer.setEnabled(has_numpy_array)
 
-    def clear_panel_buffer(self):
+    def clear_panel_buffer(self) -> None:
         # Clear the config options on the internal config
         self.detector_config['buffer'] = self.default_buffer
         self.update_enable_states()
         HexrdConfig().rerender_needed.emit()
 
     @property
-    def default_buffer(self):
+    def default_buffer(self) -> list[float]:
         return [0.0, 0.0]
 
-    def show_panel_buffer(self):
+    def show_panel_buffer(self) -> None:
         buffer = self.current_editing_buffer_value
         if isinstance(buffer, str):
             instr = create_hedm_instrument()
@@ -279,7 +282,8 @@ class PanelBufferDialog(QObject):
                 return
 
         fig, ax = plt.subplots()
-        fig.canvas.manager.set_window_title(f'{self.detector}')
+        if fig.canvas.manager is not None:
+            fig.canvas.manager.set_window_title(f'{self.detector}')
         ax.set_title('Panel Buffer')
 
         ax.imshow(buffer, vmin=0, vmax=1)

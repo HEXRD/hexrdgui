@@ -1,3 +1,5 @@
+from typing import Any
+
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QFocusEvent, QKeyEvent
 from PySide6.QtWidgets import (
@@ -6,6 +8,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QWidget,
 )
 
 import numpy as np
@@ -15,7 +18,6 @@ from hexrd.resources import detector_templates
 from hexrd.instrument import (
     calc_angles_from_beam_vec,
     calc_beam_vec,
-    HEDMInstrument,
 )
 from hexrd.matrixutil import rowNorm
 from hexrd.transforms import xfcapi
@@ -33,7 +35,7 @@ class InstrumentFormViewWidget(QObject):
 
     gui_data_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.cfg = HexrdConfig()
@@ -54,9 +56,9 @@ class InstrumentFormViewWidget(QObject):
 
         self.setup_connections()
 
-        self.timer = None
+        self.timer: QTimer | None = None
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.cal_det_current.installEventFilter(self)
         self.ui.cal_energy.valueChanged.connect(self.on_energy_changed)
         self.ui.cal_energy_wavelength.valueChanged.connect(
@@ -111,7 +113,7 @@ class InstrumentFormViewWidget(QObject):
             self.on_apply_energy_correction_toggled
         )
 
-    def on_energy_changed(self):
+    def on_energy_changed(self) -> None:
         val = self.ui.cal_energy.value()
 
         # Make sure energy has same style
@@ -126,7 +128,7 @@ class InstrumentFormViewWidget(QObject):
         finally:
             self.ui.cal_energy_wavelength.blockSignals(block_signals)
 
-    def on_energy_wavelength_changed(self):
+    def on_energy_wavelength_changed(self) -> None:
         val = self.ui.cal_energy_wavelength.value()
 
         block_signals = self.ui.cal_energy.blockSignals(True)
@@ -136,18 +138,21 @@ class InstrumentFormViewWidget(QObject):
         finally:
             self.ui.cal_energy.blockSignals(block_signals)
 
-    def open_xray_energies_dialog(self):
+    def open_xray_energies_dialog(self) -> None:
         dialog = XRayEnergySelectionDialog(self.ui)
         if not dialog.exec():
+            return
+
+        if dialog.selected_energy is None:
             return
 
         # The table has units in eV. Convert to keV.
         self.ui.cal_energy.setValue(dialog.selected_energy / 1e3)
 
-    def on_detector_changed(self):
+    def on_detector_changed(self) -> None:
         self.update_detector_from_config()
 
-    def enable_detector_widgets(self, enable=True):
+    def enable_detector_widgets(self, enable: bool = True) -> None:
         detector_widgets = self.cfg.get_detector_widgets()
         detector_widgets.remove('cal_det_add')
         for widget in detector_widgets:
@@ -156,7 +161,7 @@ class InstrumentFormViewWidget(QObject):
 
         self.detector_widgets_disabled = not enable
 
-    def on_detector_name_edited(self):
+    def on_detector_name_edited(self) -> None:
         new_name = self.ui.cal_det_current.currentText()
         detector_names = self.cfg.detector_names
 
@@ -171,13 +176,15 @@ class InstrumentFormViewWidget(QObject):
         self.ui.cal_det_current.setItemText(idx, new_name)
         self.cfg.rename_detector(old_name, new_name)
 
-    def on_detector_remove_clicked(self):
+    def on_detector_remove_clicked(self) -> None:
         if self.ui.cal_det_current.count() <= 1:
             msg = 'Cannot remove last detector'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
         current_detector = self.get_current_detector()
+        if current_detector is None:
+            return
         idx = self.ui.cal_det_current.currentIndex()
 
         self.cfg.remove_detector(current_detector)
@@ -186,7 +193,7 @@ class InstrumentFormViewWidget(QObject):
         else:
             self.update_detector_from_config()
 
-    def on_detector_add_clicked(self):
+    def on_detector_add_clicked(self) -> None:
         # Grab current selection info
         combo = self.ui.cal_det_current
         current_detector = self.get_current_detector()
@@ -233,7 +240,7 @@ class InstrumentFormViewWidget(QObject):
         new_ind = combo.findText(new_detector_name)
         combo.setCurrentIndex(new_ind)
 
-    def update_config_from_gui(self):
+    def update_config_from_gui(self) -> None:
         """This function only updates the sender value"""
         sender = self.sender()
         name = sender.objectName()
@@ -246,7 +253,7 @@ class InstrumentFormViewWidget(QObject):
         current_detector = self.get_current_detector()
         self.cfg.set_val_from_widget_name(name, value, current_detector)
 
-    def gui_value_changed(self):
+    def gui_value_changed(self) -> None:
         """We only want to emit a changed signal once editing is done"""
         if self.timer is None:
             self.timer = QTimer()
@@ -256,7 +263,7 @@ class InstrumentFormViewWidget(QObject):
         # Start or restart our timer...
         self.timer.start(666)
 
-    def update_gui_from_config(self):
+    def update_gui_from_config(self) -> None:
         previously_blocked = self.block_all_signals()
 
         try:
@@ -291,7 +298,7 @@ class InstrumentFormViewWidget(QObject):
 
         self.update_hedm_energy_correction_checkbox()
 
-    def update_detector_from_config(self):
+    def update_detector_from_config(self) -> None:
         previously_blocked = self.block_all_signals()
 
         try:
@@ -353,13 +360,13 @@ class InstrumentFormViewWidget(QObject):
         # Update distortion parameter enable states
         self.update_distortion_params_enable_states()
 
-    def get_current_detector(self):
+    def get_current_detector(self) -> str | None:
         if self.detector_widgets_disabled:
             return None
 
         return self.ui.cal_det_current.currentText()
 
-    def get_all_widgets(self):
+    def get_all_widgets(self) -> list:
         gui_yaml_paths = self.cfg.get_gui_yaml_paths()
         widgets = [x[0] for x in gui_yaml_paths]
         widgets += self.cfg.get_detector_widgets()
@@ -368,8 +375,8 @@ class InstrumentFormViewWidget(QObject):
         widgets = [getattr(self.ui, x) for x in widgets]
         return widgets
 
-    def block_all_signals(self):
-        previously_blocked = []
+    def block_all_signals(self) -> list[bool]:
+        previously_blocked: list[bool] = []
         all_widgets = self.get_all_widgets()
 
         for widget in all_widgets:
@@ -377,13 +384,13 @@ class InstrumentFormViewWidget(QObject):
 
         return previously_blocked
 
-    def unblock_all_signals(self, previously_blocked):
+    def unblock_all_signals(self, previously_blocked: list[bool]) -> None:
         all_widgets = self.get_all_widgets()
 
         for block, widget in zip(previously_blocked, all_widgets):
             widget.blockSignals(block)
 
-    def _set_gui_value(self, gui_object, value):
+    def _set_gui_value(self, gui_object: Any, value: Any) -> None:
         """This is for calling various set methods for GUI variables
 
         For instance, QComboBox will call "setCurrentText", while
@@ -395,7 +402,7 @@ class InstrumentFormViewWidget(QObject):
             # If it is anything else, just assume setValue()
             gui_object.setValue(value)
 
-    def _get_gui_value(self, gui_object):
+    def _get_gui_value(self, gui_object: Any) -> Any:
         """This is for calling various get methods for GUI variables
 
         For instance, QComboBox will call "currentText", while
@@ -408,14 +415,14 @@ class InstrumentFormViewWidget(QObject):
             return gui_object.value()
 
     @property
-    def distortion(self):
+    def distortion(self) -> str:
         return self.ui.cal_det_function.currentText()
 
     @property
-    def num_distortion_params(self):
+    def num_distortion_params(self) -> int:
         return HexrdConfig.num_distortion_parameters(self.distortion)
 
-    def update_distortion_params_enable_states(self):
+    def update_distortion_params_enable_states(self) -> None:
         num_params = self.num_distortion_params
         label_enabled = num_params != 0
 
@@ -433,7 +440,7 @@ class InstrumentFormViewWidget(QObject):
             widget.setEnabled(enable)
             widget.setVisible(enable)
 
-    def eventFilter(self, target, event):
+    def eventFilter(self, target: Any, event: Any) -> bool:
         # Unfortunately, when a user modifies the name in the editable
         # QComboBox 'cal_det_current', and then they press enter, it does
         # not emit QLineEdit.editingFinished(), but instead emits
@@ -443,15 +450,15 @@ class InstrumentFormViewWidget(QObject):
         # emitted twice: once in this function, and once when the focus
         # gets cleared. Rather than calling it twice, let's just clear the
         # focus here so it gets called only once.
-        if type(target) == QComboBox:
+        if type(target) is QComboBox:
             if target.objectName() == 'cal_det_current':
-                enter_keys = [Qt.Key_Return, Qt.Key_Enter]
-                if type(event) == QKeyEvent and event.key() in enter_keys:
+                enter_keys = [Qt.Key.Key_Return, Qt.Key.Key_Enter]
+                if type(event) is QKeyEvent and event.key() in enter_keys:
                     widget = self.ui.cal_det_current
                     widget.lineEdit().clearFocus()
                     return True
 
-                if type(event) == QFocusEvent and event.lostFocus():
+                if type(event) is QFocusEvent and event.lostFocus():
                     # This happens either if enter is pressed, or if the
                     # user tabs out.
                     widget = self.ui.cal_det_current
@@ -469,21 +476,23 @@ class InstrumentFormViewWidget(QObject):
 
         return False
 
-    def _on_configure_buffer(self):
+    def _on_configure_buffer(self) -> None:
         # Disable button to prevent multiple dialogs
         self.ui.cal_det_buffer.setEnabled(False)
         detector = self.get_current_detector()
+        if detector is None:
+            return
         dialog = PanelBufferDialog(detector, self.ui)
         dialog.show()
         # Re-enable button
         dialog.ui.finished.connect(lambda _: self.ui.cal_det_buffer.setEnabled(True))
 
     @property
-    def active_beam(self):
+    def active_beam(self) -> dict[str, Any]:
         return HexrdConfig().active_beam
 
     @property
-    def polar_beam_vector(self):
+    def polar_beam_vector(self) -> tuple[float, float]:
         beam_vector = self.active_beam['vector']
         return (
             beam_vector['azimuth'],
@@ -491,7 +500,7 @@ class InstrumentFormViewWidget(QObject):
         )
 
     @polar_beam_vector.setter
-    def polar_beam_vector(self, v):
+    def polar_beam_vector(self, v: tuple[float, float]) -> None:
         beam_vector = self.active_beam['vector']
 
         any_modified = False
@@ -510,16 +519,16 @@ class InstrumentFormViewWidget(QObject):
             HexrdConfig().beam_vector_changed.emit()
 
     @property
-    def cartesian_beam_vector_widgets(self):
+    def cartesian_beam_vector_widgets(self) -> list:
         axes = ('x', 'y', 'z')
         return [getattr(self.ui, f'beam_vector_cartesian_{ax}') for ax in axes]
 
-    def update_cartesian_beam_vector(self):
+    def update_cartesian_beam_vector(self) -> None:
         self.cartesian_beam_vector = calc_beam_vec(*self.polar_beam_vector)
         self.update_cartesian_beam_vector_from_magnitude()
         self.update_cartesian_beam_vector_normalized_note()
 
-    def update_cartesian_beam_vector_normalized_note(self):
+    def update_cartesian_beam_vector_normalized_note(self) -> None:
         w = self.ui.cartesian_beam_vector_normalized_note
         w.setVisible(False)
 
@@ -550,12 +559,12 @@ class InstrumentFormViewWidget(QObject):
         w.setText(text)
 
     @property
-    def cartesian_beam_vector(self):
+    def cartesian_beam_vector(self) -> list[float]:
         sign = self.cartesian_beam_convention_sign
         return [w.value() * sign for w in self.cartesian_beam_vector_widgets]
 
     @cartesian_beam_vector.setter
-    def cartesian_beam_vector(self, v):
+    def cartesian_beam_vector(self, v: Any) -> None:
         sign = self.cartesian_beam_convention_sign
         widgets = self.cartesian_beam_vector_widgets
         with block_signals(*widgets):
@@ -564,13 +573,13 @@ class InstrumentFormViewWidget(QObject):
                 value = 0 if np.isclose(v[i], 0) else v[i]
                 w.setValue(value * sign)
 
-    def cartesian_beam_vector_modified(self):
+    def cartesian_beam_vector_modified(self) -> None:
         # Convert to polar
         self.polar_beam_vector = calc_angles_from_beam_vec(self.cartesian_beam_vector)
         self.update_beam_magnitude_from_cartesian()
         self.update_cartesian_beam_vector_normalized_note()
 
-    def update_beam_magnitude_from_cartesian(self):
+    def update_beam_magnitude_from_cartesian(self) -> None:
         if not self.beam_vector_is_finite:
             # If the beam vector is infinite, just return
             return
@@ -578,7 +587,7 @@ class InstrumentFormViewWidget(QObject):
         beam_vec = np.atleast_2d(self.cartesian_beam_vector)
         self.beam_vector_magnitude = rowNorm(beam_vec).item()
 
-    def update_cartesian_beam_vector_from_magnitude(self):
+    def update_cartesian_beam_vector_from_magnitude(self) -> None:
         if not self.beam_vector_is_finite:
             # If the beam vector is infinite, just return
             return
@@ -588,14 +597,14 @@ class InstrumentFormViewWidget(QObject):
         self.cartesian_beam_vector = beam_vec
 
     @property
-    def beam_vector_is_finite(self):
+    def beam_vector_is_finite(self) -> bool:
         return self.ui.beam_vector_is_finite.isChecked()
 
     @beam_vector_is_finite.setter
-    def beam_vector_is_finite(self, b):
+    def beam_vector_is_finite(self, b: bool) -> None:
         self.ui.beam_vector_is_finite.setChecked(bool(b))
 
-    def set_beam_vector_is_finite(self, b):
+    def set_beam_vector_is_finite(self, b: bool) -> None:
         self.beam_vector_is_finite = b
 
         # Update the config
@@ -611,21 +620,21 @@ class InstrumentFormViewWidget(QObject):
         self.update_cartesian_beam_vector_normalized_note()
 
     @property
-    def beam_vector_magnitude(self):
+    def beam_vector_magnitude(self) -> float:
         if not self.beam_vector_is_finite:
             return np.inf
 
         return self.ui.beam_vector_magnitude.value()
 
     @beam_vector_magnitude.setter
-    def beam_vector_magnitude(self, v):
+    def beam_vector_magnitude(self, v: float | None) -> None:
         is_finite = v is not None and v != np.inf
         self.beam_vector_is_finite = is_finite
 
         if is_finite:
             self.ui.beam_vector_magnitude.setValue(v)
 
-    def beam_vector_magnitude_value_changed(self, v):
+    def beam_vector_magnitude_value_changed(self, v: float) -> None:
         if not self.beam_vector_is_finite:
             # Don't do anything
             return
@@ -641,22 +650,22 @@ class InstrumentFormViewWidget(QObject):
         # Update the cartesian vector
         self.update_cartesian_beam_vector_from_magnitude()
 
-    def update_beam_vector_magnitude_from_config(self):
+    def update_beam_vector_magnitude_from_config(self) -> None:
         beam_config = self.active_beam
         dist = beam_config.get('source_distance', np.inf)
         if self.beam_vector_magnitude != dist:
             self.beam_vector_magnitude = dist
 
     @property
-    def cartesian_beam_vector_convention(self):
+    def cartesian_beam_vector_convention(self) -> str:
         return self.ui.cartesian_beam_vector_convention.currentText()
 
     @cartesian_beam_vector_convention.setter
-    def cartesian_beam_vector_convention(self, text):
+    def cartesian_beam_vector_convention(self, text: str) -> None:
         self.ui.cartesian_beam_vector_convention.setCurrentText(text)
 
     @property
-    def cartesian_beam_convention_sign(self):
+    def cartesian_beam_convention_sign(self) -> int:
         convention = self.cartesian_beam_vector_convention
         signs = {
             'X-Ray Source': -1,
@@ -667,7 +676,7 @@ class InstrumentFormViewWidget(QObject):
 
         return signs[convention]
 
-    def cartesian_beam_vector_convention_changed(self):
+    def cartesian_beam_vector_convention_changed(self) -> None:
         widgets = self.cartesian_beam_vector_widgets
         with block_signals(*widgets):
             for w in widgets:
@@ -676,12 +685,12 @@ class InstrumentFormViewWidget(QObject):
 
         self.update_cartesian_beam_vector_normalized_note()
 
-    def update_hedm_energy_correction_checkbox(self):
+    def update_hedm_energy_correction_checkbox(self) -> None:
         checked = self.active_beam.get('energy_correction') is not None
         self.ui.apply_energy_correction.setChecked(checked)
 
     @property
-    def energy_correction_widgets(self):
+    def energy_correction_widgets(self) -> list:
         return [
             self.ui.cal_energy_correction_axis,
             self.ui.energy_correction_axis_label,
@@ -691,7 +700,7 @@ class InstrumentFormViewWidget(QObject):
             self.ui.energy_correction_slope_label,
         ]
 
-    def on_apply_energy_correction_toggled(self):
+    def on_apply_energy_correction_toggled(self) -> None:
         enabled = self.ui.apply_energy_correction.isChecked()
 
         for w in self.energy_correction_widgets:

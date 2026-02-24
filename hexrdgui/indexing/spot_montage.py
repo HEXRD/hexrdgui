@@ -6,6 +6,10 @@ Created on Wed Apr 19 15:29:27 2017
 @author: bernier2
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 import h5py
 from matplotlib import pyplot as plt
 import numpy as np
@@ -28,18 +32,18 @@ plt.rcParams.update(params)
 
 
 def montage(
-    X,
-    colormap=plt.cm.inferno,
-    show_borders=True,
-    title=None,
-    xlabel=None,
-    ylabel=None,
-    threshold=None,
-    filename=None,
-    fig_ax=None,
-    ome_centers=None,
-    frame_indices=None,
-):
+    X: np.ndarray,
+    colormap: Any = None,
+    show_borders: bool = True,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    threshold: float | None = None,
+    filename: str | None = None,
+    fig_ax: Any = None,
+    ome_centers: np.ndarray | None = None,
+    frame_indices: np.ndarray | None = None,
+) -> np.ndarray:
     m, n, count = np.shape(X)
     img_data = np.log(X - np.min(X) + 1)
     if threshold is None:
@@ -51,6 +55,8 @@ def montage(
     M = np.zeros((mm * m, nn * n))
 
     # colormap
+    if colormap is None:
+        colormap = plt.get_cmap('inferno')
     colormap = colormap.copy()
     colormap.set_under('b')
 
@@ -58,7 +64,8 @@ def montage(
         fig, ax = fig_ax
     else:
         fig, ax = plt.subplots()
-        fig.canvas.manager.set_window_title(title)
+        if fig.canvas.manager is not None and title is not None:
+            fig.canvas.manager.set_window_title(title)
 
     image_id = 0
     for j in range(mm):
@@ -138,7 +145,13 @@ def montage(
     return M
 
 
-def create_labels(det_key, tth_crd, eta_crd, peak_id, hkl):
+def create_labels(
+    det_key: str,
+    tth_crd: np.ndarray,
+    eta_crd: np.ndarray,
+    peak_id: int,
+    hkl: np.ndarray,
+) -> dict:
     tth_crd = np.degrees(tth_crd)
     eta_crd = np.degrees(eta_crd)
 
@@ -150,10 +163,14 @@ def create_labels(det_key, tth_crd, eta_crd, peak_id, hkl):
     return labels
 
 
-def extract_hkls_from_spots_data(all_spots, grain_id=None, detector_key=None):
+def extract_hkls_from_spots_data(
+    all_spots: dict[str, Any],
+    grain_id: int | None = None,
+    detector_key: str | None = None,
+) -> dict[int, Any]:
     data_map = SPOTS_DATA_MAP
 
-    hkls = {}
+    hkls: dict[int, Any] = {}
     for cur_grain_id, spots in all_spots.items():
         if grain_id is not None and cur_grain_id != grain_id:
             continue
@@ -179,7 +196,11 @@ def extract_hkls_from_spots_data(all_spots, grain_id=None, detector_key=None):
     return hkls
 
 
-def plot_gvec_from_spots_data(all_spots, gvec_id, threshold=0.0):
+def plot_gvec_from_spots_data(
+    all_spots: dict[str, Any],
+    gvec_id: int,
+    threshold: float = 0.0,
+) -> None:
     data_map = SPOTS_DATA_MAP
 
     for grain_id, spots in all_spots.items():
@@ -206,7 +227,11 @@ def plot_gvec_from_spots_data(all_spots, gvec_id, threshold=0.0):
                 montage(intensities, threshold=threshold, **labels)
 
 
-def plot_gvec_from_hdf5(fname, gvec_id, threshold=0.0):
+def plot_gvec_from_hdf5(
+    fname: str,
+    gvec_id: int,
+    threshold: float = 0.0,
+) -> None:
     """ """
     with h5py.File(fname, 'r') as f:
         for det_key, panel_data in f['reflection_data'].items():

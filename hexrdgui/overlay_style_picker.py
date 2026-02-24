@@ -1,10 +1,16 @@
+from __future__ import annotations
+
 import copy
+from typing import Any, TYPE_CHECKING
 
 from matplotlib.font_manager import weight_dict
 
 from PySide6.QtCore import QObject
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QColorDialog
+from PySide6.QtWidgets import QColorDialog, QWidget
+
+if TYPE_CHECKING:
+    from hexrdgui.overlays.overlay import Overlay
 
 from hexrdgui.constants import OverlayType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -14,7 +20,7 @@ from hexrdgui.utils import block_signals
 
 class OverlayStylePicker(QObject):
 
-    def __init__(self, overlay, parent=None):
+    def __init__(self, overlay: Overlay, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -32,11 +38,11 @@ class OverlayStylePicker(QObject):
         self.setup_connections()
         self.update_gui()
 
-    def exec(self):
+    def exec(self) -> int:
         self.ui.adjustSize()
         return self.ui.exec()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.data_color.pressed.connect(self.pick_color)
         self.ui.range_color.pressed.connect(self.pick_color)
         self.ui.label_color.pressed.connect(self.pick_color)
@@ -50,14 +56,14 @@ class OverlayStylePicker(QObject):
         # Reset the style if the dialog is rejected
         self.ui.rejected.connect(self.reset_style)
 
-    def setup_labels(self):
+    def setup_labels(self) -> None:
         # Override some of the labels, depending on our type
         for k, v in self.labels.items():
             # Take advantage of the naming scheme
             w = getattr(self.ui, k + '_label')
             w.setText(v)
 
-    def setup_combo_boxes(self):
+    def setup_combo_boxes(self) -> None:
         line_styles = ['solid', 'dotted', 'dashed', 'dashdot']
 
         marker_styles = ['.', 'o', '^', 's', 'x', 'D']
@@ -81,11 +87,11 @@ class OverlayStylePicker(QObject):
         self.ui.label_weight.addItems(weight_options)
 
     @property
-    def style(self):
+    def style(self) -> dict[str, Any]:
         return self.overlay.style
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list[QWidget]:
         return [
             self.ui.data_color,
             self.ui.data_style,
@@ -98,7 +104,7 @@ class OverlayStylePicker(QObject):
             self.ui.label_weight,
         ]
 
-    def reset_style(self):
+    def reset_style(self) -> None:
         if self.overlay.style == self.original_style:
             # Nothing really to do...
             return
@@ -107,7 +113,7 @@ class OverlayStylePicker(QObject):
         self.update_gui()
         HexrdConfig().overlay_config_changed.emit()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         data = self.style['data']
         keys = self.keys
 
@@ -130,7 +136,7 @@ class OverlayStylePicker(QObject):
 
         self.update_button_colors()
 
-    def update_config(self):
+    def update_config(self) -> None:
         data = self.style['data']
         keys = self.keys
 
@@ -153,19 +159,19 @@ class OverlayStylePicker(QObject):
         self.overlay.update_needed = True
         HexrdConfig().overlay_config_changed.emit()
 
-    def pick_color(self):
+    def pick_color(self) -> None:
         # This should only be called by signals/slots
         # It uses the sender() to get the button that called it
         sender = self.sender()
-        color = sender.text()
+        color = sender.text()  # type: ignore[attr-defined]
 
         dialog = QColorDialog(QColor(color), self.ui)
         if dialog.exec():
-            sender.setText(dialog.selectedColor().name())
+            sender.setText(dialog.selectedColor().name())  # type: ignore[attr-defined]
             self.update_button_colors()
             self.update_config()
 
-    def update_button_colors(self):
+    def update_button_colors(self) -> None:
         buttons = [
             self.ui.data_color,
             self.ui.range_color,
@@ -175,7 +181,7 @@ class OverlayStylePicker(QObject):
             b.setStyleSheet('QPushButton {background-color: %s}' % b.text())
 
     @property
-    def keys(self):
+    def keys(self) -> dict[str, str]:
         if not hasattr(self, '_keys'):
             self._keys = {
                 OverlayType.powder: self.powder_keys,
@@ -191,7 +197,7 @@ class OverlayStylePicker(QObject):
         return self._keys[type]
 
     @property
-    def powder_keys(self):
+    def powder_keys(self) -> dict[str, str]:
         return {
             'data_color': 'c',
             'data_style': 'ls',
@@ -202,7 +208,7 @@ class OverlayStylePicker(QObject):
         }
 
     @property
-    def laue_keys(self):
+    def laue_keys(self) -> dict[str, str]:
         return {
             'data_color': 'c',
             'data_style': 'marker',
@@ -216,12 +222,12 @@ class OverlayStylePicker(QObject):
         }
 
     @property
-    def rotation_series_keys(self):
+    def rotation_series_keys(self) -> dict[str, str]:
         # Same as laue
         return self.laue_keys
 
     @property
-    def const_chi_keys(self):
+    def const_chi_keys(self) -> dict[str, str]:
         return {
             'data_color': 'c',
             'data_style': 'ls',
@@ -229,7 +235,7 @@ class OverlayStylePicker(QObject):
         }
 
     @property
-    def labels(self):
+    def labels(self) -> dict[str, str]:
         if not hasattr(self, '_labels'):
             self._labels = {
                 OverlayType.powder: self.powder_labels,
@@ -245,28 +251,28 @@ class OverlayStylePicker(QObject):
         return self._labels[type]
 
     @property
-    def powder_labels(self):
+    def powder_labels(self) -> dict[str, str]:
         # No labels to override
         return {}
 
     @property
-    def laue_labels(self):
+    def laue_labels(self) -> dict[str, str]:
         return {'data_style': 'Marker Style:', 'data_size': 'Marker Size:'}
 
     @property
-    def rotation_series_labels(self):
+    def rotation_series_labels(self) -> dict[str, str]:
         # Same as Laue
         return self.laue_labels
 
     @property
-    def const_chi_labels(self):
+    def const_chi_labels(self) -> dict[str, str]:
         # No labels to override
         return {}
 
     @property
-    def include_ranges(self):
+    def include_ranges(self) -> bool:
         return not self.overlay.is_const_chi
 
     @property
-    def include_labels(self):
+    def include_labels(self) -> bool:
         return self.overlay.is_laue

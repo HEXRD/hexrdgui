@@ -1,4 +1,13 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+    from hexrd.instrument import Detector
 
 from skimage.filters.edges import binary_erosion
 from skimage.morphology import footprint_rectangle
@@ -21,13 +30,13 @@ from hexrdgui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 tvec_c = ct.zeros_3
 
 
-def sqrt_scale_img(img):
+def sqrt_scale_img(img: np.ndarray) -> np.ndarray:
     fimg = np.array(img, dtype=float)
     fimg = fimg - np.min(fimg)
     return np.sqrt(fimg)
 
 
-def log_scale_img(img):
+def log_scale_img(img: np.ndarray) -> np.ndarray:
     fimg = np.array(img, dtype=float)
     fimg = fimg - np.min(fimg) + 1.0
     return np.log(fimg)
@@ -45,11 +54,11 @@ class PolarView:
 
     def __init__(
         self,
-        instrument,
-        distortion_instrument=None,
+        instrument: HEDMInstrument | None,
+        distortion_instrument: HEDMInstrument | None = None,
         eta_min: float | None = None,
         eta_max: float | None = None,
-    ):
+    ) -> None:
 
         if distortion_instrument is None:
             distortion_instrument = instrument
@@ -67,7 +76,7 @@ class PolarView:
 
         if instrument is None:
             # This is a dummy polar view
-            self._images_dict = None
+            self._images_dict: dict[str, np.ndarray] | None = None
         else:
             # Use an image dict with the panel buffers applied.
             # This keeps invalid pixels from bleeding out in the polar view
@@ -76,21 +85,21 @@ class PolarView:
             # Update the intensity corrections. They'll be used later.
             self.update_intensity_corrections()
 
-        self.warp_dict = {}
+        self.warp_dict: dict[str, np.ma.MaskedArray] = {}
 
         # Keep track of which polar view pixels are affected by each detector
-        self.panel_has_data = {}
+        self.panel_has_data: dict[str, np.ndarray] = {}
 
-        self.raw_img = None
-        self.snipped_img = None
-        self.computation_img = None
-        self.display_image = None
+        self.raw_img: np.ma.MaskedArray | None = None
+        self.snipped_img: np.ndarray | None = None
+        self.computation_img: np.ndarray | None = None
+        self.display_image: np.ndarray | None = None
 
         # Cache this and invalidate it when needed
-        self._corr_field_polar_cached = None
+        self._corr_field_polar_cached: np.ma.MaskedArray | None = None
 
-        self.snip_background = None
-        self.erosion_mask = None
+        self.snip_background: np.ndarray | None = None
+        self.erosion_mask: np.ndarray | None = None
 
         self.update_angular_grid()
 
@@ -102,66 +111,69 @@ class PolarView:
         )
 
     @property
-    def detectors(self):
+    def detectors(self) -> dict[str, Detector]:
+        assert self.instr is not None
         return self.instr.detectors
 
     @property
-    def chi(self):
+    def chi(self) -> float:
+        assert self.instr is not None
         return self.instr.chi
 
     @property
-    def tvec_s(self):
+    def tvec_s(self) -> np.ndarray:
+        assert self.instr is not None
         return self.instr.tvec
 
     @property
-    def tth_min(self):
+    def tth_min(self) -> float:
         return np.radians(HexrdConfig().polar_res_tth_min)
 
     @property
-    def tth_max(self):
+    def tth_max(self) -> float:
         return np.radians(HexrdConfig().polar_res_tth_max)
 
     @property
-    def tth_range(self):
+    def tth_range(self) -> float:
         return self.tth_max - self.tth_min
 
     @property
-    def tth_pixel_size(self):
+    def tth_pixel_size(self) -> float:
         return HexrdConfig().polar_pixel_size_tth
 
-    def tth_to_pixel(self, tth):
+    def tth_to_pixel(self, tth: float) -> float:
         """
         convert two-theta value to pixel value (float) along two-theta axis
         """
         return np.degrees(tth - self.tth_min) / self.tth_pixel_size
 
     @property
-    def eta_range(self):
+    def eta_range(self) -> float:
         return self.eta_max - self.eta_min
 
     @property
-    def eta_pixel_size(self):
+    def eta_pixel_size(self) -> float:
         return HexrdConfig().polar_pixel_size_eta
 
-    def eta_to_pixel(self, eta):
+    def eta_to_pixel(self, eta: float) -> float:
         """
         convert eta value to pixel value (float) along eta axis
         """
         return np.degrees(eta - self.eta_min) / self.eta_pixel_size
 
     @property
-    def ntth(self):
+    def ntth(self) -> int:
         return int(round(np.degrees(self.tth_range) / self.tth_pixel_size))
 
     @property
-    def neta(self):
+    def neta(self) -> int:
         return int(round(np.degrees(self.eta_range) / self.eta_pixel_size))
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         return (self.neta, self.ntth)
 
-    def update_angular_grid(self):
+    def update_angular_grid(self) -> None:
         tth_vec = (
             np.radians(self.tth_pixel_size * (np.arange(self.ntth)))
             + self.tth_min
@@ -175,11 +187,11 @@ class PolarView:
         self._angular_grid = np.meshgrid(eta_vec, tth_vec, indexing='ij')
 
     @property
-    def angular_grid(self):
-        return self._angular_grid
+    def angular_grid(self) -> list[np.ndarray]:
+        return self._angular_grid  # type: ignore[return-value]
 
     @property
-    def extent(self):
+    def extent(self) -> list[float]:
         ev, tv = self.angular_grid
         heps = np.radians(0.5 * self.eta_pixel_size)
         htps = np.radians(0.5 * self.tth_pixel_size)
@@ -191,15 +203,15 @@ class PolarView:
         ]
 
     @property
-    def eta_period(self):
+    def eta_period(self) -> np.ndarray:
         return HexrdConfig().polar_res_eta_period
 
     @property
-    def images_dict(self):
+    def images_dict(self) -> dict[str, np.ndarray] | None:
         return self._images_dict
 
     @images_dict.setter
-    def images_dict(self, v):
+    def images_dict(self, v: dict[str, np.ndarray]) -> None:
         # This images_dict sometimes gets modified by external callers,
         # such as when a waterfall plot is created. So we need to make
         # sure that everything that needs to be updated gets updated
@@ -208,13 +220,14 @@ class PolarView:
 
         # 0 is a better fill value because it results in fewer nans in
         # the final image.
-        HexrdConfig().apply_panel_buffer_to_images(self._images_dict, 0)
+        if self._images_dict is not None:
+            HexrdConfig().apply_panel_buffer_to_images(self._images_dict, 0)
 
         # Cache the image min and max for later use
         self.min = min(x.min() for x in v.values())
         self.max = max(x.max() for x in v.values())
 
-    def detector_borders(self, det):
+    def detector_borders(self, det: str) -> list[np.ndarray]:
         panel = self.detectors[det]
 
         row_vec, col_vec = panel.row_edge_vec, panel.col_edge_vec
@@ -229,7 +242,7 @@ class PolarView:
 
         # Convert each border to angles
         for i, border in enumerate(borders):
-            angles, _ = panel.cart_to_angles(border, tvec_s=self.instr.tvec)
+            angles, _ = panel.cart_to_angles(border, tvec_s=self.tvec_s)
             angles = angles.T
             angles[1:, :] = mapAngle(
                 angles[1:, :], np.radians(self.eta_period), units='radians'
@@ -267,21 +280,22 @@ class PolarView:
         return borders
 
     @property
-    def all_detector_borders(self):
+    def all_detector_borders(self) -> dict[str, list[np.ndarray]]:
         borders = {}
         for key in self.detectors:
             borders[key] = self.detector_borders(key)
 
         return borders
 
-    def create_warp_image(self, det):
+    def create_warp_image(self, det: str) -> np.ndarray:
+        assert self.images_dict is not None
         img = self.images_dict[det]
         panel = self.detectors[det]
 
         self.warp_dict[det] = self.warp_image(img, panel)
         return self.warp_dict[det]
 
-    def func_project_on_detector(self, detector):
+    def func_project_on_detector(self, detector: Detector) -> Callable[..., Any]:
         '''
         helper function to decide which function to
         use for mapping of g-vectors to detector
@@ -291,13 +305,13 @@ class PolarView:
         else:
             return _project_on_detector_plane
 
-    def args_project_on_detector(self, detector):
+    def args_project_on_detector(self, detector: Detector) -> tuple[tuple[Any, ...], dict[str, Any]]:
         """
         prepare the arguments to be passed for
         mapping to plane or cylinder
         """
         kwargs = {'beamVec': detector.bvec}
-        arg = (
+        arg: tuple[Any, ...] = (
             detector.rmat,
             ct.identity_3x3,
             self.chi,
@@ -326,7 +340,7 @@ class PolarView:
 
         return arg, kwargs
 
-    def warp_image(self, img, panel):
+    def warp_image(self, img: np.ndarray, panel: Detector) -> np.ma.MaskedArray:
         # The first 3 arguments of this function get converted into
         # the first argument of `_project_on_detector_plane`, and then
         # the rest are just passed as *args and **kwargs.
@@ -346,14 +360,17 @@ class PolarView:
         # Store as masked array
         return np.ma.masked_array(data=wimg, mask=nan_mask, fill_value=0.0)
 
-    def invalidate_corr_field_polar_cache(self):
+    def invalidate_corr_field_polar_cache(self) -> None:
         self._corr_field_polar_cached = None
 
-    def create_corr_field_polar(self):
+    def create_corr_field_polar(self) -> np.ma.MaskedArray:
         if self._corr_field_polar_cached is not None:
             return self._corr_field_polar_cached
 
+        from hexrdgui.polar_distortion_object import PolarDistortionObject
+
         obj = HexrdConfig().polar_tth_distortion_object
+        assert isinstance(obj, PolarDistortionObject)
 
         if obj.has_polar_pinhole_displacement_field:
             # Compute the polar tth displacement field directly
@@ -382,7 +399,7 @@ class PolarView:
         self._corr_field_polar_cached = corr_field_polar
         return corr_field_polar
 
-    def apply_tth_distortion(self, pimg):
+    def apply_tth_distortion(self, pimg: np.ndarray) -> np.ndarray:
         if not HexrdConfig().polar_tth_distortion:
             # We are not applying tth distortion. Return the same image.
             return pimg
@@ -409,12 +426,12 @@ class PolarView:
 
         return np.ma.array(image1_warp)  # , mask=mask_warp)
 
-    def generate_image(self):
+    def generate_image(self) -> None:
         self.reset_cached_distortion_fields()
 
         self.panel_has_data.clear()
         for det_key, array in self.warp_dict.items():
-            self.panel_has_data[det_key] = ~array.mask
+            self.panel_has_data[det_key] = np.asarray(~array.mask)
 
         # sum masked images in self.warp_dict using np.ma ufuncs
         #
@@ -426,10 +443,12 @@ class PolarView:
         self.apply_image_processing()
 
     @property
-    def warp_mask(self):
-        return self.raw_img.mask
+    def warp_mask(self) -> np.ndarray:
+        assert self.raw_img is not None
+        return self.raw_img.mask  # type: ignore[return-value]
 
-    def apply_image_processing(self):
+    def apply_image_processing(self) -> None:
+        assert self.raw_img is not None
         img = self.raw_img.data
         img = self.apply_snip(img)
 
@@ -452,7 +471,7 @@ class PolarView:
         comp_img = self.apply_boundary_masks(disp_img)
         self.computation_img = comp_img
 
-    def apply_snip(self, img):
+    def apply_snip(self, img: np.ndarray) -> np.ndarray:
         # do SNIP if requested
         img = img.copy()
         if HexrdConfig().polar_apply_snip1d:
@@ -473,6 +492,7 @@ class PolarView:
                 structure = footprint_rectangle(
                     (1, int(np.ceil(2.25 * niter * snip_width_pixels())))
                 )
+                assert self.raw_img is not None
                 mask = binary_erosion(~self.raw_img.mask, structure)
                 img[~mask] = np.nan
                 self.erosion_mask = mask
@@ -484,7 +504,7 @@ class PolarView:
 
         return img
 
-    def apply_intensity_corrections(self, img):
+    def apply_intensity_corrections(self, img: np.ndarray) -> np.ndarray:
         if not HexrdConfig().any_intensity_corrections:
             # No corrections
             return img
@@ -527,12 +547,14 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
-            mask_arr = mask.get_masked_arrays(ViewType.polar, self.instr)
+            mask_arr = mask.get_masked_arrays(  # type: ignore[call-arg]
+                ViewType.polar, self.instr
+            )
             total_mask = np.logical_or(total_mask, ~mask_arr)
         if (tm := MaskManager().threshold_mask) and tm.visible:
             lt_val, gt_val = tm.data
-            lt_mask = img < lt_val
-            gt_mask = img > gt_val
+            lt_mask = self.img < lt_val
+            gt_mask = self.img > gt_val
             mask = np.logical_or(lt_mask, gt_mask)
             total_mask = np.logical_or(total_mask, mask)
 
@@ -544,25 +566,27 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.show_border:
                 continue
-            mask_arr = mask.get_masked_arrays(ViewType.polar, self.instr)
+            mask_arr = mask.get_masked_arrays(  # type: ignore[call-arg]
+                ViewType.polar, self.instr
+            )
             total_mask = np.logical_or(total_mask, ~mask_arr)
         return total_mask
 
-    def apply_visible_masks(self, img):
+    def apply_visible_masks(self, img: np.ndarray) -> np.ndarray:
         # Apply user-specified masks if they are present
         total_mask = np.logical_or(self.warp_mask, self.visible_mask_pv_array)
         img = img.copy()
         img[total_mask] = np.nan
         return img
 
-    def apply_boundary_masks(self, img):
+    def apply_boundary_masks(self, img: np.ndarray) -> np.ndarray:
         # Apply user-specified masks if they are present
         total_mask = np.logical_or(self.warp_mask, self.boundary_mask_pv_array)
         img = img.copy()
         img[total_mask] = np.nan
         return img
 
-    def reapply_masks(self):
+    def reapply_masks(self) -> None:
         # This will only re-run the final steps of the processing...
         if self.snipped_img is None:
             return
@@ -581,14 +605,14 @@ class PolarView:
         self.computation_img = comp_img
 
     @property
-    def img(self):
+    def img(self) -> np.ndarray | None:
         return self.computation_img
 
     @property
-    def display_img(self):
+    def display_img(self) -> np.ndarray | None:
         return self.display_image
 
-    def warp_all_images(self):
+    def warp_all_images(self) -> None:
         self.reset_cached_distortion_fields()
 
         # Create the warped image for each detector
@@ -598,11 +622,11 @@ class PolarView:
         # Generate the final image
         self.generate_image()
 
-    def update_intensity_corrections(self):
+    def update_intensity_corrections(self) -> None:
         if HexrdConfig().any_intensity_corrections:
             HexrdConfig().create_intensity_corrections_dict()
 
-    def update_detectors(self, detectors):
+    def update_detectors(self, detectors: list[str]) -> None:
         self.reset_cached_distortion_fields()
 
         # If there are intensity corrections and the detector transform
@@ -614,8 +638,8 @@ class PolarView:
 
         for det in detectors:
             t_conf = iconfig['detectors'][det]['transform']
-            self.instr.detectors[det].tvec = t_conf['translation']
-            self.instr.detectors[det].tilt = t_conf['tilt']
+            self.detectors[det].tvec = t_conf['translation']
+            self.detectors[det].tilt = t_conf['tilt']
 
             # Update the individual detector image
             self.create_warp_image(det)
@@ -626,7 +650,7 @@ class PolarView:
         # Generate the final image
         self.generate_image()
 
-    def reset_cached_distortion_fields(self):
+    def reset_cached_distortion_fields(self) -> None:
         # These are only reset so that other parts of the code
         # will not use them while we are generating new ones.
         # They are actually still cached elsewhere.
@@ -638,7 +662,14 @@ class PolarView:
 # longest when generating the polar view.
 # Memoize this so we can regenerate the polar view faster
 @memoize(maxsize=16)
-def project_on_detector(angular_grid, ntth, neta, func_projection, *args, **kwargs):
+def project_on_detector(
+    angular_grid: tuple[np.ndarray, np.ndarray],
+    ntth: int,
+    neta: int,
+    func_projection: Callable[..., Any],
+    *args: Any,
+    **kwargs: Any,
+) -> np.ndarray:
     # This will take `angular_grid`, `ntth`, and `neta`, and make the
     # `gvec_angs` argument with them. Then, the `gvec_args` will be passed
     # first to `_project_on_detector_plane`, along with any extra args and

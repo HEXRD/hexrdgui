@@ -1,11 +1,17 @@
-from PySide6.QtWidgets import QFileDialog
+from typing import Any
+
+from PySide6.QtWidgets import QFileDialog, QWidget
 
 from hexrd.xrdutil import EtaOmeMaps
 
 from hexrdgui.hexrd_config import HexrdConfig
 
 
-def plot_grains(grains_table, ome_maps=None, parent=None):
+def plot_grains(
+    grains_table: Any,
+    ome_maps: EtaOmeMaps | None = None,
+    parent: QWidget | None = None,
+) -> None:
     # Avoid a circular import
     from hexrdgui.indexing.indexing_results_dialog import IndexingResultsDialog
 

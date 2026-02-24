@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import copy
+from typing import Any, TextIO
 
 from PySide6.QtCore import QTimer
 
@@ -24,21 +27,22 @@ class H5StateLoader(yaml.SafeLoader):
     also whitelist a new python types.
     """
 
-    def __init__(self, *pargs, h5_file=None, **kwargs):
+    def __init__(self, *pargs: Any, h5_file: h5py.File | None = None, **kwargs: Any) -> None:
         super().__init__(*pargs, **kwargs)
         self.h5_file = h5_file
 
-    def include(self, node):
+    def include(self, node: Any) -> Any:
         path = self.construct_scalar(node)
+        assert self.h5_file is not None
 
         return self.h5_file[path][()]
 
-    def hexrd_ui_constants_overlaytype(self, node):
+    def hexrd_ui_constants_overlaytype(self, node: Any) -> Any:
         value = self.construct_sequence(node)
 
         return hexrdgui.constants.OverlayType(value[0])
 
-    def python_tuple(self, node):
+    def python_tuple(self, node: Any) -> tuple[Any, ...]:
         value = self.construct_sequence(node)
 
         return tuple(value)
@@ -54,7 +58,11 @@ H5StateLoader.add_constructor(
 )
 
 
-def _dict_path_by_id(d, value, path=()):
+def _dict_path_by_id(
+    d: Any,
+    value: int,
+    path: tuple[str, ...] = (),
+) -> tuple[str, ...] | None:
     if id(d) == value:
         return path
     elif isinstance(d, dict):
@@ -84,38 +92,50 @@ class H5StateDumper(yaml.Dumper):
 
     """
 
-    def __init__(self, stream, h5_file=None, prefix=None, **kwargs):
+    def __init__(
+        self,
+        stream: TextIO,
+        h5_file: h5py.File | None = None,
+        prefix: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(stream, **kwargs)
 
         self.h5_file = h5_file
         self.prefix = prefix
 
-    def numpy_representer(self, data):
+    def numpy_representer(self, data: np.ndarray) -> Any:
         path = _dict_path_by_id(self._dct, id(data))
         if path is None:
             raise ValueError("Unable to determine array path.")
 
-        path = '/'.join(path)
+        path_str = '/'.join(path)
         if self.prefix:
-            path = f'{self.prefix}/{path}'
+            path_str = f'{self.prefix}/{path_str}'
 
-        self.h5_file.create_dataset(path, data.shape, data.dtype, data=data)
+        assert self.h5_file is not None
+        self.h5_file.create_dataset(path_str, data.shape, data.dtype, data=data)
 
-        return self.represent_scalar('!include', path)
+        return self.represent_scalar('!include', path_str)
 
     # We need intercept the dict so we can lookup the paths to numpy types
-    def represent(self, data):
+    def represent(self, data: Any) -> Any:
         self._dct = data
         return super().represent(data)
 
 
 H5StateDumper.add_representer(np.ndarray, H5StateDumper.numpy_representer)
-H5StateDumper.add_representer(np.float64, H5StateDumper.numpy_representer)
+H5StateDumper.add_representer(
+    np.float64,
+    H5StateDumper.numpy_representer,  # type: ignore[arg-type]
+)
 
 
-def _save_config(h5_file, config):
-    def _create_dumper(*arg, **kwargs):
-        return H5StateDumper(*arg, **kwargs, h5_file=h5_file, prefix=CONFIG_PREFIX)
+def _save_config(h5_file: h5py.File, config: dict[str, Any]) -> None:
+    def _create_dumper(*arg: Any, **kwargs: Any) -> H5StateDumper:
+        return H5StateDumper(  # type: ignore[misc]
+            *arg, **kwargs, h5_file=h5_file, prefix=CONFIG_PREFIX
+        )
 
     # Dump the YAML, this will write the numpy types to the H5 file
     config_yaml = yaml.dump(config, Dumper=_create_dumper)
@@ -126,18 +146,18 @@ def _save_config(h5_file, config):
     )
 
 
-def _load_config(h5_file):
-    def _create_loader(*pargs, **kwargs):
+def _load_config(h5_file: h5py.File) -> dict[str, Any]:
+    def _create_loader(*pargs: Any, **kwargs: Any) -> H5StateLoader:
         return H5StateLoader(*pargs, **kwargs, h5_file=h5_file)
 
     # First load extract the YAML string from the H5 file.
     config_yaml = h5_file[CONFIG_YAML_PATH][()]
 
     # Load it, which will cause the numpy type to be loaded as well.
-    return yaml.load(config_yaml, Loader=_create_loader)
+    return yaml.load(config_yaml, Loader=_create_loader)  # type: ignore[arg-type]
 
 
-def save(h5_file):
+def save(h5_file: h5py.File) -> None:
     """
     Save the state of the application in a HDF5 file
     """
@@ -173,7 +193,7 @@ def save(h5_file):
         imageseries.write(ims, h5_file, 'hdf5', path=f'{root}/{det}')
 
 
-def load(h5_file):
+def load(h5_file: h5py.File) -> None:
     """
     Load application state from a HDF5 file
     """
@@ -196,7 +216,7 @@ def load(h5_file):
         ]
 
         # Rename the state variables to the attribute names...
-        renamed_state = {}
+        renamed_state: dict[str, Any] = {}
         for name, default in HexrdConfig()._attributes_to_persist():
             old_name = HexrdConfig()._attribute_to_settings_key(name)
             if old_name in state:
@@ -224,7 +244,7 @@ def load(h5_file):
     # Record the location of the state file in case we save over it
     HexrdConfig().last_loaded_state_file = h5_file.filename
 
-    def finalize():
+    def finalize() -> None:
         # Indicate that the state was loaded...
         HexrdConfig().state_loaded.emit()
 
@@ -236,7 +256,7 @@ def load(h5_file):
     QTimer.singleShot(0, finalize)
 
 
-def load_imageseries_dict(h5_file):
+def load_imageseries_dict(h5_file: h5py.File) -> None:
     imsd = HexrdConfig().imageseries_dict
     imsd.clear()
 
@@ -252,5 +272,5 @@ def load_imageseries_dict(h5_file):
     ImageLoadManager().finish_processing_ims()
 
 
-def update_if_needed(file_path):
+def update_if_needed(file_path: str) -> Any:
     return state_compatibility.update_if_needed(file_path)

@@ -1,10 +1,9 @@
 import numpy as np
 
-from PySide6.QtGui import QCursor
+from PySide6.QtGui import QContextMenuEvent, QCursor
 from PySide6.QtWidgets import QMenu
 
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.line_picker_dialog import LinePickerDialog
 from hexrdgui.overlays import Overlay
 from hexrdgui.tree_views.base_dict_tree_item_model import BaseTreeItemModel
 from hexrdgui.tree_views.generic_picks_tree_view import GenericPicksTreeView, TreeItem
@@ -18,12 +17,13 @@ Y_COL = X_COL + 1
 
 class HKLPicksTreeView(GenericPicksTreeView):
 
-    def item_type(self, tree_item):
+    def item_type(self, tree_item: TreeItem) -> str:
         root_item = self.model().root_item
 
         parents_to_root = 1
         parent = tree_item.parent_item
         while parent is not root_item:
+            assert parent is not None
             parent = parent.parent_item
             parents_to_root += 1
 
@@ -34,14 +34,14 @@ class HKLPicksTreeView(GenericPicksTreeView):
 
         raise Exception(f'Unknown parents_to_root: {parents_to_root}')
 
-    def clear_highlights(self):
+    def clear_highlights(self) -> None:
         for overlay in HexrdConfig().overlays:
             overlay.clear_highlights()
 
-    def highlight_selected_lines(self):
+    def highlight_selected_lines(self) -> None:
         self.highlight_selected_hkls()
 
-    def highlight_selected_hkls(self):
+    def highlight_selected_hkls(self) -> None:
         self.clear_highlights()
 
         model = self.model()
@@ -49,14 +49,14 @@ class HKLPicksTreeView(GenericPicksTreeView):
             path = model.path_to_value(item, 0)
             # Example: ['diamond powder', 'IMAGE-PLATE-2', '1 1 1', 1, -1]
             overlay_name, detector_name, hkl_str, *others = path
-            overlay = Overlay.from_name(overlay_name)
-            hkl = hkl_str_to_array(hkl_str)
-            overlay.highlight_hkl(detector_name, hkl)
+            overlay = Overlay.from_name(overlay_name)  # type: ignore[arg-type]
+            hkl = hkl_str_to_array(hkl_str)  # type: ignore[arg-type]
+            overlay.highlight_hkl(detector_name, hkl)  # type: ignore[arg-type]
 
         HexrdConfig().flag_overlay_updates_for_all_materials()
         HexrdConfig().overlay_config_changed.emit()
 
-    def _delete_selected_picks(self):
+    def _delete_selected_picks(self) -> None:
         model = self.model()
         items_to_remove = []
         for item in self.selected_items:
@@ -81,14 +81,14 @@ class HKLPicksTreeView(GenericPicksTreeView):
             model.remove_items(items_to_remove)
             self.draw_picks()
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: QContextMenuEvent) -> None:
         actions = {}
 
         index = self.indexAt(event.pos())
         model = self.model()
         item = model.get_item(index)
         path = model.path_to_item(item)
-        powder_clicked = 'powder' in path[0]
+        powder_clicked = 'powder' in path[0]  # type: ignore[operator]
         hkl_clicked = len(path) == 3
         powder_pick_clicked = len(path) == 4
         hkl_str = path[2] if hkl_clicked or powder_pick_clicked else ''
@@ -104,30 +104,30 @@ class HKLPicksTreeView(GenericPicksTreeView):
         menu = QMenu(self)
 
         # Helper functions
-        def add_actions(d: dict):
+        def add_actions(d: dict) -> None:
             actions.update({menu.addAction(k): v for k, v in d.items()})
 
-        def add_separator():
+        def add_separator() -> None:
             if not actions:
                 return
             menu.addSeparator()
 
         # Context menu methods
-        def insert_item():
+        def insert_item() -> None:
             if hkl_clicked:
                 position = 0
                 parent_item = item
             elif powder_pick_clicked:
-                position = path[-1]
-                parent_item = item.parent_item
+                position = path[-1]  # type: ignore[assignment]
+                parent_item = item.parent_item  # type: ignore[assignment]
             else:
                 raise NotImplementedError
 
             pick_label = f'Inserting points into: {hkl_str}'
             return self._insert_picks(parent_item, position, pick_label)
 
-        def hand_pick_item():
-            self.hand_pick_point(item, hkl_str)
+        def hand_pick_item() -> None:
+            self.hand_pick_point(item, hkl_str)  # type: ignore[arg-type]
 
         # Action logic
         if powder_clicked and (hkl_clicked or powder_pick_clicked):

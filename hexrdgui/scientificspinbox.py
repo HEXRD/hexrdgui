@@ -1,6 +1,7 @@
 from functools import wraps
 import re
 import math
+from typing import Any, Callable
 
 from PySide6.QtGui import QValidator
 from PySide6.QtWidgets import QDoubleSpinBox
@@ -21,7 +22,7 @@ NAN_REGEX = re.compile(r'^(n(?:a|an)?)$')
 class FloatValidator(QValidator):
 
     @staticmethod
-    def valid_float_string(string):
+    def valid_float_string(string: str) -> bool:
         match = FLOAT_REGEX.search(string)
         if match:
             return match.group(0) == string
@@ -29,7 +30,7 @@ class FloatValidator(QValidator):
         special_regexes = (INFINITE_REGEX, NAN_REGEX)
         return any(x.search(string) is not None for x in special_regexes)
 
-    def validate(self, string, position):
+    def validate(self, string: str, position: int) -> QValidator.State:
         if FloatValidator.valid_float_string(string):
             return self.State.Acceptable
 
@@ -38,7 +39,7 @@ class FloatValidator(QValidator):
 
         return self.State.Invalid
 
-    def fixup(self, text):
+    def fixup(self, text: str) -> str:
         match = FLOAT_REGEX.search(text)
         if match:
             return match.group(0)
@@ -52,14 +53,14 @@ class FloatValidator(QValidator):
         return ''
 
 
-def clean_text(func):
+def clean_text(func: Callable[..., Any]) -> Callable[..., Any]:
     """Clean text for ScientificDoubleSpinBox functions
 
     This removes the prefix, suffix, and leading/trailing white space.
     """
 
     @wraps(func)
-    def wrapped(self, text, *args, **kwargs):
+    def wrapped(self: Any, text: str, *args: Any, **kwargs: Any) -> Any:
         text = text.removeprefix(self.prefix())
         text = text.removesuffix(self.suffix())
         text = text.strip()
@@ -71,28 +72,28 @@ def clean_text(func):
 class ScientificDoubleSpinBox(QDoubleSpinBox):
 
     @staticmethod
-    def format_float(value):
+    def format_float(value: float) -> str:
         """Modified form of the 'g' format specifier."""
         string = '{:.10g}'.format(value).replace('e+', 'e')
         string = re.sub(r'e(-?)0*(\d+)', r'e\1\2', string)
 
         return string
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.validator = FloatValidator()
         self.setDecimals(1000)
         self.reset_range()
 
-    def reset_range(self):
+    def reset_range(self) -> None:
         self.setRange(-math.inf, math.inf)
 
     @clean_text
-    def validate(self, text, position):
+    def validate(self, text: str, position: int) -> QValidator.State:
         return self.validator.validate(text, position)
 
     @clean_text
-    def fixup(self, original_text):
+    def fixup(self, original_text: str) -> str:
         text = self.validator.fixup(original_text)
         if text == 'nan':
             self.is_nan = True
@@ -105,13 +106,13 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
         return text
 
     @clean_text
-    def valueFromText(self, text):
+    def valueFromText(self, text: str) -> float:
         return float(self.fixup(text))
 
-    def textFromValue(self, value):
+    def textFromValue(self, value: float) -> str:
         return ScientificDoubleSpinBox.format_float(value)
 
-    def stepBy(self, steps):
+    def stepBy(self, steps: int) -> None:
         text = self.cleanText()
         if any(x.search(text) for x in (INFINITE_REGEX, NAN_REGEX)):
             # We cannot step
@@ -123,16 +124,16 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
         # Select the text just like a regular spin box would...
         self.selectAll()
 
-    def setValue(self, v):
+    def setValue(self, v: float) -> None:
         self.is_nan = math.isnan(v)
         super().setValue(v)
 
     @property
-    def is_nan(self):
+    def is_nan(self) -> bool:
         return math.isnan(super().value())
 
     @is_nan.setter
-    def is_nan(self, b):
+    def is_nan(self, b: bool) -> None:
         if self.is_nan == b:
             # Unchanged
             return

@@ -8,14 +8,14 @@ def ask_to_create_physics_package_if_missing() -> bool:
         return True
 
     msg = 'This operation requires a physics package. ' 'Would you like to create one?'
-    if QMessageBox.question(None, 'HEXRD', msg) == QMessageBox.Yes:
+    if QMessageBox.question(None, 'HEXRD', msg) == QMessageBox.StandardButton.Yes:
         HexrdConfig().create_default_physics_package()
         return True
 
     return False
 
 
-def make_physics_package_from_old_overlay_config(overlay_config: list[dict]):
+def make_physics_package_from_old_overlay_config(overlay_config: list[dict]) -> None:
     # This function is only present for backward-compatibility with older
     # state files.
     # In the past, settings such as the sample layer and window thickness
@@ -28,6 +28,7 @@ def make_physics_package_from_old_overlay_config(overlay_config: list[dict]):
 
     HexrdConfig().create_default_physics_package()
     physics = HexrdConfig().physics_package
+    assert physics is not None
 
     for overlay_dict in overlay_config:
         distortion_type = overlay_dict.get('tth_distortion_type')

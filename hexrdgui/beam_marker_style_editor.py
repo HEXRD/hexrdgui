@@ -3,7 +3,7 @@ import copy
 from matplotlib.markers import MarkerStyle
 
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QColorDialog
+from PySide6.QtWidgets import QColorDialog, QWidget
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
@@ -12,7 +12,7 @@ from hexrdgui.utils import block_signals
 
 class BeamMarkerStyleEditor:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('beam_marker_style_editor.ui', parent)
 
@@ -20,22 +20,22 @@ class BeamMarkerStyleEditor:
         self.setup_connections()
         self.update_gui()
 
-    def show(self):
+    def show(self) -> None:
         self.update_gui()
         self.ui.show()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.color.pressed.connect(self.pick_color)
         self.ui.marker.currentIndexChanged.connect(self.update_config)
         self.ui.markersize.valueChanged.connect(self.update_config)
         HexrdConfig().beam_marker_modified.connect(self.update_gui)
 
-    def setup_combo_boxes(self):
+    def setup_combo_boxes(self) -> None:
         self.ui.marker.clear()
         self.ui.marker.addItems(self.marker_options)
 
     @property
-    def marker_options(self):
+    def marker_options(self) -> list[str]:
         options = list(MarkerStyle.markers)
 
         # Blacklist these
@@ -50,14 +50,14 @@ class BeamMarkerStyleEditor:
         return [x for x in options if isinstance(x, str)]
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list:
         return [
             self.ui.color,
             self.ui.marker,
             self.ui.markersize,
         ]
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         style = HexrdConfig().beam_marker_style
         with block_signals(*self.all_widgets):
             self.ui.color.setText(style['color'])
@@ -66,7 +66,7 @@ class BeamMarkerStyleEditor:
 
         self.update_button_colors()
 
-    def update_config(self):
+    def update_config(self) -> None:
         style = copy.deepcopy(HexrdConfig().beam_marker_style)
 
         style['color'] = self.ui.color.text()
@@ -75,7 +75,7 @@ class BeamMarkerStyleEditor:
 
         HexrdConfig().beam_marker_style = style
 
-    def pick_color(self):
+    def pick_color(self) -> None:
         w = self.ui.color
         color = w.text()
 
@@ -85,7 +85,7 @@ class BeamMarkerStyleEditor:
             self.update_button_colors()
             self.update_config()
 
-    def update_button_colors(self):
+    def update_button_colors(self) -> None:
         b = self.ui.color
         style = f'QPushButton {{background-color: {b.text()}}}'
         self.ui.color.setStyleSheet(style)

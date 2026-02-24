@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import h5py
 import numpy as np
-from hexrd import constants as ct
 from hexrd.rotations import mapAngle
 
 from hexrdgui.constants import ViewType
@@ -18,13 +19,13 @@ from .polarview import PolarView
 from .stereo_project import stereo_project, stereo_projection_of_polar_view
 
 
-def stereo_viewer():
+def stereo_viewer() -> "InstrumentViewer":
     return InstrumentViewer()
 
 
 class InstrumentViewer:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.type = ViewType.stereo
 
         # This instrument is used to generate the overlays and other things
@@ -32,54 +33,56 @@ class InstrumentViewer:
 
         # This instrument has a VISAR view and is used to generate the image
         self.instr_pv = create_view_hedm_instrument()
-        self.pv = None
-        self.img = None
+        self.pv: PolarView | None = None
+        self.img: np.ndarray | None = None
 
         self.draw_stereo()
 
     @property
-    def extent(self):
+    def extent(self) -> list[int]:
         return [0, self.stereo_size, 0, self.stereo_size]
 
     @property
-    def raw_img_dict(self):
+    def raw_img_dict(self) -> dict:
         return HexrdConfig().masked_images_dict
 
     @property
-    def stereo_size(self):
+    def stereo_size(self) -> int:
         return HexrdConfig().stereo_size
 
     @property
-    def eta_period(self):
+    def eta_period(self) -> np.ndarray:
         return HexrdConfig().polar_res_eta_period
 
     @property
-    def project_from_polar(self):
+    def project_from_polar(self) -> bool:
         return HexrdConfig().stereo_project_from_polar
 
     @property
-    def display_img(self):
+    def display_img(self) -> np.ndarray | None:
         return self.img
 
-    def detector_borders(self, det):
+    def detector_borders(self, det: str) -> list[np.ndarray]:
         panel = self.instr_pv.detectors[det]
 
         # First, create the polar view version of the borders
-        # (this skips some things like trimming based upon tth/eta min/max)
+        # (this skips some things like trimming based upon
+        # tth/eta min/max)
         row_vec, col_vec = panel.row_pixel_vec, panel.col_pixel_vec
         x_start, x_stop = col_vec[0], col_vec[-1]
         y_start, y_stop = row_vec[0], row_vec[-1]
 
         # Create the borders in Cartesian
-        borders = [
-            [[x, y_start] for x in col_vec],
-            [[x, y_stop] for x in col_vec],
-            [[x_start, y] for y in row_vec],
-            [[x_stop, y] for y in row_vec],
+        raw_borders: list[np.ndarray] = [
+            np.array([[x, y_start] for x in col_vec]),
+            np.array([[x, y_stop] for x in col_vec]),
+            np.array([[x_start, y] for y in row_vec]),
+            np.array([[x_stop, y] for y in row_vec]),
         ]
 
         # Convert each border to angles, then stereo
-        for i, border in enumerate(borders):
+        borders: list[np.ndarray] = []
+        for border in raw_borders:
             angles = np.radians(
                 cart_to_angles(
                     border,
@@ -88,19 +91,19 @@ class InstrumentViewer:
                     tvec_s=self.instr_pv.tvec,
                 )
             )
-            borders[i] = angles_to_stereo(angles, self.instr_pv, self.stereo_size).T
+            borders.append(angles_to_stereo(angles, self.instr_pv, self.stereo_size).T)
 
         return borders
 
     @property
-    def all_detector_borders(self):
+    def all_detector_borders(self) -> dict[str, list[np.ndarray]]:
         borders = {}
         for key in self.instr_pv.detectors:
             borders[key] = self.detector_borders(key)
 
         return borders
 
-    def draw_stereo(self):
+    def draw_stereo(self) -> None:
         if self.project_from_polar:
             self.draw_stereo_from_polar()
         else:
@@ -108,7 +111,7 @@ class InstrumentViewer:
 
         self.fill_image_with_nans()
 
-    def draw_stereo_from_raw(self):
+    def draw_stereo_from_raw(self) -> None:
         self.img = stereo_project(
             **{
                 'instr': self.instr_pv,
@@ -117,7 +120,9 @@ class InstrumentViewer:
             }
         )
 
-    def prep_eta_grid(self, eta_grid):
+    def prep_eta_grid(
+        self, eta_grid: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         this function formats the eta grid in a
         range such that
@@ -131,7 +136,9 @@ class InstrumentViewer:
         mask[iduq] = True
         return eta_grid, idx, mask
 
-    def pad_etas_pvarray(self, eta_grid, polar_img):
+    def pad_etas_pvarray(
+        self, eta_grid: np.ndarray, polar_img: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         start = np.array([eta_grid[-1] - 360])
         end = np.array([360 + eta_grid[0]])
 
@@ -168,21 +175,31 @@ class InstrumentViewer:
         polar_img = np.vstack(p_padded)
         return eta_grid, polar_img
 
-    def draw_stereo_from_polar(self):
+    def draw_stereo_from_polar(self) -> None:
         # We need to make sure `self.pv` is always updated when it needs
         # to be. But that can be done elsewhere.
         if self.pv is None:
             # Don't redraw the polar view unless we have to
             self.draw_polar()
 
+        assert self.pv is not None
         polar_img = self.pv.display_img
+        assert polar_img is not None
 
         extent = np.degrees(self.pv.extent)
         tth_range = extent[:2]
         eta_range = np.sort(extent[2:])
 
-        tth_grid = np.linspace(*tth_range, polar_img.shape[1])
-        eta_grid = np.linspace(*eta_range, polar_img.shape[0])
+        tth_grid = np.linspace(
+            float(tth_range[0]),
+            float(tth_range[1]),
+            polar_img.shape[1],
+        )
+        eta_grid = np.linspace(
+            float(eta_range[0]),
+            float(eta_range[1]),
+            polar_img.shape[0],
+        )
 
         eta_grid, idx, mask = self.prep_eta_grid(eta_grid)
 
@@ -201,7 +218,7 @@ class InstrumentViewer:
             }
         )
 
-    def draw_polar(self):
+    def draw_polar(self) -> None:
         self.pv = PolarView(
             self.instr_pv,
             distortion_instrument=self.instr,
@@ -211,29 +228,31 @@ class InstrumentViewer:
         )
         self.pv.warp_all_images()
 
-    def reapply_masks(self):
+    def reapply_masks(self) -> None:
         if not self.pv or not self.project_from_polar:
             return
 
         self.pv.reapply_masks()
         self.draw_stereo()
 
-    def fill_image_with_nans(self):
+    def fill_image_with_nans(self) -> None:
         # If the image is a masked array, fill it with nans
         if isinstance(self.img, np.ma.masked_array):
             self.img = self.img.filled(np.nan)
 
-    def update_overlay_data(self):
+    def update_overlay_data(self) -> None:
         update_overlay_data(self.instr, self.type)
 
-    def update_detectors(self, detectors):
-        if self.project_from_polar:
+    def update_detectors(self, detectors: list[str]) -> None:
+        if self.project_from_polar and self.pv is not None:
             self.pv.update_detectors(detectors)
 
         self.draw_stereo()
 
-    def write_image(self, filename):
+    def write_image(self, filename: str | Path) -> None:
         filename = Path(filename)
+
+        assert self.img is not None
 
         # Prepare the data to write out
         data = {
@@ -249,7 +268,7 @@ class InstrumentViewer:
 
         if ext == '.npz':
             # If it looks like npz, save as npz
-            np.savez(filename, **data)
+            np.savez(filename, **data)  # type: ignore[arg-type]
         else:
             # Default to HDF5 format
             with h5py.File(filename, 'w') as f:

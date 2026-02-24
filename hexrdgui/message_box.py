@@ -1,10 +1,17 @@
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget
 
 from hexrdgui.ui_loader import UiLoader
 
 
 class MessageBox:
-    def __init__(self, title, message, details='', parent=None):
+    def __init__(
+        self,
+        title: str,
+        message: str,
+        details: str = '',
+        parent: QWidget | None = None,
+    ) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('message_box.ui', parent)
 
@@ -15,34 +22,34 @@ class MessageBox:
         self.message = message
         self.details = details
 
-    def exec(self):
+    def exec(self) -> int:
         return self.ui.exec()
 
-    def show(self):
+    def show(self) -> None:
         return self.ui.show()
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self.ui.windowTitle()
 
     @title.setter
-    def title(self, text):
+    def title(self, text: str) -> None:
         self.ui.setWindowTitle(text)
 
     @property
-    def message(self):
+    def message(self) -> str:
         return self.ui.message.text()
 
     @message.setter
-    def message(self, text):
+    def message(self, text: str) -> None:
         self.ui.message.setText(text)
 
     @property
-    def details(self):
+    def details(self) -> str:
         return self.ui.details.toPlainText()
 
     @details.setter
-    def details(self, text):
+    def details(self, text: str) -> None:
         self.ui.details.clear()
         self.ui.details.setAlignment(self.details_alignment)
         # Append the text so any formatting will stick
@@ -50,8 +57,8 @@ class MessageBox:
             self.ui.details.append(line)
         self.ui.details.setVisible(bool(text))
 
-    def align_details_hcenter(self):
-        self.details_alignment = Qt.AlignHCenter
+    def align_details_hcenter(self) -> None:
+        self.details_alignment = Qt.AlignmentFlag.AlignHCenter
         # Reset details
         self.details = self.details
 
@@ -83,7 +90,7 @@ if __name__ == '__main__':
         'message': 'Optimization successful!',
         'details': details,
     }
-    dialog = MessageBox(**kwargs)
+    dialog = MessageBox(**kwargs)  # type: ignore[arg-type]
     dialog.align_details_hcenter()
     dialog.ui.show()
     app.exec()

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 
 from hexrd.findorientations import _process_omegas
@@ -21,19 +25,19 @@ class RotationSeriesOverlay(Overlay):
 
     def __init__(
         self,
-        material_name,
-        crystal_params=None,
-        eta_ranges=None,
-        ome_ranges=None,
-        ome_period=None,
-        aggregated=True,
-        ome_width=np.radians(1.5).item(),
-        tth_width=np.radians(0.25).item(),
-        eta_width=np.radians(1.0).item(),
-        sync_ome_period=True,
-        sync_ome_ranges=True,
-        **overlay_kwargs
-    ):
+        material_name: str,
+        crystal_params: np.ndarray | list[float] | None = None,
+        eta_ranges: list[list[float]] | np.ndarray | None = None,
+        ome_ranges: list[list[float]] | np.ndarray | None = None,
+        ome_period: list[float] | np.ndarray | None = None,
+        aggregated: bool = True,
+        ome_width: float = np.radians(1.5).item(),
+        tth_width: float = np.radians(0.25).item(),
+        eta_width: float = np.radians(1.0).item(),
+        sync_ome_period: bool = True,
+        sync_ome_ranges: bool = True,
+        **overlay_kwargs: Any,
+    ) -> None:
         super().__init__(material_name, **overlay_kwargs)
 
         if crystal_params is None:
@@ -63,7 +67,7 @@ class RotationSeriesOverlay(Overlay):
         self.sync_omegas()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         super().setup_connections()
 
         from hexrdgui.image_load_manager import ImageLoadManager
@@ -71,7 +75,7 @@ class RotationSeriesOverlay(Overlay):
         ImageLoadManager().omegas_updated.connect(self.sync_omegas)
 
     @property
-    def child_attributes_to_save(self):
+    def child_attributes_to_save(self) -> list[str]:
         # These names must be identical here, as attributes, and as
         # arguments to the __init__ method.
         return [
@@ -88,47 +92,47 @@ class RotationSeriesOverlay(Overlay):
         ]
 
     @property
-    def has_widths(self):
+    def has_widths(self) -> bool:
         widths = ['tth_width', 'eta_width']
         return all(getattr(self, x) is not None for x in widths)
 
     @property
-    def crystal_params(self):
+    def crystal_params(self) -> np.ndarray:
         return self._crystal_params
 
     @crystal_params.setter
-    def crystal_params(self, x):
+    def crystal_params(self, x: np.ndarray | list[float]) -> None:
         assert len(x) == 12, 'input must be array-like with length 12'
         self._crystal_params = np.array(x)
 
     @property
-    def eta_ranges(self):
+    def eta_ranges(self) -> list[list[float]] | np.ndarray:
         return self._eta_ranges
 
     @eta_ranges.setter
-    def eta_ranges(self, x):
+    def eta_ranges(self, x: list[list[float]] | np.ndarray) -> None:
         assert hasattr(x, '__len__'), 'eta ranges must be a list of 2-tuples'
         self._eta_ranges = x
 
     @property
-    def ome_ranges(self):
+    def ome_ranges(self) -> list[list[float]] | np.ndarray:
         return self._ome_ranges
 
     @ome_ranges.setter
-    def ome_ranges(self, x):
+    def ome_ranges(self, x: list[list[float]] | np.ndarray) -> None:
         assert hasattr(x, '__len__'), 'ome ranges must be a list of 2-tuples'
         self._ome_ranges = x
 
     @property
-    def ome_period(self):
+    def ome_period(self) -> list[float] | np.ndarray:
         return self._ome_period
 
     @ome_period.setter
-    def ome_period(self, v):
+    def ome_period(self, v: list[float] | np.ndarray) -> None:
         self._ome_period = v
 
     @property
-    def aggregated(self):
+    def aggregated(self) -> bool:
         from hexrdgui.hexrd_config import HexrdConfig
 
         # Even though we may have aggregated set to be True, do not
@@ -140,15 +144,15 @@ class RotationSeriesOverlay(Overlay):
         return self._aggregated
 
     @aggregated.setter
-    def aggregated(self, v):
+    def aggregated(self, v: bool) -> None:
         self._aggregated = v
 
     @property
-    def sync_ome_period(self):
+    def sync_ome_period(self) -> bool:
         return self._sync_ome_period
 
     @sync_ome_period.setter
-    def sync_ome_period(self, v):
+    def sync_ome_period(self, v: bool) -> None:
         if self.sync_ome_period == v:
             return
 
@@ -156,11 +160,11 @@ class RotationSeriesOverlay(Overlay):
         self.sync_omegas()
 
     @property
-    def sync_ome_ranges(self):
+    def sync_ome_ranges(self) -> bool:
         return self._sync_ome_ranges
 
     @sync_ome_ranges.setter
-    def sync_ome_ranges(self, v):
+    def sync_ome_ranges(self, v: bool) -> None:
         if self.sync_ome_ranges == v:
             return
 
@@ -168,29 +172,29 @@ class RotationSeriesOverlay(Overlay):
         self.sync_omegas()
 
     @property
-    def refinement_labels(self):
+    def refinement_labels(self) -> list[str]:
         return crystal_refinement_labels()
 
     @property
-    def default_refinements(self):
+    def default_refinements(self) -> np.ndarray:
         return default_crystal_refinements()
 
     @property
-    def has_picks_data(self):
+    def has_picks_data(self) -> bool:
         # Rotation series overlays do not currently support picks data
         return False
 
     @property
-    def calibration_picks_polar(self):
+    def calibration_picks_polar(self) -> list:
         # Rotation series overlays do not currently support picks data
         return []
 
     @calibration_picks_polar.setter
-    def calibration_picks_polar(self, picks):
+    def calibration_picks_polar(self, picks: list) -> None:
         # Rotation series overlays do not currently support picks data
         pass
 
-    def generate_overlay(self):
+    def generate_overlay(self) -> dict:
         """
         Returns appropriate point groups for displaying bragg reflection
         locations for a monochromatic rotation series.
@@ -265,12 +269,12 @@ class RotationSeriesOverlay(Overlay):
         return point_groups
 
     @property
-    def tvec_c(self):
+    def tvec_c(self) -> np.ndarray | None:
         if self.crystal_params is None:
             return None
         return self.crystal_params[3:6].reshape(3, 1)
 
-    def range_corners(self, spots):
+    def range_corners(self, spots: np.ndarray) -> list:
         # spots should be in degrees
         if not self.has_widths:
             return []
@@ -287,7 +291,7 @@ class RotationSeriesOverlay(Overlay):
 
         return ranges
 
-    def range_data(self, spots, display_mode, panel):
+    def range_data(self, spots: np.ndarray, display_mode: str, panel: Any) -> list:
         data = self.rectangular_range_data(spots, display_mode, panel)
 
         # Add a nans row at the end of each range
@@ -296,7 +300,12 @@ class RotationSeriesOverlay(Overlay):
 
         return data
 
-    def rectangular_range_data(self, spots, display_mode, panel):
+    def rectangular_range_data(
+        self,
+        spots: np.ndarray,
+        display_mode: str,
+        panel: Any,
+    ) -> list | np.ndarray:
         from hexrdgui.hexrd_config import HexrdConfig
 
         range_corners = self.range_corners(spots)
@@ -318,38 +327,38 @@ class RotationSeriesOverlay(Overlay):
         # Get more intermediate points so the data reflects this.
         results = []
         for corners in range_corners:
-            data = []
+            data_list: list[Any] = []
             for i in range(len(corners) - 1):
                 tmp = np.linspace(corners[i], corners[i + 1])
-                data.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
+                data_list.extend(panel.angles_to_cart(tmp, tvec_c=self.tvec_c))
 
-            data = np.array(data)
+            data_arr = np.array(data_list)
             if display_mode == ViewType.raw:
-                data = panel.cartToPixel(data)
-                data[:, [0, 1]] = data[:, [1, 0]]
+                data_arr = panel.cartToPixel(data_arr)
+                data_arr[:, [0, 1]] = data_arr[:, [1, 0]]
 
-            results.append(data)
+            results.append(data_arr)
 
         return results
 
     @property
-    def default_style(self):
+    def default_style(self) -> dict:
         return {
             'data': {'c': '#00ffff', 'marker': 'o', 's': 2.0},  # Cyan
             'ranges': {'c': '#00ff00', 'ls': 'dotted', 'lw': 1.0},  # Green
         }
 
     @property
-    def default_highlight_style(self):
+    def default_highlight_style(self) -> dict:
         return {
             'data': {'c': '#ff00ff', 'ls': 'solid', 'lw': 3.0},  # Magenta
             'ranges': {'c': '#ff00ff', 'ls': 'dotted', 'lw': 3.0},  # Magenta
         }
 
-    def on_new_images_loaded(self):
+    def on_new_images_loaded(self) -> None:
         self.sync_omegas()
 
-    def sync_omegas(self):
+    def sync_omegas(self) -> None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         ims_dict = HexrdConfig().omega_imageseries_dict

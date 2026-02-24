@@ -1,9 +1,10 @@
 import copy
 import numpy as np
 from numpy.linalg import LinAlgError
+from typing import Any
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog, QWidget
 
 from hexrd import instrument, matrixutil
 
@@ -27,7 +28,7 @@ class CalibrationCrystalEditor(QObject):
     # Emitted when the refinements get modified
     refinements_modified = Signal()
 
-    def __init__(self, params=None, parent=None):
+    def __init__(self, params: Any = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -48,7 +49,7 @@ class CalibrationCrystalEditor(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         HexrdConfig().euler_angle_convention_changed.connect(
             self.euler_angle_convention_changed
         )
@@ -65,21 +66,21 @@ class CalibrationCrystalEditor(QObject):
         self.ui.save.clicked.connect(self.save)
 
     @property
-    def params(self):
+    def params(self) -> Any:
         return self._params
 
     @params.setter
-    def params(self, v):
+    def params(self, v: Any) -> None:
         self._params = copy.deepcopy(v)
         self.update_gui()
         self.slider_widget.reset_ranges()
 
     @property
-    def refinements(self):
+    def refinements(self) -> list[bool]:
         return [x[1] for x in self.refinements_selector.items]
 
     @refinements.setter
-    def refinements(self, v):
+    def refinements(self, v: list[bool]) -> None:
         if len(v) != len(self.refinements_selector.items):
             msg = (
                 f'Mismatch in {len(v)=} and ' f'{len(self.refinements_selector.items)=}'
@@ -92,10 +93,10 @@ class CalibrationCrystalEditor(QObject):
 
         self.refinements_selector.items = new_items
 
-    def refinements_edited(self):
+    def refinements_edited(self) -> None:
         self.refinements_modified.emit()
 
-    def value_changed(self):
+    def value_changed(self) -> None:
         sender = self.sender()
 
         if sender in self.orientation_widgets:
@@ -116,23 +117,23 @@ class CalibrationCrystalEditor(QObject):
 
         self.params_modified.emit()
 
-    def slider_widget_changed(self, mode, index, value):
+    def slider_widget_changed(self, mode: Any, index: int, value: float) -> None:
         prefix = 'orientation' if mode == SliderWidgetMode.ORIENTATION else 'position'
         name = f'{prefix}_{index}'
         w = getattr(self.ui, name)
         w.setValue(value)
 
-    def euler_angle_convention_changed(self):
+    def euler_angle_convention_changed(self) -> None:
         self.update_gui()
         self.update_orientation_suffixes()
 
-    def update_orientation_suffixes(self):
+    def update_orientation_suffixes(self) -> None:
         suffix = '' if HexrdConfig().euler_angle_convention is None else '°'
         for w in self.orientation_widgets:
             w.setSuffix(suffix)
         self.slider_widget.set_orientation_suffix(suffix)
 
-    def update_params(self):
+    def update_params(self) -> None:
         if self.params is None:
             return
 
@@ -141,7 +142,7 @@ class CalibrationCrystalEditor(QObject):
         self.params[6:] = self.inverse_stretch
         self.params_modified.emit()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         if self.params is None:
             return
 
@@ -152,10 +153,10 @@ class CalibrationCrystalEditor(QObject):
         self.update_tab_gui()
 
     @property
-    def stretch_matrix_duplicates(self):
+    def stretch_matrix_duplicates(self) -> dict[int, int]:
         return {1: 3, 2: 6, 5: 7, 7: 5, 6: 2, 3: 1}
 
-    def update_duplicate(self, w):
+    def update_duplicate(self, w: Any) -> None:
         ind = int(w.objectName().replace('stretch_matrix_', ''))
         dup_ind = self.stretch_matrix_duplicates.get(ind)
         if dup_ind is not None:
@@ -163,30 +164,30 @@ class CalibrationCrystalEditor(QObject):
             with block_signals(dup):
                 dup.setValue(w.value())
 
-    def set_matrix_valid(self):
+    def set_matrix_valid(self) -> None:
         self.set_matrix_style_sheet('background-color: white')
         self.set_matrix_tooltips('')
 
-    def set_matrix_invalid(self, msg=''):
+    def set_matrix_invalid(self, msg: str = '') -> None:
         self.set_matrix_style_sheet('background-color: red')
         self.set_matrix_tooltips(msg)
 
-    def set_matrix_style_sheet(self, s):
+    def set_matrix_style_sheet(self, s: str) -> None:
         for w in self.stretch_matrix_widgets:
             w.setStyleSheet(s)
 
-    def set_matrix_tooltips(self, s):
+    def set_matrix_tooltips(self, s: str) -> None:
         for w in self.stretch_matrix_widgets:
             w.setToolTip(s)
 
     @staticmethod
-    def convert_angle_convention(values, old_conv, new_conv):
+    def convert_angle_convention(values: Any, old_conv: Any, new_conv: Any) -> None:
         values[:] = convert_angle_convention(values, old_conv, new_conv)
 
     @property
-    def orientation(self):
+    def orientation(self) -> list[float]:
         # This automatically converts from Euler angle conventions
-        values = [x.value() for x in self.orientation_widgets]
+        values: Any = [x.value() for x in self.orientation_widgets]
         if HexrdConfig().euler_angle_convention is not None:
             values = np.radians(values)
             convention = HexrdConfig().euler_angle_convention
@@ -195,7 +196,7 @@ class CalibrationCrystalEditor(QObject):
         return values
 
     @orientation.setter
-    def orientation(self, v):
+    def orientation(self, v: Any) -> None:
         # This automatically converts to Euler angle conventions
         if HexrdConfig().euler_angle_convention is not None:
             v = copy.deepcopy(v)
@@ -208,59 +209,59 @@ class CalibrationCrystalEditor(QObject):
                 w.setValue(v[i])
 
     @property
-    def position(self):
+    def position(self) -> list[float]:
         return [x.value() for x in self.position_widgets]
 
     @position.setter
-    def position(self, v):
+    def position(self, v: Any) -> None:
         for i, w in enumerate(self.position_widgets):
             with block_signals(w):
                 w.setValue(v[i])
 
     @property
-    def inverse_stretch(self):
+    def inverse_stretch(self) -> np.ndarray:
         m = np.array(self.stretch_matrix).reshape(3, 3)
         return matrixutil.symmToVecMV(np.linalg.inv(m), scale=True)
 
     @inverse_stretch.setter
-    def inverse_stretch(self, v):
+    def inverse_stretch(self, v: Any) -> None:
         m = matrixutil.vecMVToSymm(v, scale=True)
         self.stretch_matrix = np.linalg.inv(m).flatten()
 
     @property
-    def stretch_matrix(self):
+    def stretch_matrix(self) -> list[float]:
         return [x.value() for x in self.stretch_matrix_widgets]
 
     @stretch_matrix.setter
-    def stretch_matrix(self, v):
+    def stretch_matrix(self, v: Any) -> None:
         for i, w in enumerate(self.stretch_matrix_widgets):
             with block_signals(w):
                 w.setValue(v[i])
 
     @property
-    def orientation_widgets(self):
+    def orientation_widgets(self) -> list:
         # Take advantage of the naming scheme
         return [getattr(self.ui, f'orientation_{i}') for i in range(3)]
 
     @property
-    def position_widgets(self):
+    def position_widgets(self) -> list:
         # Take advantage of the naming scheme
         return [getattr(self.ui, f'position_{i}') for i in range(3)]
 
     @property
-    def stretch_matrix_widgets(self):
+    def stretch_matrix_widgets(self) -> list:
         # Take advantage of the naming scheme
         return [getattr(self.ui, f'stretch_matrix_{i}') for i in range(9)]
 
     @property
-    def all_widgets(self):
+    def all_widgets(self) -> list:
         return (
             self.orientation_widgets
             + self.position_widgets
             + self.stretch_matrix_widgets
         )
 
-    def update_tab_gui(self):
+    def update_tab_gui(self) -> None:
         """Updates slider tab contents when it becomes current tab."""
         current_widget = self.ui.tab_widget.currentWidget()
         if current_widget is self.ui.slider_tab:
@@ -268,18 +269,18 @@ class CalibrationCrystalEditor(QObject):
             p_values = [x.value() for x in self.position_widgets]
             self.slider_widget.update_gui(o_values, p_values)
 
-    def load(self):
+    def load(self) -> None:
         dialog = SelectGrainsDialog(1, self.ui)
         if not dialog.exec():
             return
 
         self.load_from_grain(dialog.selected_grain)
 
-    def load_from_grain(self, grain):
+    def load_from_grain(self, grain: Any) -> None:
         self.params = grain[3:15]
         self.params_modified.emit()
 
-    def save(self):
+    def save(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui,
             'Save Crystal Parameters',
@@ -292,7 +293,7 @@ class CalibrationCrystalEditor(QObject):
 
         self.write_params(selected_file)
 
-    def write_params(self, filepath):
+    def write_params(self, filepath: str) -> None:
         gw = instrument.GrainDataWriter(filepath)
         try:
             gw.dump_grain(0, 1, 0, self.params)

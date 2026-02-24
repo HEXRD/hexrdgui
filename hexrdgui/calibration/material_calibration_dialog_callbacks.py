@@ -1,3 +1,10 @@
+from __future__ import annotations
+
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
+
 from hexrd.fitting.calibration.lmfit_param_handling import normalize_euler_convention
 
 from hexrdgui.calibration.calibration_dialog import TILT_LABELS_EULER
@@ -14,28 +21,36 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
 
-    def __init__(self, overlays, dialog, calibrator, instr, async_runner):
+    def __init__(
+        self,
+        overlays: list[Any],
+        dialog: Any,
+        calibrator: Any,
+        instr: HEDMInstrument,
+        async_runner: Any,
+    ) -> None:
         self.overlays = overlays
 
         if not hasattr(self, 'edit_picks_dialog'):
-            self.edit_picks_dialog = None
+            self.edit_picks_dialog: HKLPicksTreeViewDialog | None = None
 
         super().__init__(dialog, calibrator, instr, async_runner)
 
     @property
-    def calibrators(self):
+    def calibrators(self) -> list[Any]:
         return self.calibrator.calibrators
 
-    def create_hkl_picks_tree_view_dialog(self):
-        kwargs = {
-            'dictionary': overlays_to_tree_format(self.overlays),
-            'coords_type': ViewType.polar,
-            'canvas': self.canvas,
-            'parent': self.canvas,
-        }
-        return HKLPicksTreeViewDialog(**kwargs)
+    def create_hkl_picks_tree_view_dialog(self) -> HKLPicksTreeViewDialog:
+        canvas = self.canvas
+        assert canvas is not None
+        return HKLPicksTreeViewDialog(
+            dictionary=overlays_to_tree_format(self.overlays),
+            coords_type=ViewType.polar,
+            canvas=canvas,
+            parent=canvas,
+        )
 
-    def update_edit_picks_dictionary(self):
+    def update_edit_picks_dictionary(self) -> None:
         if self.edit_picks_dialog is None:
             # Nothing to update
             return
@@ -44,13 +59,13 @@ class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
         self.edit_picks_dialog.dictionary = tree_format
 
     @property
-    def edit_picks_dictionary(self):
+    def edit_picks_dictionary(self) -> dict[str, Any]:
         if self.edit_picks_dialog is None:
             return {}
 
         return self.edit_picks_dialog.dictionary
 
-    def set_picks(self, picks):
+    def set_picks(self, picks: dict[str, Any]) -> None:
         self.validate_picks(picks)
 
         overlays = {x.name: x for x in self.overlays}
@@ -66,18 +81,18 @@ class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
         # Update the dialog
         self.redraw_picks()
 
-    def on_edit_picks_accepted(self):
+    def on_edit_picks_accepted(self) -> None:
         # Write the modified picks to the overlays
         self.set_picks(self.edit_picks_dictionary)
 
-    def on_calibration_finished(self):
+    def on_calibration_finished(self) -> None:
         super().on_calibration_finished()
 
         # Now make sure the overlays have updated instruments
         for overlay in self.overlays:
             overlay.instrument = self.instr
 
-    def validate_picks(self, picks):
+    def validate_picks(self, picks: dict[str, Any]) -> None:
         if len(picks) != len(self.overlays):
             msg = (
                 f'Number of picks ({len(picks)}) do not match number of '
@@ -106,8 +121,12 @@ class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
 
 
 def format_material_params_func(
-    params_dict, tree_dict, create_param_item, overlays, calibrators
-):
+    params_dict: dict[str, Any],
+    tree_dict: dict[str, Any],
+    create_param_item: Any,
+    overlays: list[Any],
+    calibrators: list[Any],
+) -> None:
     tree_dict.setdefault('Materials', {})
     for overlay, calibrator in zip(overlays, calibrators):
         if not calibrator.param_names:
@@ -131,13 +150,20 @@ def format_material_params_func(
                 d['Orientation'][labels[i]] = create_param_item(param)
 
             d['Position'] = {}
-            labels = ['X', 'Y', 'Z']
+            pos_labels = ['X', 'Y', 'Z']
             for i in range(3):
                 param = params_dict[calibrator.param_names[i + 3]]
-                d['Position'][labels[i]] = create_param_item(param)
+                d['Position'][pos_labels[i]] = create_param_item(param)
 
             d['Stretch'] = {}
-            labels = ['U_xx', 'U_yy', 'U_zz', 'U_yz', 'U_xz', 'U_xy']
+            stretch_labels = [
+                'U_xx',
+                'U_yy',
+                'U_zz',
+                'U_yz',
+                'U_xz',
+                'U_xy',
+            ]
             for i in range(6):
                 param = params_dict[calibrator.param_names[i + 6]]
-                d['Stretch'][labels[i]] = create_param_item(param)
+                d['Stretch'][stretch_labels[i]] = create_param_item(param)

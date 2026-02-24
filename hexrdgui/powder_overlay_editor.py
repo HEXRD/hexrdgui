@@ -1,8 +1,22 @@
+from __future__ import annotations
+
 import copy
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QSpinBox
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QSpinBox,
+    QWidget,
+)
+
+if TYPE_CHECKING:
+    from hexrd.material import Material
+
+    from hexrdgui.overlays.powder_overlay import PowderOverlay
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
@@ -17,11 +31,11 @@ from hexrdgui.utils.physics_package import (
 
 class PowderOverlayEditor:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('powder_overlay_editor.ui', parent)
 
-        self._overlay = None
+        self._overlay: PowderOverlay | None = None
 
         self.pinhole_correction_editor = PinholeCorrectionEditor(self.ui)
         pinhole_editor = self.pinhole_correction_editor
@@ -35,7 +49,7 @@ class PowderOverlayEditor:
         self.update_visibility_states()
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         for w in self.widgets:
             if isinstance(w, (QDoubleSpinBox, QSpinBox)):
                 w.valueChanged.connect(self.update_config)
@@ -61,18 +75,18 @@ class PowderOverlayEditor:
 
         HexrdConfig().instrument_config_loaded.connect(self.update_visibility_states)
 
-    def update_refinement_options(self):
+    def update_refinement_options(self) -> None:
         if self.overlay is None:
             return
 
         self.refinements_with_labels = self.overlay.refinements_with_labels
 
     @property
-    def refinements(self):
+    def refinements(self) -> list[bool]:
         return [x[1] for x in self.refinements_with_labels]
 
     @refinements.setter
-    def refinements(self, v):
+    def refinements(self, v: list[bool]) -> None:
         if len(v) != len(self.refinements_with_labels):
             msg = f'Mismatch in {len(v)=} and ' f'{len(self.refinements_with_labels)=}'
             raise Exception(msg)
@@ -84,27 +98,28 @@ class PowderOverlayEditor:
         self.refinements_with_labels = with_labels
 
     @property
-    def refinements_with_labels(self):
+    def refinements_with_labels(self) -> list[tuple[str, bool]]:
         return self.refinements_selector.items
 
     @refinements_with_labels.setter
-    def refinements_with_labels(self, v):
+    def refinements_with_labels(self, v: list[tuple[str, bool]]) -> None:
         self.refinements_selector.items = copy.deepcopy(v)
         self.refinements_selector.update_table()
 
-    def update_refinements(self):
+    def update_refinements(self) -> None:
+        assert self.overlay is not None
         self.overlay.refinements = self.refinements
 
     @property
-    def overlay(self):
+    def overlay(self) -> PowderOverlay | None:
         return self._overlay
 
     @overlay.setter
-    def overlay(self, v):
+    def overlay(self, v: PowderOverlay) -> None:
         self._overlay = v
         self.update_gui()
 
-    def update_visibility_states(self):
+    def update_visibility_states(self) -> None:
         label = self.ui.xray_source_label
         combo = self.ui.xray_source
 
@@ -112,11 +127,11 @@ class PowderOverlayEditor:
         label.setVisible(visible)
         combo.setVisible(visible)
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         enable_width = self.ui.enable_width.isChecked()
         self.ui.tth_width.setEnabled(enable_width)
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         if self.overlay is None:
             return
 
@@ -136,7 +151,7 @@ class PowderOverlayEditor:
             self.update_enable_states()
             self.update_reflections_table()
 
-    def update_config(self):
+    def update_config(self) -> None:
         self.tth_width_config = self.tth_width_gui
         self.offset_config = self.offset_gui
         self.distortion_config = self.distortion_gui
@@ -148,59 +163,61 @@ class PowderOverlayEditor:
             HexrdConfig().overlay_config_changed.emit()
 
     @property
-    def material(self):
+    def material(self) -> Material | None:
         return self.overlay.material if self.overlay is not None else None
 
     @property
-    def tth_width_config(self):
+    def tth_width_config(self) -> float | None:
         if self.overlay is None:
             return None
 
+        assert self.material is not None
         return self.material.planeData.tThWidth
 
     @tth_width_config.setter
-    def tth_width_config(self, v):
+    def tth_width_config(self, v: float | None) -> None:
         if self.overlay is None:
             return
 
+        assert self.material is not None
         self.material.planeData.tThWidth = v
 
         # All overlays that use this material will be affected
         HexrdConfig().flag_overlay_updates_for_material(self.material.name)
 
     @property
-    def tth_width_gui(self):
+    def tth_width_gui(self) -> float | None:
         if not self.ui.enable_width.isChecked():
             return None
         return np.radians(self.ui.tth_width.value())
 
     @tth_width_gui.setter
-    def tth_width_gui(self, v):
+    def tth_width_gui(self, v: float | None) -> None:
         enable_width = v is not None
         self.ui.enable_width.setChecked(enable_width)
-        if enable_width:
+        if enable_width and v is not None:
             self.ui.tth_width.setValue(np.degrees(v))
 
     @property
-    def offset_config(self):
+    def offset_config(self) -> np.ndarray | None:
         if self.overlay is None:
-            return
+            return None
 
         return self.overlay.tvec
 
     @offset_config.setter
-    def offset_config(self, v):
+    def offset_config(self, v: list[float] | np.ndarray | None) -> None:
         if self.overlay is None:
             return
 
         self.overlay.tvec = v
 
     @property
-    def offset_gui(self):
+    def offset_gui(self) -> list[float]:
         return [w.value() for w in self.offset_widgets]
 
     @offset_gui.setter
-    def offset_gui(self, v):
+    def offset_gui(self, v: np.ndarray | None) -> None:
         if v is None:
             return
 
@@ -208,14 +225,14 @@ class PowderOverlayEditor:
             w.setValue(v[i])
 
     @property
-    def distortion_type_config(self):
+    def distortion_type_config(self) -> str | None:
         if self.overlay is None:
             return None
 
         return self.overlay.tth_distortion_type
 
     @distortion_type_config.setter
-    def distortion_type_config(self, v):
+    def distortion_type_config(self, v: str | None) -> None:
         if self.overlay is None:
             return
 
@@ -226,14 +243,14 @@ class PowderOverlayEditor:
         HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
 
     @property
-    def distortion_type_gui(self):
+    def distortion_type_gui(self) -> str | None:
         if self.ui.distortion_type.currentText() == 'Offset':
             return None
 
         return self.pinhole_correction_editor.correction_type
 
     @distortion_type_gui.setter
-    def distortion_type_gui(self, v):
+    def distortion_type_gui(self, v: str | None) -> None:
         widgets = [self.ui.distortion_type, self.pinhole_correction_editor]
         with block_signals(*widgets):
             if v is None:
@@ -249,25 +266,25 @@ class PowderOverlayEditor:
             self.pinhole_correction_editor.correction_type = v
 
     @property
-    def distortion_kwargs_config(self):
+    def distortion_kwargs_config(self) -> dict[str, Any] | None:
         if self.overlay is None:
-            return
+            return None
 
         return self.overlay.tth_distortion_kwargs
 
     @distortion_kwargs_config.setter
-    def distortion_kwargs_config(self, v):
+    def distortion_kwargs_config(self, v: dict[str, Any] | None) -> None:
         if self.overlay is None:
             return
 
         if self.overlay.tth_distortion_kwargs == v:
             return
 
-        self.overlay.tth_distortion_kwargs = v
+        self.overlay.tth_distortion_kwargs = v  # type: ignore[assignment]
         HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
 
     @property
-    def distortion_kwargs_gui(self):
+    def distortion_kwargs_gui(self) -> dict[str, Any] | None:
         dtype = self.distortion_type_gui
         if dtype is None:
             return None
@@ -275,15 +292,23 @@ class PowderOverlayEditor:
         return self.pinhole_correction_editor.correction_kwargs
 
     @distortion_kwargs_gui.setter
-    def distortion_kwargs_gui(self, v):
+    def distortion_kwargs_gui(self, v: dict[str, Any] | None) -> None:
         self.pinhole_correction_editor.correction_kwargs = v
 
     @property
-    def distortion_config(self):
-        return self.distortion_type_config, self.distortion_kwargs_config
+    def distortion_config(
+        self,
+    ) -> tuple[str | None, dict[str, Any] | None]:
+        return (
+            self.distortion_type_config,
+            self.distortion_kwargs_config,
+        )
 
     @distortion_config.setter
-    def distortion_config(self, v):
+    def distortion_config(
+        self,
+        v: tuple[str | None, dict[str, Any] | None],
+    ) -> None:
         if self.overlay is None:
             return
 
@@ -295,24 +320,32 @@ class PowderOverlayEditor:
             return
 
         self.overlay.tth_distortion_type = dtype
-        self.overlay.tth_distortion_kwargs = dconfig
+        self.overlay.tth_distortion_kwargs = dconfig  # type: ignore[assignment]
         HexrdConfig().overlay_distortions_modified.emit(self.overlay.name)
 
     @property
-    def distortion_gui(self):
-        return self.distortion_type_gui, self.distortion_kwargs_gui
+    def distortion_gui(
+        self,
+    ) -> tuple[str | None, dict[str, Any] | None]:
+        return (
+            self.distortion_type_gui,
+            self.distortion_kwargs_gui,
+        )
 
     @distortion_gui.setter
-    def distortion_gui(self, v):
+    def distortion_gui(
+        self,
+        v: tuple[str | None, dict[str, Any] | None],
+    ) -> None:
         self.distortion_type_gui = v[0]
         self.distortion_type_kwargs = v[1]
 
     @property
-    def offset_widgets(self):
+    def offset_widgets(self) -> list[QDoubleSpinBox]:
         return [getattr(self.ui, f'offset_{i}') for i in range(3)]
 
     @property
-    def widgets(self):
+    def widgets(self) -> list[QWidget]:
         distortion_widgets = self.offset_widgets + [
             self.ui.distortion_type,
             self.pinhole_correction_editor,
@@ -324,7 +357,7 @@ class PowderOverlayEditor:
             self.ui.xray_source,
         ] + distortion_widgets
 
-    def material_tth_width_modified_externally(self, material_name):
+    def material_tth_width_modified_externally(self, material_name: str) -> None:
         if not self.material:
             return
 
@@ -333,11 +366,11 @@ class PowderOverlayEditor:
 
         self.update_gui()
 
-    def update_reflections_table(self):
+    def update_reflections_table(self) -> None:
         if hasattr(self, '_table'):
             self._table.material = self.material
 
-    def show_reflections_table(self):
+    def show_reflections_table(self) -> None:
         if not hasattr(self, '_table'):
             kwargs = {
                 'material': self.material,
@@ -351,15 +384,15 @@ class PowderOverlayEditor:
         self._table.show()
 
     @property
-    def distortion_type(self):
+    def distortion_type(self) -> str:
         return self.ui.distortion_type.currentText()
 
     @property
-    def pinhole_correction_type(self):
+    def pinhole_correction_type(self) -> str | None:
         return self.pinhole_correction_editor.correction_type
 
     @pinhole_correction_type.setter
-    def pinhole_correction_type(self, v):
+    def pinhole_correction_type(self, v: str | None) -> None:
         self.pinhole_correction_editor.correction_type = v
 
     @property
@@ -370,7 +403,7 @@ class PowderOverlayEditor:
         return self.overlay.xray_source
 
     @xray_source_config.setter
-    def xray_source_config(self, v: str | None):
+    def xray_source_config(self, v: str | None) -> None:
         if self.overlay is None:
             return
 
@@ -380,16 +413,15 @@ class PowderOverlayEditor:
         self.overlay.xray_source = v
 
     @property
-    def xray_source_gui(self):
+    def xray_source_gui(self) -> str | None:
         if not HexrdConfig().has_multi_xrs:
             return None
 
         w = self.ui.xray_source
-        idx = w.currentIndex()
         return w.currentText()
 
     @xray_source_gui.setter
-    def xray_source_gui(self, v):
+    def xray_source_gui(self, v: str | None) -> None:
         if v is not None and not HexrdConfig().has_multi_xrs:
             raise Exception(v)
 
@@ -400,7 +432,7 @@ class PowderOverlayEditor:
 
         w.setCurrentText(v)
 
-    def distortion_type_changed(self):
+    def distortion_type_changed(self) -> None:
         if self.distortion_type == 'Pinhole Camera Correction':
             # A physics package is required for this operation
             if not ask_to_create_physics_package_if_missing():
@@ -415,23 +447,23 @@ class PowderOverlayEditor:
         self.update_config()
 
     @property
-    def clip_with_panel_buffer_config(self):
+    def clip_with_panel_buffer_config(self) -> bool:
         if self.overlay is None:
             return False
 
         return self.overlay.clip_with_panel_buffer
 
     @clip_with_panel_buffer_config.setter
-    def clip_with_panel_buffer_config(self, b):
+    def clip_with_panel_buffer_config(self, b: bool) -> None:
         if self.overlay is None:
             return
 
         self.overlay.clip_with_panel_buffer = b
 
     @property
-    def clip_with_panel_buffer_gui(self):
+    def clip_with_panel_buffer_gui(self) -> bool:
         return self.ui.clip_with_panel_buffer.isChecked()
 
     @clip_with_panel_buffer_gui.setter
-    def clip_with_panel_buffer_gui(self, b):
+    def clip_with_panel_buffer_gui(self, b: bool) -> None:
         self.ui.clip_with_panel_buffer.setChecked(b)

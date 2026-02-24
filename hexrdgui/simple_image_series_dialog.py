@@ -2,10 +2,11 @@ import copy
 import yaml
 import numpy as np
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtGui import QCursor
-from PySide6.QtCore import QObject, Qt, QPersistentModelIndex, QDir, Signal
-from PySide6.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox
+from PySide6.QtCore import QObject, Qt, QPersistentModelIndex, Signal
+from PySide6.QtWidgets import QTableWidgetItem, QFileDialog, QMenu, QMessageBox, QWidget
 
 from hexrdgui.constants import (
     MAXIMUM_OMEGA_RANGE,
@@ -37,19 +38,19 @@ class SimpleImageSeriesDialog(QObject):
     # Emitted when images are loaded
     images_loaded = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
         self.ui = loader.load_file('simple_image_series_dialog.ui', parent)
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         self.update_config_variables()
 
-        self.files = []
-        self.omega_min = []
-        self.omega_max = []
+        self.files: list[Any] = []
+        self.omega_min: list[Any] = []
+        self.omega_max: list[Any] = []
         self.idx = 0
         self.ext = ''
         self.frame_data = None
@@ -69,7 +70,7 @@ class SimpleImageSeriesDialog(QObject):
 
     # Setup GUI
 
-    def setup_gui(self):
+    def setup_gui(self) -> None:
         self.setup_processing_options()
 
         self.ui.all_detectors.setChecked(self.state.get('apply_to_all', False))
@@ -94,7 +95,7 @@ class SimpleImageSeriesDialog(QObject):
 
         self.ui.file_options.resizeColumnsToContents()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         HexrdConfig().detectors_changed.connect(self.config_changed)
         HexrdConfig().load_panel_state_modified.connect(self.config_changed)
 
@@ -120,7 +121,7 @@ class SimpleImageSeriesDialog(QObject):
 
         HexrdConfig().state_loaded.connect(self.state_loaded)
 
-    def setup_processing_options(self):
+    def setup_processing_options(self) -> None:
         self.state = HexrdConfig().load_panel_state
         self.num_dets = len(HexrdConfig().detector_names)
         self.state.setdefault('agg', UI_AGG_INDEX_NONE)
@@ -138,18 +139,18 @@ class SimpleImageSeriesDialog(QObject):
             while len(self.state[k]) < self.num_dets:
                 self.state[k].append(default)
 
-    def state_loaded(self):
+    def state_loaded(self) -> None:
         self.update_config_variables()
         self.setup_gui()
 
-    def update_config_variables(self):
+    def update_config_variables(self) -> None:
         self.ims = HexrdConfig().imageseries_dict
-        self.parent_dir = HexrdConfig().images_dir
+        self.parent_dir: str | None = HexrdConfig().images_dir
         self.state = HexrdConfig().load_panel_state
 
     # Handle GUI changes
 
-    def dark_mode_changed(self):
+    def dark_mode_changed(self) -> None:
         self.state['dark'][self.idx] = self.ui.dark_mode.currentIndex()
 
         if self.state['dark'][self.idx] == UI_DARK_INDEX_FILE:
@@ -168,33 +169,33 @@ class SimpleImageSeriesDialog(QObject):
             self.state['dark_files'][self.idx] = None
         self.enable_read()
 
-    def detectors_changed(self):
+    def detectors_changed(self) -> None:
         self.ui.detector.clear()
         self.dets = HexrdConfig().detector_names
         self.ui.detector.addItems(HexrdConfig().detector_names)
 
-    def agg_changed(self):
+    def agg_changed(self) -> None:
         self.state['agg'] = self.ui.aggregation.currentIndex()
         self.enable_read()
 
-    def trans_changed(self):
+    def trans_changed(self) -> None:
         self.state['trans'][self.idx] = self.ui.transform.currentIndex()
         self.enable_read()
 
-    def dir_changed(self):
+    def dir_changed(self) -> None:
         new_dir = str(Path(self.files[0][0]).parent)
         HexrdConfig().set_images_dir(new_dir)
         self.parent_dir = new_dir
         self.ui.img_directory.setText(str(Path(self.parent_dir).parent))
 
-    def config_changed(self):
+    def config_changed(self) -> None:
         self.setup_gui()
         self.detectors_changed()
         self.ui.file_options.setRowCount(0)
         self.reset_data()
         self.enable_read()
 
-    def switch_detector(self):
+    def switch_detector(self) -> None:
         self.idx = self.ui.detector.currentIndex()
         if not self.ui.all_detectors.isChecked():
             self.ui.transform.setCurrentIndex(self.state['trans'][self.idx])
@@ -203,7 +204,7 @@ class SimpleImageSeriesDialog(QObject):
         self.dark_mode_changed()
         self.create_table()
 
-    def apply_to_all_changed(self, checked):
+    def apply_to_all_changed(self, checked: bool) -> None:
         HexrdConfig().load_panel_state['apply_to_all'] = checked
         if not checked:
             self.switch_detector()
@@ -211,12 +212,12 @@ class SimpleImageSeriesDialog(QObject):
             self.select_dark_img(self.dark_files[self.idx])
         self.enable_read()
 
-    def select_dark_img(self, selected_file=False):
+    def select_dark_img(self, selected_file: bool | str = False) -> None:
         if not selected_file:
             # This takes one image to use for dark subtraction.
             caption = 'Select image file'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
-                self.ui, caption, dir=self.parent_dir
+                self.ui, caption, dir=self.parent_dir or ""
             )
 
         if selected_file:
@@ -231,10 +232,10 @@ class SimpleImageSeriesDialog(QObject):
                     self.dark_files = [selected_file] * self.num_dets
                     self.state['dark_files'] = [selected_file] * self.num_dets
                     msg = (
-                        f'Unable to match files - using the same dark file'
-                        f'for each detector.\nIf this is incorrect please '
-                        f'de-select \"Apply Selections to All Detectors\" and '
-                        f'select the dark file manually for each detector.'
+                        'Unable to match files - using the same dark file'
+                        'for each detector.\nIf this is incorrect please '
+                        'de-select \"Apply Selections to All Detectors\" and '
+                        'select the dark file manually for each detector.'
                     )
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
             else:
@@ -244,11 +245,11 @@ class SimpleImageSeriesDialog(QObject):
             self.dark_mode_changed()
             self.enable_read()
 
-    def select_images(self):
+    def select_images(self) -> None:
         # This takes one or more images for a single detector.
         caption = 'Select image file(s)'
         selected_files, _ = QFileDialog.getOpenFileNames(
-            self.ui, caption, dir=self.parent_dir
+            self.ui, caption, dir=self.parent_dir or ""
         )
 
         if selected_files:
@@ -265,22 +266,22 @@ class SimpleImageSeriesDialog(QObject):
             self.setup_gui()
             self.enable_read()
 
-    def reset_data(self):
+    def reset_data(self) -> None:
         self.empty_frames = 0
-        self.total_frames = []
+        self.total_frames: list[Any] = []
         self.omega_min = []
         self.omega_max = []
-        self.nsteps = []
+        self.nsteps: list[Any] = []
         self.files = []
         self.nframes = 0
         self.frame_data = None
 
-    def clear_from_stack_dialog(self):
+    def clear_from_stack_dialog(self) -> None:
         self.reset_data()
         self.ui.file_options.setRowCount(0)
         self.enable_read()
 
-    def enable_aggregations(self, row, column):
+    def enable_aggregations(self, row: int, column: int) -> None:
         if not (column == 1 or column == 2):
             return
 
@@ -309,7 +310,7 @@ class SimpleImageSeriesDialog(QObject):
             self.state['agg'] = UI_AGG_INDEX_NONE
             self.ui.aggregation.setCurrentIndex(0)
 
-    def load_image_data(self, selected_files):
+    def load_image_data(self, selected_files: list[str]) -> None:
         self.ext = Path(selected_files[0]).suffix
         self.has_omega = False
 
@@ -371,7 +372,7 @@ class SimpleImageSeriesDialog(QObject):
 
         self.add_roi_to_state()
 
-    def add_roi_to_state(self):
+    def add_roi_to_state(self) -> None:
         if 'rect' in self.state:
             del self.state['rect']
 
@@ -391,20 +392,21 @@ class SimpleImageSeriesDialog(QObject):
 
         self.state['rect'] = rect_dict
 
-    def get_omega_data(self, ims):
+    def get_omega_data(self, ims: Any) -> None:
         minimum = ims.metadata['omega'][0][0]
         maximum = ims.metadata['omega'][-1][1]
 
         self.omega_min.append(minimum)
         self.omega_max.append(maximum)
 
-    def get_yaml_omega_data(self, data):
+    def get_yaml_omega_data(self, data: dict[str, Any]) -> None:
         if 'ostart' in data['meta']:
             self.omega_min.append(data['meta']['ostart'])
             self.omega_max.append(data['meta']['ostop'])
         else:
             if isinstance(data['meta']['omega'], str):
                 words = data['meta']['omega'].split()
+                assert self.parent_dir is not None
                 fname = Path(self.parent_dir, words[-1])
                 nparray = np.load(fname)
             else:
@@ -414,7 +416,7 @@ class SimpleImageSeriesDialog(QObject):
                 self.omega_min.append(vals[0])
                 self.omega_max.append(vals[1])
 
-    def find_images(self, fnames):
+    def find_images(self, fnames: list[str]) -> None:
         self.files, manual = ImageLoadManager().load_images(fnames)
         using_roi = HexrdConfig().instrument_has_roi
 
@@ -441,8 +443,9 @@ class SimpleImageSeriesDialog(QObject):
         if self.files and self.ext in YAML_EXTS:
             self.get_yml_files()
 
-    def get_yml_files(self):
+    def get_yml_files(self) -> None:
         self.yml_files = []
+        assert self.parent_dir is not None
         for det in self.files:
             files = []
             for f in det:
@@ -454,7 +457,7 @@ class SimpleImageSeriesDialog(QObject):
                     files.extend([str(p) for p in path.glob(raw_image)])
             self.yml_files.append(files)
 
-    def enable_read(self):
+    def enable_read(self) -> None:
         files = self.yml_files if self.ext in YAML_EXTS else self.files
         enabled = len(files) > 0
         if len(files) and all(len(f) for f in files):
@@ -467,7 +470,7 @@ class SimpleImageSeriesDialog(QObject):
 
     # Handle table setup and changes
 
-    def create_table(self):
+    def create_table(self) -> None:
         # Create the table if files have successfully been selected
         if not len(self.files):
             return
@@ -483,7 +486,7 @@ class SimpleImageSeriesDialog(QObject):
         for row in range(self.ui.file_options.rowCount()):
             for column in range(self.ui.file_options.columnCount()):
                 item = QTableWidgetItem()
-                item.setTextAlignment(Qt.AlignCenter)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.ui.file_options.setItem(row, column, item)
 
         self.ui.file_options.blockSignals(True)
@@ -504,18 +507,18 @@ class SimpleImageSeriesDialog(QObject):
             self.ui.file_options.item(i, 5).setToolTip('Number of steps')
 
             # Don't allow editing of file name or total frames
-            self.ui.file_options.item(i, 0).setFlags(Qt.ItemIsEnabled)
-            self.ui.file_options.item(i, 2).setFlags(Qt.ItemIsEnabled)
-            self.ui.file_options.item(i, 5).setFlags(Qt.ItemIsEnabled)
+            self.ui.file_options.item(i, 0).setFlags(Qt.ItemFlag.ItemIsEnabled)
+            self.ui.file_options.item(i, 2).setFlags(Qt.ItemFlag.ItemIsEnabled)
+            self.ui.file_options.item(i, 5).setFlags(Qt.ItemFlag.ItemIsEnabled)
             # If raw data offset can only be changed in YAML file
             if self.ext in YAML_EXTS:
-                self.ui.file_options.item(i, 1).setFlags(Qt.ItemIsEnabled)
+                self.ui.file_options.item(i, 1).setFlags(Qt.ItemFlag.ItemIsEnabled)
 
         self.ui.file_options.blockSignals(False)
         self.ui.file_options.resizeColumnsToContents()
-        self.ui.file_options.sortByColumn(0, Qt.AscendingOrder)
+        self.ui.file_options.sortByColumn(0, Qt.SortOrder.AscendingOrder)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, event: Any) -> None:
         # Allow user to delete selected file(s)
         menu = QMenu(self.ui)
         remove = menu.addAction('Remove Selected Files')
@@ -537,12 +540,12 @@ class SimpleImageSeriesDialog(QObject):
                 for i in range(len(self.files)):
                     self.files[i] = []
                 for row in range(self.ui.file_options.rowCount()):
-                    f = self.ui.file_options.item(row, 0).text()
+                    self.ui.file_options.item(row, 0).text()
             else:
                 self.files = []
         self.enable_read()
 
-    def omega_data_changed(self, row, column):
+    def omega_data_changed(self, row: int, column: int) -> None:
         # Update the values for equivalent files when the data is changed
         with block_signals(self.ui.file_options):
             curr_val = self.ui.file_options.item(row, column).text()
@@ -563,9 +566,9 @@ class SimpleImageSeriesDialog(QObject):
                             'metadata. Continue?'
                         )
                         response = QMessageBox.question(
-                            self.ui, 'HEXRD', msg, (QMessageBox.Yes | QMessageBox.No)
+                            self.ui, 'HEXRD', msg, (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
                         )
-                        if response == QMessageBox.No:
+                        if response == QMessageBox.StandardButton.No:
                             self.ui.file_options.item(row, column).setText(
                                 str(options[column][row])
                             )
@@ -576,20 +579,18 @@ class SimpleImageSeriesDialog(QObject):
                 self.ui.update_image_data.setEnabled(self.update_allowed)
                 self.enable_read()
 
-    def confirm_omega_range(self):
-        files = self.yml_files if self.ext in YAML_EXTS else self.files
+    def confirm_omega_range(self) -> bool:
         omega_range = abs(max(self.omega_max) - min(self.omega_min))
         within_range = omega_range <= MAXIMUM_OMEGA_RANGE
         if not within_range:
             msg = (
-                f'All omegas must be set and the '
-                f'range must be no greater than 360°.'
+                'All omegas must be set and the ' 'range must be no greater than 360°.'
             )
             QMessageBox.warning(self.ui, 'HEXRD', msg)
         return within_range
 
     # Process files
-    def read_data(self):
+    def read_data(self) -> None:
         if not self.confirm_omega_range():
             return
         data = {
@@ -610,11 +611,11 @@ class SimpleImageSeriesDialog(QObject):
             data.update(self.frame_data)
         HexrdConfig().recent_images = self.files
         HexrdConfig().load_panel_state.update(copy.copy(self.state))
-        ImageLoadManager().read_data(self.files, data, self.parent())
+        ImageLoadManager().read_data(self.files, data, self.parent())  # type: ignore[arg-type]
         self.update_allowed = True
         self.ui.read.setDisabled(True)
 
-    def image_stack_loaded(self, data):
+    def image_stack_loaded(self, data: dict[str, Any]) -> None:
         self.files = data['files']
         self.omega_min = data['omega_min']
         self.omega_max = data['omega_max']
@@ -629,7 +630,7 @@ class SimpleImageSeriesDialog(QObject):
         self.update_allowed = False
         self.ui.update_image_data.setEnabled(self.update_allowed)
 
-    def update_image_data(self):
+    def update_image_data(self) -> None:
         if not self.confirm_omega_range():
             return
         self.ui.update_image_data.setDisabled(True)
@@ -642,22 +643,22 @@ class SimpleImageSeriesDialog(QObject):
         ImageLoadManager().add_omega_metadata(HexrdConfig().imageseries_dict, data)
         ImageLoadManager().omegas_updated.emit()
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
-    def accept_dialog(self):
+    def accept_dialog(self) -> None:
         if self.ui.read.isEnabled():
             self.read_data()
         self.close_widget()
 
-    def reverse_frames(self, state):
+    def reverse_frames(self, state: bool) -> None:
         self.state['frames_reversed'] = state
         self.ui.reverse_frames.setChecked(state)
         self.enable_read()
 
-    def close_widget(self):
+    def close_widget(self) -> None:
         if self.ui.isFloating():
             self.ui.close()
 
-    def location_changed(self):
+    def location_changed(self) -> None:
         self.ui.button_box.setVisible(self.ui.isFloating())

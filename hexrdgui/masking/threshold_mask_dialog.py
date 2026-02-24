@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import math
 
@@ -17,30 +19,33 @@ class ThresholdMaskDialog(QObject):
     # Mask has been applied
     mask_applied = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
-        self.ui = loader.load_file('threshold_mask_dialog.ui', parent)
+        self.ui = loader.load_file(
+            'threshold_mask_dialog.ui', parent  # type: ignore[arg-type]
+        )
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
         add_help_url(self.ui.button_box, 'configuration/masking/#threshold')
 
-        self.values = []
+        self.values: list[float] = []
 
         self.setup_gui()
         self.setup_connections()
 
-    def show(self):
+    def show(self) -> None:
         self.setup_gui()
         self.ui.show()
 
-    def setup_gui(self, reset=False):
-        if reset or not MaskManager().threshold_mask:
+    def setup_gui(self, reset: bool = False) -> None:
+        threshold_mask = MaskManager().threshold_mask
+        if reset or not threshold_mask:
             vals = []
         else:
-            vals = MaskManager().threshold_mask.data
+            vals = threshold_mask.data
 
         val = vals[0] if len(vals) > 0 else -math.inf
         self.ui.first_value.setValue(val)
@@ -48,21 +53,22 @@ class ThresholdMaskDialog(QObject):
         val = vals[1] if len(vals) > 1 else math.inf
         self.ui.second_value.setValue(val)
 
-    def setup_connections(self):
-        apply_button = self.ui.button_box.button(QDialogButtonBox.Apply)
+    def setup_connections(self) -> None:
+        apply_button = self.ui.button_box.button(QDialogButtonBox.StandardButton.Apply)
         apply_button.clicked.connect(self.accept)
-        reset_button = self.ui.button_box.button(QDialogButtonBox.RestoreDefaults)
+        reset_button = self.ui.button_box.button(QDialogButtonBox.StandardButton.RestoreDefaults)
         reset_button.clicked.connect(functools.partial(self.setup_gui, reset=True))
 
-    def gather_input(self):
+    def gather_input(self) -> None:
         self.values.clear()
         self.values.append(self.ui.first_value.value())
         self.values.append(self.ui.second_value.value())
 
-    def accept(self):
+    def accept(self) -> None:
         self.gather_input()
-        if MaskManager().threshold_mask is None:
+        threshold_mask = MaskManager().threshold_mask
+        if threshold_mask is None:
             MaskManager().add_mask(self.values, MaskType.threshold, name='threshold')
         else:
-            MaskManager().threshold_mask.data = self.values
+            threshold_mask.data = self.values
         self.mask_applied.emit()

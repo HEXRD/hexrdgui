@@ -1,4 +1,6 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout
+from typing import Any
+
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QWidget
 
 from hexrdgui.indexing.grains_table_model import GrainsTableModel
 from hexrdgui.plot_grains import plot_grains
@@ -7,7 +9,7 @@ from hexrdgui.ui_loader import UiLoader
 
 class GrainsViewerWidget:
 
-    def __init__(self, grains_table, parent=None):
+    def __init__(self, grains_table: Any, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('grains_viewer_widget.ui', parent)
 
@@ -18,15 +20,15 @@ class GrainsViewerWidget:
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.plot_grains.clicked.connect(self.plot_grains)
 
     @property
-    def grains_table(self):
+    def grains_table(self) -> Any:
         return self.ui.table_view.grains_table
 
     @grains_table.setter
-    def grains_table(self, v):
+    def grains_table(self, v: Any) -> None:
         # We make a new GrainsTableModel each time for now to save
         # dev time, since the model wasn't designed to be mutable.
         # FIXME: in the future, make GrainsTableModel grains mutable,
@@ -44,20 +46,20 @@ class GrainsViewerWidget:
         }
         view.data_model = GrainsTableModel(**kwargs)
 
-    def plot_grains(self):
+    def plot_grains(self) -> None:
         plot_grains(self.grains_table, None, parent=self.ui)
 
     @property
-    def plot_grains_visible(self):
+    def plot_grains_visible(self) -> bool:
         return self.ui.plot_grains.isVisible()
 
     @plot_grains_visible.setter
-    def plot_grains_visible(self, b):
+    def plot_grains_visible(self, b: bool) -> None:
         self.ui.plot_grains.setVisible(b)
 
 
 class GrainsViewerDialog(QDialog):
-    def __init__(self, grains_table, parent=None):
+    def __init__(self, grains_table: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.widget = GrainsViewerWidget(grains_table, self)
 
@@ -71,9 +73,9 @@ class GrainsViewerDialog(QDialog):
         UiLoader().install_dialog_enter_key_filters(self)
 
     @property
-    def plot_grains_visible(self):
+    def plot_grains_visible(self) -> bool:
         return self.widget.plot_grains_visible
 
     @plot_grains_visible.setter
-    def plot_grains_visible(self, b):
+    def plot_grains_visible(self, b: bool) -> None:
         self.widget.plot_grains_visible = b

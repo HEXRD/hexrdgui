@@ -1,11 +1,21 @@
+from typing import Any
+
 import numpy as np
 from scipy.interpolate import interp1d
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QMessageBox, QVBoxLayout
+from PySide6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
+    QMessageBox,
+    QVBoxLayout,
+    QWidget,
+)
 
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.container import BarContainer
 from matplotlib.figure import Figure
+from matplotlib.lines import Line2D
 
 from hexrdgui.range_widget import RangeWidget
 from hexrdgui.ui_loader import UiLoader
@@ -23,15 +33,17 @@ class BrightnessContrastEditor(QObject):
 
     reset = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self._data_range = (0, 1)
+        self._ui_min: Any = 0
+        self._ui_max: Any = 1
         self._ui_min, self._ui_max = self._data_range
         self._data = None
-        self.histogram = None
-        self.histogram_artist = None
-        self.line_artist = None
+        self.histogram: Any = None
+        self.histogram_artist: BarContainer | None = None
+        self.line_artist: Line2D | None = None
 
         self.default_auto_threshold = 5000
         self.current_auto_threshold = self.default_auto_threshold
@@ -48,7 +60,7 @@ class BrightnessContrastEditor(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.minimum.valueChanged.connect(self.minimum_edited)
         self.ui.maximum.valueChanged.connect(self.maximum_edited)
         self.ui.brightness.valueChanged.connect(self.brightness_edited)
@@ -59,27 +71,27 @@ class BrightnessContrastEditor(QObject):
         self.ui.auto_button.pressed.connect(self.auto_pressed)
 
     @property
-    def data_range(self):
+    def data_range(self) -> tuple:
         return self._data_range
 
     @data_range.setter
-    def data_range(self, v):
+    def data_range(self, v: tuple) -> None:
         self._data_range = v
         self.clip_ui_range()
         self.ensure_min_max_space('max')
         self.update_gui()
 
     @property
-    def data(self):
+    def data(self) -> Any:
         return self._data
 
     @data.setter
-    def data(self, v):
+    def data(self, v: Any) -> None:
         self._data = v
         self.reset_data_range()
 
     @property
-    def data_list(self):
+    def data_list(self) -> list:
         if self.data is None:
             return []
         elif isinstance(self.data, (tuple, list)):
@@ -90,7 +102,7 @@ class BrightnessContrastEditor(QObject):
             return [self.data]
 
     @property
-    def data_bounds(self):
+    def data_bounds(self) -> tuple:
         if self.data is None:
             return (0, 1)
 
@@ -99,10 +111,10 @@ class BrightnessContrastEditor(QObject):
         maxes = [np.nanmax(x) for x in data]
         return (min(mins), max(maxes))
 
-    def reset_data_range(self):
+    def reset_data_range(self) -> None:
         self.data_range = self.data_bounds
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         self.update_brightness()
         self.update_contrast()
         self.update_histogram()
@@ -110,27 +122,27 @@ class BrightnessContrastEditor(QObject):
         self.update_line()
 
     @property
-    def data_min(self):
+    def data_min(self) -> float:
         return self.data_range[0]
 
     @property
-    def data_max(self):
+    def data_max(self) -> float:
         return self.data_range[1]
 
     @property
-    def data_mean(self):
+    def data_mean(self) -> float:
         return np.mean(self.data_range)
 
     @property
-    def data_width(self):
+    def data_width(self) -> float:
         return self.data_range[1] - self.data_range[0]
 
     @property
-    def ui_min(self):
+    def ui_min(self) -> float:
         return self._ui_min
 
     @ui_min.setter
-    def ui_min(self, v):
+    def ui_min(self, v: float) -> None:
         self._ui_min = v
         slider_v = np.interp(v, self.data_range, (0, NUM_INCREMENTS))
         self.ui.minimum.setValue(slider_v)
@@ -139,11 +151,11 @@ class BrightnessContrastEditor(QObject):
         self.modified()
 
     @property
-    def ui_max(self):
+    def ui_max(self) -> float:
         return self._ui_max
 
     @ui_max.setter
-    def ui_max(self, v):
+    def ui_max(self, v: float) -> None:
         self._ui_max = v
         slider_v = np.interp(v, self.data_range, (0, NUM_INCREMENTS))
         self.ui.maximum.setValue(slider_v)
@@ -151,7 +163,7 @@ class BrightnessContrastEditor(QObject):
         self.update_line()
         self.modified()
 
-    def clip_ui_range(self):
+    def clip_ui_range(self) -> None:
         # Clip the ui min and max to be in the data range
         if self.ui_min < self.data_min:
             self.ui_min = self.data_min
@@ -160,29 +172,29 @@ class BrightnessContrastEditor(QObject):
             self.ui_max = self.data_max
 
     @property
-    def ui_mean(self):
-        return np.mean((self.ui_min, self.ui_max))
+    def ui_mean(self) -> float:
+        return float(np.mean((self.ui_min, self.ui_max)))
 
     @ui_mean.setter
-    def ui_mean(self, v):
+    def ui_mean(self, v: float) -> None:
         offset = v - self.ui_mean
         self.ui_range = (self.ui_min + offset, self.ui_max + offset)
 
     @property
-    def ui_width(self):
+    def ui_width(self) -> float:
         return self.ui_max - self.ui_min
 
     @ui_width.setter
-    def ui_width(self, v):
+    def ui_width(self, v: float) -> None:
         offset = (v - self.ui_width) / 2
         self.ui_range = (self.ui_min - offset, self.ui_max + offset)
 
     @property
-    def ui_range(self):
+    def ui_range(self) -> tuple:
         return (self.ui_min, self.ui_max)
 
     @ui_range.setter
-    def ui_range(self, v):
+    def ui_range(self, v: tuple) -> None:
         with block_signals(self, self.ui.minimum, self.ui.maximum):
             self.ui_min = v[0]
             self.ui_max = v[1]
@@ -190,40 +202,40 @@ class BrightnessContrastEditor(QObject):
         self.modified()
 
     @property
-    def ui_brightness(self):
+    def ui_brightness(self) -> float:
         return self.ui.brightness.value() / NUM_INCREMENTS * 100
 
     @ui_brightness.setter
-    def ui_brightness(self, v):
+    def ui_brightness(self, v: float) -> None:
         self.ui.brightness.setValue(v / 100 * NUM_INCREMENTS)
 
     @property
-    def ui_contrast(self):
+    def ui_contrast(self) -> float:
         return self.ui.contrast.value() / NUM_INCREMENTS * 100
 
     @ui_contrast.setter
-    def ui_contrast(self, v):
+    def ui_contrast(self, v: float) -> None:
         self.ui.contrast.setValue(v / 100 * NUM_INCREMENTS)
 
     @property
-    def contrast(self):
+    def contrast(self) -> float:
         angle = np.arctan((self.ui_width - self.data_width) / self.data_width)
-        return 100 - np.interp(angle, (-np.pi / 4, np.pi / 4), (0, 100))
+        return float(100 - np.interp(angle, (-np.pi / 4, np.pi / 4), (0, 100)))
 
     @contrast.setter
-    def contrast(self, v):
+    def contrast(self, v: float) -> None:
         angle = np.interp(100 - v, (0, 100), (-np.pi / 4, np.pi / 4))
-        self.ui_width = np.tan(angle) * self.data_width + self.data_width
+        self.ui_width = float(np.tan(angle) * self.data_width + self.data_width)
 
     @property
-    def brightness(self):
-        return 100 - np.interp(self.ui_mean, self.data_range, (0, 100))
+    def brightness(self) -> float:
+        return float(100 - np.interp(self.ui_mean, self.data_range, (0, 100)))
 
     @brightness.setter
-    def brightness(self, v):
-        self.ui_mean = np.interp(100 - v, (0, 100), self.data_range)
+    def brightness(self, v: float) -> None:
+        self.ui_mean = float(np.interp(100 - v, (0, 100), self.data_range))
 
-    def ensure_min_max_space(self, one_to_change):
+    def ensure_min_max_space(self, one_to_change: str) -> None:
         # Keep the maximum at least one increment ahead of the minimum
         if self.ui.maximum.value() > self.ui.minimum.value():
             return
@@ -243,7 +255,7 @@ class BrightnessContrastEditor(QObject):
         interpolated = np.interp(v, (0, NUM_INCREMENTS), self.data_range)
         setattr(self, a, interpolated)
 
-    def minimum_edited(self):
+    def minimum_edited(self) -> None:
         v = self.ui.minimum.value()
         self._ui_min = np.interp(v, (0, NUM_INCREMENTS), self.data_range)
         self.clip_ui_range()
@@ -255,7 +267,7 @@ class BrightnessContrastEditor(QObject):
         self.update_line()
         self.modified()
 
-    def maximum_edited(self):
+    def maximum_edited(self) -> None:
         v = self.ui.maximum.value()
         self._ui_max = np.interp(v, (0, NUM_INCREMENTS), self.data_range)
         self.clip_ui_range()
@@ -267,26 +279,26 @@ class BrightnessContrastEditor(QObject):
         self.update_line()
         self.modified()
 
-    def update_brightness(self):
+    def update_brightness(self) -> None:
         with block_signals(self, self.ui.brightness):
             self.ui_brightness = self.brightness
 
-    def update_contrast(self):
+    def update_contrast(self) -> None:
         with block_signals(self, self.ui.contrast):
             self.ui_contrast = self.contrast
 
-    def brightness_edited(self, v):
+    def brightness_edited(self, v: float) -> None:
         self.brightness = self.ui_brightness
         self.update_contrast()
 
-    def contrast_edited(self, v):
+    def contrast_edited(self, v: float) -> None:
         self.contrast = self.ui_contrast
         self.update_brightness()
 
-    def modified(self):
+    def modified(self) -> None:
         self.edited.emit(self.ui_min, self.ui_max)
 
-    def setup_plot(self):
+    def setup_plot(self) -> None:
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         self.axis = self.figure.add_subplot(111)
@@ -295,12 +307,12 @@ class BrightnessContrastEditor(QObject):
 
         self.ui.plot_layout.addWidget(self.canvas)
 
-    def clear_plot(self):
+    def clear_plot(self) -> None:
         self.axis.clear()
         self.histogram_artist = None
         self.line_artist = None
 
-    def update_histogram(self):
+    def update_histogram(self) -> None:
         # Clear the plot so everything will be re-drawn from scratch
         self.clear_plot()
 
@@ -341,26 +353,27 @@ class BrightnessContrastEditor(QObject):
 
         self.canvas.draw()
 
-    def update_range_labels(self):
+    def update_range_labels(self) -> None:
         labels = (self.ui.min_label, self.ui.max_label)
         texts = [f'{x:.2f}' for x in self.ui_range]
         for label, text in zip(labels, texts):
             label.setText(text)
 
-    def create_line(self):
+    def create_line(self) -> None:
         xs = (self.ui_min, self.ui_max)
         ys = self.axis.get_ylim()
-        kwargs = {
+        kwargs: dict[str, Any] = {
             'scalex': False,
             'scaley': False,
             'color': 'black',
         }
         (self.line_artist,) = self.axis.plot(xs, ys, **kwargs)
 
-    def update_line(self):
+    def update_line(self) -> None:
         if self.line_artist is None:
             self.create_line()
 
+        assert self.line_artist is not None
         xs = (self.ui_min, self.ui_max)
         ys = self.axis.get_ylim()
 
@@ -373,10 +386,10 @@ class BrightnessContrastEditor(QObject):
         self.canvas.draw_idle()
 
     @property
-    def max_num_pixels(self):
+    def max_num_pixels(self) -> int:
         return max(np.prod(x.shape) for x in self.data_list)
 
-    def select_data_range(self):
+    def select_data_range(self) -> None:
         dialog = QDialog(self.ui)
         layout = QVBoxLayout()
         dialog.setLayout(layout)
@@ -387,7 +400,7 @@ class BrightnessContrastEditor(QObject):
         range_widget.max = self.data_range[1]
         layout.addWidget(range_widget.ui)
 
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         button_box = QDialogButtonBox(buttons, dialog)
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)
@@ -412,15 +425,15 @@ class BrightnessContrastEditor(QObject):
         self.data_range = data_range
         self.modified()
 
-    def reset_pressed(self):
+    def reset_pressed(self) -> None:
         self.reset_data_range()
         self.reset_auto_threshold()
         self.reset.emit()
 
-    def reset_auto_threshold(self):
+    def reset_auto_threshold(self) -> None:
         self.current_auto_threshold = self.default_auto_threshold
 
-    def auto_pressed(self):
+    def auto_pressed(self) -> None:
         data_range = self.data_range
         hist = self.histogram
 
@@ -438,7 +451,7 @@ class BrightnessContrastEditor(QObject):
         if auto_threshold < 10:
             auto_threshold = self.default_auto_threshold
         else:
-            auto_threshold /= 2
+            auto_threshold //= 2
 
         self.current_auto_threshold = auto_threshold
 

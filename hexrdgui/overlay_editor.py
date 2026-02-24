@@ -1,13 +1,25 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from PySide6.QtWidgets import QWidget
+
 from hexrdgui.const_chi_overlay_editor import ConstChiOverlayEditor
+from hexrdgui.constants import OverlayType
 from hexrdgui.laue_overlay_editor import LaueOverlayEditor
 from hexrdgui.powder_overlay_editor import PowderOverlayEditor
-from hexrdgui.rotation_series_overlay_editor import RotationSeriesOverlayEditor
+from hexrdgui.rotation_series_overlay_editor import (
+    RotationSeriesOverlayEditor,
+)
 from hexrdgui.ui_loader import UiLoader
+
+if TYPE_CHECKING:
+    from hexrdgui.overlays.overlay import Overlay
 
 
 class OverlayEditor:
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_editor.ui', parent)
 
@@ -32,19 +44,19 @@ class OverlayEditor:
         self.overlay = None
 
     @property
-    def overlay(self):
+    def overlay(self) -> Overlay | None:
         return self._overlay
 
     @overlay.setter
-    def overlay(self, v):
+    def overlay(self, v: Overlay | None) -> None:
         self._overlay = v
         self.update_type_tab()
 
     @property
-    def type(self):
+    def type(self) -> OverlayType | None:
         return self.overlay.type if self.overlay else None
 
-    def update_type_tab(self):
+    def update_type_tab(self) -> None:
         if self.type is None:
             w = getattr(self.ui, 'blank_tab')
         else:
@@ -58,7 +70,7 @@ class OverlayEditor:
             self.ui.setMinimumSize(self.active_widget.ui.minimumSize())
 
     @property
-    def active_widget(self):
+    def active_widget(self) -> Any:
         widgets = {
             'powder': self.powder_overlay_editor,
             'laue': self.laue_overlay_editor,
@@ -71,13 +83,13 @@ class OverlayEditor:
 
         return widgets[self.type.value]
 
-    def update_active_widget_gui(self):
+    def update_active_widget_gui(self) -> None:
         w = self.active_widget
         if w is None:
             return
 
         w.update_gui()
 
-    def update_refinement_options(self):
+    def update_refinement_options(self) -> None:
         # Right now, only powder refinement options can vary
         self.powder_overlay_editor.update_refinement_options()

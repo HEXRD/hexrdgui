@@ -1,7 +1,7 @@
 import sys
 
 
-def macos_fix_app_name():
+def macos_fix_app_name() -> None:
     # This fixes the bundle name to be "HEXRD"
     # Otherwise, it is displayed as "Python" in the top-left corner
     # of the OSX menu bar.

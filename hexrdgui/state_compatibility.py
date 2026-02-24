@@ -1,21 +1,23 @@
+from pathlib import Path
+
 import h5py
 
 from hexrdgui.hexrd_config import HexrdConfig
 
 
-def update_if_needed(file_path):
+def update_if_needed(file_path: str | Path) -> None:
     # Find and fix any issues with the state file
     fix_issue_1227(file_path)
 
 
-def has_issue_1227(file_path):
+def has_issue_1227(file_path: str | Path) -> bool:
     # Issue 1227 is where `\` was used on Windows for paths inside the HDF5
     # file instead of `/`
     with h5py.File(file_path, 'r') as rf:
         return any(x.startswith('config\\') for x in rf.keys())
 
 
-def fix_issue_1227(file_path):
+def fix_issue_1227(file_path: str | Path) -> None:
     if not has_issue_1227(file_path):
         return
 

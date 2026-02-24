@@ -1,10 +1,12 @@
+from typing import Any
+
 import h5py
 
 VERSION_KEY = 'structureless_calibration_pick_points_version'
 VERSION_NUMBER = 2
 
 
-def load_picks_from_file(instr, selected_file):
+def load_picks_from_file(instr: Any, selected_file: str) -> dict:
     with h5py.File(selected_file, 'r') as rf:
         if VERSION_KEY not in rf.attrs:
             msg = (
@@ -29,7 +31,7 @@ def load_picks_from_file(instr, selected_file):
             return _load_picks_from_file_v2(rf)
 
 
-def save_picks_to_file(calibration_lines, selected_file):
+def save_picks_to_file(calibration_lines: Any, selected_file: str) -> None:
     with h5py.File(selected_file, 'w') as wf:
         wf.attrs[VERSION_KEY] = VERSION_NUMBER
         for xray_source, lines in calibration_lines.items():
@@ -40,7 +42,7 @@ def save_picks_to_file(calibration_lines, selected_file):
                     ring_group[det_key] = data
 
 
-def _load_picks_from_file_v1(rf: h5py.File):
+def _load_picks_from_file_v1(rf: h5py.File) -> list:
     output = []
     i = 0
     while f'DS_ring_{i}' in rf:
@@ -55,7 +57,7 @@ def _load_picks_from_file_v1(rf: h5py.File):
     return output
 
 
-def _convert_v1_to_v2(instr, picks) -> dict:
+def _convert_v1_to_v2(instr: Any, picks: Any) -> dict:
     if instr.has_multi_xrs:
         # Use the active beam
         xrs_name = instr.active_beam_name

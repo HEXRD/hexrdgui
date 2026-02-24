@@ -1,4 +1,7 @@
+from typing import Any
+
 from PySide6.QtCore import Qt, QObject, Signal
+from PySide6.QtWidgets import QWidget
 
 from itertools import cycle
 
@@ -41,13 +44,13 @@ class LinePickerDialog(QObject):
 
     def __init__(
         self,
-        canvas,
-        parent,
-        single_line_mode=False,
-        single_pick_mode=False,
-        cycle_cursor_colors=False,
-        line_settings=None,
-    ):
+        canvas: Any,
+        parent: QWidget | None,
+        single_line_mode: bool = False,
+        single_pick_mode: bool = False,
+        cycle_cursor_colors: bool = False,
+        line_settings: dict[str, Any] | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.canvas = canvas
@@ -75,18 +78,22 @@ class LinePickerDialog(QObject):
         self.line_settings = line_settings
 
         flags = self.ui.windowFlags()
-        self.ui.setWindowFlags(flags | Qt.Tool)
+        self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
-        self.linebuilder = None
-        self.previous_linebuilders = []
-        self.lines = []
-        self.unused_colors = []
+        self.linebuilder: LineBuilder | None = None
+        self.previous_linebuilders: list[Any] = []
+        self.lines: list[Any] = []
+        self.unused_colors: list[Any] = []
 
         self.two_click_mode = self.ui.two_click_mode.isChecked()
 
         display_sums_in_subplots = self.ui.display_sums_in_subplots.isChecked()
 
-        self.zoom_canvas = ZoomCanvas(canvas, True, display_sums_in_subplots)
+        self.zoom_canvas = ZoomCanvas(
+            canvas,
+            True,
+            display_sums_in_subplots,
+        )
         self.zoom_canvas.zoom_width = self.ui.zoom_tth_width.value()
         self.zoom_canvas.zoom_height = self.ui.zoom_eta_width.value()
         self.ui.zoom_canvas_layout.addWidget(self.zoom_canvas)
@@ -98,7 +105,7 @@ class LinePickerDialog(QObject):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.accepted.connect(self.accept)
         self.ui.rejected.connect(self.reject)
         self.ui.zoom_tth_width.valueChanged.connect(self.zoom_width_changed)
@@ -117,7 +124,7 @@ class LinePickerDialog(QObject):
         if self.single_pick_mode:
             self.point_picked.connect(self.ui.accept)
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         linebuilder = self.linebuilder
         enable_back_button = linebuilder is not None and (
             all(z for z in [linebuilder.xs, linebuilder.ys])
@@ -125,7 +132,7 @@ class LinePickerDialog(QObject):
         )
         self.ui.back_button.setEnabled(enable_back_button)
 
-    def update_visible_states(self):
+    def update_visible_states(self) -> None:
         single_line = self.single_line_mode
         single_pick = self.single_pick_mode
 
@@ -136,7 +143,7 @@ class LinePickerDialog(QObject):
         self.ui.view_picks.setVisible(not single_pick)
         self.ui.button_box.setVisible(not single_pick)
 
-    def move_dialog_to_left(self):
+    def move_dialog_to_left(self) -> None:
         # This moves the dialog to the left border of the parent
         ph = self.ui.parent().geometry().height()
         px = self.ui.parent().geometry().x()
@@ -145,7 +152,7 @@ class LinePickerDialog(QObject):
         dh = self.ui.height()
         self.ui.setGeometry(px, py + (ph - dh) / 2.0, dw, dh)
 
-    def clear(self):
+    def clear(self) -> None:
         while self.lines:
             remove_artist(self.lines.pop(0))
 
@@ -153,20 +160,20 @@ class LinePickerDialog(QObject):
         self.previous_linebuilders.clear()
 
         self.zoom_canvas.cleanup()
-        self.zoom_canvas = None
+        self.zoom_canvas = None  # type: ignore[assignment]
 
         self.canvas.mpl_disconnect(self.bp_id)
         self.bp_id = None
         self.canvas.draw_idle()
 
-    def zoom_width_changed(self):
+    def zoom_width_changed(self) -> None:
         canvas = self.zoom_canvas
         canvas.zoom_width = self.ui.zoom_tth_width.value()
         canvas.zoom_height = self.ui.zoom_eta_width.value()
         if all(x is not None for x in (canvas.xdata, canvas.ydata)):
             canvas.render()
 
-    def zoom_point_picked(self, event):
+    def zoom_point_picked(self, event: Any) -> None:
         self.zoom_frozen = False
         if self.linebuilder is None:
             return
@@ -174,7 +181,7 @@ class LinePickerDialog(QObject):
         # Append the data to the line builder
         self.linebuilder.append_data(event.xdata, event.ydata)
 
-    def back_button_pressed(self):
+    def back_button_pressed(self) -> None:
         linebuilder = self.linebuilder
         if linebuilder is None:
             # Nothing to do
@@ -189,7 +196,7 @@ class LinePickerDialog(QObject):
 
         self.last_point_removed.emit()
 
-    def restore_last_line(self):
+    def restore_last_line(self) -> None:
         if not self.previous_linebuilders:
             # There are no previous linebuilders to restore
             return
@@ -203,18 +210,18 @@ class LinePickerDialog(QObject):
 
         if self.cycle_cursor_colors and self.lines:
             prev_color = self.lines[-1]._color
-            self.zoom_canvas.cursor_color = prev_color
+            self.zoom_canvas.cursor_color = prev_color  # type: ignore[misc]
 
         self.last_line_restored.emit()
 
-    def two_click_mode_changed(self, on):
+    def two_click_mode_changed(self, on: bool) -> None:
         self.two_click_mode = on
         self.zoom_frozen = False
 
-    def display_sums_in_subplots_toggled(self, b):
+    def display_sums_in_subplots_toggled(self, b: bool) -> None:
         self.zoom_canvas.display_sums_in_subplots = b
 
-    def start(self):
+    def start(self) -> None:
         if self.canvas.mode != ViewType.polar:
             print('line picker only works in polar mode!')
             return
@@ -222,7 +229,7 @@ class LinePickerDialog(QObject):
         self.add_line()
         self.show()
 
-    def add_line(self):
+    def add_line(self) -> None:
         ax = self.canvas.axis
         if self.unused_colors:
             # Use the unused colors first
@@ -248,23 +255,23 @@ class LinePickerDialog(QObject):
         self.line_added.emit()
 
         if self.cycle_cursor_colors:
-            self.zoom_canvas.cursor_color = color
+            self.zoom_canvas.cursor_color = color  # type: ignore[misc]
 
-    def hide_artists(self):
+    def hide_artists(self) -> None:
         self.show_artists(False)
 
-    def show_artists(self, show=True):
+    def show_artists(self, show: bool = True) -> None:
         for line in self.lines:
             line.set_visible(show)
 
-    def line_finished(self):
+    def line_finished(self) -> None:
         # If the linebuilder is already gone, just return
         if self.linebuilder is None:
             return
 
         self.add_line()
 
-    def button_pressed(self, event):
+    def button_pressed(self, event: Any) -> None:
         if self.disabled:
             return
 
@@ -291,7 +298,7 @@ class LinePickerDialog(QObject):
 
         self.linebuilder.append_data(event.xdata, event.ydata)
 
-    def next_line(self):
+    def next_line(self) -> None:
         if not self.single_line_mode:
             # Complete a line
             self.line_completed.emit()
@@ -304,7 +311,7 @@ class LinePickerDialog(QObject):
 
         self.linebuilder.append_data(np.nan, np.nan)
 
-    def accept(self):
+    def accept(self) -> None:
         # Finish the current line
         self.line_finished()
 
@@ -314,15 +321,15 @@ class LinePickerDialog(QObject):
 
         self.clear()
 
-    def reject(self):
+    def reject(self) -> None:
         self.finished.emit()
         self.clear()
 
-    def show(self):
+    def show(self) -> None:
         self.ui.show()
 
     @property
-    def line_data(self):
+    def line_data(self) -> list[np.ndarray]:
         # Get the line data as a list of transposed numpy arrays
         output = []
         for line in self.lines:
@@ -331,35 +338,35 @@ class LinePickerDialog(QObject):
         return output
 
     @property
-    def zoom_frozen(self):
+    def zoom_frozen(self) -> bool:
         return self.zoom_canvas.frozen
 
     @zoom_frozen.setter
-    def zoom_frozen(self, v):
+    def zoom_frozen(self, v: bool) -> None:
         self.zoom_canvas.frozen = v
 
     @property
-    def current_pick_label(self):
+    def current_pick_label(self) -> str:
         return self.ui.current_pick_label.text()
 
     @current_pick_label.setter
-    def current_pick_label(self, text):
+    def current_pick_label(self, text: str) -> None:
         self.ui.current_pick_label.setText(text)
 
     @property
-    def start_new_line_label(self):
+    def start_new_line_label(self) -> str:
         return self.ui.start_new_line_label.text()
 
     @start_new_line_label.setter
-    def start_new_line_label(self, text):
+    def start_new_line_label(self, text: str) -> None:
         self.ui.start_new_line_label.setText(text)
 
     @property
-    def disabled(self):
+    def disabled(self) -> bool:
         return self.zoom_canvas.disabled if self.zoom_canvas else True
 
     @disabled.setter
-    def disabled(self, v):
+    def disabled(self, v: bool) -> None:
         if self.zoom_canvas:
             self.zoom_canvas.disabled = v
         self.show_artists(not v)
@@ -370,32 +377,32 @@ class LineBuilder(QObject):
     # Emits when a point was picked
     point_picked = Signal(float, float)
 
-    def __init__(self, line):
+    def __init__(self, line: Any) -> None:
         super().__init__()
 
         self.line = line
         self.canvas = line.figure.canvas
 
     @property
-    def xs(self):
+    def xs(self) -> list[float]:
         return list(self.line.get_xdata())
 
     @property
-    def ys(self):
+    def ys(self) -> list[float]:
         return list(self.line.get_ydata())
 
-    def append_data(self, x, y):
+    def append_data(self, x: float, y: float) -> None:
         xs = self.xs + [x]
         ys = self.ys + [y]
         self.line.set_data(xs, ys)
         self.line_modified()
         self.point_picked.emit(x, y)
 
-    def remove_last_point(self):
+    def remove_last_point(self) -> None:
         xs = self.xs[:-1]
         ys = self.ys[:-1]
         self.line.set_data(xs, ys)
         self.line_modified()
 
-    def line_modified(self):
+    def line_modified(self) -> None:
         self.canvas.draw_idle()

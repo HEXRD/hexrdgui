@@ -1,5 +1,6 @@
 import copy
 import re
+from typing import Any
 
 import numpy as np
 
@@ -9,6 +10,7 @@ from PySide6.QtWidgets import (
     QItemEditorFactory,
     QStyledItemDelegate,
     QTableWidgetItem,
+    QWidget,
 )
 
 from hexrd.constants import ptable, ptableinverse
@@ -33,7 +35,7 @@ class MaterialStructureEditor(QObject):
 
     material_modified = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -45,13 +47,13 @@ class MaterialStructureEditor(QObject):
         # Center the text when it is edited...
         self.ui.table.setItemDelegate(Delegate(self.ui.table))
 
-        self.sites = []
+        self.sites: list[Any] = []
 
         self.setup_connections()
 
         self.update_gui()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.ui.add_site.pressed.connect(self.add_site)
         self.ui.remove_site.pressed.connect(self.remove_site)
 
@@ -62,12 +64,14 @@ class MaterialStructureEditor(QObject):
         self.ui.apply.pressed.connect(self.update_material)
         self.ui.reset.pressed.connect(self.update_gui)
 
-    def site_modified(self):
+    def site_modified(self) -> None:
         site = copy.deepcopy(self.material_site_editor.site)
-        self.sites[self.selected_row] = site
+        row = self.selected_row
+        if row is not None:
+            self.sites[row] = site
         self.material_edited()
 
-    def name_changed(self, row, column):
+    def name_changed(self, row: int, column: int) -> None:
         new_name = self.ui.table.item(row, column).text()
 
         # If there are any sites that already have this name, ignore it
@@ -76,26 +80,26 @@ class MaterialStructureEditor(QObject):
 
         self.sites[row]['name'] = new_name
 
-    def selection_changed(self):
+    def selection_changed(self) -> None:
         self.update_enable_states()
         self.update_tab()
         self.update_site_editor()
 
-    def update_gui(self):
+    def update_gui(self) -> None:
         self.generate_sites()
         self.update_table()
         self.modified = False
 
-    def update_enable_states(self):
+    def update_enable_states(self) -> None:
         enable_remove = self.num_rows > 1 and self.selected_row is not None
         self.ui.remove_site.setEnabled(enable_remove)
 
-    def update_tab(self):
+    def update_tab(self) -> None:
         tab = 'empty' if self.selected_row is None else 'site_editor'
         w = self.ui.site_editor_tab_widget
         w.setCurrentWidget(getattr(self.ui, f'{tab}_tab'))
 
-    def update_site_editor(self):
+    def update_site_editor(self) -> None:
         site = copy.deepcopy(self.active_site)
         if site is None:
             return
@@ -108,24 +112,24 @@ class MaterialStructureEditor(QObject):
             self.material_site_editor.site = site
 
     @property
-    def material(self):
+    def material(self) -> Any:
         return HexrdConfig().active_material
 
     @property
-    def num_rows(self):
+    def num_rows(self) -> int:
         return self.ui.table.rowCount()
 
     @property
-    def active_site(self):
+    def active_site(self) -> dict[str, Any] | None:
         row = self.selected_row
         return self.sites[row] if row is not None else None
 
     @property
-    def selected_row(self):
+    def selected_row(self) -> int | None:
         selected = self.ui.table.selectionModel().selectedRows()
         return selected[0].row() if selected else None
 
-    def select_row(self, i):
+    def select_row(self, i: int | None) -> None:
         if i is None or i >= self.num_rows:
             # Out of range. Don't do anything.
             return
@@ -135,15 +139,15 @@ class MaterialStructureEditor(QObject):
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.Select | QItemSelectionModel.Rows
+        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
         selection_model.select(model_index, command)
 
     @staticmethod
-    def trailing_integer(s):
+    def trailing_integer(s: str) -> int | None:
         last = re.split(r'[^\d]', s)[-1]
         return int(last) if last else None
 
-    def next_name(self, s):
+    def next_name(self, s: str) -> str:
         # Get a name with a trailing number at the end
         # If that name already exists, it increments the trailing number
         trailing_int = self.trailing_integer(s)
@@ -161,12 +165,12 @@ class MaterialStructureEditor(QObject):
 
         return new_name
 
-    def new_site(self, site):
+    def new_site(self, site: dict[str, Any]) -> dict[str, Any]:
         new = copy.deepcopy(site)
         new['name'] = self.next_name(site['name'])
         return new
 
-    def add_site(self):
+    def add_site(self) -> None:
         self.sites.append(self.new_site(DEFAULT_SITE))
         self.update_table()
 
@@ -175,7 +179,7 @@ class MaterialStructureEditor(QObject):
 
         self.material_edited()
 
-    def remove_site(self):
+    def remove_site(self) -> None:
         selected_row = self.selected_row
         if selected_row is None:
             return
@@ -189,7 +193,7 @@ class MaterialStructureEditor(QObject):
 
         self.material_edited()
 
-    def remove_duplicate_atoms(self):
+    def remove_duplicate_atoms(self) -> None:
         # Apply any current changes
         self.update_material()
 
@@ -199,15 +203,15 @@ class MaterialStructureEditor(QObject):
         # Update the GUI
         self.update_gui()
 
-    def create_table_widget(self, v):
+    def create_table_widget(self, v: str) -> QTableWidgetItem:
         w = QTableWidgetItem(v)
-        w.setTextAlignment(Qt.AlignCenter)
+        w.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         return w
 
-    def clear_table(self):
+    def clear_table(self) -> None:
         self.ui.table.clearContents()
 
-    def update_table(self):
+    def update_table(self) -> None:
         prev_selected = self.selected_row
 
         self.clear_table()
@@ -232,7 +236,7 @@ class MaterialStructureEditor(QObject):
             # Just in case the selection actually changed...
             self.selection_changed()
 
-    def update_material(self):
+    def update_material(self) -> None:
         # Convert the sites back to the material data format
         pos_array = []
         type_array = []
@@ -258,7 +262,7 @@ class MaterialStructureEditor(QObject):
 
         self.modified = False
 
-    def generate_sites(self):
+    def generate_sites(self) -> None:
         """The sites have a structure like the following:
         {
             'name': 'NaBr1',
@@ -282,9 +286,9 @@ class MaterialStructureEditor(QObject):
         self.sites.clear()
 
         mat = self.material
-        site_indices = []
+        site_indices: list[Any] = []
 
-        def coords_equal(v1, v2, tol=1.0e-5):
+        def coords_equal(v1: Any, v2: Any, tol: float = 1.0e-5) -> bool:
             return len(v1) == len(v2) and all(abs(x - y) < tol for x, y in zip(v1, v2))
 
         pos_array = mat.atom_pos
@@ -317,7 +321,7 @@ class MaterialStructureEditor(QObject):
             site_indices.append(([i], atom_coords))
 
         for indices, coords in site_indices:
-            site = {}
+            site: dict[str, Any] = {}
             site['name'] = self.next_name('Site')
             site['fractional_coords'] = coords
             site['atoms'] = []
@@ -333,15 +337,15 @@ class MaterialStructureEditor(QObject):
 
             self.sites.append(site)
 
-    def material_edited(self):
+    def material_edited(self) -> None:
         self.modified = True
 
     @property
-    def modified(self):
+    def modified(self) -> bool:
         return self._modified
 
     @modified.setter
-    def modified(self, b):
+    def modified(self, b: bool) -> None:
         self._modified = b
         self.ui.apply.setEnabled(b)
         self.ui.reset.setEnabled(b)
@@ -350,7 +354,7 @@ class MaterialStructureEditor(QObject):
 class Delegate(QStyledItemDelegate):
     # This is only needed to center the text when we edit it...
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         editor_factory = EditorFactory(parent)
@@ -360,16 +364,16 @@ class Delegate(QStyledItemDelegate):
 class EditorFactory(QItemEditorFactory):
     # This is only needed to center the text when we edit it...
 
-    def __init__(self, parent=None):
-        super().__init__(self, parent)
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(self, parent)  # type: ignore[call-arg]
 
-    def createEditor(self, user_type, parent):
+    def createEditor(self, user_type: int, parent: QWidget) -> QLineEdit:
         editor = QLineEdit(parent)
-        editor.setAlignment(Qt.AlignCenter)
+        editor.setAlignment(Qt.AlignmentFlag.AlignCenter)
         return editor
 
 
-def scalar_to_tensor(x):
+def scalar_to_tensor(x: Any) -> np.ndarray:
     if isinstance(x, np.ndarray) and x.shape == (6,):
         # Already a tensor
         return x
@@ -379,7 +383,7 @@ def scalar_to_tensor(x):
     return tensor
 
 
-def tensor_to_scalar_if_diagonal(x):
+def tensor_to_scalar_if_diagonal(x: Any) -> Any:
     # This will only convert to a scalar if the tensor is diagonal
     if not isinstance(x, np.ndarray) or x.shape != (6,):
         return x

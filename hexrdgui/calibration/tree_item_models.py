@@ -1,12 +1,16 @@
+from __future__ import annotations
+
+from typing import Any
+
 import numpy as np
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Qt
 from PySide6.QtGui import QColor
 
 from hexrdgui.tree_views.multi_column_dict_tree_view import MultiColumnDictTreeItemModel
 
 
-def _tree_columns_to_indices(columns):
+def _tree_columns_to_indices(columns: dict[str, str]) -> dict[str, int]:
     return {'Key': 0, **{k: list(columns).index(k) + 1 for k in columns}}
 
 
@@ -17,7 +21,18 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
     # too close and should be colored red in the UI.
     RED_COLOR_TOLERANCE = 1e-12
 
-    def set_config_val(self, path, value):
+    # Subclasses must define these
+    COLUMNS: dict[str, str]
+    VALUE_IDX: int
+    VARY_IDX: int
+    BOUND_INDICES: tuple[int, ...]
+
+    # These are defined by specific subclasses
+    DELTA_IDX: int  # DeltaCalibrationTreeItemModel
+    MIN_IDX: int  # DefaultCalibrationTreeItemModel
+    MAX_IDX: int  # DefaultCalibrationTreeItemModel
+
+    def set_config_val(self, path: list[str | int], value: Any) -> None:
         super().set_config_val(path, value)
         # Now set the parameter too
         param_path = path[:-1] + ['_param']
@@ -27,7 +42,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
             raise Exception('Failed to set parameter!', param_path)
 
         # Now set the attribute on the param
-        attribute = path[-1].removeprefix('_')
+        attribute = str(path[-1]).removeprefix('_')
 
         if attribute in ('value', 'min', 'max', 'delta'):
             # Check if there is a conversion we need to make before proceeding
@@ -50,7 +65,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
                 if conversion_funcs and config.get('_min_max_inverted'):
                     min_key, max_key = max_key, min_key
 
-                def convert_if_needed(v):
+                def convert_if_needed(v: Any) -> Any:
                     if conversion_funcs is None:
                         return v
 
@@ -69,7 +84,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
                     convert_if_needed(param.max),
                 )
 
-                col = list(self.COLUMNS.values()).index(path[-1]) + 1
+                col = list(self.COLUMNS.values()).index(str(path[-1])) + 1
                 index = self.create_index(path[:-1], col)
                 self.dict_modified.emit(index)
 
@@ -91,18 +106,18 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
             # Trigger the callback function
             param._on_vary_modified()
 
-    def data(self, index, role):
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if (
-            role in (Qt.BackgroundRole, Qt.ForegroundRole)
+            role in (Qt.ItemDataRole.BackgroundRole, Qt.ItemDataRole.ForegroundRole)
             and index.column() in (self.VALUE_IDX, self.VARY_IDX)
-            and self.has_uneditable_paths
+            and self.has_uneditable_paths()
         ):
             # Check if this value is uneditable. If so, gray it out.
             item = self.get_item(index)
-            path = tuple(self.path_to_item(item) + [self.VALUE_IDX])
-            if path in self.uneditable_paths:
+            uneditable_path = tuple(self.path_to_item(item) + [self.VALUE_IDX])
+            if uneditable_path in self.uneditable_paths:
                 color = 'gray'
-                if index.column() == self.VALUE_IDX and role == Qt.ForegroundRole:
+                if index.column() == self.VALUE_IDX and role == Qt.ItemDataRole.ForegroundRole:
                     color = 'white'
 
                 return QColor(color)
@@ -110,7 +125,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
         data = super().data(index, role)
 
         if (
-            role in (Qt.DisplayRole, Qt.EditRole)
+            role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole)
             and index.column() in self.BOUND_INDICES
             and data is not None
         ):
@@ -119,7 +134,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
             path = self.path_to_item(item)
             config = self.config_path(path)
 
-            if role == Qt.DisplayRole and config.get('_units'):
+            if role == Qt.ItemDataRole.DisplayRole and config.get('_units'):
                 is_inf = isinstance(data, float) and np.isinf(data)
                 # Don't attach units to infinity
                 if not is_inf:
@@ -149,8 +164,8 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
     MIN_IDX = COLUMN_INDICES['Minimum']
     BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
 
-    def data(self, index, role):
-        if role == Qt.ForegroundRole and index.column() in self.BOUND_INDICES:
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if role == Qt.ItemDataRole.ForegroundRole and index.column() in self.BOUND_INDICES:
             # If a value hit the boundary, color both the boundary and the
             # value red.
             item = self.get_item(index)
@@ -190,8 +205,8 @@ class DeltaCalibrationTreeItemModel(CalibrationTreeItemModel):
     DELTA_IDX = COLUMN_INDICES['Delta']
     BOUND_INDICES = (VALUE_IDX, DELTA_IDX)
 
-    def data(self, index, role):
-        if role == Qt.ForegroundRole and index.column() in self.BOUND_INDICES:
+    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if role == Qt.ItemDataRole.ForegroundRole and index.column() in self.BOUND_INDICES:
             # If a delta is zero, color both the delta and the value red.
             item = self.get_item(index)
             if not item.child_items and item.data(self.VALUE_IDX) is not None:

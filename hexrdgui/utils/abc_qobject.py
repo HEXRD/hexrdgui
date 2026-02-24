@@ -5,7 +5,7 @@ from PySide6.QtCore import QObject
 QObjectMeta = type(QObject)
 
 
-class _ABCQObjectMeta(QObjectMeta, ABCMeta):
+class _ABCQObjectMeta(QObjectMeta, ABCMeta):  # type: ignore[misc,valid-type]
     pass
 
 

@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import h5py
 import os
 import copy
 import itertools
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 import psutil
 
 from hexrd.gridutil import cellIndices
@@ -19,17 +25,17 @@ from skimage import transform as tf
 from .display_plane import DisplayPlane
 
 
-def cartesian_viewer():
+def cartesian_viewer() -> 'InstrumentViewer':
     return InstrumentViewer()
 
 
-def get_xray_propagation_sign(instr):
+def get_xray_propagation_sign(instr: HEDMInstrument) -> Any:
     return np.sign(instr.beam_vector[2])
 
 
 class InstrumentViewer:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.type = ViewType.cartesian
         self.instr = create_hedm_instrument()
         self.images_dict = HexrdConfig().images_dict
@@ -37,15 +43,15 @@ class InstrumentViewer:
         # Set invalid pixels to be nan
         HexrdConfig().apply_panel_buffer_to_images(self.images_dict)
 
-        self.img = None
+        self.img: np.ma.MaskedArray | None = None
 
         # Perform some checks before proceeding
         self.check_keys_match()
         self.check_angles_feasible()
 
         self.pixel_size = HexrdConfig().cartesian_pixel_size
-        self.warp_dict = {}
-        self.detector_corners = {}
+        self.warp_dict: dict[str, Any] = {}
+        self.detector_corners: dict[str, Any] = {}
 
         dist = HexrdConfig().cartesian_virtual_plane_distance
         sgn = get_xray_propagation_sign(self.instr)
@@ -65,7 +71,7 @@ class InstrumentViewer:
 
         self.plot_dplane()
 
-    def check_keys_match(self):
+    def check_keys_match(self) -> None:
         # Make sure each key in the image dict is in the panel_ids
         if self.images_dict.keys() != self.instr._detectors.keys():
             msg = (
@@ -75,7 +81,7 @@ class InstrumentViewer:
             )
             raise Exception(msg)
 
-    def check_angles_feasible(self):
+    def check_angles_feasible(self) -> None:
         max_angle = 120.0
 
         # Check all combinations of detectors. If any have an angle
@@ -96,7 +102,7 @@ class InstrumentViewer:
             msg += '\n'.join([f'{x[0]}: {x[1]}' for x in bad_combos])
             raise Exception(msg)
 
-    def check_size_feasible(self):
+    def check_size_feasible(self) -> None:
         available_mem = psutil.virtual_memory().available
         img_dtype = np.float64
         dtype_size = np.dtype(img_dtype).itemsize
@@ -111,12 +117,12 @@ class InstrumentViewer:
             msg += f'Memory required: {format_memory_int(mem_usage)}'
             raise Exception(msg)
 
-    def update_panel_sizes(self):
+    def update_panel_sizes(self) -> None:
         self.dpanel_sizes = self.dplane.panel_size(self.instr)
 
-    def make_dpanel(self):
+    def make_dpanel(self) -> None:
         self.dpanel = self.dplane.display_panel(
-            self.dpanel_sizes,
+            self.dpanel_sizes,  # type: ignore[arg-type]
             self.pixel_size,
             self.instr.beam_vector,
             self.instr.source_distance,
@@ -125,7 +131,7 @@ class InstrumentViewer:
         self.dpanel._distortion = FakeDistortionObject(self.dpanel, self.instr)
 
     @property
-    def extent(self):
+    def extent(self) -> tuple[float, float, float, float]:
         # We might want to use self.dpanel.col_edge_vec and
         # self.dpanel.row_edge_vec here instead.
         # !!! recall that extents are (left, right, bottom, top)
@@ -134,18 +140,18 @@ class InstrumentViewer:
         return -x_lim, x_lim, -y_lim, y_lim
 
     @property
-    def images_dict(self):
+    def images_dict(self) -> dict[str, Any]:
         return self._images_dict
 
     @images_dict.setter
-    def images_dict(self, v):
+    def images_dict(self, v: dict[str, Any]) -> None:
         self._images_dict = v
 
         # Cache the image min and max for later use
         self.min = min(x.min() for x in v.values())
         self.max = max(x.max() for x in v.values())
 
-    def update_overlay_data(self):
+    def update_overlay_data(self) -> None:
         if not HexrdConfig().show_overlays:
             # Nothing to do
             return
@@ -163,7 +169,7 @@ class InstrumentViewer:
 
         update_overlay_data(temp_instr, self.type)
 
-    def plot_dplane(self):
+    def plot_dplane(self) -> None:
         # Create the warped image for each detector
         for detector_id in self.images_dict.keys():
             self.create_warped_image(detector_id)
@@ -171,7 +177,7 @@ class InstrumentViewer:
         # Generate the final image
         self.generate_image()
 
-    def detector_borders(self, det):
+    def detector_borders(self, det: str) -> list[tuple[list[Any], list[Any]]]:
         corners = self.detector_corners.get(det, [])
 
         # These corners are in pixel coordinates. Convert to Cartesian.
@@ -199,14 +205,14 @@ class InstrumentViewer:
             x_range = (extent[0], extent[1])
             y_range = (extent[2], extent[3])
 
-            def out_of_frame(p):
+            def out_of_frame(p: list[float]) -> bool:
                 # Check if point p is out of the frame
                 return (
                     not x_range[0] <= p[0] <= x_range[1]
                     or not y_range[0] <= p[1] <= y_range[1]
                 )
 
-            def move_point_into_frame(p, p2):
+            def move_point_into_frame(p: list[float], p2: list[float]) -> None:
                 # Make sure we don't divide by zero
                 if p2[0] == p[0]:
                     return
@@ -257,14 +263,14 @@ class InstrumentViewer:
         return [(x_vals, y_vals)]
 
     @property
-    def all_detector_borders(self):
+    def all_detector_borders(self) -> dict[str, list[tuple[list[Any], list[Any]]]]:
         borders = {}
         for det in self.images_dict.keys():
             borders[det] = self.detector_borders(det)
 
         return borders
 
-    def create_warped_image(self, detector_id):
+    def create_warped_image(self, detector_id: str) -> np.ndarray:
         img = self.images_dict[detector_id]
         panel = self.instr._detectors[detector_id]
 
@@ -313,10 +319,10 @@ class InstrumentViewer:
         return res
 
     @property
-    def display_img(self):
+    def display_img(self) -> Any:
         return self.img
 
-    def generate_image(self):
+    def generate_image(self) -> None:
         img = np.zeros((self.dpanel.rows, self.dpanel.cols))
         always_nan = np.ones(img.shape, dtype=bool)
         for key in self.images_dict.keys():
@@ -332,11 +338,11 @@ class InstrumentViewer:
         nan_mask = np.isnan(img)
         self.img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.0)
 
-    def update_images_dict(self):
+    def update_images_dict(self) -> None:
         if HexrdConfig().any_intensity_corrections:
             self.images_dict = HexrdConfig().images_dict
 
-    def update_detectors(self, detectors):
+    def update_detectors(self, detectors: list[str]) -> None:
         # If there are intensity corrections and the detector transform
         # has been modified, we need to update the images dict.
         self.update_images_dict()
@@ -375,9 +381,9 @@ class InstrumentViewer:
         # Generate the final image
         self.generate_image()
 
-    def write_image(self, filename='cartesian_image.npz'):
+    def write_image(self, filename: str = 'cartesian_image.npz') -> None:
         # Prepare the data to write out
-        data = {
+        data: dict[str, Any] = {
             'intensities': self.img,
         }
 
@@ -405,11 +411,11 @@ class FakeDistortionObject:
     This maps the xys to the correct panel and applies the distortion
     """
 
-    def __init__(self, dpanel, instr):
+    def __init__(self, dpanel: Any, instr: HEDMInstrument) -> None:
         self.dpanel = dpanel
         self.instr = instr
 
-    def apply(self, xys):
+    def apply(self, xys: np.ndarray) -> np.ndarray:
         if all(x.distortion is None for x in self.instr.detectors.values()):
             # No changes
             return xys
@@ -436,7 +442,7 @@ class FakeDistortionObject:
 
         return xys
 
-    def apply_inverse(self, xys):
+    def apply_inverse(self, xys: np.ndarray) -> np.ndarray:
         if all(x.distortion is None for x in self.instr.detectors.values()):
             # No changes
             return xys

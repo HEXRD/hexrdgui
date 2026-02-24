@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from silx.gui.widgets.PeriodicTable import PeriodicTable
@@ -13,20 +14,26 @@ from hexrdgui.ui_loader import UiLoader
 
 class PeriodicTableDialog(QDialog):
 
-    def __init__(self, atoms_selected=None, parent=None):
+    def __init__(
+        self,
+        atoms_selected: list | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
 
         self.setLayout(QVBoxLayout(self))
+        layout = self.layout()
+        assert layout is not None
 
         self.periodic_table = PeriodicTable(self, selectable=True)
-        self.layout().addWidget(self.periodic_table)
+        layout.addWidget(self.periodic_table)
 
         self.clear_selection_button = QPushButton('Clear Selection', self)
-        self.layout().addWidget(self.clear_selection_button)
+        layout.addWidget(self.clear_selection_button)
 
-        buttons = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         self.button_box = QDialogButtonBox(buttons, self)
-        self.layout().addWidget(self.button_box)
+        layout.addWidget(self.button_box)
 
         UiLoader().install_dialog_enter_key_filters(self)
 
@@ -35,13 +42,13 @@ class PeriodicTableDialog(QDialog):
 
         self.setup_connections()
 
-    def setup_connections(self):
+    def setup_connections(self) -> None:
         self.clear_selection_button.pressed.connect(self.clear_selection)
 
         self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
 
-    def accept(self):
+    def accept(self) -> None:
         if not self.selected_atoms:
             msg = 'Please select at least one element'
             QMessageBox.critical(self, 'HEXRD', msg)
@@ -50,10 +57,10 @@ class PeriodicTableDialog(QDialog):
         super().accept()
 
     @property
-    def selected_atoms(self):
+    def selected_atoms(self) -> list[str]:
         return [x.symbol for x in self.periodic_table.getSelection()]
 
-    def clear_selection(self):
+    def clear_selection(self) -> None:
         for item in self.periodic_table.getSelection():
             self.periodic_table.elementToggle(item)
 

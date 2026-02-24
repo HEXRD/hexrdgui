@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 
 from hexrd import constants
@@ -5,7 +7,7 @@ from hexrd import instrument
 from hexrd.transforms import xfcapi
 
 
-def generate_grains_table(qbar):
+def generate_grains_table(qbar: np.ndarray) -> np.ndarray:
     num_grains = qbar.shape[1]
     grains_table = np.empty((num_grains, 21))
     gw = instrument.GrainDataWriter(array=grains_table)
@@ -18,7 +20,7 @@ def generate_grains_table(qbar):
     return grains_table
 
 
-def write_grains_txt(grains_table, filename):
+def write_grains_txt(grains_table: Any, filename: str) -> None:
     gw = instrument.GrainDataWriter(filename=filename)
     try:
         for grain in grains_table:
@@ -27,8 +29,8 @@ def write_grains_txt(grains_table, filename):
         gw.close()
 
 
-def hkl_in_list(hkl, hkl_list):
-    def hkls_equal(hkl_a, hkl_b):
+def hkl_in_list(hkl: Any, hkl_list: Any) -> bool:
+    def hkls_equal(hkl_a: Any, hkl_b: Any) -> bool:
         return all(x == y for x, y in zip(hkl_a, hkl_b))
 
     for hkl_b in hkl_list:
@@ -38,7 +40,7 @@ def hkl_in_list(hkl, hkl_list):
     return False
 
 
-def hkls_missing_in_list(hkls, hkl_list):
+def hkls_missing_in_list(hkls: Any, hkl_list: Any) -> list:
     missing = []
     for hkl in hkls:
         if not hkl_in_list(hkl, hkl_list):

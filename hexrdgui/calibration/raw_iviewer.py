@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 from itertools import chain
+from typing import Any, Sequence, TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrdgui.overlays.overlay import Overlay
 
 from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
@@ -8,23 +14,23 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays import update_overlay_data
 
 
-def raw_iviewer():
+def raw_iviewer() -> "InstrumentViewer":
     return InstrumentViewer()
 
 
 class InstrumentViewer:
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.type = ViewType.raw
         self.instr = create_hedm_instrument()
-        self.roi_info = {}
+        self.roi_info: dict[str, Any] = {}
 
         self.setup_roi_info()
 
-    def update_overlay_data(self):
+    def update_overlay_data(self) -> None:
         update_overlay_data(self.instr, self.type)
 
-    def update_detectors(self, detectors):
+    def update_detectors(self, detectors: list[str]) -> None:
         # First, convert to the "None" angle convention
         iconfig = HexrdConfig().instrument_config_none_euler_convention
 
@@ -36,25 +42,25 @@ class InstrumentViewer:
         # Since these are just individual images, no further updates are needed
 
     @property
-    def has_roi(self):
+    def has_roi(self) -> bool:
         # Assume it has ROI support if a single detector supports it
         panel = next(iter(self.instr.detectors.values()))
         return all(x is not None for x in (panel.roi, panel.group))
 
     @property
-    def roi_groups(self):
+    def roi_groups(self) -> dict:
         return self.roi_info.get('groups', {})
 
     @property
-    def roi_stitched_shapes(self):
+    def roi_stitched_shapes(self) -> dict:
         return self.roi_info.get('stitched_shapes', {})
 
-    def setup_roi_info(self):
+    def setup_roi_info(self) -> None:
         if not self.has_roi:
             # Required info is missing
             return
 
-        groups = {}
+        groups: dict[str, Any] = {}
         for det_key, panel in self.instr.detectors.items():
             groups.setdefault(panel.group, []).append(det_key)
 
@@ -74,7 +80,7 @@ class InstrumentViewer:
 
         self.roi_info['stitched_shapes'] = stitched_shapes
 
-    def raw_to_stitched(self, ij, det_key):
+    def raw_to_stitched(self, ij: np.ndarray, det_key: str) -> tuple[np.ndarray, str]:
         ij = np.array(ij)
 
         panel = self.instr.detectors[det_key]
@@ -85,7 +91,11 @@ class InstrumentViewer:
 
         return ij, panel.group
 
-    def stitched_to_raw(self, ij, stitched_key):
+    def stitched_to_raw(
+        self,
+        ij: np.ndarray,
+        stitched_key: str,
+    ) -> dict[str, np.ndarray]:
         ij = np.atleast_2d(ij)
 
         ret = {}
@@ -102,7 +112,11 @@ class InstrumentViewer:
 
         return ret
 
-    def raw_images_to_stitched(self, group_names, images_dict):
+    def raw_images_to_stitched(
+        self,
+        group_names: Sequence[str],
+        images_dict: dict,
+    ) -> dict:
         shapes = self.roi_stitched_shapes
         stitched = {}
         for group in group_names:
@@ -116,18 +130,18 @@ class InstrumentViewer:
 
         return stitched
 
-    def create_overlay_data(self, overlay):
+    def create_overlay_data(self, overlay: Overlay) -> dict[str, Any]:
         if HexrdConfig().stitch_raw_roi_images:
             return self.create_roi_overlay_data(overlay)
 
         return overlay.data
 
-    def create_roi_overlay_data(self, overlay):
-        ret = {}
+    def create_roi_overlay_data(self, overlay: Overlay) -> dict[str, Any]:
+        ret: dict[str, Any] = {}
         for det_key, data in overlay.data.items():
             panel = self.instr.detectors[det_key]
 
-            def raw_to_stitched(x):
+            def raw_to_stitched(x: np.ndarray) -> None:
                 # x is in "ji" coordinates
                 x[:, 0] += panel.roi[1][0]
                 x[:, 1] += panel.roi[0][0]
@@ -183,5 +197,5 @@ class InstrumentViewer:
         return ret
 
 
-def in_range(x, range):
+def in_range(x: np.ndarray, range: Sequence[int]) -> np.ndarray:
     return (range[0] <= x) & (x < range[1])

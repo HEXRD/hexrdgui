@@ -1,6 +1,12 @@
+from __future__ import annotations
+
 import copy
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from hexrd.instrument import HEDMInstrument
 
 from hexrd import constants
 from hexrd.material import unitcell
@@ -27,14 +33,15 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
     def __init__(
         self,
-        material_name,
-        tvec=None,
-        eta_steps=360,
-        tth_distortion_type=None,
-        tth_distortion_kwargs=None,
-        clip_with_panel_buffer=False,
-        **overlay_kwargs,
-    ):
+        material_name: str,
+        tvec: Any = None,
+        eta_steps: int = 360,
+        tth_distortion_type: str | None = None,
+        tth_distortion_kwargs: dict | None = None,
+        clip_with_panel_buffer: bool = False,
+        **overlay_kwargs: Any,
+    ) -> None:
+        self._xray_source: str | None = None
         Overlay.__init__(self, material_name, **overlay_kwargs)
 
         if tvec is None:
@@ -52,10 +59,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         self.validate_tth_distortion_kwargs()
 
         # Store hkl means if we are in the polar view (for azimuthal lineout)
-        self.hkl_means = {}
+        self.hkl_means: dict[str, Any] = {}
 
     @property
-    def child_attributes_to_save(self):
+    def child_attributes_to_save(self) -> list:
         # These names must be identical here, as attributes, and as
         # arguments to the __init__ method.
         return [
@@ -67,7 +74,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         ]
 
     @property
-    def xray_source(self):
+    def xray_source(self) -> str | None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         if self._xray_source is None and HexrdConfig().has_multi_xrs:
@@ -77,7 +84,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         return self._xray_source
 
     @xray_source.setter
-    def xray_source(self, v):
+    def xray_source(self, v: str | None) -> None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         if v is None and HexrdConfig().has_multi_xrs:
@@ -86,7 +93,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         else:
             self._xray_source = v
 
-    def validate_tth_distortion_kwargs(self):
+    def validate_tth_distortion_kwargs(self) -> None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         if self.tth_distortion_type is not None:
@@ -101,15 +108,17 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         if self.tth_distortion_type == 'LayerDistortion':
             # We added pinhole_radius later. Set a default if it is missing.
             if 'pinhole_radius' not in self.tth_distortion_kwargs:
-                radius = HexrdConfig().physics_package.pinhole_radius
+                physics_package = HexrdConfig().physics_package
+                assert physics_package is not None
+                radius = physics_package.pinhole_radius
                 self.tth_distortion_kwargs['pinhole_radius'] = radius * 1e-3
 
     @property
-    def has_widths(self):
+    def has_widths(self) -> bool:
         return self.material.planeData.tThWidth is not None
 
     @property
-    def tvec(self):
+    def tvec(self) -> np.ndarray:
         if self.has_tth_distortion:
             # If there is a distortion, act as if there is no tvec
             return constants.zeros_3.copy()
@@ -117,44 +126,44 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         return self._tvec
 
     @tvec.setter
-    def tvec(self, x):
+    def tvec(self, x: Any) -> None:
         x = np.asarray(x, float).flatten()
         assert len(x) == 3, "tvec input must have exactly 3 elements"
         self._tvec = x
 
     @property
-    def eta_steps(self):
+    def eta_steps(self) -> int:
         return self._eta_steps
 
     @eta_steps.setter
-    def eta_steps(self, x):
+    def eta_steps(self, x: int) -> None:
         assert isinstance(x, int), 'input must be an int'
         self._eta_steps = x
 
     @property
-    def delta_eta(self):
+    def delta_eta(self) -> float:
         return 360 / self.eta_steps
 
     @property
-    def all_refinements(self):
+    def all_refinements(self) -> np.ndarray:
         # This doesn't take into account crystal symmetry
         if not hasattr(self, '_all_refinements'):
             self._all_refinements = self.default_refinements
         return self._all_refinements
 
     @all_refinements.setter
-    def all_refinements(self, v):
+    def all_refinements(self, v: Any) -> None:
         if len(v) != 6:
             raise Exception(f'{len(v)=} must be 6')
         self._all_refinements = np.asarray(v)
 
     @property
-    def refinements(self):
+    def refinements(self) -> np.ndarray:
         # Only return the required indices
         return self.all_refinements[self.refinement_indices]
 
     @refinements.setter
-    def refinements(self, v):
+    def refinements(self, v: Any) -> None:
         if len(v) == 6:
             self.all_refinements = v
         elif len(v) == len(self.refinement_indices):
@@ -164,29 +173,29 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             raise Exception(msg)
 
     @property
-    def refinement_indices(self):
+    def refinement_indices(self) -> np.ndarray:
         if self.material is None:
             return np.asarray(range(6))
         ltype = self.material.unitcell.latticeType
         return np.asarray(unitcell._rqpDict[ltype][0])
 
     @property
-    def all_refinement_labels(self):
+    def all_refinement_labels(self) -> np.ndarray:
         return np.asarray(['a', 'b', 'c', 'α', 'β', 'γ'])
 
     @property
-    def refinement_labels(self):
+    def refinement_labels(self) -> list[str]:
         if self.material is None:
-            return self.all_refinement_labels
+            return self.all_refinement_labels.tolist()
 
-        return self.all_refinement_labels[self.refinement_indices]
+        return self.all_refinement_labels[self.refinement_indices].tolist()
 
     @property
-    def default_refinements(self):
+    def default_refinements(self) -> np.ndarray:
         return np.asarray([False] * 6)
 
     @property
-    def has_picks_data(self):
+    def has_picks_data(self) -> bool:
         for det_key, hkl_dict in self.calibration_picks.items():
             for hkl_str, hkl_picks in hkl_dict.items():
                 if hkl_picks:
@@ -195,7 +204,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         return False
 
     @property
-    def calibration_picks_polar(self):
+    def calibration_picks_polar(self) -> dict:
         # Convert from cartesian to polar
         instr = self.instrument
         picks = copy.deepcopy(self.calibration_picks)
@@ -217,7 +226,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         return picks
 
     @calibration_picks_polar.setter
-    def calibration_picks_polar(self, picks):
+    def calibration_picks_polar(self, picks: dict) -> None:
         self._validate_picks(picks)
 
         # Convert from polar to cartesian
@@ -234,17 +243,19 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     hkl_picks, in_degrees=True, reverse=True
                 )
 
-                hkl_dict[hkl_str] = angles_to_cart(angles, panel).tolist()
+                hkl_dict[hkl_str] = angles_to_cart(
+                    angles, panel  # type: ignore[arg-type]
+                ).tolist()
 
         self.calibration_picks = picks
 
     @property
-    def active_beam_name(self):
+    def active_beam_name(self) -> str | None:
         from hexrdgui.hexrd_config import HexrdConfig
 
         return HexrdConfig().active_beam_name
 
-    def generate_overlay(self):
+    def generate_overlay(self) -> dict:
         # Ensure hkl means is cleared
         self.hkl_means.clear()
 
@@ -266,7 +277,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             r_lower = [r[0] for r in ranges]
             r_upper = [r[1] for r in ranges]
 
-        point_groups = {}
+        point_groups: dict[str, Any] = {}
         for det_key, panel in instr.detectors.items():
             keys = ['rings', 'rbnds', 'rbnd_indices', 'hkls']
             point_groups[det_key] = {key: [] for key in keys}
@@ -320,10 +331,10 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
         return point_groups
 
-    def generate_hkl_means(self, point_groups):
+    def generate_hkl_means(self, point_groups: dict) -> None:
         # Concatenate all hkl rings and rbnds together for the polar
         # view azimuthal lineout.
-        hkl_data = {}
+        hkl_data: dict[str, Any] = {}
 
         all_hkls = self.plane_data.getHKLs()
         for orig_idx, hkl in enumerate(all_hkls):
@@ -369,7 +380,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                         lower = False
 
         # Now compute the means
-        means = {}
+        means: dict[str, Any] = {}
         for hkl_str, data in hkl_data.items():
             hkl_means = means.setdefault(hkl_str, {})
 
@@ -393,7 +404,14 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
         self.hkl_means = means
 
-    def generate_ring_points(self, instr, tths, etas, panel, display_mode):
+    def generate_ring_points(
+        self,
+        instr: HEDMInstrument,
+        tths: np.ndarray | list[Any],
+        etas: np.ndarray,
+        panel: Any,
+        display_mode: Any,
+    ) -> tuple:
         from hexrdgui.hexrd_config import HexrdConfig
 
         ring_pts = []
@@ -402,7 +420,9 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         # Grab the distortion object if we have one
         sd = None
         if self.has_tth_distortion:
-            sd = self.tth_distortion_dict[panel.name]
+            distortion_dict = self.tth_distortion_dict
+            assert distortion_dict is not None
+            sd = distortion_dict[panel.name]
 
         # Apply tth_distortion if:
         # 1. tth_distortion was set (sd is not None)
@@ -431,6 +451,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
         if offset_distortion:
             # Set these up outside of the loop
+            assert polar_corr_field is not None
+            assert polar_angular_grid is not None
             polar_field = polar_corr_field.filled(np.nan)
             eta_centers, tth_centers = polar_angular_grid
             first_eta_col = eta_centers[:, 0]
@@ -472,6 +494,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             if has_pinhole_distortion or (
                 (polar_distortion_with_self or offset_distortion)
                 and distortion_object
+                and hasattr(distortion_object, 'pinhole_distortion_type')
                 and distortion_object.pinhole_distortion_type == 'LayerDistortion'
             ):
                 # If this overlay has a pinhole distortion of any kind, or
@@ -481,6 +504,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 if has_pinhole_distortion:
                     kwargs = self.pinhole_distortion_kwargs
                 else:
+                    assert distortion_object is not None
+                    assert hasattr(distortion_object, 'pinhole_distortion_kwargs')
                     kwargs = distortion_object.pinhole_distortion_kwargs
 
                 pinhole_thickness = kwargs['pinhole_thickness']
@@ -493,6 +518,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
             if apply_distortion:
                 # Apply distortion correction
+                assert sd is not None
                 ang_crds = sd.apply(xys)
             elif offset_distortion:
                 # Compute ang_crds in the regular way
@@ -619,12 +645,12 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 if n_segments == 1:
                     ring_pts.append(np.vstack([xys, nans_row]))
                 else:
-                    src_len = sum(on_panel)
+                    src_len: int = sum(on_panel)  # type: ignore[assignment]
                     dst_len = src_len + len(ring_breaks)
                     nxys = np.nan * np.ones((dst_len, 2))
-                    ii = 0
+                    ii = 0  # type: ignore[assignment]
                     for i in range(n_segments - 1):
-                        jj = ring_breaks[i]
+                        jj = int(ring_breaks[i])  # type: ignore[assignment]
                         nxys[ii + i : jj + i, :] = xys[ii:jj, :]
                         ii = jj
                     i = n_segments - 1
@@ -635,11 +661,11 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
     # START PolarDistortionObject mixin reroutes
     @property
-    def has_tth_distortion(self):
+    def has_tth_distortion(self) -> bool:
         return self.has_pinhole_distortion
 
     @property
-    def tth_distortion_dict(self):
+    def tth_distortion_dict(self) -> dict | None:
         if self.instrument is None:
             return None
 
@@ -647,24 +673,32 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             return self.pinhole_distortion_dict(self.instrument)
 
     @property
-    def has_polar_tth_displacement_field(self):
+    def has_polar_tth_displacement_field(self) -> bool:
         return self.has_polar_pinhole_displacement_field
 
     @property
-    def tth_displacement_field(self):
+    def tth_displacement_field(self) -> Any:
         with switch_xray_source(self.instrument, self.xray_source):
             return self.pinhole_displacement_field(self.instrument)
 
-    def create_polar_tth_displacement_field(self):
+    def create_polar_tth_displacement_field(
+        self, tth: np.ndarray, eta: np.ndarray
+    ) -> Any:
         with switch_xray_source(self.instrument, self.xray_source):
-            return self.create_polar_pinhole_displacement_field(self.instrument)
+            return self.create_polar_pinhole_displacement_field(
+                self.instrument, tth, eta
+            )
 
     @property
-    def pinhole_distortion_type(self):
+    def pinhole_distortion_type(self) -> str | None:
         return self.tth_distortion_type
 
+    @pinhole_distortion_type.setter
+    def pinhole_distortion_type(self, v: str | None) -> None:
+        self.tth_distortion_type = v
+
     @property
-    def pinhole_distortion_kwargs(self):
+    def pinhole_distortion_kwargs(self) -> dict:
         from hexrdgui.hexrd_config import HexrdConfig
 
         kwargs = self.tth_distortion_kwargs.copy()
@@ -673,17 +707,21 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             kwargs['absorption_length'] = HexrdConfig().absorption_length() * 1e-3
         return kwargs
 
+    @pinhole_distortion_kwargs.setter
+    def pinhole_distortion_kwargs(self, v: dict) -> None:
+        self.tth_distortion_kwargs = v
+
     # END PolarDistortionObject mixin reroutes
 
     @property
-    def default_style(self):
+    def default_style(self) -> dict:
         return {
             'data': {'c': '#00ffff', 'ls': 'solid', 'lw': 1.0},  # Cyan
             'ranges': {'c': '#00ff00', 'ls': 'dotted', 'lw': 1.0},  # Green
         }
 
     @property
-    def default_highlight_style(self):
+    def default_highlight_style(self) -> dict:
         return {
             'data': {'c': '#ff00ff', 'ls': 'solid', 'lw': 3.0},  # Magenta
             'ranges': {'c': '#ff00ff', 'ls': 'dotted', 'lw': 3.0},  # Magenta
