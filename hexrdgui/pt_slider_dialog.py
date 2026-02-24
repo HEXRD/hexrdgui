@@ -288,7 +288,10 @@ class PTSliderDialog:
                 f'material "{self.material.name}". Update the material '
                 'parameters to match?'
             )
-            if QMessageBox.question(self.ui, 'HEXRD', msg) == QMessageBox.StandardButton.Yes:
+            if (
+                QMessageBox.question(self.ui, 'HEXRD', msg)
+                == QMessageBox.StandardButton.Yes
+            ):
                 jcpds.write_lattice_params_to_material(self.material)
                 self.rerender_overlays()
 

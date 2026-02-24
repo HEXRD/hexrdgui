@@ -189,7 +189,9 @@ class WaterfallPlot:
 
 
 class WaterfallPlotDialog(QDialog):
-    def __init__(self, ax: Axes, line_data: LineData, parent: QWidget | None = None) -> None:
+    def __init__(
+        self, ax: Axes, line_data: LineData, parent: QWidget | None = None
+    ) -> None:
         super().__init__(parent)
 
         self.setWindowTitle('Waterfall Plot')
@@ -229,7 +231,9 @@ class WaterfallPlotDialog(QDialog):
 
         # Add a navigation toolbar too
         self.toolbar = NavigationToolbar(canvas, self)
-        self.toolbar.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        self.toolbar.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum
+        )
         layout.addWidget(self.toolbar)
         layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignCenter)
 

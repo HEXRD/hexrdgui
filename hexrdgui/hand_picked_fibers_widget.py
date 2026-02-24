@@ -336,7 +336,10 @@ class HandPickedFibersWidget(QObject):
 
         with block_signals(selection_model):
             selection_model.clearSelection()
-            command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+            command = (
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows
+            )
 
             for i in rows:
                 if i is None or i >= table.rowCount():

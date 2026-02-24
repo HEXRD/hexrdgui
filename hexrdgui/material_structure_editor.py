@@ -139,7 +139,10 @@ class MaterialStructureEditor(QObject):
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        command = (
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows
+        )
         selection_model.select(model_index, command)
 
     @staticmethod

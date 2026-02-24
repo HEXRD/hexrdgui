@@ -32,7 +32,11 @@ class CalTreeItemModel(BaseTreeItemModel):
         self.cfg = HexrdConfig()
         self.rebuild_tree()
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         if not index.isValid():
             return None
 
@@ -49,7 +53,12 @@ class CalTreeItemModel(BaseTreeItemModel):
 
         return value
 
-    def setData(self, index: QModelIndex | QPersistentModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
+    def setData(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        value: Any,
+        role: int = Qt.ItemDataRole.EditRole,
+    ) -> bool:
         item = self.get_item(index)
         path = self.path_to_value(item, index.column())
 

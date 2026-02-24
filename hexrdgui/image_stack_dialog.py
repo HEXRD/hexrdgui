@@ -201,9 +201,13 @@ class ImageStackDialog(QObject):
         self.ui.load_omega_file.setEnabled(checked)
         self.ui.omega_file.setEnabled(checked)
         if checked:
-            self.ui.omega_wedges.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+            self.ui.omega_wedges.setEditTriggers(
+                QAbstractItemView.EditTrigger.NoEditTriggers
+            )
         else:
-            self.ui.omega_wedges.setEditTriggers(QAbstractItemView.EditTrigger.AllEditTriggers)
+            self.ui.omega_wedges.setEditTriggers(
+                QAbstractItemView.EditTrigger.AllEditTriggers
+            )
 
     def detector_selection(self, checked: bool) -> None:
         self.state['all_detectors'] = checked

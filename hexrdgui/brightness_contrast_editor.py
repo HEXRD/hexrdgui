@@ -400,7 +400,9 @@ class BrightnessContrastEditor(QObject):
         range_widget.max = self.data_range[1]
         layout.addWidget(range_widget.ui)
 
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         button_box = QDialogButtonBox(buttons, dialog)
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)

@@ -342,7 +342,9 @@ class Overlay(ABC):
     def clear_highlights(self) -> None:
         self._highlights.clear()
 
-    def path_to_hkl_data(self, detector_key: str, hkl: np.ndarray) -> tuple[str, str | None, int]:
+    def path_to_hkl_data(
+        self, detector_key: str, hkl: np.ndarray
+    ) -> tuple[str, str | None, int]:
         data_key = self.data_key
         detector_data = self.data[detector_key]
         ind = array_index_in_list(hkl, detector_data['hkls'])

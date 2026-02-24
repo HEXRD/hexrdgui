@@ -27,7 +27,9 @@ class H5StateLoader(yaml.SafeLoader):
     also whitelist a new python types.
     """
 
-    def __init__(self, *pargs: Any, h5_file: h5py.File | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, *pargs: Any, h5_file: h5py.File | None = None, **kwargs: Any
+    ) -> None:
         super().__init__(*pargs, **kwargs)
         self.h5_file = h5_file
 

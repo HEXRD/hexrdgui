@@ -28,7 +28,7 @@ class ConstChiOverlay(Overlay):
         chi_values: list[Any] | None = None,
         tvec: np.ndarray | None = None,
         chi_values_serialized: list[Any] | None = None,
-        **overlay_kwargs: Any
+        **overlay_kwargs: Any,
     ) -> None:
         # chi_values_serialized is only used if chi_values is None.
         # It is used for state loading.

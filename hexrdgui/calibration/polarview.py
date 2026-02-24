@@ -305,7 +305,9 @@ class PolarView:
         else:
             return _project_on_detector_plane
 
-    def args_project_on_detector(self, detector: Detector) -> tuple[tuple[Any, ...], dict[str, Any]]:
+    def args_project_on_detector(
+        self, detector: Detector
+    ) -> tuple[tuple[Any, ...], dict[str, Any]]:
         """
         prepare the arguments to be passed for
         mapping to plane or cylinder

@@ -46,7 +46,11 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
         self.root_item = TreeItem(['Key'] + self.column_labels)
         self.rebuild_tree()
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         value = super().data(index, role)
 
         if isinstance(value, bool) and role == Qt.ItemDataRole.DisplayRole:

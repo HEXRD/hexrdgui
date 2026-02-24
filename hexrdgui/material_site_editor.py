@@ -189,7 +189,10 @@ class MaterialSiteEditor(QObject):
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        command = (
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows
+        )
         selection_model.select(model_index, command)
 
     def selection_changed(self) -> None:
@@ -221,7 +224,9 @@ class MaterialSiteEditor(QObject):
         cb.setCurrentText(charge)
         cb.currentIndexChanged.connect(self.update_config)
 
-        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         cb.setSizePolicy(size_policy)
 
         self.charge_comboboxes.append(cb)
@@ -238,7 +243,9 @@ class MaterialSiteEditor(QObject):
         sb.setValue(v)
         sb.valueChanged.connect(self.update_config)
 
-        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         sb.setSizePolicy(size_policy)
 
         self.occupancy_spinboxes.append(sb)
@@ -256,7 +263,9 @@ class MaterialSiteEditor(QObject):
         sb.valueChanged.connect(self.update_config)
         sb.setToolTip('Double-click to open tensor editor')
 
-        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         sb.setSizePolicy(size_policy)
 
         self.thermal_factor_spinboxes.append(sb)

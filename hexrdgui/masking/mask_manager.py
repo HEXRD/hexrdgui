@@ -162,7 +162,9 @@ class RegionMask(Mask):
             return
         self._highlight = value
 
-    def update_masked_arrays(self, view: str = ViewType.raw, instr: HEDMInstrument | None = None) -> None:
+    def update_masked_arrays(
+        self, view: str = ViewType.raw, instr: HEDMInstrument | None = None
+    ) -> None:
         self.masked_arrays_view_mode = view
         assert self._raw is not None
         if view == ViewType.raw:
@@ -432,7 +434,9 @@ class MaskManager(QObject, metaclass=QSingleton):
         self.mask_mgr_dialog_update.emit()
         return removed_mask
 
-    def write_masks_to_group(self, data: dict[str, Any], h5py_group: h5py.Group) -> None:
+    def write_masks_to_group(
+        self, data: dict[str, Any], h5py_group: h5py.Group
+    ) -> None:
         h5py_group.attrs['_version'] = CURRENT_MASK_VERSION
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 

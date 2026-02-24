@@ -117,7 +117,9 @@ class TableSelectorDialog(QDialog):
 
         self.set_options()
 
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self.button_box = QDialogButtonBox(buttons, self)
         layout.addWidget(self.button_box)
 

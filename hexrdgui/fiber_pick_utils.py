@@ -88,7 +88,9 @@ def _pick_to_fiber(
         return qfib.T  # (4, ndiv)
 
 
-def _angles_from_orientation(instr: HEDMInstrument, eta_ome_maps: Any, orientation: Any) -> list:
+def _angles_from_orientation(
+    instr: HEDMInstrument, eta_ome_maps: Any, orientation: Any
+) -> list:
     """
     Return the (eta, omega) angles for a specified orientation consistent with
     input EtaOmeMaps.

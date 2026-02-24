@@ -124,7 +124,9 @@ def chi_to_angs(
     return angs
 
 
-def calc_chi_map(sample_tilt: np.ndarray, instr: HEDMInstrument) -> dict[str, np.ndarray]:
+def calc_chi_map(
+    sample_tilt: np.ndarray, instr: HEDMInstrument
+) -> dict[str, np.ndarray]:
 
     chi = {}
     for det_name, panel in instr.detectors.items():

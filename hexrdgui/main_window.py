@@ -128,11 +128,15 @@ class MainWindow(QObject):
         self.messages_widget = MessagesWidget(self.ui)
         dock_widget_contents = self.ui.messages_dock_widget_contents
         dock_widget_contents.layout().addWidget(self.messages_widget.ui)
-        self.ui.resizeDocks([self.ui.messages_dock_widget], [80], Qt.Orientation.Vertical)
+        self.ui.resizeDocks(
+            [self.ui.messages_dock_widget], [80], Qt.Orientation.Vertical
+        )
 
         # Let the left dock widget take up the whole left side
         self.ui.setCorner(Qt.Corner.TopLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea)
-        self.ui.setCorner(Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea)
+        self.ui.setCorner(
+            Qt.Corner.BottomLeftCorner, Qt.DockWidgetArea.LeftDockWidgetArea
+        )
 
         self.color_map_editor = ColorMapEditor(
             self.ui.image_tab_widget, self.ui.central_widget
@@ -897,7 +901,9 @@ class MainWindow(QObject):
             self.run_apply_hand_drawn_mask
         )
 
-    def run_apply_hand_drawn_mask(self, dets: list[str | None], line_data: list[np.ndarray]) -> None:
+    def run_apply_hand_drawn_mask(
+        self, dets: list[str | None], line_data: list[np.ndarray]
+    ) -> None:
         if self.image_mode == ViewType.polar:
             for line in line_data:
                 raw_line = convert_polar_to_raw([line])

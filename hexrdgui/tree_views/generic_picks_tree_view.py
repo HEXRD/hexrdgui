@@ -716,7 +716,9 @@ class GenericPicksTreeViewDialog(QDialog):
         layout.addWidget(cb)
 
         # Add a button box for accept/cancel
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self.button_box = QDialogButtonBox(buttons, self)
         layout.addWidget(self.button_box)
 

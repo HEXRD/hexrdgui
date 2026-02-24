@@ -184,7 +184,10 @@ class SelectGrainsDialog(QObject):
             and len(v) == self.num_requested_grains
         ):
             selection_model = view.selectionModel()
-            command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+            command = (
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows
+            )
             for i in range(len(v)):
                 model_index = selection_model.model().index(i, 0)
                 selection_model.select(model_index, command)

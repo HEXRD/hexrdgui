@@ -228,7 +228,9 @@ class CalibrationDialogCallbacks(ABCQObject):
     def update_undo_enable_state(self) -> None:
         self.dialog.undo_enabled = bool(self.undo_stack)
 
-    def on_relative_constraints_changed(self, new_constraint: RelativeConstraintsType) -> None:
+    def on_relative_constraints_changed(
+        self, new_constraint: RelativeConstraintsType
+    ) -> None:
         self.calibrator.relative_constraints_type = new_constraint
         self.restore_constraint_params()
         # Reset the tilt center of rotation in the dialog

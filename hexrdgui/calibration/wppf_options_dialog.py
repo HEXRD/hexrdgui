@@ -1588,7 +1588,9 @@ class WppfOptionsDialog(QObject):
         return self.tree_view_model_class.COLUMNS
 
     @property
-    def tree_view_model_class(self) -> type[DefaultWPPFTreeItemModel] | type[DeltaWPPFTreeItemModel]:
+    def tree_view_model_class(
+        self,
+    ) -> type[DefaultWPPFTreeItemModel] | type[DeltaWPPFTreeItemModel]:
         if self.delta_boundaries:
             return DeltaWPPFTreeItemModel
         else:
@@ -1746,7 +1748,9 @@ class WppfOptionsDialog(QObject):
 
         return self._wppf_object
 
-    def create_wppf_object(self, reset_background_params: bool = False) -> LeBail | Rietveld:
+    def create_wppf_object(
+        self, reset_background_params: bool = False
+    ) -> LeBail | Rietveld:
         class_types = {
             'LeBail': LeBail,
             'Rietveld': Rietveld,
@@ -2282,7 +2286,9 @@ class WppfOptionsDialog(QObject):
 
         return False
 
-    def _copy_texture_figs(self, obj1: LeBail | Rietveld | None, obj2: LeBail | Rietveld | None) -> None:
+    def _copy_texture_figs(
+        self, obj1: LeBail | Rietveld | None, obj2: LeBail | Rietveld | None
+    ) -> None:
         # We need to keep the original texture figures, so copy those over.
         if obj1 is None or obj2 is None:
             return

@@ -3,7 +3,13 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, overload
 
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, QPersistentModelIndex, Qt
+from PySide6.QtCore import (
+    QAbstractItemModel,
+    QModelIndex,
+    QObject,
+    QPersistentModelIndex,
+    Qt,
+)
 
 from hexrdgui.tree_views.tree_item import TreeItem
 
@@ -17,7 +23,9 @@ class BaseTreeItemModel(QAbstractItemModel):
     # Subclasses must define root_item
     root_item: TreeItem
 
-    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
+    def columnCount(
+        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
+    ) -> int:
         return self.root_item.column_count()
 
     def headerData(
@@ -26,12 +34,19 @@ class BaseTreeItemModel(QAbstractItemModel):
         orientation: Qt.Orientation,
         role: int = Qt.ItemDataRole.DisplayRole,
     ) -> str | None:
-        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+        if (
+            orientation == Qt.Orientation.Horizontal
+            and role == Qt.ItemDataRole.DisplayRole
+        ):
             return self.root_item.data(section)
 
         return None
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         if not index.isValid():
             return
 
@@ -41,7 +56,12 @@ class BaseTreeItemModel(QAbstractItemModel):
         item = self.get_item(index)
         return item.data(index.column())
 
-    def index(self, row: int, column: int, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> QModelIndex:
+    def index(
+        self,
+        row: int,
+        column: int,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> QModelIndex:
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
 
@@ -56,7 +76,9 @@ class BaseTreeItemModel(QAbstractItemModel):
     def parent(self) -> QObject: ...
     @overload
     def parent(self, index: QModelIndex | QPersistentModelIndex) -> QModelIndex: ...
-    def parent(self, index: QModelIndex | QPersistentModelIndex | None = None) -> QObject | QModelIndex:
+    def parent(
+        self, index: QModelIndex | QPersistentModelIndex | None = None
+    ) -> QObject | QModelIndex:
         if index is None:
             return super().parent()
 
@@ -70,7 +92,9 @@ class BaseTreeItemModel(QAbstractItemModel):
 
         return self.createIndex(parent_item.row(), KEY_COL, parent_item)
 
-    def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
+    def rowCount(
+        self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()
+    ) -> int:
         parent_item = self.get_item(parent)
         return parent_item.child_count()
 

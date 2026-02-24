@@ -1818,9 +1818,7 @@ class ImageCanvas(FigureCanvas):
         assert self.azimuthal_integral_axis is not None
         extent = self.azimuthal_integral_axis.get_window_extent().transformed(size)
         # The bbox does not include the axis so manually scale it up so it does
-        new_extent = extent.from_extents(
-            0, 0, extent.xmax * 1.05, extent.ymax * 1.05
-        )
+        new_extent = extent.from_extents(0, 0, extent.xmax * 1.05, extent.ymax * 1.05)
         # Save the clipped region of the figure
         self.figure.savefig(selected_file, bbox_inches=new_extent)
 
@@ -2154,7 +2152,8 @@ class ImageCanvas(FigureCanvas):
         # No close button in the corner
         flags = progress.windowFlags()
         progress.setWindowFlags(
-            (flags | Qt.WindowType.CustomizeWindowHint) & ~Qt.WindowType.WindowCloseButtonHint
+            (flags | Qt.WindowType.CustomizeWindowHint)
+            & ~Qt.WindowType.WindowCloseButtonHint
         )
 
         self._create_waterfall_progress = progress
@@ -2591,7 +2590,9 @@ def transform_from_plain_cartesian_func(mode: str) -> Callable:
     def to_pixels(xys: np.ndarray, panel: Detector, iviewer: IViewer) -> np.ndarray:
         return cart_to_pixels(xys, panel)
 
-    def transform_cart(xys: np.ndarray, panel: Detector, iviewer: IViewer) -> np.ndarray:
+    def transform_cart(
+        xys: np.ndarray, panel: Detector, iviewer: IViewer
+    ) -> np.ndarray:
         dplane = iviewer.dplane  # type: ignore[union-attr]
         return panel.map_to_plane(xys, dplane.rmat, dplane.tvec)
 

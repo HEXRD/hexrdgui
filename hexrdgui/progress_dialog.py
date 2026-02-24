@@ -36,7 +36,8 @@ class ProgressDialog(QObject):
         # No close button in the corner
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(
-            (flags | Qt.WindowType.CustomizeWindowHint) & ~Qt.WindowType.WindowCloseButtonHint
+            (flags | Qt.WindowType.CustomizeWindowHint)
+            & ~Qt.WindowType.WindowCloseButtonHint
         )
 
         self.setup_connections()

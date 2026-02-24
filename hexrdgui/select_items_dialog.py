@@ -23,7 +23,9 @@ class SelectItemsDialog(QDialog):
         self.select_items_widget = SelectItemsWidget(items, parent)
         layout.addWidget(self.select_items_widget.ui)
 
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self.button_box = QDialogButtonBox(buttons, self)
         layout.addWidget(self.button_box)
 

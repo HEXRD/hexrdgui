@@ -11,7 +11,9 @@ except ImportError:
     import importlib_resources  # type: ignore[no-redef]
 
 
-def load_resource(module: types.ModuleType, name: str, binary: bool = False) -> str | bytes:
+def load_resource(
+    module: types.ModuleType, name: str, binary: bool = False
+) -> str | bytes:
     """This will return a string of a resource's contents"""
     if binary:
         return importlib_resources.read_binary(module, name)

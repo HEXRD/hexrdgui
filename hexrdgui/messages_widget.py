@@ -116,7 +116,9 @@ class MessagesWidget(QObject):
             ind = text.find('\r')
             first, rest = text[:ind], text[ind + 1 :]
             self.ui.text.insertPlainText(first)
-            self.ui.text.moveCursor(QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.KeepAnchor)
+            self.ui.text.moveCursor(
+                QTextCursor.MoveOperation.StartOfLine, QTextCursor.MoveMode.KeepAnchor
+            )
             text = rest
 
         self.ui.text.insertPlainText(text)
@@ -210,7 +212,9 @@ class Writer(QObject):
         # Always do a queued connection so the messages are
         # printed in the order they are received (regardless of which
         # thread they are coming from)
-        self.text_received.connect(self.on_text_received, Qt.ConnectionType.QueuedConnection)
+        self.text_received.connect(
+            self.on_text_received, Qt.ConnectionType.QueuedConnection
+        )
 
     def on_text_received(self, text: str) -> None:
         self.write_func(text)
