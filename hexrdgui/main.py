@@ -4,6 +4,14 @@ import gc
 import os
 import signal
 import sys
+import warnings
+
+# Suppress harmless leaked semaphore warning from loky at shutdown
+warnings.filterwarnings(
+    'ignore',
+    message=r'resource_tracker:.*leaked semaphore',
+    category=UserWarning,
+)
 
 if sys.platform.startswith('darwin'):
     # Prevent crashing when using OpenBLAS
