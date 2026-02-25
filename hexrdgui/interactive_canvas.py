@@ -299,6 +299,11 @@ class InteractiveCanvasMixin:
         self._interaction_active = True
         self._cached_pixmap = self.grab()
 
+        # Push the pre-interaction state so the toolbar "home" button
+        # always returns to the view before any interactive zoom/pan.
+        if self._nav_toolbar is not None:
+            self._nav_toolbar.push_current()
+
         self._build_axis_data()
 
         # Seed original and pending limits
