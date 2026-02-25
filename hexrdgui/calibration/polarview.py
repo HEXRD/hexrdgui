@@ -15,8 +15,6 @@ from skimage.transform import warp
 
 from hexrd.rotations import mapAngle
 from hexrd.utils.decorators import memoize
-from hexrd.utils.warnings import ignore_warnings
-
 from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane, _project_on_detector_cylinder
 from hexrd import instrument
@@ -519,13 +517,15 @@ class PolarView:
 
         stacked = np.ma.stack(output.values()).filled(np.nan)
 
-        # It's okay to have all nan-slices here, but it produces a warning.
-        # Just ignore the warning.
-        with ignore_warnings(RuntimeWarning):
-            # In case there are overlapping detectors, we do nanmean for
-            # the intensities instead of nansum. This would produce a
-            # somewhat more reasonable intensity.
-            correction_field = np.nanmean(stacked, axis=0)
+        # In case there are overlapping detectors, we do nanmean for
+        # the intensities instead of nansum.  All-NaN slices are expected
+        # (detector gaps) and should produce NaN in the correction field.
+        # We compute the mean manually instead of calling np.nanmean()
+        # because the "Mean of empty slice" RuntimeWarning it emits could
+        # not be reliably suppressed on all platforms (see PR #1941).
+        valid_count = np.sum(~np.isnan(stacked), axis=0)
+        with np.errstate(invalid='ignore', divide='ignore'):
+            correction_field = np.nansum(stacked, axis=0) / valid_count
 
         img *= correction_field
 
