@@ -1078,7 +1078,9 @@ class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
 
 @contextmanager
-def zoom_canvas_disabled(line_picker: LinePickerDialog | None) -> Generator[None, None, None]:
+def zoom_canvas_disabled(
+    line_picker: LinePickerDialog | None,
+) -> Generator[None, None, None]:
     if line_picker:
         prev = line_picker.zoom_canvas.disabled
         line_picker.zoom_canvas.disabled = True

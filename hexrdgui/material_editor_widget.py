@@ -242,7 +242,10 @@ class MaterialEditorWidget(QObject):
                 f'large value of "{value:.2f}" Å. This might use too '
                 'many system resources. Proceed anyways?'
             )
-            if QMessageBox.question(self.ui, 'HEXRD', msg) == QMessageBox.StandardButton.No:
+            if (
+                QMessageBox.question(self.ui, 'HEXRD', msg)
+                == QMessageBox.StandardButton.No
+            ):
                 # Reset the lattice parameter value.
                 self.update_gui_from_material()
 

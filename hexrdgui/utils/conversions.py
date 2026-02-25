@@ -95,7 +95,9 @@ def pixels_to_angles(
     )
 
 
-def stereo_to_angles(ij: np.ndarray, instr: HEDMInstrument, stereo_size: int) -> np.ndarray:
+def stereo_to_angles(
+    ij: np.ndarray, instr: HEDMInstrument, stereo_size: int
+) -> np.ndarray:
     # Returns radians
     return stereo_ij2ang(
         ij=ij,
@@ -104,7 +106,9 @@ def stereo_to_angles(ij: np.ndarray, instr: HEDMInstrument, stereo_size: int) ->
     )
 
 
-def angles_to_stereo(angs: np.ndarray, instr: HEDMInstrument, stereo_size: int) -> np.ndarray:
+def angles_to_stereo(
+    angs: np.ndarray, instr: HEDMInstrument, stereo_size: int
+) -> np.ndarray:
     # angs is in radians
     return ang2stereo_ij(
         angs=angs,

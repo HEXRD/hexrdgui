@@ -18,7 +18,9 @@ class DynamicWidget(QObject):
     # Emitted when the value is changed
     value_changed = Signal()
 
-    def __init__(self, description: dict[str, Any], parent: QObject | None = None) -> None:
+    def __init__(
+        self, description: dict[str, Any], parent: QObject | None = None
+    ) -> None:
         super().__init__(parent)
 
         self.description = description
@@ -60,7 +62,9 @@ def label_from_description(x: dict[str, Any]) -> QLabel | None:
     return QLabel(x['label'])
 
 
-def widget_from_description(x: dict[str, Any], parent: QWidget | None = None) -> QWidget | None:
+def widget_from_description(
+    x: dict[str, Any], parent: QWidget | None = None
+) -> QWidget | None:
     """Dynamically create a widget from a description dict.
 
     Some of the keys currently accepted are 'type', 'min', 'max', and

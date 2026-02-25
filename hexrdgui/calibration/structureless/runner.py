@@ -267,7 +267,9 @@ class StructurelessCalibrationRunner(QObject):
         # will not be left in an invalid state.
         self.set_focus_mode(False)
 
-    def show_calibration_dialog(self, calibrator_lines: dict[str, Any]) -> CalibrationDialog:
+    def show_calibration_dialog(
+        self, calibrator_lines: dict[str, Any]
+    ) -> CalibrationDialog:
         self.previous_picks_data = calibrator_lines
 
         engineering_constraints = guess_engineering_constraints(self.instr)

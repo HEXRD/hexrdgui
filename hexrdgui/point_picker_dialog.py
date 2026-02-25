@@ -38,7 +38,9 @@ class PointPickerDialog(QDialog):
         layout.setAlignment(self.toolbar, Qt.AlignmentFlag.AlignHCenter)
 
         # Add a button box for accept/cancel
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self.button_box = QDialogButtonBox(buttons, self)
         layout.addWidget(self.button_box)
 

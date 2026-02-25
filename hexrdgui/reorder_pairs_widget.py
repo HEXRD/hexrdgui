@@ -67,7 +67,9 @@ class ReorderPairsWidget(QObject):
         options = [x[j] for x in self.items]
 
         cb = QComboBox(self.ui.table)
-        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         cb.setSizePolicy(size_policy)
         cb.addItems(options)
         cb.setCurrentIndex(options.index(value))

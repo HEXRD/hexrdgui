@@ -116,7 +116,9 @@ class MaskManagerDialog(QObject):
         mode_item.setFont(
             0,
             QFont(
-                mode_item.font(0).family(), mode_item.font(0).pointSize(), QFont.Weight.Bold
+                mode_item.font(0).family(),
+                mode_item.font(0).pointSize(),
+                QFont.Weight.Bold,
             ),
         )
         self.ui.masks_tree.addTopLevelItem(mode_item)
@@ -131,7 +133,11 @@ class MaskManagerDialog(QObject):
     ) -> None:
         assert mask.name is not None
         mask_item = QTreeWidgetItem([mask.name])
-        mask_item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable)
+        mask_item.setFlags(
+            Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsSelectable
+            | Qt.ItemFlag.ItemIsEditable
+        )
         # Store the original mask name in the item's data
         mask_item.setData(0, Qt.ItemDataRole.UserRole, mask.name)
         parent_item.addChild(mask_item)
@@ -352,7 +358,10 @@ class MaskManagerDialog(QObject):
             options.addItem('Intersection of panel buffer and current masks')
             layout.addWidget(options)
 
-            buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            buttons = (
+                QDialogButtonBox.StandardButton.Ok
+                | QDialogButtonBox.StandardButton.Cancel
+            )
             button_box = QDialogButtonBox(buttons, dialog)
             button_box.accepted.connect(dialog.accept)
             button_box.rejected.connect(dialog.reject)

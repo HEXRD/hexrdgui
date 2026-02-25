@@ -106,7 +106,11 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
             # Trigger the callback function
             param._on_vary_modified()
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
         if (
             role in (Qt.ItemDataRole.BackgroundRole, Qt.ItemDataRole.ForegroundRole)
             and index.column() in (self.VALUE_IDX, self.VARY_IDX)
@@ -117,7 +121,10 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
             uneditable_path = tuple(self.path_to_item(item) + [self.VALUE_IDX])
             if uneditable_path in self.uneditable_paths:
                 color = 'gray'
-                if index.column() == self.VALUE_IDX and role == Qt.ItemDataRole.ForegroundRole:
+                if (
+                    index.column() == self.VALUE_IDX
+                    and role == Qt.ItemDataRole.ForegroundRole
+                ):
                     color = 'white'
 
                 return QColor(color)
@@ -164,8 +171,15 @@ class DefaultCalibrationTreeItemModel(CalibrationTreeItemModel):
     MIN_IDX = COLUMN_INDICES['Minimum']
     BOUND_INDICES = (VALUE_IDX, MAX_IDX, MIN_IDX)
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
-        if role == Qt.ItemDataRole.ForegroundRole and index.column() in self.BOUND_INDICES:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if (
+            role == Qt.ItemDataRole.ForegroundRole
+            and index.column() in self.BOUND_INDICES
+        ):
             # If a value hit the boundary, color both the boundary and the
             # value red.
             item = self.get_item(index)
@@ -205,8 +219,15 @@ class DeltaCalibrationTreeItemModel(CalibrationTreeItemModel):
     DELTA_IDX = COLUMN_INDICES['Delta']
     BOUND_INDICES = (VALUE_IDX, DELTA_IDX)
 
-    def data(self, index: QModelIndex | QPersistentModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
-        if role == Qt.ItemDataRole.ForegroundRole and index.column() in self.BOUND_INDICES:
+    def data(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        role: int = Qt.ItemDataRole.DisplayRole,
+    ) -> Any:
+        if (
+            role == Qt.ItemDataRole.ForegroundRole
+            and index.column() in self.BOUND_INDICES
+        ):
             # If a delta is zero, color both the delta and the value red.
             item = self.get_item(index)
             if not item.child_items and item.data(self.VALUE_IDX) is not None:

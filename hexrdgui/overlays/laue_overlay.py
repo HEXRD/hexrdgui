@@ -361,7 +361,9 @@ class LaueOverlay(Overlay):
 
         return data
 
-    def rectangular_range_data(self, spots: np.ndarray, display_mode: str, panel: Any) -> list:
+    def rectangular_range_data(
+        self, spots: np.ndarray, display_mode: str, panel: Any
+    ) -> list:
         range_corners = self.range_corners(spots)
         if display_mode == ViewType.polar:
             # All done...
@@ -400,7 +402,9 @@ class LaueOverlay(Overlay):
 
         return results
 
-    def ellipsoidal_range_data(self, spots: np.ndarray, display_mode: str, panel: Any) -> list:
+    def ellipsoidal_range_data(
+        self, spots: np.ndarray, display_mode: str, panel: Any
+    ) -> list:
         from hexrdgui.hexrd_config import HexrdConfig
 
         num_points = 300

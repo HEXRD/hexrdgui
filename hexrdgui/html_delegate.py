@@ -22,7 +22,9 @@ class HtmlDelegate(QStyledItemDelegate):
             '</html>'
         )
 
-    def _get_display_string(self, index: QModelIndex | QPersistentModelIndex) -> str | None:
+    def _get_display_string(
+        self, index: QModelIndex | QPersistentModelIndex
+    ) -> str | None:
         data = index.data(Qt.ItemDataRole.DisplayRole)
         if data is not None and not isinstance(data, str):
             # Ensure it is a string

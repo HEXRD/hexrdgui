@@ -4,7 +4,14 @@ from collections.abc import Sequence
 from functools import partial
 from typing import Any
 
-from PySide6.QtCore import QAbstractItemModel, QItemSelection, QModelIndex, QPersistentModelIndex, Qt, Signal
+from PySide6.QtCore import (
+    QAbstractItemModel,
+    QItemSelection,
+    QModelIndex,
+    QPersistentModelIndex,
+    Qt,
+    Signal,
+)
 from PySide6.QtGui import QContextMenuEvent, QCursor
 from PySide6.QtWidgets import QAbstractItemView, QMenu, QMessageBox, QTreeView, QWidget
 
@@ -59,7 +66,12 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return config
 
-    def setData(self, index: QModelIndex | QPersistentModelIndex, value: Any, role: int = Qt.ItemDataRole.EditRole) -> bool:
+    def setData(
+        self,
+        index: QModelIndex | QPersistentModelIndex,
+        value: Any,
+        role: int = Qt.ItemDataRole.EditRole,
+    ) -> bool:
         item = self.get_item(index)
 
         # If they are identical, don't do anything
@@ -88,7 +100,12 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return True
 
-    def removeRows(self, row: int, count: int, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> bool:
+    def removeRows(
+        self,
+        row: int,
+        count: int,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> bool:
         item = self.get_item(parent)
         for _ in range(count):
             if row >= len(item.child_items):
@@ -109,7 +126,12 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
         return True
 
-    def insertRows(self, row: int, count: int, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> bool:
+    def insertRows(
+        self,
+        row: int,
+        count: int,
+        parent: QModelIndex | QPersistentModelIndex = QModelIndex(),
+    ) -> bool:
         # This will not add data to the items. The data must be
         # added in a separate function.
         parent_item = self.get_item(parent)

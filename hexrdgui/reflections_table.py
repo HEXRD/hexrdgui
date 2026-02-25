@@ -281,7 +281,10 @@ class ReflectionsTable:
         with block_signals(selection_model):
             selection_model.clear()
 
-            command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+            command = (
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows
+            )
             for i in rows:
                 model_index = selection_model.model().index(i, 0)
                 selection_model.select(model_index, command)

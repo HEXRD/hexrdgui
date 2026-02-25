@@ -1090,7 +1090,10 @@ class LLNLImportToolDialog(QObject):
             + ' been accepted. Keep changes?'
         )
         response = QMessageBox.question(
-            self.ui, 'HEXRD', msg, (QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Save)
+            self.ui,
+            'HEXRD',
+            msg,
+            (QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Save),
         )
         if response == QMessageBox.StandardButton.Save:
             self.complete_current_selection()

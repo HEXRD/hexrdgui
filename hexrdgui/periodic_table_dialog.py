@@ -31,7 +31,9 @@ class PeriodicTableDialog(QDialog):
         self.clear_selection_button = QPushButton('Clear Selection', self)
         layout.addWidget(self.clear_selection_button)
 
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         self.button_box = QDialogButtonBox(buttons, self)
         layout.addWidget(self.button_box)
 

@@ -45,7 +45,9 @@ class XRayEnergySelectionDialog(DictTreeViewDialog):
         self.setWindowTitle('X-Ray Energy Selection')
 
         # Add the dialog buttons
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         button_box = QDialogButtonBox(buttons, self)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)

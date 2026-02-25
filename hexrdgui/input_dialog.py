@@ -41,7 +41,9 @@ class InputDialog(QDialog):
         combo_box.setEditable(editable)
         layout.addWidget(combo_box)
 
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         button_box = QDialogButtonBox(buttons)
         button_box.accepted.connect(dialog.accept)
         button_box.rejected.connect(dialog.reject)

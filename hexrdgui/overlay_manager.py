@@ -88,7 +88,9 @@ class OverlayManager:
             raise Exception(f'Unknown material: {v}')
 
         cb = QComboBox(self.ui.table)
-        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         cb.setSizePolicy(size_policy)
         for mat in materials:
             cb.addItem(mat, mat)
@@ -107,7 +109,9 @@ class OverlayManager:
             raise Exception(f'Unknown type: {v}')
 
         cb = QComboBox(self.ui.table)
-        size_policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        size_policy = QSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         cb.setSizePolicy(size_policy)
         for type in types:
             cb.addItem(self.format_type(type), type.value)
@@ -192,7 +196,10 @@ class OverlayManager:
         selection_model.clearSelection()
 
         model_index = selection_model.model().index(i, 0)
-        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        command = (
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows
+        )
         selection_model.select(model_index, command)
 
     @property

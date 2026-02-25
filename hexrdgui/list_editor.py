@@ -108,7 +108,10 @@ class ListEditor(QObject):
 
     def select_row(self, i: int) -> None:
         model_index = self.selection_model.model().index(i, 0)
-        command = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+        command = (
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows
+        )
         self.selection_model.select(model_index, command)
 
     def selection_changed(self) -> None:

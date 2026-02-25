@@ -566,7 +566,13 @@ class SimpleImageSeriesDialog(QObject):
                             'metadata. Continue?'
                         )
                         response = QMessageBox.question(
-                            self.ui, 'HEXRD', msg, (QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                            self.ui,
+                            'HEXRD',
+                            msg,
+                            (
+                                QMessageBox.StandardButton.Yes
+                                | QMessageBox.StandardButton.No
+                            ),
                         )
                         if response == QMessageBox.StandardButton.No:
                             self.ui.file_options.item(row, column).setText(
