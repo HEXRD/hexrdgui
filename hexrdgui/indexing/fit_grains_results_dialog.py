@@ -56,6 +56,7 @@ class FitGrainsResultsDialog(QObject):
         material: Material | None = None,
         parent: QObject | None = None,
         allow_export_workflow: bool = True,
+        spots_data: dict | None = None,
     ) -> None:
         super().__init__(parent)
 
@@ -74,6 +75,7 @@ class FitGrainsResultsDialog(QObject):
         self.data = data
         self.data_model = GrainsTableModel(data)
         self.material = material
+        self.spots_data = spots_data
         self.canvas: FigureCanvas | None = None
         self.fig: Figure | None = None
         self.scatter_artist: Any = None
@@ -91,6 +93,12 @@ class FitGrainsResultsDialog(QObject):
 
         self.ui.splitter.setStretchFactor(0, 1)
         self.ui.splitter.setStretchFactor(1, 10)
+        self.ui.spot_diagnostics.setEnabled(spots_data is not None)
+        if spots_data is None:
+            self.ui.spot_diagnostics.setToolTip(
+                'No spot data available. Re-run fit grains to generate it.'
+            )
+
         self.ui.export_workflow.setEnabled(allow_export_workflow)
         if not allow_export_workflow:
             # Give some possible reasons
@@ -359,6 +367,7 @@ class FitGrainsResultsDialog(QObject):
             self.cylindrical_reference_toggled
         )
         self.ui.export_workflow.clicked.connect(self.on_export_workflow_clicked)
+        self.ui.spot_diagnostics.clicked.connect(self.show_spot_diagnostics)
 
         for name in ('x', 'y', 'z'):
             action = getattr(self, f'set_view_{name}')
@@ -713,6 +722,27 @@ class FitGrainsResultsDialog(QObject):
     def draw_idle(self) -> None:
         assert self.canvas is not None
         self.canvas.draw_idle()
+
+    def show_spot_diagnostics(self) -> None:
+        if self.spots_data is None:
+            return
+
+        from hexrdgui.calibration.hedm.spot_diagnostics_dialog import (
+            SpotDiagnosticsDialog,
+        )
+        from hexrdgui.indexing.create_config import create_indexing_config
+
+        cfg = create_indexing_config()
+        instr = cfg.instrument.hedm
+        grain_ids = sorted(self.spots_data.keys())
+
+        self._spot_diagnostics_dialog = SpotDiagnosticsDialog(
+            instr=instr,
+            spots_data=self.spots_data,
+            grain_ids=grain_ids,
+            parent=self.ui,
+        )
+        self._spot_diagnostics_dialog.show()
 
     def on_grains_table_modified(self) -> None:
         # Update our grains table
