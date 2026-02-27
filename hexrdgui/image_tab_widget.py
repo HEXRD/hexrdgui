@@ -195,6 +195,10 @@ class ImageTabWidget(QTabWidget):
             idx = len(self.toolbars)
             tb = NavigationToolbar(self.image_canvases[idx], parent, False)
             self.image_canvases[idx]._nav_toolbar = tb
+            canvas = self.image_canvases[idx]
+            tb.after_home_callback = (
+                lambda *args, _c=canvas, **kwargs: _c._reset_zoom_flag()
+            )
             tb.setVisible(False)
             # Current detector
             ims = self.ims_for_name(self.image_names[idx])

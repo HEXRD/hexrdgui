@@ -69,6 +69,10 @@ class InteractiveCanvasMixin:
         self._potential_pan_start: QPointF | None = None
         self._potential_pan_ax: Axes | None = None
 
+        # Whether a wheel zoom has been performed — panning is only
+        # allowed after the user has zoomed into the canvas.
+        self._zoom_has_occurred: bool = False
+
         # Nav toolbar reference (set externally by image_tab_widget)
         self._nav_toolbar = None
 
@@ -317,6 +321,10 @@ class InteractiveCanvasMixin:
             self._orig_limits[a] = lims
             self._pending_limits[a] = lims
 
+    def _reset_zoom_flag(self) -> None:
+        """Reset the zoom flag so panning is disabled until the next zoom."""
+        self._zoom_has_occurred = False
+
     def _invalidate_interaction_cache(self) -> None:
         """Cancel any active interaction and reset state."""
         self._finalize_timer.stop()
@@ -334,6 +342,7 @@ class InteractiveCanvasMixin:
         self._pan_target_ax = None
         self._potential_pan_start = None
         self._potential_pan_ax = None
+        self._zoom_has_occurred = False
 
     def _finalize_interaction(self) -> None:
         """Apply pending limits, push nav stack, and trigger a single redraw."""
@@ -477,6 +486,8 @@ class InteractiveCanvasMixin:
         if not self._interaction_active:
             self._begin_interaction(ax)
 
+        self._zoom_has_occurred = True
+
         self._apply_zoom_to_limits(ax, pos, scale)
 
         self.update()
@@ -487,6 +498,7 @@ class InteractiveCanvasMixin:
         if (
             event.button() == Qt.MouseButton.LeftButton
             and not self._toolbar_mode_active()
+            and self._zoom_has_occurred
         ):
             pos = event.position()
             ax = self._axes_under_cursor(pos.toPoint())
