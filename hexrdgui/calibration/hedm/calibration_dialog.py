@@ -15,6 +15,10 @@ from hexrdgui.calibration.calibration_dialog import CalibrationDialog
 from hexrdgui.calibration.hedm.calibration_results_dialog import (
     HEDMCalibrationResultsDialog,
 )
+from hexrdgui.calibration.hedm.spot_diagnostics_dialog import (
+    SpotDiagnosticsDialog,
+    extract_spot_angles,
+)
 from hexrdgui.calibration.tree_item_models import CalibrationTreeItemModel
 from hexrdgui.calibration.material_calibration_dialog_callbacks import (
     MaterialCalibrationDialogCallbacks,
@@ -28,6 +32,7 @@ from hexrdgui.utils import block_signals
 class HEDMCalibrationDialog(CalibrationDialog):
 
     apply_refinement_selections_needed = Signal()
+    spot_diagnostics_requested = Signal()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Need to initialize this before setup_connections() is called
@@ -74,6 +79,10 @@ class HEDMCalibrationDialog(CalibrationDialog):
         self.extra_ui.refit_pixel_scale.valueChanged.connect(self.save_refit_settings)
         self.extra_ui.refit_ome_step_scale.valueChanged.connect(
             self.save_refit_settings
+        )
+
+        self.extra_ui.spot_diagnostics.clicked.connect(
+            self.spot_diagnostics_requested.emit,
         )
 
     def show_refinements(self, b: bool) -> None:
@@ -274,6 +283,9 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         self.dialog.apply_refinement_selections_needed.connect(
             self.apply_refinement_selections
         )
+        self.dialog.spot_diagnostics_requested.connect(
+            self.show_spot_diagnostics,
+        )
 
     @property
     def grain_ids(self) -> np.ndarray:
@@ -298,6 +310,26 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
             self._xyo_det = xyo_det
 
         return self._xyo_det
+
+    def show_spot_diagnostics(self) -> None:
+        pred_angs, meas_angs = extract_spot_angles(
+            self.spots_data,
+            self.instr,
+            self.grain_ids,
+        )
+        xyo_pred = compute_xyo(self.calibrators)
+
+        kwargs = {
+            'pred_angs': pred_angs,
+            'meas_angs': meas_angs,
+            'xyo_pred': xyo_pred,
+            'xyo_det': self.xyo_det,
+            'grain_ids': self.grain_ids,
+            'det_keys': list(self.instr.detectors),
+            'parent': self.dialog.ui,
+        }
+        self._spot_diagnostics_dialog = SpotDiagnosticsDialog(**kwargs)
+        self._spot_diagnostics_dialog.show()
 
     def on_calibration_finished(self) -> None:
         super().on_calibration_finished()
@@ -340,6 +372,14 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         if not dialog.exec():
             # Do an "undo"
             self.pop_undo_stack()
+
+        self.update_spot_diagnostics()
+
+    def update_spot_diagnostics(self) -> None:
+        dialog = getattr(self, '_spot_diagnostics_dialog', None)
+        if dialog is not None and dialog.is_visible:
+            xyo_pred = compute_xyo(self.calibrators)
+            dialog.update_data(xyo_pred)
 
     def push_undo_stack(self) -> Any:
         self.extra_ui_undo_stack.append(self.dialog.extra_ui_settings)

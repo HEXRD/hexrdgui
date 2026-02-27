@@ -100,7 +100,7 @@ class HEDMCalibrationResultsDialog:
         self.ui.canvas_layout.addWidget(canvas)
 
         ax[0].grid(True)
-        ax[0].axis('equal')
+        ax[0].set_aspect('equal', adjustable='box')
         ax[0].set_xlabel('detector X [mm]')
         ax[0].set_ylabel('detector Y [mm]')
 
