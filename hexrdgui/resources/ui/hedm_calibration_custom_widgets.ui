@@ -166,6 +166,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="spot_diagnostics">
+     <property name="text">
+      <string>Spot Diagnostics...</string>
+     </property>
+     <property name="toolTip">
+      <string>View diagnostic plots comparing predicted and measured spot positions and angles</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
