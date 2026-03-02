@@ -27,6 +27,7 @@ from hexrd import distortion as distortion_pkg
 from hexrdgui import utils
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.blit_manager import BlitManager
+from hexrdgui.interactive_canvas import InteractiveCanvasMixin
 from hexrdgui.calibration.cartesian_plot import cartesian_viewer
 from hexrdgui.calibration.polar_plot import polar_viewer
 from hexrdgui.calibration.raw_iviewer import raw_iviewer
@@ -81,7 +82,7 @@ FONTSIZE_LABEL_INCREASE = 4
 FONTSIZE_TICKS_INCREASE = 4
 
 
-class ImageCanvas(FigureCanvas):
+class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
     cmap_modified = Signal()
     norm_modified = Signal()
     transform_modified = Signal()
@@ -136,6 +137,7 @@ class ImageCanvas(FigureCanvas):
 
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
+        self._init_interactive()
         self.setup_connections()
 
     def setup_connections(self) -> None:
@@ -244,12 +246,14 @@ class ImageCanvas(FigureCanvas):
         plt.close(self.figure)
 
     def clear(self) -> None:
+        self._invalidate_interaction_cache()
         self.iviewer = None
         self.mode = None
         self.raw_view_images_dict = {}
         self.clear_figure()
 
     def clear_figure(self) -> None:
+        self._invalidate_interaction_cache()
         self.remove_all_overlay_artists()
         self.figure.clear()
         self.raw_axes.clear()
