@@ -10,8 +10,14 @@ from PySide6.QtGui import QColor, QImage, QPainter, QPixmap, QTransform
 from matplotlib.axes import Axes
 
 if TYPE_CHECKING:
+    from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as _CanvasBase
+
     from PySide6.QtCore import QPoint
     from PySide6.QtGui import QPaintEvent, QMouseEvent, QResizeEvent, QWheelEvent
+
+    from hexrdgui.navigation_toolbar import NavigationToolbar
+else:
+    _CanvasBase = object
 
 # Minimum drag distance (in pixels) before a left-click becomes a pan
 _PAN_THRESHOLD = 5
@@ -23,7 +29,7 @@ _ZOOM_BASE = 1.15
 _SPINE_INSET = 2
 
 
-class InteractiveCanvasMixin:
+class InteractiveCanvasMixin(_CanvasBase):
     """Mixin for matplotlib FigureCanvasQTAgg providing fast scroll-zoom and
     left-click pan via Qt pixmap preview with debounced matplotlib redraw.
 
@@ -74,7 +80,7 @@ class InteractiveCanvasMixin:
         self._zoom_has_occurred: bool = False
 
         # Nav toolbar reference (set externally by image_tab_widget)
-        self._nav_toolbar = None
+        self._nav_toolbar: NavigationToolbar | None = None
 
     # ------------------------------------------------------------------
     # Axis lookup helpers
@@ -107,6 +113,15 @@ class InteractiveCanvasMixin:
         ):
             return self._find_main_axis() or ax
         return ax
+
+    @staticmethod
+    def _get_ax_limits(
+        ax: Axes,
+    ) -> tuple[tuple[float, float], tuple[float, float]]:
+        """Return (xlim, ylim) as fixed-length tuples for type safety."""
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        return (xlim[0], xlim[1]), (ylim[0], ylim[1])
 
     def _find_main_axis(self) -> Axes | None:
         """Return the primary image axis (``self.axis`` when it exists)."""
@@ -141,8 +156,8 @@ class InteractiveCanvasMixin:
     @staticmethod
     def _axis_bg_color(ax: Axes) -> QColor:
         """Return the axis facecolor as a QColor."""
-        fc = ax.get_facecolor()  # (r, g, b, a) floats 0-1
-        return QColor.fromRgbF(fc[0], fc[1], fc[2], fc[3])
+        r, g, b, a = ax.get_facecolor()  # type: ignore[misc]
+        return QColor.fromRgbF(r, g, b, a)
 
     def _build_axis_data(self) -> None:
         """Compute widget rects, extract sub-pixmaps, and build full-data
@@ -314,10 +329,7 @@ class InteractiveCanvasMixin:
         self._orig_limits.clear()
         self._pending_limits.clear()
         for a in self.figure.get_axes():
-            lims = (
-                tuple(a.get_xlim()),  # type: ignore[assignment]
-                tuple(a.get_ylim()),  # type: ignore[assignment]
-            )
+            lims = self._get_ax_limits(a)
             self._orig_limits[a] = lims
             self._pending_limits[a] = lims
 
@@ -384,7 +396,7 @@ class InteractiveCanvasMixin:
         display_y = self.figure.bbox.height - pos.y() * dpr
 
         xlim, ylim = self._pending_limits.get(
-            ax, (tuple(ax.get_xlim()), tuple(ax.get_ylim()))
+            ax, self._get_ax_limits(ax)
         )
         x0, x1 = xlim
         y0, y1 = ylim
@@ -418,7 +430,7 @@ class InteractiveCanvasMixin:
 
         for linked in self._get_linked_axes(ax):
             old_xlim, old_ylim = self._pending_limits.get(
-                linked, (tuple(linked.get_xlim()), tuple(linked.get_ylim()))
+                linked, self._get_ax_limits(linked)
             )
             lx = new_xlim if ax.get_shared_x_axes().joined(ax, linked) else old_xlim
             ly = new_ylim if ax.get_shared_y_axes().joined(ax, linked) else old_ylim
@@ -439,7 +451,7 @@ class InteractiveCanvasMixin:
         dpr = self.devicePixelRatioF()
 
         xlim, ylim = self._pending_limits.get(
-            ax, (tuple(ax.get_xlim()), tuple(ax.get_ylim()))
+            ax, self._get_ax_limits(ax)
         )
 
         dx_data = (
@@ -454,7 +466,7 @@ class InteractiveCanvasMixin:
 
         for linked in self._get_linked_axes(ax):
             old_xlim, old_ylim = self._pending_limits.get(
-                linked, (tuple(linked.get_xlim()), tuple(linked.get_ylim()))
+                linked, self._get_ax_limits(linked)
             )
             lx = new_xlim if ax.get_shared_x_axes().joined(ax, linked) else old_xlim
             ly = new_ylim if ax.get_shared_y_axes().joined(ax, linked) else old_ylim
@@ -522,9 +534,11 @@ class InteractiveCanvasMixin:
                 self._pan_target_ax = self._potential_pan_ax
                 self._pan_start_pos = event.position()
                 if not self._interaction_active:
+                    assert self._pan_target_ax is not None
                     self._begin_interaction(self._pan_target_ax)
 
         if self._pan_active and self._pan_start_pos is not None:
+            assert self._pan_target_ax is not None
             current = event.position()
             dx = current.x() - self._pan_start_pos.x()
             dy = current.y() - self._pan_start_pos.y()
@@ -577,7 +591,7 @@ class InteractiveCanvasMixin:
 
                 xlim, ylim = self._pending_limits.get(
                     ax,
-                    (tuple(ax.get_xlim()), tuple(ax.get_ylim())),
+                    self._get_ax_limits(ax),
                 )
 
                 painter.save()
