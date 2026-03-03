@@ -1429,10 +1429,15 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'reset_exclusions': False,
         }
 
+        if self.instrument_has_roi:
+            names = self.detector_group_names
+        else:
+            names = self.detector_names
+
         data = []
-        for det in self.detector_names:
+        for name in names:
             data.append(
-                {'file': f'{det}.npz', 'args': {'path': 'imageseries'}, 'panel': det}
+                {'file': f'{name}.npz', 'args': {'path': 'imageseries'}, 'panel': name}
             )
 
         image_series = {'format': 'frame-cache', 'data': data}
