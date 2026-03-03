@@ -18,7 +18,6 @@ from hexrdgui.utils.conversions import angles_to_stereo
 
 
 class RotationSeriesOverlay(Overlay):
-
     type = OverlayType.rotation_series
     data_key = 'data'
     ranges_key = 'ranges'

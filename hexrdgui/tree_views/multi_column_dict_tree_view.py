@@ -28,7 +28,6 @@ KEY_COL = BaseTreeItemModel.KEY_COL
 
 
 class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
-
     UNEDITABLE_COLUMN_INDICES: list[int] = []
 
     def __init__(
@@ -143,7 +142,6 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
 
 
 class MultiColumnDictTreeView(BaseDictTreeView):
-
     dict_modified = Signal(QModelIndex)
 
     def model(self) -> MultiColumnDictTreeItemModel:
@@ -341,7 +339,6 @@ class MultiColumnDictTreeView(BaseDictTreeView):
 
 
 class MultiColumnDictTreeViewDialog(QDialog):
-
     dict_modified = Signal(QModelIndex)
 
     def __init__(

@@ -11,7 +11,6 @@ from hexrdgui.utils import block_signals
 
 
 class BeamMarkerStyleEditor:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('beam_marker_style_editor.ui', parent)

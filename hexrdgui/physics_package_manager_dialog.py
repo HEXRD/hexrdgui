@@ -29,7 +29,6 @@ from hexrd.rotations import rotMatOfExpMap
 
 
 class PhysicsPackageManagerDialog:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
@@ -359,7 +358,6 @@ class PhysicsPackageManagerDialog:
 
 
 class PhysicsPackageDiagram:
-
     patches = {
         'laser drive': Polygon(
             [(0.05, 0.2), (0.05, 0.8), (0.2, 0.75), (0.2, 0.25)],

@@ -21,7 +21,6 @@ from hexrdgui.utils import block_signals, convert_angle_convention
 
 
 class CalibrationCrystalEditor(QObject):
-
     # Emitted when the params get modified
     params_modified = Signal()
 
@@ -82,9 +81,7 @@ class CalibrationCrystalEditor(QObject):
     @refinements.setter
     def refinements(self, v: list[bool]) -> None:
         if len(v) != len(self.refinements_selector.items):
-            msg = (
-                f'Mismatch in {len(v)=} and ' f'{len(self.refinements_selector.items)=}'
-            )
+            msg = f'Mismatch in {len(v)=} and {len(self.refinements_selector.items)=}'
             raise Exception(msg)
 
         new_items = []

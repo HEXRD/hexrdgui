@@ -19,12 +19,11 @@ from .polarview import PolarView
 from .stereo_project import stereo_project, stereo_projection_of_polar_view
 
 
-def stereo_viewer() -> "InstrumentViewer":
+def stereo_viewer() -> 'InstrumentViewer':
     return InstrumentViewer()
 
 
 class InstrumentViewer:
-
     def __init__(self) -> None:
         self.type = ViewType.stereo
 

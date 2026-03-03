@@ -27,7 +27,6 @@ CONFIG_MODE_NAME = 'name'
 
 
 class PanelBufferDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
     finished = Signal(int)

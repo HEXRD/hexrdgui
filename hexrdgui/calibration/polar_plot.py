@@ -21,7 +21,6 @@ def polar_viewer() -> 'InstrumentViewer':
 
 
 class InstrumentViewer:
-
     def __init__(self) -> None:
         self.type = ViewType.polar
         self.instr = create_hedm_instrument()
@@ -82,14 +81,14 @@ class InstrumentViewer:
         self.pv = PolarView(self.instr)
         self.pv.warp_all_images()
 
-        '''
+        """
         tth_min = HexrdConfig().polar_res_tth_min
         tth_max = HexrdConfig().polar_res_tth_max
         eta_min = HexrdConfig().polar_res_eta_min
         eta_max = HexrdConfig().polar_res_eta_max
 
         self._extent = [tth_min, tth_max, eta_max, eta_min]  # l, r, b, t
-        '''
+        """
         self._extent = np.degrees(self.pv.extent)  # l, r, b, t
 
     def update_overlay_data(self) -> None:

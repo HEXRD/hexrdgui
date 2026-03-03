@@ -16,7 +16,6 @@ from hexrdgui.utils import apply_symmetric_constraint, block_signals, compose
 
 
 class MaterialPropertiesEditor:
-
     elastic_tensor_shape = (6, 6)
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -72,7 +71,7 @@ class MaterialPropertiesEditor:
 
         tensor_type = self.elastic_tensor_type
         units = units_map[tensor_type]
-        tooltip = f'The elastic {tensor_type} tensor in Voigt notation. ' f'({units})'
+        tooltip = f'The elastic {tensor_type} tensor in Voigt notation. ({units})'
 
         self.ui.elastic_tensor_group.setToolTip(tooltip)
 

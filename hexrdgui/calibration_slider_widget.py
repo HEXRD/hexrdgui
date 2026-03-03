@@ -13,7 +13,6 @@ from hexrdgui.utils import block_signals, convert_angle_convention
 
 
 class CalibrationSliderWidget(QObject):
-
     # Conversions from configuration value to slider value and back
     CONF_VAL_TO_SLIDER_VAL = 10
     SLIDER_VAL_TO_CONF_VAL = 0.1

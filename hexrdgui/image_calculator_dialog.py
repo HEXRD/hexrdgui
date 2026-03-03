@@ -18,7 +18,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class ImageCalculatorDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 
@@ -170,7 +169,7 @@ class ImageCalculatorDialog(QObject):
             'Average': imageseries.stats.average_iter,
         }
 
-        msg = f'Image Series is length {len(ims)}\n\nSelect aggregation ' 'method'
+        msg = f'Image Series is length {len(ims)}\n\nSelect aggregation method'
         method, ok = QInputDialog.getItem(
             self.ui, 'Image Calculator', msg, list(aggregation_methods), 0, False
         )

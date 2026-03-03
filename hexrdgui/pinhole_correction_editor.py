@@ -40,7 +40,6 @@ from hexrdgui import resource_loader
 
 
 class PinholeCorrectionEditor(QObject):
-
     settings_modified = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:

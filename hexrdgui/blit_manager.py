@@ -26,7 +26,7 @@ class BlitManager:
         self.artists: dict[str, Any] = {}
 
         # grab the background on every draw
-        self.cid = canvas.mpl_connect("draw_event", self.on_draw)
+        self.cid = canvas.mpl_connect('draw_event', self.on_draw)
 
     def disconnect(self) -> None:
         self.remove_artists()

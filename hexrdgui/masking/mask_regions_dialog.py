@@ -28,7 +28,6 @@ from matplotlib import patches
 
 
 class MaskRegionsDialog(QObject):
-
     # Emitted when new images are loaded
     new_mask_added = Signal(str)
 

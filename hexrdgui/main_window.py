@@ -98,7 +98,6 @@ if TYPE_CHECKING:
 
 
 class MainWindow(QObject):
-
     # Emitted when a new mask is added
     new_mask_added = Signal(str)
 
@@ -595,7 +594,7 @@ class MainWindow(QObject):
         images_dir = HexrdConfig().images_dir
 
         selected_file, selected_filter = QFileDialog.getOpenFileNames(
-            self.ui, dir=images_dir or ""
+            self.ui, dir=images_dir or ''
         )
 
         if len(selected_file) > 1:
@@ -618,7 +617,7 @@ class MainWindow(QObject):
             images_dir = HexrdConfig().images_dir
 
             selected_files, selected_filter = QFileDialog.getOpenFileNames(
-                self.ui, dir=images_dir or ""
+                self.ui, dir=images_dir or ''
             )
 
         if selected_files:
@@ -642,7 +641,6 @@ class MainWindow(QObject):
             if ImageFileManager().is_hdf(
                 ext
             ) and not ImageFileManager().hdf_path_exists(selected_files[0]):
-
                 selection = ImageFileManager().path_prompt(selected_files[0])
                 if not selection:
                     return
@@ -739,7 +737,7 @@ class MainWindow(QObject):
     def on_action_export_to_maud_triggered(self) -> None:
         filters = 'ESG files (*.esg)'
 
-        default_path = os.path.join(HexrdConfig().working_dir, "maud.esg")
+        default_path = os.path.join(HexrdConfig().working_dir, 'maud.esg')
         selected_file, selected_filter = QFileDialog.getSaveFileName(
             self.ui, 'Export to Maud', default_path, filters
         )
@@ -1266,9 +1264,7 @@ class MainWindow(QObject):
         # Only works in the polar view right now, but could in theory work in
         # other views.
         if self.image_mode != ViewType.polar:
-            msg = (
-                'Overlay picks may currently only be viewed in the polar ' 'image mode'
-            )
+            msg = 'Overlay picks may currently only be viewed in the polar image mode'
             print(msg)
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
@@ -1323,7 +1319,7 @@ class MainWindow(QObject):
 
         intensity = info['intensity']
         if intensity is not None:
-            material_name = info.get("material_name", "")
+            material_name = info.get('material_name', '')
 
             labels.append(f'value = {info["intensity"]:8.3f}')
             labels.append(f'tth = {info["tth"]:8.3f}')
@@ -1353,7 +1349,7 @@ class MainWindow(QObject):
             labels.append(f'Q = {info["Q"]:8.3f}')
         else:
             # We are in the main polar canvas
-            material_name = info.get("material_name", "")
+            material_name = info.get('material_name', '')
 
             labels.append(f'eta = {info["y_data"]:8.3f}')
             labels.append(f'value = {info["intensity"]:8.3f}')
@@ -1452,8 +1448,7 @@ class MainWindow(QObject):
             'action_export_current_plot': {
                 True: '',
                 False: (
-                    'Cartesian/polar/stereo view must be active '
-                    'with image data loaded'
+                    'Cartesian/polar/stereo view must be active with image data loaded'
                 ),
             },
             'action_export_to_maud': {
@@ -1462,9 +1457,7 @@ class MainWindow(QObject):
             },
             'action_image_calculator': {
                 True: '',
-                False: (
-                    'Image data must be loaded (and must not be an image ' 'stack)'
-                ),
+                False: ('Image data must be loaded (and must not be an image stack)'),
             },
             'action_run_laue_and_powder_calibration': {
                 True: '',
@@ -1610,7 +1603,7 @@ class MainWindow(QObject):
         state.update_if_needed(str(filepath))
 
         # The image series will take care of closing the file
-        h5_file = h5py.File(filepath, "r")
+        h5_file = h5py.File(filepath, 'r')
         try:
             state.load(h5_file)
         except Exception:

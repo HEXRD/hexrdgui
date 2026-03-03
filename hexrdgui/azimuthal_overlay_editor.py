@@ -7,7 +7,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class AzimuthalOverlayEditor:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('azimuthal_overlay_editor.ui', parent)

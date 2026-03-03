@@ -30,7 +30,6 @@ if TYPE_CHECKING:
 
 
 class ImageTabWidget(QTabWidget):
-
     # Tell the main window that an update is needed
     update_needed = Signal()
 
@@ -51,7 +50,8 @@ class ImageTabWidget(QTabWidget):
 
         # Set up a mouse move connection to use with the status bar
         cid = self.image_canvases[0].mpl_connect(
-            'motion_notify_event', self.on_motion_notify_event  # type: ignore[arg-type]
+            'motion_notify_event',
+            self.on_motion_notify_event,  # type: ignore[arg-type]
         )
         self.mpl_connections = [cid]
 
@@ -93,7 +93,8 @@ class ImageTabWidget(QTabWidget):
         while len(self.mpl_connections) < len(self.image_canvases):
             ind = len(self.mpl_connections)
             cid = self.image_canvases[ind].mpl_connect(
-                'motion_notify_event', self.on_motion_notify_event  # type: ignore[arg-type]
+                'motion_notify_event',
+                self.on_motion_notify_event,  # type: ignore[arg-type]
             )
 
             self.mpl_connections.append(cid)
@@ -196,8 +197,8 @@ class ImageTabWidget(QTabWidget):
             tb = NavigationToolbar(self.image_canvases[idx], parent, False)
             self.image_canvases[idx]._nav_toolbar = tb
             canvas = self.image_canvases[idx]
-            tb.after_home_callback = (
-                lambda *args, _c=canvas, **kwargs: _c._reset_zoom_flag()
+            tb.after_home_callback = lambda *args, _c=canvas, **kwargs: (
+                _c._reset_zoom_flag()
             )
             tb.setVisible(False)
             # Current detector
@@ -430,7 +431,6 @@ class ImageTabWidget(QTabWidget):
         # intensity being None implies here that the mouse is on top of the
         # azimuthal integration plot in the polar view.
         if intensity is not None:
-
             iviewer = self.image_canvases[0].iviewer
             assert iviewer is not None
             instr = iviewer.instr

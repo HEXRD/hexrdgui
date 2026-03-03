@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class PTSliderDialog:
-
     VAL_TO_SLIDER = 10
     SLIDER_TO_VAL = 1 / VAL_TO_SLIDER
 

@@ -29,7 +29,6 @@ from hexrdgui.utils import block_signals
 
 
 class RotationSeriesOverlayEditor:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('rotation_series_overlay_editor.ui', parent)

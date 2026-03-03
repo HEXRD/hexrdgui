@@ -13,7 +13,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class PeriodicTableDialog(QDialog):
-
     def __init__(
         self,
         atoms_selected: list | None = None,

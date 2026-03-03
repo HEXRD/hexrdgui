@@ -7,7 +7,6 @@ from hexrdgui.utils import wrap_with_callbacks
 
 
 class NavigationToolbar(NavigationToolbar2QT):
-
     default_button_blacklist = ['Subplots', 'Customize']
 
     def __init__(

@@ -25,7 +25,6 @@ from hexrdgui.indexing.create_config import create_indexing_config, OmegasNotFou
 
 
 class HEDMCalibrationRunner(QObject):
-
     finished = Signal()
 
     def __init__(self, async_runner: Any, parent: QWidget | None = None) -> None:
@@ -102,15 +101,11 @@ class HEDMCalibrationRunner(QObject):
 
         # Verify the grain IDs are as we expect
         if not np.array_equal(grain_ids, np.arange(ngrains)):
-            msg = (
-                f'Grain IDs ({grain_ids}) are not as expected: ' f'{np.arange(ngrains)}'
-            )
+            msg = f'Grain IDs ({grain_ids}) are not as expected: {np.arange(ngrains)}'
             raise Exception(msg)
 
         if not np.array_equal(grain_ids, list(spots_data_dict)):
-            msg = (
-                f'Grain ID order mismatch: "{grain_ids}", ' f'"{list(spots_data_dict)}"'
-            )
+            msg = f'Grain ID order mismatch: "{grain_ids}", "{list(spots_data_dict)}"'
             raise Exception(msg)
 
         spots_data = list(spots_data_dict.values())
@@ -331,7 +326,7 @@ class HEDMCalibrationRunner(QObject):
         ome_periods = []
         for overlay in self.active_overlays:
             if not overlay.has_widths:
-                msg = 'All visible rotation series overlays must have widths ' 'enabled'
+                msg = 'All visible rotation series overlays must have widths enabled'
                 raise Exception(msg)
 
             ome_periods.append(overlay.ome_period)
@@ -346,7 +341,7 @@ class HEDMCalibrationRunner(QObject):
 
         materials = [overlay.material_name for overlay in self.active_overlays]
         if not all(x == materials[0] for x in materials):
-            msg = 'All visible rotation series overlays must have the same ' 'material'
+            msg = 'All visible rotation series overlays must have the same material'
             raise Exception(msg)
 
         # Make sure the material is updated in the indexing config

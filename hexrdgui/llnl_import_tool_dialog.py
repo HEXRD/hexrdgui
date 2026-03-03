@@ -235,7 +235,6 @@ class AtlasConfig:
 
 
 class LLNLImportToolDialog(QObject):
-
     # Emitted when new config is loaded
     new_config_loaded = Signal()
 
@@ -730,7 +729,7 @@ class LLNLImportToolDialog(QObject):
 
     def load_detector_images(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select file(s)', dir=HexrdConfig().images_dir or ""
+            self.ui, 'Select file(s)', dir=HexrdConfig().images_dir or ''
         )
         if not selected_file:
             return
@@ -767,8 +766,8 @@ class LLNLImportToolDialog(QObject):
         # TD_TC000-000_FIDDLE_CAMERA-02-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-999.h5
         # ->
         # TD_TC000-000_FIDDLE_CAMERA-*-DB_SHOT_RAW-FIDDLE-CAMERA_N240717-001-*.h5
-        image = re.sub(r"CAMERA-\d{2}-", "CAMERA-*-", selected_file)
-        files = re.sub(r"-\d{3}.h", "-*.h", image)
+        image = re.sub(r'CAMERA-\d{2}-', 'CAMERA-*-', selected_file)
+        files = re.sub(r'-\d{3}.h', '-*.h', image)
 
         # Sort matched files. We know that those ending in -999 are data files.
         # Dark files may have different values at the end (-003, -005, etc.) so
@@ -829,7 +828,7 @@ class LLNLImportToolDialog(QObject):
         if selected_file is None:
             caption = 'Select file(s)'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
-                self.ui, caption, dir=HexrdConfig().images_dir or ""
+                self.ui, caption, dir=HexrdConfig().images_dir or ''
             )
 
         if selected_file:

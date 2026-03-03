@@ -25,7 +25,6 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class MaterialsPanel(QObject):
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 

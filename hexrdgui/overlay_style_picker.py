@@ -19,7 +19,6 @@ from hexrdgui.utils import block_signals
 
 
 class OverlayStylePicker(QObject):
-
     def __init__(self, overlay: Overlay, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 

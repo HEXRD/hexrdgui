@@ -31,7 +31,6 @@ COLUMNS = {
 
 
 class OverlayManager:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_manager.ui', parent)

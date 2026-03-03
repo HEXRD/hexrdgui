@@ -15,7 +15,6 @@ INVALID_MATRIX_STYLE_SHEET = 'background-color: red'
 
 
 class MatrixEditor(QWidget):
-
     data_modified = Signal()
 
     def __init__(self, data: np.ndarray, parent: QWidget | None = None) -> None:
@@ -67,8 +66,7 @@ class MatrixEditor(QWidget):
         if not np.array_equal(self._data, v):
             if self._data.shape != v.shape:
                 msg = (
-                    f'Shape {v.shape} does not match original shape '
-                    f'{self._data.shape}'
+                    f'Shape {v.shape} does not match original shape {self._data.shape}'
                 )
                 raise AttributeError(msg)
 

@@ -15,7 +15,6 @@ from hexrdgui.utils.matplotlib import remove_artist
 
 
 class HandPickedFibersWidget(QObject):
-
     fiber_step_modified = Signal(float)
 
     def __init__(

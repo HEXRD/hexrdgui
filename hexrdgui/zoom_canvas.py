@@ -27,7 +27,6 @@ if TYPE_CHECKING:
 
 
 class ZoomCanvas(FigureCanvas):
-
     point_picked = Signal(object)
 
     def __init__(
@@ -88,16 +87,20 @@ class ZoomCanvas(FigureCanvas):
 
     def setup_connections(self) -> None:
         self.mc_mne_id = self.main_canvas.mpl_connect(
-            'motion_notify_event', self.main_canvas_mouse_moved  # type: ignore[arg-type]
+            'motion_notify_event',
+            self.main_canvas_mouse_moved,  # type: ignore[arg-type]
         )
         self.mc_de_id = self.main_canvas.mpl_connect(
-            'draw_event', self.on_main_canvas_draw_event  # type: ignore[arg-type]
+            'draw_event',
+            self.on_main_canvas_draw_event,  # type: ignore[arg-type]
         )
         self.mc_ae_id = self.main_canvas.mpl_connect(
-            'axes_enter_event', self.on_axes_entered  # type: ignore[arg-type]
+            'axes_enter_event',
+            self.on_axes_entered,  # type: ignore[arg-type]
         )
         self.mc_al_id = self.main_canvas.mpl_connect(
-            'axes_leave_event', self.on_axes_exited  # type: ignore[arg-type]
+            'axes_leave_event',
+            self.on_axes_exited,  # type: ignore[arg-type]
         )
 
         self.mne_id = self.mpl_connect('motion_notify_event', self.mouse_moved)  # type: ignore[arg-type]
@@ -515,11 +518,11 @@ class ZoomCanvas(FigureCanvas):
             )
             (im2,) = a2.plot([], [])
             (im3,) = a3.plot([], [])
-            self.figure.suptitle(r"ROI zoom")
-            a2.set_xlabel(self.x_label or "")
-            a2.set_ylabel(r"intensity")
-            a1.set_ylabel(self.y_label or "")
-            a3.set_xlabel(r"intensity")
+            self.figure.suptitle(r'ROI zoom')
+            a2.set_xlabel(self.x_label or '')
+            a2.set_ylabel(r'intensity')
+            a1.set_ylabel(self.y_label or '')
+            a3.set_xlabel(r'intensity')
             self.crosshairs = a1.plot([], [], self.cursor_color, linestyle='-')[0]
             self.axes = [a1, a2, a3]
             self.axes_images = [im1, im2, im3]
@@ -574,7 +577,7 @@ class ZoomCanvas(FigureCanvas):
     @property
     def x_label(self) -> str | None:
         if self.canvas_is_polar:
-            return r"$2\theta$ [deg]"
+            return r'$2\theta$ [deg]'
         elif self.canvas_is_raw:
             return 'x'
         return None
@@ -582,7 +585,7 @@ class ZoomCanvas(FigureCanvas):
     @property
     def y_label(self) -> str | None:
         if self.canvas_is_polar:
-            return r"$\eta$ [deg]"
+            return r'$\eta$ [deg]'
         elif self.canvas_is_raw:
             return 'y'
         return None

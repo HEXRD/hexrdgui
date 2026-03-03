@@ -7,7 +7,6 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class PinholeMaskDialog(QObject):
-
     # Arguments are radius, thickness
     apply_clicked = Signal()
 
@@ -16,7 +15,8 @@ class PinholeMaskDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'pinhole_mask_dialog.ui', parent  # type: ignore[arg-type]
+            'pinhole_mask_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         add_help_url(self.ui.button_box, 'configuration/masking/#pinhole')

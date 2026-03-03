@@ -11,7 +11,6 @@ from hexrdgui.async_worker import AsyncWorker
 
 
 class SaveImagesDialog:
-
     def __init__(
         self,
         parent: QWidget | None = None,

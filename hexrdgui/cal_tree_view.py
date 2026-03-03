@@ -25,7 +25,6 @@ VALUE_COL = KEY_COL + 1
 
 
 class CalTreeItemModel(BaseTreeItemModel):
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.root_item = TreeItem(['key', 'value'])
@@ -238,7 +237,6 @@ class CalTreeItemModel(BaseTreeItemModel):
 
 
 class CalTreeView(QTreeView):
-
     def model(self) -> CalTreeItemModel:
         return super().model()  # type: ignore[return-value]
 

@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class PowderCalibrationDialog:
-
     def __init__(self, material: Material, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('powder_calibration_dialog.ui', parent)
@@ -38,10 +37,7 @@ class PowderCalibrationDialog:
     def update_gui(self) -> None:
         if self.tth_tol is None:
             default = 0.125
-            msg = (
-                'Powder overlay width is required.\n\n'
-                f'Setting to default: {default}°'
-            )
+            msg = f'Powder overlay width is required.\n\nSetting to default: {default}°'
             QMessageBox.warning(self.ui.parent(), 'HEXRD', msg)
             self.tth_tol = default
 

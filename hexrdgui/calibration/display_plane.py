@@ -15,7 +15,6 @@ tilt_DFTL = np.zeros(3)
 
 
 class DisplayPlane:
-
     def __init__(
         self,
         tilt: np.ndarray = tilt_DFTL,

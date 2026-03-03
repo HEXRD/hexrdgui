@@ -41,7 +41,6 @@ B_TO_U = 1 / U_TO_B
 
 
 class MaterialSiteEditor(QObject):
-
     site_modified = Signal()
 
     def __init__(self, site: dict[str, Any], parent: QWidget | None = None) -> None:

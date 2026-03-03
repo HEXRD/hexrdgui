@@ -15,7 +15,6 @@ MAX_ROWS = 2
 
 
 class ThresholdMaskDialog(QObject):
-
     # Mask has been applied
     mask_applied = Signal()
 
@@ -24,7 +23,8 @@ class ThresholdMaskDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'threshold_mask_dialog.ui', parent  # type: ignore[arg-type]
+            'threshold_mask_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.WindowType.Tool)

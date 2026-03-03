@@ -9,7 +9,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class LaueAutoPickerDialog:
-
     def __init__(self, overlay: Any, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('laue_auto_picker_dialog.ui', parent)

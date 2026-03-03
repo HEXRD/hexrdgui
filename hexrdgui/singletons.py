@@ -4,7 +4,6 @@ from PySide6.QtCore import QObject
 
 
 class Singleton(type):
-
     _instance = None
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
@@ -17,7 +16,6 @@ class Singleton(type):
 # This metaclass must inherit from `type(QObject)` for classes that use
 # it to inherit from QObject.
 class QSingleton(type(QObject)):  # type: ignore[misc]
-
     _instances: dict[str, Any] = {}
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:

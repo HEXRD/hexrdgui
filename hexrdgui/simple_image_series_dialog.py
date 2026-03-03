@@ -34,7 +34,6 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class SimpleImageSeriesDialog(QObject):
-
     # Emitted when images are loaded
     images_loaded = Signal()
 
@@ -217,7 +216,7 @@ class SimpleImageSeriesDialog(QObject):
             # This takes one image to use for dark subtraction.
             caption = 'Select image file'
             selected_file, selected_filter = QFileDialog.getOpenFileName(
-                self.ui, caption, dir=self.parent_dir or ""
+                self.ui, caption, dir=self.parent_dir or ''
             )
 
         if selected_file:
@@ -234,7 +233,7 @@ class SimpleImageSeriesDialog(QObject):
                     msg = (
                         'Unable to match files - using the same dark file'
                         'for each detector.\nIf this is incorrect please '
-                        'de-select \"Apply Selections to All Detectors\" and '
+                        'de-select "Apply Selections to All Detectors" and '
                         'select the dark file manually for each detector.'
                     )
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
@@ -249,7 +248,7 @@ class SimpleImageSeriesDialog(QObject):
         # This takes one or more images for a single detector.
         caption = 'Select image file(s)'
         selected_files, _ = QFileDialog.getOpenFileNames(
-            self.ui, caption, dir=self.parent_dir or ""
+            self.ui, caption, dir=self.parent_dir or ''
         )
 
         if selected_files:
@@ -589,9 +588,7 @@ class SimpleImageSeriesDialog(QObject):
         omega_range = abs(max(self.omega_max) - min(self.omega_min))
         within_range = omega_range <= MAXIMUM_OMEGA_RANGE
         if not within_range:
-            msg = (
-                'All omegas must be set and the ' 'range must be no greater than 360°.'
-            )
+            msg = 'All omegas must be set and the range must be no greater than 360°.'
             QMessageBox.warning(self.ui, 'HEXRD', msg)
         return within_range
 

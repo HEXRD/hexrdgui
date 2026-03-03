@@ -131,7 +131,7 @@ def montage(
     ax.spines['left'].set_visible(False)
     cbar_ax = fig.add_axes([0.875, 0.155, 0.025, 0.725])
     cbar = fig.colorbar(im, cax=cbar_ax)
-    cbar.set_label(r"$\ln(intensity)$", labelpad=5)
+    cbar.set_label(r'$\ln(intensity)$', labelpad=5)
     ax.set_xticks([])
     ax.set_yticks([])
     if title is not None:
@@ -287,14 +287,14 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Montage of spot data for a specifed G-vector family"
+        description='Montage of spot data for a specifed G-vector family'
     )
 
-    parser.add_argument('hdf5_archive', help="hdf5 archive filename", type=str)
-    parser.add_argument('gvec_id', help="unique G-vector ID from PlaneData", type=int)
+    parser.add_argument('hdf5_archive', help='hdf5 archive filename', type=str)
+    parser.add_argument('gvec_id', help='unique G-vector ID from PlaneData', type=int)
 
     parser.add_argument(
-        '-t', '--threshold', help="intensity threshold", type=float, default=0.0
+        '-t', '--threshold', help='intensity threshold', type=float, default=0.0
     )
 
     args = parser.parse_args()

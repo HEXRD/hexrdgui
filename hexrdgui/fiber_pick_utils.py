@@ -138,7 +138,7 @@ def _angles_from_orientation(
         n = xfcapi.unit_vector(expmap[1:])
         expmap = phi * n
     elif len(expmap) > 4:
-        raise RuntimeError("orientation must be a single exponential map or quaternion")
+        raise RuntimeError('orientation must be a single exponential map or quaternion')
 
     grain_param_list = [
         np.hstack([expmap, cnst.zeros_3, cnst.identity_6x1]),

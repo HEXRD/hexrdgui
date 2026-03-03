@@ -21,7 +21,6 @@ ANSI_ESCAPE_REGEX = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
 
 
 class MessagesWidget(QObject):
-
     # Signal args are the type ("stdout" or "stderr") and the message
     message_written = Signal(str, str)
 
@@ -192,7 +191,6 @@ class MessagesWidget(QObject):
 
 
 class Writer(QObject):
-
     text_received = Signal(str)
 
     def __init__(

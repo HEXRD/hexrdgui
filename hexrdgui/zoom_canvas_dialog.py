@@ -45,7 +45,8 @@ class ZoomCanvasDialog:
         self.ui.finished.connect(self.on_finished)
 
         self.bpe_id: int | None = self.main_canvas.mpl_connect(
-            'button_press_event', self.on_button_pressed  # type: ignore[arg-type]
+            'button_press_event',
+            self.on_button_pressed,  # type: ignore[arg-type]
         )
 
     def show(self) -> None:

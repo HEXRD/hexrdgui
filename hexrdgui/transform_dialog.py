@@ -7,7 +7,6 @@ from PySide6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpacerItem, QWidg
 
 
 class TransformDialog:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('transforms_dialog.ui', parent)

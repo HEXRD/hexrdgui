@@ -19,7 +19,6 @@ from hexrdgui.utils import block_signals
 
 
 class ColorMapEditor:
-
     def __init__(self, image_object: Any, parent: QWidget | None = None) -> None:
         # The image_object can be any object with the following functions:
         # 1. set_cmap: a function to set the cmap on the image

@@ -28,7 +28,6 @@ HISTOGRAM_NUM_BINS = 100
 
 
 class BrightnessContrastEditor(QObject):
-
     edited = Signal(float, float)
 
     reset = Signal()

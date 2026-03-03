@@ -24,7 +24,6 @@ KEY_COL = BaseTreeItemModel.KEY_COL
 
 
 class BaseDictTreeItemModel(BaseTreeItemModel):
-
     dict_modified = Signal(QModelIndex)
 
     def __init__(
@@ -87,9 +86,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             try:
                 value = type(old_value)(value)
             except ValueError:
-                msg = (
-                    f'Could not convert {value} to type ' f'{type(old_value).__name__}'
-                )
+                msg = f'Could not convert {value} to type {type(old_value).__name__}'
                 QMessageBox.warning(None, 'HEXRD', msg)
                 return False
 
@@ -275,7 +272,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
             for val in path:
                 cur_val = cur_val[val]
         except KeyError:
-            msg = f'Path: {path}\n' f'was not found in dict: {self.config}'
+            msg = f'Path: {path}\nwas not found in dict: {self.config}'
             raise Exception(msg)
 
         return cur_val
@@ -293,7 +290,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
             cur_val[path[-1]] = value
         except KeyError:
-            msg = f'Path: {path}\n' f'was not found in dict: {self.config}'
+            msg = f'Path: {path}\nwas not found in dict: {self.config}'
             raise Exception(msg)
 
     def del_config_val(
@@ -308,7 +305,7 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
             del cur_val[path[-1]]
         except KeyError:
-            msg = f'Path: {path}\n' f'was not found in dict: {self.config}'
+            msg = f'Path: {path}\nwas not found in dict: {self.config}'
             raise Exception(msg)
 
     def renumber_list_keys(self, item: TreeItem) -> None:
@@ -350,7 +347,6 @@ class BaseDictTreeItemModel(BaseTreeItemModel):
 
 
 class BaseDictTreeView(QTreeView):
-
     selection_changed = Signal(QItemSelection, QItemSelection)
 
     def __init__(self, parent: QWidget | None = None) -> None:

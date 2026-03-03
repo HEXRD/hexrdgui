@@ -53,7 +53,6 @@ COLUMNS = {
 
 
 class ConstChiOverlayEditor(QObject):
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
@@ -453,7 +452,6 @@ class FiberTreeModel(DictTreeItemModel):
 
 
 class FiberTreeView(DictTreeView):
-
     add_selected_chi_values = Signal()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:

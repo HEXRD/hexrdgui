@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 
 class HEDMCalibrationOptionsDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 
@@ -101,7 +100,7 @@ class HEDMCalibrationOptionsDialog(QObject):
         ome_periods = []
         for overlay in self.active_overlays:
             if not overlay.has_widths:
-                msg = 'All visible rotation series overlays must have widths ' 'enabled'
+                msg = 'All visible rotation series overlays must have widths enabled'
                 raise Exception(msg)
 
             ome_periods.append(overlay.ome_period)
@@ -116,7 +115,7 @@ class HEDMCalibrationOptionsDialog(QObject):
 
         materials = [overlay.material_name for overlay in self.active_overlays]
         if not all(x == materials[0] for x in materials):
-            msg = 'All visible rotation series overlays must have the same ' 'material'
+            msg = 'All visible rotation series overlays must have the same material'
             raise Exception(msg)
 
         # Make sure the material is updated in the indexing config

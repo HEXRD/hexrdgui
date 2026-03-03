@@ -23,7 +23,6 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class LaueOverlay(Overlay):
-
     type = OverlayType.laue
     data_key = 'spots'
     ranges_key = 'ranges'

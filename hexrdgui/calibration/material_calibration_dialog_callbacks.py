@@ -20,7 +20,6 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 
 class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
-
     def __init__(
         self,
         overlays: list[Any],

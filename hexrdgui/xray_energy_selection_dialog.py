@@ -20,7 +20,6 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class XRayEnergySelectionDialog(DictTreeViewDialog):
-
     def __init__(self, parent: QWidget | None = None) -> None:
         # Load the data
         self.load_xray_dict()

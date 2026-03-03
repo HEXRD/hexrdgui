@@ -15,7 +15,6 @@ from hexrdgui.singletons import Singleton
 
 
 class ImageFileManager(metaclass=Singleton):
-
     IMAGE_FILE_EXTS = ['.tiff', '.tif']
     HDF4_FILE_EXTS = ['.h4', '.hdf4', '.hdf']
     HDF5_FILE_EXTS = ['.h5', '.hdf5', '.he5']

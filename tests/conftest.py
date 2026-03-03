@@ -50,7 +50,7 @@ def main_window(qtbot):
 # This may not be required anymore after we drop support
 # for Python 3.11. The Python3.14 tests pass without it. We
 # can try removing this after we drop support of Python versions.
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def cleanup_qt():
     """Clean up Qt objects before Python finalizes."""
     yield

@@ -12,7 +12,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class LoadImagesDialog:
-
     def __init__(
         self,
         image_files: list[Any],

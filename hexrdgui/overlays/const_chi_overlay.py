@@ -17,7 +17,6 @@ from hexrdgui.utils.conversions import angles_to_stereo, cart_to_angles, cart_to
 
 
 class ConstChiOverlay(Overlay):
-
     type = OverlayType.const_chi
     data_key = 'data'
     ranges_key = None

@@ -25,7 +25,6 @@ from hexrdgui.utils import masks_applied_to_panel_buffers
 
 
 class PowderRunner(QObject):
-
     calibration_finished = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -195,7 +194,6 @@ class PowderRunner(QObject):
 
 
 class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
-
     @property
     def data_xys(self) -> dict:
         ret: dict[str, Any] = {}

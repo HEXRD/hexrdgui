@@ -47,7 +47,6 @@ class NoEmptyFramesException(Exception):
 
 
 class ImageLoadManager(QObject, metaclass=QSingleton):
-
     # Emitted when new images are loaded
     progress_text = Signal(str)
     update_needed = Signal()

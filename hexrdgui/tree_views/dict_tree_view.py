@@ -19,7 +19,6 @@ VALUE_COL = KEY_COL + 1
 
 
 class DictTreeItemModel(BaseDictTreeItemModel):
-
     def __init__(
         self,
         dictionary: dict[str, Any],
@@ -63,7 +62,6 @@ class DictTreeItemModel(BaseDictTreeItemModel):
 
 
 class DictTreeView(BaseDictTreeView):
-
     def __init__(
         self,
         dictionary: dict[str, Any],
@@ -83,7 +81,6 @@ class DictTreeView(BaseDictTreeView):
 
 
 class DictTreeViewDialog(QDialog):
-
     def __init__(
         self,
         dictionary: dict[str, Any],

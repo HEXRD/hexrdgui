@@ -65,9 +65,7 @@ class FitGrainsResultsDialog(QObject):
             material = HexrdConfig().active_material
             if material:
                 # Warn the user so this is clear.
-                print(
-                    f'Assuming material of {material.name} for needed ' 'computations'
-                )
+                print(f'Assuming material of {material.name} for needed computations')
 
         self.async_runner = AsyncRunner(parent)  # type: ignore[arg-type]
 
@@ -84,7 +82,8 @@ class FitGrainsResultsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'fit_grains_results_dialog.ui', parent  # type: ignore[arg-type]
+            'fit_grains_results_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         url = 'hedm/fit_grains/#fit-grains-results'

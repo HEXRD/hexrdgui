@@ -54,7 +54,6 @@ if TYPE_CHECKING:
 
 
 class CalibrationRunner(QObject):
-
     calibration_finished = Signal()
 
     def __init__(
@@ -996,7 +995,6 @@ class CalibrationRunner(QObject):
 
 
 class CalibrationCallbacks(MaterialCalibrationDialogCallbacks):
-
     def __init__(self, overlays: list, *args: Any, **kwargs: Any) -> None:
         self.overlays = overlays
 

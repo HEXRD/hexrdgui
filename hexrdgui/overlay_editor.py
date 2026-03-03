@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 
 class OverlayEditor:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_editor.ui', parent)

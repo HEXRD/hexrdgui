@@ -5,7 +5,7 @@ from typing import Any
 
 def check_positive_int(value: str) -> int:
     """Ensure the value is a positive int"""
-    error_msg = f"invalid positive int value: {value}"
+    error_msg = f'invalid positive int value: {value}'
 
     try:
         ivalue = int(value)
