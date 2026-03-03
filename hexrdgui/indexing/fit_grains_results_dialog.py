@@ -844,9 +844,7 @@ def _get_monolithic_ims(
     while True:
         if isinstance(ims, ProcessedImageSeries):
             # Collect ops (excluding rectangle) and frame_list
-            non_rect_ops.extend(
-                op for op in ims._oplist if op[0] != 'rectangle'
-            )
+            non_rect_ops.extend(op for op in ims._oplist if op[0] != 'rectangle')
             if frame_list is None and ims._hasframelist:
                 frame_list = list(ims._frames)
             ims = ims._imser

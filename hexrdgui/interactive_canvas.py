@@ -297,10 +297,8 @@ class InteractiveCanvasMixin(_CanvasBase):
         # original view maps to inset_lp * scale in the new view.
         inset_lp = _SPINE_INSET / self.devicePixelRatioF()
 
-        new_ox = (wx + (orig_xlim[0] - new_xlim[0]) / new_vx * ww
-                  + inset_lp * sx)
-        new_oy = (wy + wh - (orig_ylim[1] - new_ylim[0]) / new_vy * wh
-                  + inset_lp * sy)
+        new_ox = wx + (orig_xlim[0] - new_xlim[0]) / new_vx * ww + inset_lp * sx
+        new_oy = wy + wh - (orig_ylim[1] - new_ylim[0]) / new_vy * wh + inset_lp * sy
 
         t = QTransform()
         t.translate(new_ox, new_oy)
@@ -395,9 +393,7 @@ class InteractiveCanvasMixin(_CanvasBase):
         display_x = pos.x() * dpr
         display_y = self.figure.bbox.height - pos.y() * dpr
 
-        xlim, ylim = self._pending_limits.get(
-            ax, self._get_ax_limits(ax)
-        )
+        xlim, ylim = self._pending_limits.get(ax, self._get_ax_limits(ax))
         x0, x1 = xlim
         y0, y1 = ylim
 
@@ -450,9 +446,7 @@ class InteractiveCanvasMixin(_CanvasBase):
         bbox = ax.get_window_extent()
         dpr = self.devicePixelRatioF()
 
-        xlim, ylim = self._pending_limits.get(
-            ax, self._get_ax_limits(ax)
-        )
+        xlim, ylim = self._pending_limits.get(ax, self._get_ax_limits(ax))
 
         dx_data = (
             -dx_widget * dpr * (xlim[1] - xlim[0]) / bbox.width if bbox.width else 0
