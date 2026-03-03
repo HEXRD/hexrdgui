@@ -130,7 +130,7 @@ class Mask(ABC):
 class RegionMask(Mask):
     def __init__(
         self,
-        name: str = '',
+        name: str | None = None,
         mtype: str = '',
         visible: bool = True,
         show_border: bool = False,
@@ -422,7 +422,7 @@ class MaskManager(QObject, metaclass=QSingleton):
             new_mask = ThresholdMask(name, mtype, visible)
         else:
             mode = None if mtype == MaskType.pinhole else self.view_mode
-            new_mask = RegionMask(name or '', mtype, visible, mode=mode)
+            new_mask = RegionMask(name, mtype, visible, mode=mode)
         new_mask.data = data
         assert new_mask.name is not None
         self.masks[new_mask.name] = new_mask
