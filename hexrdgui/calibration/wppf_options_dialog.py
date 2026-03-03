@@ -352,7 +352,11 @@ class WppfOptionsDialog(QObject):
         if obj.amorphous_model is not None:
             data['amorphous'] = obj.amorphous_model.amorphous_lineout
 
-        if obj.tds_model is not None and obj.tds_model.TDSmodels:
+        if (
+            isinstance(obj, Rietveld)
+            and obj.tds_model is not None
+            and obj.tds_model.TDSmodels
+        ):
             tds_models = obj.tds_model.TDSmodels
             tds_dict: dict[Any, Any] = {}
             for p in tds_models:
