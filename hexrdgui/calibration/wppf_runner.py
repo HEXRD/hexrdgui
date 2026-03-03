@@ -123,7 +123,7 @@ class WppfRunner:
 
         # Compute TDS lineout, if applicable
         tds_lineout = []
-        if obj.tds_model is not None:
+        if isinstance(obj, Rietveld) and obj.tds_model is not None:
             x = obj.tth_list
             y = np.zeros(x.shape)
             for p in obj.tds_model.TDSmodels:
