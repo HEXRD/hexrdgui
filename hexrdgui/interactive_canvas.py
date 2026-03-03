@@ -22,6 +22,11 @@ _ZOOM_BASE = 1.15
 # Device-pixel inset when extracting axis content to exclude spine lines
 _SPINE_INSET = 2
 
+# Max image dimension for interactive preview.  Images larger than this
+# are stride-downsampled before colormapping to keep _begin_interaction fast.
+# The final matplotlib render (on finalize) is always full resolution.
+_MAX_PREVIEW_DIM = 4096
+
 
 class InteractiveCanvasMixin:
     """Mixin for matplotlib FigureCanvasQTAgg providing fast scroll-zoom and
@@ -52,6 +57,13 @@ class InteractiveCanvasMixin:
         # (left, right, bottom, top), origin, img_w, img_h
         self._axis_img_info: dict[
             Axes, tuple[tuple[float, float, float, float], str, int, int]
+        ] = {}
+
+        # Persistent cache of colormapped data pixmaps that survives across
+        # interaction cycles.  Keyed by Axes; value is (cache_key, QPixmap,
+        # img_info).  Cleared only when the figure content changes.
+        self._data_pixmap_cache: dict[
+            Axes, tuple[tuple, QPixmap, tuple[tuple[float, float, float, float], str, int, int]]
         ] = {}
 
         # Debounce timer: fires once after interaction stops
@@ -187,9 +199,32 @@ class InteractiveCanvasMixin:
             # Build full-data QPixmap from the AxesImage (if any)
             self._build_image_pixmap(ax)
 
+    @staticmethod
+    def _image_cache_key(im) -> tuple:
+        """Return a lightweight key that changes when the colormapped result
+        would differ (different data, colormap, norm, or display limits)."""
+        data = im.get_array()
+        norm = im.norm
+        return (
+            id(im),
+            id(data),
+            data.shape,
+            im.get_clim(),
+            im.get_cmap().name,
+            type(norm).__name__,
+            getattr(norm, 'vmin', None),
+            getattr(norm, 'vmax', None),
+        )
+
     def _build_image_pixmap(self, ax: Axes) -> None:
-        """Colormap the full numpy data behind *ax*'s AxesImage into a
-        QPixmap for PyQtGraph-like rendering at any zoom level."""
+        """Colormap the data behind *ax*'s AxesImage into a QPixmap.
+
+        Uses a persistent cache so the expensive ``to_rgba`` call is skipped
+        when the data / colormap / clim have not changed since the last
+        interaction.  Very large images are stride-downsampled to keep the
+        first interaction fast; the final matplotlib render on finalize is
+        always full resolution.
+        """
         images = ax.get_images()
         if not images:
             return
@@ -198,7 +233,22 @@ class InteractiveCanvasMixin:
         if data is None or data.size == 0:
             return
 
+        # Fast path: reuse cached pixmap if data/cmap/clim unchanged
+        cache_key = self._image_cache_key(im)
+        cached = self._data_pixmap_cache.get(ax)
+        if cached is not None and cached[0] == cache_key:
+            self._axis_data_pixmaps[ax] = cached[1]
+            self._axis_img_info[ax] = cached[2]
+            return
+
         try:
+            h, w = data.shape[:2]
+
+            # Stride-downsample very large images for the interactive preview
+            if max(h, w) > _MAX_PREVIEW_DIM:
+                step = max(1, max(h, w) // _MAX_PREVIEW_DIM)
+                data = data[::step, ::step]
+
             rgba = im.to_rgba(data, bytes=True)  # (h, w, 4) uint8
             rgba = np.ascontiguousarray(rgba)
         except Exception:
@@ -208,11 +258,17 @@ class InteractiveCanvasMixin:
         # Use tobytes() so the QImage owns a copy of the data
         raw = rgba.tobytes()
         qimg = QImage(raw, w, h, w * 4, QImage.Format.Format_RGBA8888)
-        self._axis_data_pixmaps[ax] = QPixmap.fromImage(qimg)
+        pixmap = QPixmap.fromImage(qimg)
 
         extent = im.get_extent()  # (left, right, bottom, top)
         origin = getattr(im, 'origin', 'upper')
-        self._axis_img_info[ax] = (extent, origin, w, h)
+        img_info = (extent, origin, w, h)
+
+        self._axis_data_pixmaps[ax] = pixmap
+        self._axis_img_info[ax] = img_info
+
+        # Store in persistent cache for subsequent interactions
+        self._data_pixmap_cache[ax] = (cache_key, pixmap, img_info)
 
     # ------------------------------------------------------------------
     # Transform computation
@@ -325,8 +381,20 @@ class InteractiveCanvasMixin:
         """Reset the zoom flag so panning is disabled until the next zoom."""
         self._zoom_has_occurred = False
 
+    def _clear_data_pixmap_cache(self) -> None:
+        """Drop the persistent colormapped-image cache.
+
+        Call this when the figure content changes (e.g. ``clear()`` or
+        ``clear_figure()``), NOT on every interaction cycle.
+        """
+        self._data_pixmap_cache.clear()
+
     def _invalidate_interaction_cache(self) -> None:
-        """Cancel any active interaction and reset state."""
+        """Cancel any active interaction and reset state.
+
+        The persistent ``_data_pixmap_cache`` is intentionally preserved so
+        that subsequent zoom gestures can skip the expensive colormapping.
+        """
         self._finalize_timer.stop()
         self._interaction_active = False
         self._cached_pixmap = None
