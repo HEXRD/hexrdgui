@@ -243,7 +243,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 )
 
                 hkl_dict[hkl_str] = angles_to_cart(
-                    angles,
+                    angles,  # type: ignore[arg-type]
                     panel,  # type: ignore[arg-type]
                 ).tolist()
 

@@ -44,7 +44,7 @@ jobs:
       working-directory: hexrdgui
 
     - name: Install linters
-      run: pip install mypy ruff
+      run: pip install mypy ruff types-PyYAML
 
     - name: Run ruff format
       run: ruff format --check hexrdgui/
