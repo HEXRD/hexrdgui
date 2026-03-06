@@ -68,9 +68,9 @@ def test_hedm_full_workflow(qtbot, main_window, dexelas_hedm_path, tmp_path):
 
     load_panel = main_window.simple_image_series_dialog
     with select_files_when_asked([str(npz1), str(npz2)]):
-        qtbot.mouseClick(load_panel.ui.image_files, Qt.LeftButton)
+        qtbot.mouseClick(load_panel.ui.image_files, Qt.MouseButton.LeftButton)
 
-    qtbot.mouseClick(load_panel.ui.read, Qt.LeftButton)
+    qtbot.mouseClick(load_panel.ui.read, Qt.MouseButton.LeftButton)
     QApplication.processEvents()
 
     assert not is_dummy_data()

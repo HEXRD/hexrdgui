@@ -139,6 +139,8 @@ class InstrumentViewer:
         ret: dict[str, Any] = {}
         for det_key, data in overlay.data.items():
             panel = self.instr.detectors[det_key]
+            if panel.roi is None:
+                continue
 
             def raw_to_stitched(x: np.ndarray) -> None:
                 # x is in "ji" coordinates
