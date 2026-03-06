@@ -53,6 +53,10 @@ def test_hedm_full_workflow(qtbot, main_window, dexelas_hedm_path, tmp_path):
     detectors = HexrdConfig().detectors
     assert len(detectors) == 8
 
+    # Override working_dir so it exists in CI
+    HexrdConfig().working_dir = str(tmp_path)
+    HexrdConfig().indexing_config['working_dir'] = str(tmp_path)
+
     # ── Step B: load NPZ images ────────────────────────────────────────
     def is_dummy_data():
         for ims in HexrdConfig().imageseries_dict.values():
