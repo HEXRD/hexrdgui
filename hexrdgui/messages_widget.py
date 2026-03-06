@@ -226,7 +226,11 @@ class Writer(QObject):
             i = self.call_stack.index(self)
             self.call_stack[i - 1].write(text)
 
-        self.text_received.emit(text)
+        try:
+            self.text_received.emit(text)
+        except RuntimeError:
+            # The underlying C++ object may have been deleted
+            pass
 
     def flush(self) -> None:
         if self in self.call_stack:
