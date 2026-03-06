@@ -30,7 +30,6 @@ from hexrdgui.utils.physics_package import (
 
 
 class PowderOverlayEditor:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('powder_overlay_editor.ui', parent)
@@ -88,7 +87,7 @@ class PowderOverlayEditor:
     @refinements.setter
     def refinements(self, v: list[bool]) -> None:
         if len(v) != len(self.refinements_with_labels):
-            msg = f'Mismatch in {len(v)=} and ' f'{len(self.refinements_with_labels)=}'
+            msg = f'Mismatch in {len(v)=} and {len(self.refinements_with_labels)=}'
             raise Exception(msg)
 
         with_labels = self.refinements_with_labels

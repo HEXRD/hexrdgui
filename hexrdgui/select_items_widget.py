@@ -12,7 +12,6 @@ COLUMNS = {'name': 0, 'checkbox': 1}
 
 
 class SelectItemsWidget(QObject):
-
     selection_changed = Signal()
 
     def __init__(self, items: list, parent: QObject | None = None) -> None:
@@ -20,7 +19,8 @@ class SelectItemsWidget(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'select_items_widget.ui', parent  # type: ignore[arg-type]
+            'select_items_widget.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         self.checkboxes: list[QCheckBox] = []

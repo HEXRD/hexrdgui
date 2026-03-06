@@ -6,7 +6,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class ProgressDialog(QObject):
-
     cancel_clicked = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
@@ -14,7 +13,8 @@ class ProgressDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'progress_dialog.ui', parent  # type: ignore[arg-type]
+            'progress_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         self.messages_widget = MessagesWidget(self.ui)

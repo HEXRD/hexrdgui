@@ -32,7 +32,6 @@ DEFAULT_SITE = {
 
 
 class MaterialStructureEditor(QObject):
-
     material_modified = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:

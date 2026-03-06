@@ -30,7 +30,6 @@ from hexrdgui.utils.matplotlib import remove_artist
 
 
 class HandDrawnMaskDialog(QObject):
-
     # Emits the ring data that was selected
     finished = Signal(list, list)
 
@@ -212,7 +211,6 @@ class HandDrawnMaskDialog(QObject):
 
 
 class LineBuilder(QObject):
-
     # Emits when a point was picked
     point_picked = Signal()
 

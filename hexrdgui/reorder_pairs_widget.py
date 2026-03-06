@@ -9,7 +9,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class ReorderPairsWidget(QObject):
-
     items_reordered = Signal()
 
     def __init__(
@@ -24,7 +23,8 @@ class ReorderPairsWidget(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'reorder_pairs_widget.ui', parent  # type: ignore[arg-type]
+            'reorder_pairs_widget.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         self.combo_boxes: list[QComboBox] = []

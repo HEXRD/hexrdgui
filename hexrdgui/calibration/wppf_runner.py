@@ -14,7 +14,6 @@ from hexrdgui.hexrd_config import HexrdConfig
 
 
 class WppfRunner:
-
     def __init__(self, parent: Any = None) -> None:
         self.parent = parent
         self.undo_stack: list[Any] = []

@@ -294,10 +294,10 @@ class PolarView:
         return self.warp_dict[det]
 
     def func_project_on_detector(self, detector: Detector) -> Callable[..., Any]:
-        '''
+        """
         helper function to decide which function to
         use for mapping of g-vectors to detector
-        '''
+        """
         if isinstance(detector, instrument.CylindricalDetector):
             return _project_on_detector_cylinder
         else:

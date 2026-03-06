@@ -27,7 +27,6 @@ VIEW_MODE_TO_TAB_INDEX = {v: k for k, v in TAB_INDEX_TO_VIEW_MODE.items()}
 
 
 class ImageModeWidget(QObject):
-
     # Using string argument instead of ViewType to workaround segfault on
     # conda/macos
     tab_changed = Signal(str)

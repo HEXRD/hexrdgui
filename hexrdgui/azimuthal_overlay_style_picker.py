@@ -10,7 +10,6 @@ from hexrdgui.utils import block_signals
 
 
 class AzimuthalOverlayStylePicker(QObject):
-
     def __init__(self, overlay: Any, parent: QObject | None = None) -> None:
         super().__init__(parent)
 

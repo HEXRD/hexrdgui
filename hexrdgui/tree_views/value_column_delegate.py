@@ -32,7 +32,7 @@ class ValueColumnDelegate(QStyledItemDelegate):
         option: QStyleOptionViewItem,
         index: QModelIndex | QPersistentModelIndex,
     ) -> QWidget | None:
-        model = self.parent().model()  # type: ignore[attr-defined]
+        model = self.parent().model()  # type: ignore[union-attr, attr-defined]
         item = model.get_item(index)
         key = item.data(BaseTreeItemModel.KEY_COL)
         if key == constants.BUFFER_KEY:

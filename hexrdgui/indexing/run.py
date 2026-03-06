@@ -39,7 +39,6 @@ from hexrdgui.utils import format_big_int
 
 
 class Runner(QObject):
-
     progress_text = Signal(str)
     accept_progress_signal = Signal()
 
@@ -95,7 +94,6 @@ class Runner(QObject):
 
 
 class IndexingRunner(Runner):
-
     clustering_ran = Signal(bool)
     indexing_results_rejected = Signal()
 
@@ -457,7 +455,6 @@ class IndexingRunner(Runner):
 
 
 class FitGrainsRunner(Runner):
-
     def __init__(
         self,
         grains_table: np.ndarray | None = None,

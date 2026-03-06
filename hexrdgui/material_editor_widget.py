@@ -19,7 +19,6 @@ if TYPE_CHECKING:
 
 
 class MaterialEditorWidget(QObject):
-
     # Emitted whenever the material is modified
     material_modified = Signal()
 

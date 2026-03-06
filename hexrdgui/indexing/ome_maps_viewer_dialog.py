@@ -54,7 +54,6 @@ DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
 
 
 class OmeMapsViewerDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 

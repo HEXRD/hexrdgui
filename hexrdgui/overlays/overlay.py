@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 
 class Overlay(ABC):
-
     # Abstract methods
     @property
     @abstractmethod
@@ -314,8 +313,7 @@ class Overlay(ABC):
             if self.instrument is None or self.display_mode is None:
                 # Cannot generate data. Raise an exception.
                 msg = (
-                    'Instrument and display mode must be set before '
-                    'generating new data'
+                    'Instrument and display mode must be set before generating new data'
                 )
                 raise Exception(msg)
 

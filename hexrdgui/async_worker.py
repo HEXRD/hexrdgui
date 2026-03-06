@@ -10,7 +10,7 @@ from typing import Any, Callable
 
 
 class AsyncWorkerSignals(QObject):
-    '''
+    """
     Defines the signals available from a running worker thread.
 
     Supported signals are:
@@ -27,7 +27,7 @@ class AsyncWorkerSignals(QObject):
     progress
         `int` indicating % progress
 
-    '''
+    """
 
     finished = Signal()
     error = Signal(tuple)
@@ -36,7 +36,7 @@ class AsyncWorkerSignals(QObject):
 
 
 class AsyncWorker(QRunnable):
-    '''
+    """
     AsyncWorker
 
     Inherits from QRunnable to handler worker thread setup, signals and
@@ -49,7 +49,7 @@ class AsyncWorker(QRunnable):
     :param args: Arguments to pass to the callback function
     :param kwargs: Keywords to pass to the callback function
 
-    '''
+    """
 
     def __init__(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         super().__init__()
@@ -67,9 +67,9 @@ class AsyncWorker(QRunnable):
 
     @Slot()
     def run(self) -> None:
-        '''
+        """
         Initialise the runner function with passed args, kwargs.
-        '''
+        """
 
         # Retrieve args/kwargs here; and fire processing using them
         try:

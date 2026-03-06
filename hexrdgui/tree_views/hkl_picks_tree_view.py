@@ -16,7 +16,6 @@ Y_COL = X_COL + 1
 
 
 class HKLPicksTreeView(GenericPicksTreeView):
-
     def item_type(self, tree_item: TreeItem) -> str:
         root_item = self.model().root_item
 

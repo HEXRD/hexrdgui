@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 
 class ReflectionsSelectionHelper(QObject):
-
     apply_clicked = Signal()
 
     def __init__(self, material: Material, parent: QWidget | None = None) -> None:

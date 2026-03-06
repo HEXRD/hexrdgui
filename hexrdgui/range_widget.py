@@ -4,7 +4,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class RangeWidget:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('range_widget.ui', parent)

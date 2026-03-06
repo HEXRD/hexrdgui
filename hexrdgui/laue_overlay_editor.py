@@ -23,7 +23,6 @@ from hexrdgui.utils import block_signals, euler_angles_to_rmat, rmat_to_euler_an
 
 
 class LaueOverlayEditor:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('laue_overlay_editor.ui', parent)

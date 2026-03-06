@@ -12,7 +12,6 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class OmeMapsSelectDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 

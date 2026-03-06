@@ -168,13 +168,13 @@ KEY_TRANSLATE_DELTA = 0.5
 
 
 TRANSFORM_OPTIONS = [
-    "None",
-    "Mirror about Vertical",
-    "Mirror about Horizontal",
-    "Transpose",
-    "Rotate 90°",
-    "Rotate 180°",
-    "Rotate 270°",
+    'None',
+    'Mirror about Vertical',
+    'Mirror about Horizontal',
+    'Transpose',
+    'Rotate 90°',
+    'Rotate 180°',
+    'Rotate 270°',
 ]
 
 FIDDLE_FRAMES = 4

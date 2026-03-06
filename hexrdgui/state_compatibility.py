@@ -27,7 +27,6 @@ def fix_issue_1227(file_path: str | Path) -> None:
     from hexrdgui.state import _load_config, _save_config
 
     with h5py.File(file_path, 'a') as f:
-
         # First, convert the yaml config and load it.
         # It is currently using paths with '\' internally.
         key = 'config\\yaml'

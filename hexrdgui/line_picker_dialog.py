@@ -17,7 +17,6 @@ from hexrdgui.zoom_canvas import ZoomCanvas
 
 
 class LinePickerDialog(QObject):
-
     # Emitted when a point was picked
     point_picked = Signal(float, float)
 
@@ -373,7 +372,6 @@ class LinePickerDialog(QObject):
 
 
 class LineBuilder(QObject):
-
     # Emits when a point was picked
     point_picked = Signal(float, float)
 

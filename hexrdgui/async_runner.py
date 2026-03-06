@@ -8,7 +8,6 @@ from hexrdgui.progress_dialog import ProgressDialog
 
 
 class AsyncRunner:
-
     def __init__(self, parent: QWidget) -> None:
         self.parent = parent
 

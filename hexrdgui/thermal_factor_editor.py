@@ -16,9 +16,7 @@ class ThermalFactorEditor:
 
         self.tensor_editor = MatrixEditor(np.zeros((3, 3)), parent)
         self.tensor_editor.enabled_elements = list(zip(*np.triu_indices(3)))
-        self.tensor_editor.apply_constraints_func = (
-            apply_symmetric_constraint  # type: ignore[assignment]
-        )
+        self.tensor_editor.apply_constraints_func = apply_symmetric_constraint  # type: ignore[assignment]
         self.ui.tensor_editor_layout.addWidget(self.tensor_editor)
 
         self.value = value

@@ -1357,8 +1357,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if directory is None:
             directory = HexrdConfig().working_dir
         if filename is None:
-            filename = f"{material.name}.cif"
-        material.write_cif(f"{directory}/{filename}")
+            filename = f'{material.name}.cif'
+        material.write_cif(f'{directory}/{filename}')
 
     def import_materials(self, file_paths: list[Path | str]) -> None:
         """Import materials from a list of files
@@ -1866,7 +1866,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if material in names:
                 names[names.index(material)] = f'{material}_1'
                 HexrdConfig().logger.warning(
-                    f'Material {material} already exists, ' f'renaming to {material}_1'
+                    f'Material {material} already exists, renaming to {material}_1'
                 )
 
         if len(names) != len(materials):

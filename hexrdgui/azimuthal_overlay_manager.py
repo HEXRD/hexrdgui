@@ -31,7 +31,6 @@ COLUMNS = {
 
 
 class AzimuthalOverlayManager:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('azimuthal_overlay_manager.ui', parent)

@@ -48,7 +48,7 @@ def convert_masks_v1_to_v2(h5py_group: h5py.Group) -> dict:
 
 
 def load_masks(h5py_group: h5py.Group) -> dict:
-    version = h5py_group.attrs.get("_version", 1)
+    version = h5py_group.attrs.get('_version', 1)
     if version != CURRENT_MASK_VERSION:
         return CONVERSION_DICT[(version, CURRENT_MASK_VERSION)](h5py_group)
 

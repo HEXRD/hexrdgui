@@ -36,7 +36,6 @@ from typing import Any, Sequence
 
 
 class MaskManagerDialog(QObject):
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._parent = parent

@@ -25,7 +25,6 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class PowderOverlay(Overlay, PolarDistortionObject):
-
     type = OverlayType.powder
     data_key = 'rings'
     ranges_key = 'rbnds'
@@ -128,7 +127,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
     @tvec.setter
     def tvec(self, x: Any) -> None:
         x = np.asarray(x, float).flatten()
-        assert len(x) == 3, "tvec input must have exactly 3 elements"
+        assert len(x) == 3, 'tvec input must have exactly 3 elements'
         self._tvec = x
 
     @property
@@ -244,7 +243,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 )
 
                 hkl_dict[hkl_str] = angles_to_cart(
-                    angles, panel  # type: ignore[arg-type]
+                    angles,  # type: ignore[arg-type]
+                    panel,  # type: ignore[arg-type]
                 ).tolist()
 
         self.calibration_picks = picks
@@ -528,7 +528,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 )
 
             if offset_distortion:
-
                 # Since this correction is based upon field position, we must
                 # use raw coordinates for the most accurate correction.
                 if apply_distortion:
@@ -631,7 +630,6 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     ring_pts.append(np.vstack([stereo_ij, nans_row]))
 
             elif display_mode in [ViewType.raw, ViewType.cartesian]:
-
                 if display_mode == ViewType.raw:
                     # Convert to pixel coordinates and swap columns
                     xys = panel.cartToPixel(xys)[:, [1, 0]]

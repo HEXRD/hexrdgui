@@ -16,7 +16,7 @@ from hexrdgui import state_compatibility
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_load_manager import ImageLoadManager
 
-CONFIG_PREFIX = "config"
+CONFIG_PREFIX = 'config'
 CONFIG_YAML_PATH = f'{CONFIG_PREFIX}/yaml'
 
 
@@ -50,13 +50,13 @@ class H5StateLoader(yaml.SafeLoader):
         return tuple(value)
 
 
-H5StateLoader.add_constructor(u'!include', H5StateLoader.include)
+H5StateLoader.add_constructor('!include', H5StateLoader.include)
 H5StateLoader.add_constructor(
-    u'tag:yaml.org,2002:python/object/apply:hexrdgui.constants.OverlayType',
+    'tag:yaml.org,2002:python/object/apply:hexrdgui.constants.OverlayType',
     H5StateLoader.hexrd_ui_constants_overlaytype,
 )
 H5StateLoader.add_constructor(
-    u'tag:yaml.org,2002:python/tuple', H5StateLoader.python_tuple
+    'tag:yaml.org,2002:python/tuple', H5StateLoader.python_tuple
 )
 
 
@@ -109,7 +109,7 @@ class H5StateDumper(yaml.Dumper):
     def numpy_representer(self, data: np.ndarray) -> Any:
         path = _dict_path_by_id(self._dct, id(data))
         if path is None:
-            raise ValueError("Unable to determine array path.")
+            raise ValueError('Unable to determine array path.')
 
         path_str = '/'.join(path)
         if self.prefix:

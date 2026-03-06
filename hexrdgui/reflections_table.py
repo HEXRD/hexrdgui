@@ -43,7 +43,6 @@ class COLUMNS:
 
 
 class ReflectionsTable:
-
     def __init__(
         self,
         material: Material,

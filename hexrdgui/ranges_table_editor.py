@@ -11,7 +11,6 @@ from hexrdgui.utils import block_signals
 
 
 class RangesTableEditor(QObject):
-
     data_modified = Signal()
 
     def __init__(self, data: Any = None, parent: QWidget | None = None) -> None:
@@ -161,7 +160,6 @@ class RangesTableEditor(QObject):
         block_list = [self.ui.table, self.ui.table.selectionModel()]
 
         with block_signals(*block_list):
-
             prev_selected = self.selected_row
 
             self.ui.table.setRowCount(len(self._data))

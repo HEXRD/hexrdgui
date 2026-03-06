@@ -2515,7 +2515,7 @@ class PolarXAxisMinorTickLocator(AutoMinorLocator):
         canvas = self._hexrdgui_canvas
         if self.axis.get_scale() == 'log':  # type: ignore[union-attr]
             logging.warning(
-                'PolarXAxisMinorTickLocator does not work' ' on logarithmic scales'
+                'PolarXAxisMinorTickLocator does not work on logarithmic scales'
             )
             return np.array([])
 

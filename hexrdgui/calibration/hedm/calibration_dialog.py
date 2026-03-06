@@ -26,7 +26,6 @@ from hexrdgui.utils import block_signals
 
 
 class HEDMCalibrationDialog(CalibrationDialog):
-
     apply_refinement_selections_needed = Signal()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -247,7 +246,6 @@ class HEDMCalibrationDialog(CalibrationDialog):
 
 
 class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
-
     dialog: HEDMCalibrationDialog  # type: ignore[assignment]
 
     def __init__(
@@ -455,9 +453,9 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         ims = next(iter(ims_dict.values()))  # grab first member
         delta_ome = ims.metadata['omega'][:, 1] - ims.metadata['omega'][:, 0]
         # In the spirit of Joel, I'm leaving his comment here...
-        assert (
-            np.max(np.abs(np.diff(delta_ome))) < cnst.sqrt_epsf
-        ), "something funky going one with your omegas"
+        assert np.max(np.abs(np.diff(delta_ome))) < cnst.sqrt_epsf, (
+            'something funky going one with your omegas'
+        )
         delta_ome = delta_ome[0]  # any one member will do
 
         # refit tolerances
@@ -510,9 +508,9 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
                 )
 
                 print(
-                    "INFO: Will keep %d of %d input reflections "
+                    'INFO: Will keep %d of %d input reflections '
                     % (sum(idx_1), sum(idx_0[det_key][ig]))
-                    + "on panel %s for re-fit" % det_key
+                    + 'on panel %s for re-fit' % det_key
                 )
 
                 idx_new = np.zeros_like(idx_0[det_key][ig], dtype=bool)
@@ -667,6 +665,6 @@ def parse_spots_data(
 REFINEMENT_OPTIONS = {
     'fix_det_y': 'Fix origin based on current sample/detector position',
     'fix_grain_centroid': 'Reset origin to grain centroid position',
-    'fix_grain_y': 'Reset Y axis origin to grain\'s Y position',
+    'fix_grain_y': "Reset Y axis origin to grain's Y position",
     'custom': 'Custom refinement parameters',
 }

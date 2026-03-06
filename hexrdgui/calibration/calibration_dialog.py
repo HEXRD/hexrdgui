@@ -40,7 +40,6 @@ import hexrdgui.resources.calibration
 
 
 class CalibrationDialog(QObject):
-
     draw_picks_toggled = Signal(bool)
     show_picks_from_all_xray_sources_toggled = Signal(bool)
 
@@ -73,7 +72,8 @@ class CalibrationDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'calibration_dialog.ui', parent  # type: ignore[arg-type]
+            'calibration_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         self.ui.setWindowFlags(self.ui.windowFlags() | Qt.WindowType.Tool)
@@ -217,15 +217,15 @@ class CalibrationDialog(QObject):
     @property
     def default_advanced_options(self) -> dict[str, Any]:
         return {
-            "ftol": 1e-8,
-            "xtol": 1e-8,
-            "gtol": 1e-8,
-            "verbose": 2,
-            "max_nfev": 1000,
+            'ftol': 1e-8,
+            'xtol': 1e-8,
+            'gtol': 1e-8,
+            'verbose': 2,
+            'max_nfev': 1000,
             # Skip x_scale until we find a way to present it in the GUI
             # "x_scale": "jac",
-            "method": "trf",
-            "jac": "3-point",
+            'method': 'trf',
+            'jac': '3-point',
         }
 
     @property

@@ -1,0 +1,55 @@
+name: lint
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Checkout HEXRD
+      uses: actions/checkout@v4
+      with:
+        repository: HEXRD/hexrd
+        path: hexrd
+
+    - name: Checkout HEXRDGUI
+      uses: actions/checkout@v4
+      with:
+        path: hexrdgui
+
+    - name: Install EGL (PySide6 needs it)
+      run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev
+
+    - name: Install HEXRD
+      run: pip install .
+      working-directory: hexrd
+
+    - name: Install HEXRDGUI
+      run: pip install .
+      working-directory: hexrdgui
+
+    - name: Install linters
+      run: pip install mypy ruff types-PyYAML
+
+    - name: Run ruff format
+      run: ruff format --check hexrdgui/
+      working-directory: hexrdgui
+
+    - name: Run mypy
+      run: mypy hexrdgui/
+      working-directory: hexrdgui

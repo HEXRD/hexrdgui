@@ -13,7 +13,6 @@ from hexrdgui.utils import block_signals
 
 
 class FitGrainsSelectDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 

@@ -5,7 +5,6 @@ from hexrdgui.utils import set_combobox_enabled_items
 
 
 class SelectItemDialog(QObject):
-
     accepted = Signal(str)
     rejected = Signal()
 
@@ -19,7 +18,8 @@ class SelectItemDialog(QObject):
         super().__init__(parent)
 
         self.ui = UiLoader().load_file(
-            'select_item_dialog.ui', parent  # type: ignore[arg-type]
+            'select_item_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         if disable_list is None:

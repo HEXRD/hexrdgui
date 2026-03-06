@@ -8,7 +8,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class GrainsViewerWidget:
-
     def __init__(self, grains_table: Any, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('grains_viewer_widget.ui', parent)

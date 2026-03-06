@@ -26,7 +26,8 @@ class DynamicWidget(QObject):
         self.description = description
         self.label = label_from_description(description)
         self.widget = widget_from_description(
-            description, parent  # type: ignore[arg-type]
+            description,
+            parent,  # type: ignore[arg-type]
         )
 
         if self.widget:

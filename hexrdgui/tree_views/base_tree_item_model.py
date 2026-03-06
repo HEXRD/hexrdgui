@@ -17,7 +17,6 @@ KEY_COL = 0
 
 
 class BaseTreeItemModel(QAbstractItemModel):
-
     KEY_COL = KEY_COL
 
     # Subclasses must define root_item

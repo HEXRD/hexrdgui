@@ -8,12 +8,12 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class EditColormapListDialog(QObject):
-
     def __init__(self, parent: QObject, cmap_editor: Any) -> None:
         super().__init__(parent)
         loader = UiLoader()
         self.ui = loader.load_file(
-            'edit_colormaps_dialog.ui', parent  # type: ignore[arg-type]
+            'edit_colormaps_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.WindowType.Tool)

@@ -22,7 +22,6 @@ from hexrdgui.utils.dialog import add_help_url
 
 
 class ImageStackDialog(QObject):
-
     # Emitted when images are cleared
     clear_images = Signal()
 
@@ -218,7 +217,7 @@ class ImageStackDialog(QObject):
 
     def select_omega_file(self) -> None:
         omega_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Select file', HexrdConfig().images_dir or "", 'NPY files (*.npy)'
+            self.ui, 'Select file', HexrdConfig().images_dir or '', 'NPY files (*.npy)'
         )
         self.ui.omega_file.setText(omega_file)
         self.state['omega'] = omega_file
@@ -419,9 +418,7 @@ class ImageStackDialog(QObject):
                 num_files,
                 dtype=np.uint16,
             )
-            omega = [
-                (b, e, self.frames_per_image) for [b, e] in omega
-            ]  # type: ignore[misc]
+            omega = [(b, e, self.frames_per_image) for [b, e] in omega]  # type: ignore[misc]
             if max_total := self.state['max_total_frames']:
                 # The max_total is subtracted off of the end of the imageseries
                 # We need to account for the edge case where the max_total is
@@ -514,11 +511,11 @@ class ImageStackDialog(QObject):
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         elif steps != total_frames:
-            msg = f'''
+            msg = f"""
                    The total number of steps must be equal to the total
                    number of frames:
                    {steps} total steps, {total_frames} total frames.
-                   '''
+                   """
             QMessageBox.warning(None, 'HEXRD', msg)
             return
         self.build_data()

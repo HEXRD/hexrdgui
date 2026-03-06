@@ -65,9 +65,7 @@ class FitGrainsResultsDialog(QObject):
             material = HexrdConfig().active_material
             if material:
                 # Warn the user so this is clear.
-                print(
-                    f'Assuming material of {material.name} for needed ' 'computations'
-                )
+                print(f'Assuming material of {material.name} for needed computations')
 
         self.async_runner = AsyncRunner(parent)  # type: ignore[arg-type]
 
@@ -84,7 +82,8 @@ class FitGrainsResultsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'fit_grains_results_dialog.ui', parent  # type: ignore[arg-type]
+            'fit_grains_results_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         url = 'hedm/fit_grains/#fit-grains-results'
@@ -844,9 +843,7 @@ def _get_monolithic_ims(
     while True:
         if isinstance(ims, ProcessedImageSeries):
             # Collect ops (excluding rectangle) and frame_list
-            non_rect_ops.extend(
-                op for op in ims._oplist if op[0] != 'rectangle'
-            )
+            non_rect_ops.extend(op for op in ims._oplist if op[0] != 'rectangle')
             if frame_list is None and ims._hasframelist:
                 frame_list = list(ims._frames)
             ims = ims._imser

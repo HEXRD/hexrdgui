@@ -41,7 +41,6 @@ if TYPE_CHECKING:
 
 
 class StructurelessCalibrationRunner(QObject):
-
     instrument_updated = Signal()
 
     def __init__(
@@ -475,7 +474,6 @@ def validate_picks(picks: dict[str, Any], instr: Any) -> None:
 
 
 class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
-
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
@@ -550,9 +548,7 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         dialog = GenericPicksTreeViewDialog(
             dictionary, canvas=self.canvas, parent=self.canvas
         )
-        dialog.tree_view.new_line_name_generator = (
-            new_line_name_generator  # type: ignore[assignment]
-        )
+        dialog.tree_view.new_line_name_generator = new_line_name_generator  # type: ignore[assignment]
         dialog.tree_view.model().disabled_paths = disabled_paths  # type: ignore[assignment]
         dialog.accepted.connect(self.on_edit_picks_accepted)
         dialog.finished.connect(self.on_edit_picks_finished)

@@ -36,7 +36,6 @@ Y_COL = X_COL + 1
 
 
 class GenericPicksTreeItemModel(BaseDictTreeItemModel):
-
     def __init__(
         self,
         dictionary: dict[str, Any],
@@ -143,7 +142,6 @@ class GenericPicksTreeItemModel(BaseDictTreeItemModel):
 
 
 class GenericPicksTreeView(BaseDictTreeView):
-
     dict_modified = Signal(QModelIndex)
 
     def model(self) -> GenericPicksTreeItemModel:
@@ -688,7 +686,6 @@ class GenericPicksTreeView(BaseDictTreeView):
 
 
 class GenericPicksTreeViewDialog(QDialog):
-
     dict_modified = Signal(QModelIndex)
 
     def __init__(

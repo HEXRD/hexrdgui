@@ -25,7 +25,6 @@ from hexrdgui.utils.matplotlib import remove_artist
 
 
 class IndexingResultsDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 

@@ -15,7 +15,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class TableSelectorWidget(QTableWidget):
-
     selection_changed = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -104,7 +103,6 @@ class TableSelectorWidget(QTableWidget):
 
 
 class TableSelectorDialog(QDialog):
-
     selection_changed = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:

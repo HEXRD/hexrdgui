@@ -18,7 +18,8 @@ class AboutDialog(QObject):
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self.ui = UiLoader().load_file(
-            'about_dialog.ui', parent  # type: ignore[arg-type]
+            'about_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         self._populate_hexrd_logo()
@@ -74,11 +75,11 @@ class AboutDialog(QObject):
         tree = self.ui.information
 
         packages = [
-            "HEXRDGUI",
-            "HEXRD",
-            "NumPy",
-            "SciPy",
-            "PySide6",
+            'HEXRDGUI',
+            'HEXRD',
+            'NumPy',
+            'SciPy',
+            'PySide6',
         ]
 
         for package in packages:
@@ -87,5 +88,5 @@ class AboutDialog(QObject):
             item.setText(1, version(package.lower()))
 
         python = QTreeWidgetItem(tree)
-        python.setText(0, "Python")
+        python.setText(0, 'Python')
         python.setText(1, sys.version)

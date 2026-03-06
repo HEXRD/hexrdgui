@@ -149,7 +149,7 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
                         # Format it into a string
                         data = f'{data:.6g}'
 
-                    data = f"{data}{config['_units']}"
+                    data = f'{data}{config["_units"]}'
 
         return data
 

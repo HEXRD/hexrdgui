@@ -12,7 +12,6 @@ from hexrdgui.utils import block_signals
 
 
 class WppfStylePicker(QObject):
-
     def __init__(
         self,
         amorphous_visible: bool = False,
@@ -23,7 +22,8 @@ class WppfStylePicker(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'wppf_style_picker.ui', parent  # type: ignore[arg-type]
+            'wppf_style_picker.ui',
+            parent,  # type: ignore[arg-type]
         )
         self.ui.installEventFilter(enter_key_filter)
 

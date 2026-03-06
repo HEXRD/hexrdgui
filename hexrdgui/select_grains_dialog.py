@@ -15,7 +15,6 @@ from hexrdgui.utils import set_combobox_enabled_items
 
 
 class SelectGrainsDialog(QObject):
-
     accepted = Signal()
     rejected = Signal()
 
@@ -29,7 +28,8 @@ class SelectGrainsDialog(QObject):
 
         loader = UiLoader()
         self.ui = loader.load_file(
-            'select_grains_dialog.ui', parent  # type: ignore[arg-type]
+            'select_grains_dialog.ui',
+            parent,  # type: ignore[arg-type]
         )
 
         self.num_requested_grains = num_requested_grains

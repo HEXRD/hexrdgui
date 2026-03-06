@@ -21,7 +21,6 @@ from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
 class HKLPicksTreeViewDialog:
-
     def __init__(
         self,
         dictionary: dict,

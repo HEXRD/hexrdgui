@@ -34,7 +34,6 @@ def get_xray_propagation_sign(instr: HEDMInstrument) -> Any:
 
 
 class InstrumentViewer:
-
     def __init__(self) -> None:
         self.type = ViewType.cartesian
         self.instr = create_hedm_instrument()

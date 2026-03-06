@@ -146,9 +146,7 @@ def generate_ring_points_chi(
     xys: dict[str, np.ndarray] = {}
 
     for det_name, panel in instr.detectors.items():
-
         if panel.detector_type == 'planar':
-
             chivecs = angles_to_chi_vecs(const_chi, sample_tilt, panel)
 
             gvecs = chi_vecs_to_gvecs(chivecs, sample_tilt)
@@ -165,7 +163,6 @@ def generate_ring_points_chi(
             )
 
         elif panel.detector_type == 'cylindrical':
-
             angs = chi_to_angs(const_chi, sample_tilt, panel, instr.beam_wavelength)
 
             xy_det, rMat_ss, valid_mask = _project_on_detector_cylinder(
@@ -217,7 +214,6 @@ def calc_angles_for_fiber(mat: Material, fiber_direction: Any) -> dict[str, np.n
 
 
 if __name__ == '__main__':
-
     import cProfile
     from importlib.resources import read_text
     import pstats
@@ -252,11 +248,11 @@ if __name__ == '__main__':
     pstats.Stats(profiler).sort_stats('tottime').print_stats(3)
     pstats.Stats(profiler).sort_stats('cumtime').print_stats(3)
 
-    '''
+    """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     DEBUGGING CODE
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    '''
+    """
 
     for det_name, panel in instr.detectors.items():
         pix = panel.cartToPixel(xy[det_name], pixels=True)

@@ -6,7 +6,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class MaskBorderStylePicker(QObject):
-
     def __init__(
         self,
         original_color: str,

@@ -6,7 +6,6 @@ from hexrdgui.utils import block_signals
 
 
 class PolarizationOptionsDialog:
-
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('polarization_options_dialog.ui', parent)

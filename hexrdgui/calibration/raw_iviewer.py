@@ -14,12 +14,11 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays import update_overlay_data
 
 
-def raw_iviewer() -> "InstrumentViewer":
+def raw_iviewer() -> 'InstrumentViewer':
     return InstrumentViewer()
 
 
 class InstrumentViewer:
-
     def __init__(self) -> None:
         self.type = ViewType.raw
         self.instr = create_hedm_instrument()

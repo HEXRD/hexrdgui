@@ -331,22 +331,28 @@ class InteractiveTemplate:
         self.disconnect()
 
         self.button_press_cid = self.current_canvas.mpl_connect(
-            'button_press_event', self.on_press  # type: ignore[arg-type]
+            'button_press_event',
+            self.on_press,  # type: ignore[arg-type]
         )
         self.button_release_cid = self.current_canvas.mpl_connect(
-            'button_release_event', self.on_release  # type: ignore[arg-type]
+            'button_release_event',
+            self.on_release,  # type: ignore[arg-type]
         )
         self.motion_cid = self.current_canvas.mpl_connect(
-            'motion_notify_event', self.on_translate  # type: ignore[arg-type]
+            'motion_notify_event',
+            self.on_translate,  # type: ignore[arg-type]
         )
         self.key_press_cid = self.current_canvas.mpl_connect(
-            'key_press_event', self.on_key  # type: ignore[arg-type]
+            'key_press_event',
+            self.on_key,  # type: ignore[arg-type]
         )
         self.button_drag_cid = self.current_canvas.mpl_connect(
-            'motion_notify_event', self.on_rotate  # type: ignore[arg-type]
+            'motion_notify_event',
+            self.on_rotate,  # type: ignore[arg-type]
         )
         self.axes_leave_cid: int = self.current_canvas.mpl_connect(
-            'axes_leave_event', self.on_release  # type: ignore[arg-type]
+            'axes_leave_event',
+            self.on_release,  # type: ignore[arg-type]
         )
         self.current_canvas.setFocus()
 

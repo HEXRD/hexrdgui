@@ -24,7 +24,6 @@ from hexrdgui.utils import block_signals
 
 
 class ImageSeriesInfoToolbar(QWidget):
-
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
@@ -75,7 +74,6 @@ class ImageSeriesInfoToolbar(QWidget):
 
 
 class ImageSeriesToolbar(QWidget):
-
     def __init__(self, ims: Any, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 

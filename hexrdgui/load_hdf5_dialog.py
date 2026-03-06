@@ -8,7 +8,6 @@ from hexrdgui.ui_loader import UiLoader
 
 
 class LoadHDF5Dialog:
-
     def __init__(
         self,
         f: str,
