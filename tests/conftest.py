@@ -42,7 +42,17 @@ def main_window(qtbot):
     window = MainWindow()
     window.confirm_application_close = False
     qtbot.addWidget(window.ui)
-    return window
+    yield window
+
+    # Release messages widget Writers from stdout/stderr call stacks
+    # before Qt destroys the underlying C++ objects.
+    window.progress_dialog.messages_widget.release_output()
+    window.messages_widget.release_output()
+
+    # Destroy the MainWindow QObject so Qt auto-disconnects all signal
+    # connections (e.g. HexrdConfig signals → this window's slots).
+    window.deleteLater()
+    QApplication.processEvents()
 
 
 # This next fixture is necessary starting in Qt 6.8, to ensure
