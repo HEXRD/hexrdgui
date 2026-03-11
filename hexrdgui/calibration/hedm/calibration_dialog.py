@@ -10,11 +10,17 @@ from hexrd.rotations import angularDifference, mapAngle
 import hexrd.constants as cnst
 from hexrd.fitting.calibration.calibrator import Calibrator
 from hexrd.fitting.calibration.lmfit_param_handling import fix_detector_y
+from hexrd.transforms import xfcapi
+from hexrd.xrdutil import apply_correction_to_wavelength
 
 from hexrdgui.calibration.calibration_dialog import CalibrationDialog
 from hexrdgui.calibration.hedm.calibration_results_dialog import (
     HEDMCalibrationResultsDialog,
 )
+from hexrdgui.calibration.hedm.spot_diagnostics_dialog import (
+    SpotDiagnosticsDialog,
+)
+from hexrdgui.utils.spots import extract_spot_angles, parse_spots_data
 from hexrdgui.calibration.tree_item_models import CalibrationTreeItemModel
 from hexrdgui.calibration.material_calibration_dialog_callbacks import (
     MaterialCalibrationDialogCallbacks,
@@ -27,6 +33,7 @@ from hexrdgui.utils import block_signals
 
 class HEDMCalibrationDialog(CalibrationDialog):
     apply_refinement_selections_needed = Signal()
+    spot_diagnostics_requested = Signal()
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         # Need to initialize this before setup_connections() is called
@@ -73,6 +80,10 @@ class HEDMCalibrationDialog(CalibrationDialog):
         self.extra_ui.refit_pixel_scale.valueChanged.connect(self.save_refit_settings)
         self.extra_ui.refit_ome_step_scale.valueChanged.connect(
             self.save_refit_settings
+        )
+
+        self.extra_ui.spot_diagnostics.clicked.connect(
+            self.spot_diagnostics_requested.emit,
         )
 
     def show_refinements(self, b: bool) -> None:
@@ -272,6 +283,9 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         self.dialog.apply_refinement_selections_needed.connect(
             self.apply_refinement_selections
         )
+        self.dialog.spot_diagnostics_requested.connect(
+            self.show_spot_diagnostics,
+        )
 
     @property
     def grain_ids(self) -> np.ndarray:
@@ -296,6 +310,26 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
             self._xyo_det = xyo_det
 
         return self._xyo_det
+
+    def show_spot_diagnostics(self) -> None:
+        pred_angs, meas_angs = extract_spot_angles(
+            self.spots_data,
+            self.instr,
+            self.grain_ids,
+        )
+        xyo_pred = compute_xyo(self.calibrators)
+
+        self._spot_diagnostics_dialog = SpotDiagnosticsDialog(
+            instr=self.instr,
+            spots_data=self.spots_data,
+            grain_ids=self.grain_ids,
+            pred_angs=pred_angs,
+            meas_angs=meas_angs,
+            xyo_pred=xyo_pred,
+            xyo_det=self.xyo_det,
+            parent=self.dialog.ui,
+        )
+        self._spot_diagnostics_dialog.show()
 
     def on_calibration_finished(self) -> None:
         super().on_calibration_finished()
@@ -338,6 +372,21 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         if not dialog.exec():
             # Do an "undo"
             self.pop_undo_stack()
+
+        self.update_spot_diagnostics()
+
+    def update_spot_diagnostics(self) -> None:
+        dialog = getattr(self, '_spot_diagnostics_dialog', None)
+        if dialog is not None and dialog.is_visible:
+            xyo_pred = compute_xyo(self.calibrators)
+            pred_angs = compute_pred_angs(self.calibrators)
+            meas_angs = compute_meas_angs(self.calibrators, self.xyo_det)
+            dialog.update_data(
+                self.instr,
+                xyo_pred=xyo_pred,
+                pred_angs=pred_angs,
+                meas_angs=meas_angs,
+            )
 
     def push_undo_stack(self) -> Any:
         self.extra_ui_undo_stack.append(self.dialog.extra_ui_settings)
@@ -602,64 +651,138 @@ def compute_xyo(calibrators: list[Calibrator]) -> dict[str, list]:
     return xyo
 
 
-def parse_spots_data(
-    spots_data: Any,
-    instr: Any,
-    grain_ids: np.ndarray,
-    ome_period: np.ndarray | None = None,
-    refit_idx: dict[str, list[Any]] | None = None,
-) -> tuple[dict[str, list[Any]], dict[str, list[Any]], dict[str, list[Any]]]:
-    hkls: dict[str, Any] = {}
-    xyo_det: dict[str, Any] = {}
-    idx_0: dict[str, Any] = {}
-    for det_key, panel in instr.detectors.items():
-        hkls[det_key] = []
-        xyo_det[det_key] = []
-        idx_0[det_key] = []
+def compute_pred_angs(
+    calibrators: list[Calibrator],
+) -> dict[str, list[np.ndarray]]:
+    """Recompute predicted (tth, eta, ome) using current grain/instrument state.
 
-        for ig, grain_id in enumerate(grain_ids):
-            data = spots_data[grain_id][1][det_key]
-            # Convert to numpy array to make operations easier
-            data = np.array(data, dtype=object)
+    For each calibrator (grain) and detector, calls oscill_angles_of_hkls()
+    with current grain parameters and selects the omega solution closest
+    to the measured omega.
+    """
+    instr = calibrators[0].instr
+    chi = instr.chi
+    bvec = instr.beam_vector
+    tvec_s = instr.tvec
+    wavelength = instr.beam_wavelength
+    energy_correction = instr.energy_correction
 
-            # FIXME: hexrd is not happy if some detectors end up with no
-            # grain data, which sometimes happens with subpanels like Dexelas
-            if data.size == 0:
-                idx_0[det_key].append(np.empty((0,)))
-                hkls[det_key].append(np.empty((0, 3)))
-                xyo_det[det_key].append(np.empty((0, 3)))
+    pred_angs: dict[str, list[np.ndarray]] = {}
+    for calibrator in calibrators:
+        grain = calibrator.grain_params
+        rmat_c = xfcapi.make_rmat_of_expmap(grain[:3])
+        tvec_c = grain[3:6]
+        vinv_s = grain[6:]
+        bmat = calibrator.bmatx
+        ome_period = calibrator.ome_period
+
+        corrected_wavelength = apply_correction_to_wavelength(
+            wavelength,
+            energy_correction,
+            tvec_s,
+            tvec_c,
+        )
+
+        for det_key in instr.detectors:
+            pred_angs.setdefault(det_key, [])
+
+            hkls = np.asarray(
+                calibrator.data_dict['hkls'][det_key],
+                dtype=float,
+            )
+            xyo = np.asarray(
+                calibrator.data_dict['pick_xys'][det_key],
+                dtype=float,
+            )
+
+            if hkls.size == 0:
+                pred_angs[det_key].append(np.empty((0, 3)))
                 continue
 
-            valid_reflections = data[:, 0] >= 0
-            not_saturated = data[:, 4] < panel.saturation_level
+            # Two omega solutions per HKL
+            oangs0, oangs1 = xfcapi.oscill_angles_of_hkls(
+                hkls,
+                chi,
+                rmat_c,
+                bmat,
+                corrected_wavelength,
+                v_inv=vinv_s,
+                beam_vec=bvec,
+            )
 
-            if refit_idx is None:
-                idx = np.logical_and(valid_reflections, not_saturated)
-                idx_0[det_key].append(idx)
-            else:
-                idx = refit_idx[det_key][ig]
-                idx_0[det_key].append(idx)
-
-            if not np.any(idx):
-                idx_0[det_key].append(np.empty((0,)))
-                hkls[det_key].append(np.empty((0, 3)))
-                xyo_det[det_key].append(np.empty((0, 3)))
-                continue
-
-            hkls[det_key].append(np.vstack(data[idx, 2]))
-            meas_omes = np.vstack(data[idx, 6])[:, 2].reshape(sum(idx), 1)
-            xyo_det_values = np.hstack([np.vstack(data[idx, 7]), meas_omes])
-
-            # re-map omegas if need be
-            if ome_period is not None:
-                xyo_det_values[:, 2] = mapAngle(
-                    xyo_det_values[:, 2],
-                    ome_period,
+            # Select the solution whose omega is closest to measured
+            meas_omes = mapAngle(xyo[:, 2], ome_period)
+            calc_omes = np.vstack(
+                [
+                    mapAngle(oangs0[:, 2], ome_period),
+                    mapAngle(oangs1[:, 2], ome_period),
+                ]
+            )  # (2, n)
+            diff = np.abs(
+                angularDifference(
+                    np.tile(meas_omes, (2, 1)),
+                    calc_omes,
                 )
+            )
+            best = np.argmin(diff, axis=0)  # 0 or 1 per reflection
 
-            xyo_det[det_key].append(xyo_det_values)
+            n = len(hkls)
+            idx = np.arange(n)
+            both = np.stack([oangs0, oangs1])  # (2, n, 3)
+            pred_angs[det_key].append(both[best, idx])
 
-    return hkls, xyo_det, idx_0
+    return pred_angs
+
+
+def compute_meas_angs(
+    calibrators: list[Calibrator],
+    xyo_det: dict[str, list[np.ndarray]],
+) -> dict[str, list[np.ndarray]]:
+    """Convert measured detector XY to angular coordinates using current geometry.
+
+    Uses panel.cart_to_angles() with per-reflection rmat_s (from chi +
+    measured omega) to account for grain position offset.
+    """
+    instr = calibrators[0].instr
+    chi = instr.chi
+    tvec_s = instr.tvec
+
+    meas_angs: dict[str, list[np.ndarray]] = {}
+    for ig, calibrator in enumerate(calibrators):
+        grain = calibrator.grain_params
+        tvec_c = grain[3:6]
+
+        for det_key, panel in instr.detectors.items():
+            meas_angs.setdefault(det_key, [])
+
+            xyo = xyo_det[det_key][ig]
+            if xyo.size == 0:
+                meas_angs[det_key].append(np.empty((0, 3)))
+                continue
+
+            xy = xyo[:, :2]
+            omes = xyo[:, 2]
+
+            # Undistort measured positions before converting to angles
+            if panel.distortion is not None:
+                xy = panel.distortion.apply(xy)
+
+            n = len(omes)
+            result = np.empty((n, 3))
+            for i in range(n):
+                rmat_s = xfcapi.make_sample_rmat(chi, omes[i])
+                tth_eta, _ = panel.cart_to_angles(
+                    xy[i : i + 1],
+                    rmat_s=rmat_s,
+                    tvec_s=tvec_s,
+                    tvec_c=tvec_c,
+                )
+                result[i, :2] = tth_eta[0]
+                result[i, 2] = omes[i]
+
+            meas_angs[det_key].append(result)
+
+    return meas_angs
 
 
 REFINEMENT_OPTIONS = {

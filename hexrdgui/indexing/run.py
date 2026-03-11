@@ -566,12 +566,14 @@ class FitGrainsRunner(Runner):
         if self.cancel_tracker:
             kwargs['check_if_canceled_func'] = self.cancel_tracker.get_need_to_cancel
 
-        self.fit_grains_results = fit_grains(**kwargs)
+        kwargs['return_pull_spots_data'] = True
+        result = fit_grains(**kwargs)
         if self.operation_canceled:
             # Operation was canceled
             return
 
-        assert self.fit_grains_results is not None
+        assert result is not None
+        self.fit_grains_results, self.spots_data = result
         self.result_grains_table = create_grains_table(self.fit_grains_results)
         print('Fit Grains Complete')
         HexrdConfig().fit_grains_grains_table = copy.deepcopy(self.result_grains_table)
@@ -613,9 +615,11 @@ class FitGrainsRunner(Runner):
         )
 
         assert self.result_grains_table is not None
+        spots_data = getattr(self, 'spots_data', None)
         dialog = create_fit_grains_results_dialog(
             grains_table=self.result_grains_table,
             allow_export_workflow=allow_export_workflow,
+            spots_data=spots_data,
             parent=self._parent,
         )
         self.fit_grains_results_dialog = dialog
@@ -651,6 +655,7 @@ def create_fit_grains_results_dialog(
     grains_table: np.ndarray,
     parent: QWidget | None = None,
     allow_export_workflow: bool = True,
+    spots_data: dict | None = None,
 ) -> Any:
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
@@ -666,6 +671,7 @@ def create_fit_grains_results_dialog(
         material=material,
         parent=parent,
         allow_export_workflow=allow_export_workflow,
+        spots_data=spots_data,
     )
     dialog.ui.resize(1200, 800)
 
