@@ -213,12 +213,13 @@ class InstrumentViewer:
         filename = Path(filename)
 
         with open(filename, 'w') as fid:
-            eta_vec = np.degrees(self.angular_grid[0])
+            eta_vec = np.degrees(self.angular_grid[0][:, 0])
+            tth = np.degrees(self.angular_grid[1][0, :])
             intensities = self.img
             first_block = True
-            for i, eta in enumerate(np.average(eta_vec, axis=1).flatten()):
-                if np.all(np.isnan(intensities[i])):
-                    # Skip this block
+            for i, eta in enumerate(eta_vec):
+                if np.sum(~np.isnan(intensities[i])) <= 3:
+                    # Skip the block if it has less than 3 non-nan points
                     continue
 
                 if first_block:
@@ -229,9 +230,7 @@ class InstrumentViewer:
 
                 fid.write(hstr)
                 fid.write(block_hdr)
-                integral_data = HexrdConfig().last_unscaled_azimuthal_integral_data
-                assert integral_data is not None
-                tth = integral_data[0]
+
                 for rho, inten in zip(tth, intensities[i]):
                     if np.isnan(inten):
                         continue
