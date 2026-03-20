@@ -50,6 +50,7 @@ class InteractiveTemplate:
         self.motion_cid: int | None = None
         self.key_press_cid: int | None = None
         self.button_drag_cid: int | None = None
+        self.axes_leave_cid: int | None = None
 
     @property
     def axis(self) -> Axes:
@@ -231,14 +232,22 @@ class InteractiveTemplate:
     def disconnect(self) -> None:
         if self.button_press_cid is not None:
             self.current_canvas.mpl_disconnect(self.button_press_cid)
+            self.button_press_cid = None
         if self.button_release_cid is not None:
             self.current_canvas.mpl_disconnect(self.button_release_cid)
+            self.button_release_cid = None
         if self.motion_cid is not None:
             self.current_canvas.mpl_disconnect(self.motion_cid)
+            self.motion_cid = None
         if self.key_press_cid is not None:
             self.current_canvas.mpl_disconnect(self.key_press_cid)
+            self.key_press_cid = None
         if self.button_drag_cid is not None:
             self.current_canvas.mpl_disconnect(self.button_drag_cid)
+            self.button_drag_cid = None
+        if self.axes_leave_cid is not None:
+            self.current_canvas.mpl_disconnect(self.axes_leave_cid)
+            self.axes_leave_cid = None
 
     def completed(self) -> None:
         self.disconnect()
@@ -350,7 +359,7 @@ class InteractiveTemplate:
             'motion_notify_event',
             self.on_rotate,  # type: ignore[arg-type]
         )
-        self.axes_leave_cid: int = self.current_canvas.mpl_connect(
+        self.axes_leave_cid = self.current_canvas.mpl_connect(
             'axes_leave_event',
             self.on_release,  # type: ignore[arg-type]
         )

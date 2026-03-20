@@ -856,6 +856,8 @@ class LLNLImportToolDialog(QObject):
             # why this is the case but it may be related to being a parent to
             # the QProgressDialog.
             ImageLoadManager().read_data(files, ui_parent=self.ui.parent())
+            if self.it is not None:
+                self.it.disconnect()
             self.it = InteractiveTemplate(
                 self.canvas, self.image_plate, instrument=self.instrument
             )
@@ -1100,6 +1102,9 @@ class LLNLImportToolDialog(QObject):
     def reset_panel(self) -> None:
         # Remove any templates that exist
         self.clear_boundry()
+        if self.it is not None:
+            self.it.disconnect()
+            self.it = None
         # Reset internal state
         self.completed = []
         self.atlas_coords = None
