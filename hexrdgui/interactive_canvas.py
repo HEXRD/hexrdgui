@@ -382,6 +382,61 @@ class InteractiveCanvasMixin(_CanvasBase):
         self.draw_idle()
 
     # ------------------------------------------------------------------
+    # Limit clamping
+    # ------------------------------------------------------------------
+
+    def _clamp_limits(
+        self,
+        ax: Axes,
+        xlim: tuple[float, float],
+        ylim: tuple[float, float],
+    ) -> tuple[tuple[float, float], tuple[float, float]]:
+        """Clamp *xlim*/*ylim* so the view stays within the image extent."""
+        info = self._axis_img_info.get(ax)
+        if info is None:
+            return xlim, ylim
+
+        extent = info[0]
+        left, right, bottom, top = extent
+        xlim = self._clamp_one_axis(xlim, left, right)
+        ylim = self._clamp_one_axis(ylim, bottom, top)
+        return xlim, ylim
+
+    @staticmethod
+    def _clamp_one_axis(
+        lim: tuple[float, float],
+        bound_a: float,
+        bound_b: float,
+    ) -> tuple[float, float]:
+        """Clamp a single axis limit pair to stay within bounds.
+
+        Handles inverted axes (lim[0] > lim[1]) and inverted bounds
+        (bound_a > bound_b) correctly.
+        """
+        v0, v1 = lim
+        inverted = v0 > v1
+        if inverted:
+            v0, v1 = v1, v0
+
+        b_lo, b_hi = min(bound_a, bound_b), max(bound_a, bound_b)
+        view_range = v1 - v0
+        data_range = b_hi - b_lo
+
+        if view_range >= data_range:
+            # Zoomed out past full extent — snap to extent
+            v0, v1 = b_lo, b_hi
+        else:
+            # Shift to stay within bounds
+            if v0 < b_lo:
+                v0, v1 = b_lo, b_lo + view_range
+            elif v1 > b_hi:
+                v0, v1 = b_hi - view_range, b_hi
+
+        if inverted:
+            v0, v1 = v1, v0
+        return (v0, v1)
+
+    # ------------------------------------------------------------------
     # Zoom math
     # ------------------------------------------------------------------
 
@@ -423,6 +478,7 @@ class InteractiveCanvasMixin(_CanvasBase):
 
         new_xlim = (new_x0, new_x1)
         new_ylim = (new_y0, new_y1)
+        new_xlim, new_ylim = self._clamp_limits(ax, new_xlim, new_ylim)
 
         for linked in self._get_linked_axes(ax):
             old_xlim, old_ylim = self._pending_limits.get(
@@ -457,6 +513,7 @@ class InteractiveCanvasMixin(_CanvasBase):
 
         new_xlim = (xlim[0] + dx_data, xlim[1] + dx_data)
         new_ylim = (ylim[0] + dy_data, ylim[1] + dy_data)
+        new_xlim, new_ylim = self._clamp_limits(ax, new_xlim, new_ylim)
 
         for linked in self._get_linked_axes(ax):
             old_xlim, old_ylim = self._pending_limits.get(
