@@ -62,6 +62,8 @@ class MaskRegionsDialog(QObject):
         self.ui.show()
 
     def disconnect_all(self) -> None:
+        if self.canvas_ids:
+            self.canvas.unsuppress_pan()
         for id in self.canvas_ids:
             self.canvas.mpl_disconnect(id)
         self.canvas_ids.clear()
@@ -84,6 +86,7 @@ class MaskRegionsDialog(QObject):
         self.canvas_ids.append(
             self.canvas.mpl_connect('axes_leave_event', self.axes_exited)
         )
+        self.canvas.suppress_pan()
 
     def setup_ui_connections(self) -> None:
         self.ui.button_box.accepted.connect(self.apply_masks)

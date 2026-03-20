@@ -79,6 +79,10 @@ class InteractiveCanvasMixin(_CanvasBase):
         # allowed after the user has zoomed into the canvas.
         self._zoom_has_occurred: bool = False
 
+        # External code (e.g. mask dialogs) can suppress panning so that
+        # left-click drag is forwarded to matplotlib callbacks instead.
+        self._pan_suppress_count: int = 0
+
         # Nav toolbar reference (set externally by image_tab_widget)
         self._nav_toolbar: NavigationToolbar | None = None
 
@@ -148,6 +152,15 @@ class InteractiveCanvasMixin(_CanvasBase):
             if ax.get_navigate_mode() is not None:
                 return True
         return False
+
+    def suppress_pan(self) -> None:
+        """Increment the pan suppression counter.  While > 0, left-click
+        drag is forwarded to matplotlib instead of being used for panning."""
+        self._pan_suppress_count += 1
+
+    def unsuppress_pan(self) -> None:
+        """Decrement the pan suppression counter."""
+        self._pan_suppress_count = max(0, self._pan_suppress_count - 1)
 
     # ------------------------------------------------------------------
     # Axis rect / pixmap helpers
@@ -505,6 +518,7 @@ class InteractiveCanvasMixin(_CanvasBase):
             event.button() == Qt.MouseButton.LeftButton
             and not self._toolbar_mode_active()
             and self._zoom_has_occurred
+            and self._pan_suppress_count == 0
         ):
             pos = event.position()
             ax = self._axes_under_cursor(pos.toPoint())
