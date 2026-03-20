@@ -135,8 +135,11 @@ def q_to_tth(
     q: Union[np.ndarray, float],
     beam_energy: float,
 ) -> Union[np.ndarray, float]:
-    # Convert the q-space values (Angstrom^-1) to tth in degrees
-    tth = np.arcsin(q / 4 / np.pi * KEV_TO_WAVELENGTH / beam_energy) * 2
+    # Convert the q-space values (Angstrom^-1) to tth in degrees.
+    # Clamp to arcsin's domain to avoid NaN when tick locations exceed the
+    # physically meaningful range (e.g. during interactive zoom/pan).
+    arg = np.clip(q / 4 / np.pi * KEV_TO_WAVELENGTH / beam_energy, -1, 1)
+    tth = np.arcsin(arg) * 2
     return np.degrees(tth)
 
 
