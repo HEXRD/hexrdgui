@@ -76,8 +76,15 @@ class HandDrawnMaskDialog(QObject):
         self.bp_id = self.canvas.mpl_connect('button_press_event', self.button_pressed)
         self.enter_id = self.canvas.mpl_connect('axes_enter_event', self.axes_entered)
         self.exit_id = self.canvas.mpl_connect('axes_leave_event', self.axes_exited)
+        self.canvas.suppress_pan()
 
     def disconnect_canvas_connections(self) -> None:
+        had_connections = (
+            self.bp_id is not None
+            or self.enter_id is not None
+            or self.exit_id is not None
+        )
+
         if self.bp_id:
             self.canvas.mpl_disconnect(self.bp_id)
             self.bp_id = None
@@ -89,6 +96,9 @@ class HandDrawnMaskDialog(QObject):
         if self.exit_id:
             self.canvas.mpl_disconnect(self.exit_id)
             self.exit_id = None
+
+        if had_connections:
+            self.canvas.unsuppress_pan()
 
     def move_dialog_to_left(self) -> None:
         # This moves the dialog to the left border of the parent
