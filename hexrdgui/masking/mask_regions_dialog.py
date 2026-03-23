@@ -319,7 +319,8 @@ class MaskRegionsDialog(QObject):
         masks_changed_signal[self.image_mode].emit()
 
     def button_released(self, event: MouseEvent) -> None:
-        assert self.interactive_template is not None
+        if self.interactive_template is None:
+            return
         if not self.press or not self.interactive_template.static_mode:
             return
 
