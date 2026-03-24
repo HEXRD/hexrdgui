@@ -192,7 +192,10 @@ class PinholeCorrectionEditor(QObject):
         vp = v.copy()
         # These units are in mm, but we display in micrometers
         for key, value in v.items():
-            if key in ('num_phi_elements', 'absorption_length', 'layer_type'):
+            if key == 'layer_type':
+                # This is a string, not numeric. Skip conversion.
+                continue
+            elif key in ('num_phi_elements', 'absorption_length'):
                 multiplier = 1.0
             else:
                 multiplier = 1e3
