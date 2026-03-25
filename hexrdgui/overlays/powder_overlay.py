@@ -616,15 +616,31 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                         # The ang_crds need to be recomputed for the
                         # current x-ray source for stereo.
                         # FIXME: is there a better way to do this?
-                        ang_crds, _ = panel.cart_to_angles(
+                        stereo_ang_crds, _ = panel.cart_to_angles(
                             xys,
                             tvec_s=instr.tvec,
                         )
                         stereo_ij = angles_to_stereo(
-                            ang_crds,
+                            stereo_ang_crds,
                             instr,
                             HexrdConfig().stereo_size,
                         )
+
+                    # Sort by eta from the correct x-ray source
+                    # context and detect gaps independently (the
+                    # polar gap detection above uses a different
+                    # coordinate system that may not apply here).
+                    stereo_eta = np.degrees(stereo_ang_crds[:, 1])
+                    stereo_eta = mapAngle(stereo_eta, self.eta_period, units='degrees')
+                    stereo_eidx = np.argsort(stereo_eta)
+                    stereo_ij = stereo_ij[stereo_eidx]
+                    stereo_eta = stereo_eta[stereo_eidx]
+
+                    stereo_diff = np.diff(stereo_eta)
+                    stereo_delta_eta = np.nanmedian(np.abs(stereo_diff))
+                    stereo_tol = stereo_delta_eta * 2
+                    (stereo_gaps,) = np.nonzero(np.abs(stereo_diff) > stereo_tol)
+                    stereo_ij = np.insert(stereo_ij, stereo_gaps + 1, np.nan, axis=0)
 
                     # append to list with nan padding
                     ring_pts.append(np.vstack([stereo_ij, nans_row]))
