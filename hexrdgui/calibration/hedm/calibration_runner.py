@@ -7,7 +7,8 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QWidget
 
 from hexrd import instrument
-from hexrd.fitting.calibration import GrainCalibrator, InstrumentCalibrator
+from hexrd.core.fitting.calibration import InstrumentCalibrator
+from hexrd.hedm.fitting.calibration import GrainCalibrator
 
 from hexrdgui.calibration.hedm import (
     compute_xyo,
