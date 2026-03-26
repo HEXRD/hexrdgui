@@ -770,8 +770,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.update_status_bar.emit(msg)
 
     def on_detectors_changed(self) -> None:
-        # Reset azimuthal lineout detectors
-        self._azimuthal_lineout_detectors = None
+        # Reset azimuthal lineout detectors, unless we are loading state
+        # (the saved state already has the correct lineout detectors for the
+        # saved instrument).
+        if not self.loading_state:
+            self._azimuthal_lineout_detectors = None
 
     @property
     def indexing_config(self) -> dict[str, Any]:
