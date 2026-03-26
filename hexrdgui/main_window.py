@@ -1528,7 +1528,11 @@ class MainWindow(QObject):
             return
 
         overwriting_last_loaded = False
-        if selected_file == HexrdConfig().last_loaded_state_file:
+        last_loaded = HexrdConfig().last_loaded_state_file
+        if (
+            last_loaded is not None
+            and Path(selected_file).resolve() == Path(last_loaded).resolve()
+        ):
             # We are over-writing the last loaded state file.
             # We must save to a temp file to avoid over-writing the
             # imageseries, which are already open...
