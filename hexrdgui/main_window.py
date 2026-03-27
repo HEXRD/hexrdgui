@@ -663,6 +663,9 @@ class MainWindow(QObject):
         self.color_map_editor.reset_range()
         self.update_image_mode_enable_states()
 
+        for overlay in HexrdConfig().overlays:
+            overlay.on_new_images_loaded()
+
     def on_action_open_materials_triggered(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
             self.ui,
