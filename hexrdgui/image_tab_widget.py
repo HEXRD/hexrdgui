@@ -161,7 +161,13 @@ class ImageTabWidget(QTabWidget):
 
     def change_ims_image(self, pos: int) -> None:
         HexrdConfig().current_imageseries_idx = pos
-        self.update_needed.emit()
+
+        if HexrdConfig().image_mode == ViewType.raw:
+            # Update image data on existing canvases without clearing
+            # and rebuilding tabs, which causes a render flash.
+            self._update_raw_images()
+        else:
+            self.update_needed.emit()
 
         is_aggregated = HexrdConfig().is_aggregated
         has_omegas = HexrdConfig().has_omegas
@@ -177,6 +183,14 @@ class ImageTabWidget(QTabWidget):
             if redraw:
                 for canvas in self.active_canvases:
                     canvas.redraw_overlay(overlay)
+
+    def _update_raw_images(self) -> None:
+        """Update raw image data on existing canvases without rebuilding tabs."""
+        if HexrdConfig().tab_images:
+            for i, name in enumerate(self.image_names):
+                self.image_canvases[i].load_images(image_names=[name])
+        else:
+            self.image_canvases[0].load_images(image_names=self.image_names)
 
     @Slot(bool)
     def show_toolbar(self, b: bool) -> None:

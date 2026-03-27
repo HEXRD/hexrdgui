@@ -130,9 +130,7 @@ class Overlay(ABC):
         self.setup_connections()
 
     def setup_connections(self) -> None:
-        from hexrdgui.image_load_manager import ImageLoadManager
-
-        ImageLoadManager().new_images_loaded.connect(self.on_new_images_loaded)
+        pass
 
     @property
     def plot_data_keys(self) -> tuple[str, ...]:
