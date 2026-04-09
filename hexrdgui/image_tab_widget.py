@@ -346,8 +346,8 @@ class ImageTabWidget(QTabWidget):
         self.norm = norm
         self.update_canvas_norms()
 
-    def set_scaling(self, scaling: Any) -> None:
-        self.scaling = scaling
+    def set_scaling(self, scaling_name: str) -> None:
+        self.scaling = scaling_name
         self.update_canvas_scaling()
 
     @property

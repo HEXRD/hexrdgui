@@ -35,6 +35,7 @@ from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.hand_picked_fibers_widget import HandPickedFibersWidget
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.navigation_toolbar import NavigationToolbar
+from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
@@ -45,8 +46,6 @@ import hexrdgui.constants
 import hexrdgui.resources.indexing
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     import matplotlib as mpl
 
 
@@ -638,8 +637,8 @@ class OmeMapsViewerDialog(QObject):
             self.im.set_norm(norm)
             self.draw()
 
-    def set_scaling(self, transform: Callable[[np.ndarray], np.ndarray]) -> None:
-        self.transform = transform
+    def set_scaling(self, scaling_name: str) -> None:
+        self.transform = SCALING_OPTIONS[scaling_name]
         self.update_plot()
 
     def create_spots(self) -> None:

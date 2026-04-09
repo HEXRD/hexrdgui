@@ -18,6 +18,7 @@ from hexrdgui.grains_viewer_dialog import GrainsViewerDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing.utils import write_grains_txt
 from hexrdgui.navigation_toolbar import NavigationToolbar
+from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.dialog import add_help_url
@@ -266,8 +267,8 @@ class IndexingResultsDialog(QObject):
             self.im.set_norm(norm)
             self.draw()
 
-    def set_scaling(self, transform: Any) -> None:
-        self.transform = transform
+    def set_scaling(self, scaling_name: str) -> None:
+        self.transform = SCALING_OPTIONS[scaling_name]
         self.update_plot()
 
     def view_grains(self) -> None:

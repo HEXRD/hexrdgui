@@ -43,6 +43,7 @@ class InstrumentViewer:
         HexrdConfig().apply_panel_buffer_to_images(self.images_dict)
 
         self.img: np.ma.MaskedArray | None = None
+        self.unmasked_min: float | None = None
 
         # Perform some checks before proceeding
         self.check_keys_match()
@@ -335,6 +336,7 @@ class InstrumentViewer:
         # In case there were any nans...
         nan_mask = np.isnan(img)
         self.img = np.ma.masked_array(img, mask=nan_mask, fill_value=0.0)
+        self.unmasked_min = float(np.nanmin(self.img))
 
     def update_images_dict(self) -> None:
         if HexrdConfig().any_intensity_corrections:

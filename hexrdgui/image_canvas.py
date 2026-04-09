@@ -38,6 +38,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
 from hexrdgui.masking.create_polar_mask import create_polar_line_data_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
+from hexrdgui.scaling import create_scaling_function
 from hexrdgui.snip_viewer_dialog import SnipViewerDialog
 from hexrdgui.utils.array import split_array
 from hexrdgui.utils.conversions import (
@@ -114,7 +115,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         self.wppf_difference_axis: Axes | None = None
         self.auto_picked_data_artists: list[Any] = []
         self.beam_marker_artists: list[Any] = []
-        self._transform = lambda x: x
+        self._scaling_name: str = 'none'
         self._last_stereo_size = None
         self.stereo_border_artists: list[Any] = []
         self.azimuthal_overlay_artists: list[Any] = []
@@ -379,8 +380,9 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
             images_dict = iviewer.raw_images_to_stitched(image_names, images_dict)
 
             # We also apply the scaling manually here
+            scaling = create_scaling_function(self._scaling_name, self.unmasked_min)
             for k, img in images_dict.items():
-                images_dict[k] = self._transform(img)
+                images_dict[k] = scaling(img)
 
         return images_dict
 
@@ -1714,17 +1716,43 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         self.clear_figure()
         self.draw_idle()
 
+    @property
+    def unmasked_min(self) -> float | None:
+        """The minimum from unmasked image data.
+
+        Used by scaling functions so that the display doesn't jump
+        when user-drawn masks happen to remove the current minimum
+        pixel value.
+
+        For non-raw views, each viewer stores an unmasked_min right
+        before masks are applied during image generation.
+        """
+        try:
+            if self.mode == ViewType.raw:
+                images = HexrdConfig().images_dict
+                return float(min(np.nanmin(img) for img in images.values()))
+            elif self.iviewer is not None:
+                iviewer = cast(
+                    'PolarViewer | CartesianViewer | StereoViewer',
+                    self.iviewer,
+                )
+                return iviewer.unmasked_min
+        except (ValueError, AttributeError):
+            pass
+
+        return None
+
     def transform(self, img: np.ndarray) -> np.ndarray:
         if self.mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
             # We actually perform the transformation manually later.
             # Don't do it now.
             return img
 
-        return self._transform(img)
+        return create_scaling_function(self._scaling_name, self.unmasked_min)(img)
 
-    def set_scaling(self, transform: Callable[[np.ndarray], np.ndarray]) -> None:
+    def set_scaling(self, scaling_name: str) -> None:
         # Apply the scaling, and set the data
-        self._transform = transform
+        self._scaling_name = scaling_name
         if self.mode == ViewType.raw and HexrdConfig().stitch_raw_roi_images:
             # Apply the transformation by loading the images
             image_names = list(self.raw_axes)

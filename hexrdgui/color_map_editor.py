@@ -274,8 +274,8 @@ class ColorMapEditor:
         self.image_object.set_norm(norm)
 
     def update_scaling(self) -> None:
-        new_scaling = SCALING_OPTIONS[self.ui.scaling.currentText()]
-        self.image_object.set_scaling(new_scaling)
+        scaling_name = self.ui.scaling.currentText()
+        self.image_object.set_scaling(scaling_name)
 
         # Reset the bounds, as the histogram could potentially have moved.
         # This will update the data too.

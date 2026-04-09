@@ -34,6 +34,7 @@ class InstrumentViewer:
         self.instr_pv = create_view_hedm_instrument()
         self.pv: PolarView | None = None
         self.img: np.ndarray | None = None
+        self.unmasked_min: float | None = None
 
         self.draw_stereo()
 
@@ -109,6 +110,8 @@ class InstrumentViewer:
             self.draw_stereo_from_raw()
 
         self.fill_image_with_nans()
+        if self.img is not None:
+            self.unmasked_min = float(np.nanmin(self.img))
 
     def draw_stereo_from_raw(self) -> None:
         self.img = stereo_project(
