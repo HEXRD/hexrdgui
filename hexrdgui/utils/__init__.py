@@ -71,6 +71,7 @@ def convert_tilt_convention(
             return
 
     # Update to the new mapping
+    assert new_convention is not None
     rme = RotMatEuler(np.zeros(3), **new_convention)
     for key in det_keys:
         tilts = iconfig['detectors'][key]['transform']['tilt']

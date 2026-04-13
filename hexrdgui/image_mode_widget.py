@@ -256,7 +256,7 @@ class ImageModeWidget(QObject):
 
     def eventFilter(self, target: QObject, event: QEvent) -> bool:
         if target is self.ui and event.type() == QEvent.Type.Resize:
-            size = self.ui.polar_scroll_area_contents.minimumSizeHint()
+            size = self.ui.polar_scroll_area_contents.minimumSizeHint()  # type: ignore[attr-defined]
 
             # Make the minimum height of the polar scroll area to be
             # either its size hint or half the display height, whichever
@@ -268,9 +268,9 @@ class ImageModeWidget(QObject):
             # its minimum width, because we don't allow horizontal
             # scrolling.
             # Include the vertical bar width in this minimum width
-            vert_bar = self.ui.polar_scroll_area.verticalScrollBar()
+            vert_bar = self.ui.polar_scroll_area.verticalScrollBar()  # type: ignore[attr-defined]
             size.setWidth(size.width() + vert_bar.sizeHint().width())
-            self.ui.setMinimumSize(size)
+            self.ui.setMinimumSize(size)  # type: ignore[attr-defined]
 
         return False
 

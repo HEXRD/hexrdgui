@@ -527,7 +527,7 @@ class WppfOptionsDialog(QObject):
         if self.include_amorphous:
             kwargs['amorphous_model'] = Amorphous(
                 [],
-                **self.amorphous_kwargs,
+                **self.amorphous_kwargs,  # type: ignore[arg-type]
             )
 
         return generate_params(**kwargs)
@@ -1815,7 +1815,7 @@ class WppfOptionsDialog(QObject):
         if self.include_amorphous:
             amorphous_model = Amorphous(
                 tth_list=expt_spectrum[:, 0],
-                **self.amorphous_kwargs,
+                **self.amorphous_kwargs,  # type: ignore[arg-type]
             )
 
         extra_kwargs: dict[str, Any] = {}
