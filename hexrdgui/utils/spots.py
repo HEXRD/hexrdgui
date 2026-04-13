@@ -92,7 +92,11 @@ def filter_spots_data(
             # Determine the filter mask
             if refit_idx is None:
                 valid_reflections = data[:, 0] >= 0
-                not_saturated = data[:, 4] < panel.saturation_level
+                # Only check saturation for valid reflections to avoid
+                # NaN comparison warnings from invalid spots.
+                max_int = np.asarray(data[valid_reflections, 4], dtype=float)
+                not_saturated = np.ones(len(data), dtype=bool)
+                not_saturated[valid_reflections] = max_int < panel.saturation_level
                 idx = np.logical_and(valid_reflections, not_saturated)
             else:
                 idx = refit_idx[det_key][ig]
