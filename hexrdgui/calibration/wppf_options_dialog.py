@@ -482,9 +482,10 @@ class WppfOptionsDialog(QObject):
         if use_experiment_file and not Path(self.experiment_file).exists():
             raise Exception(f'Experiment file, {self.experiment_file}, does not exist')
 
-        if not any(x.vary for x in self.params.values()):
-            msg = 'All parameters are fixed. Need to vary at least one'
-            raise Exception(msg)
+        if isinstance(self.wppf_object, Rietveld):
+            if not any(x.vary for x in self.params.values()):
+                msg = 'All parameters are fixed. Need to vary at least one'
+                raise Exception(msg)
 
         if self.background_method == 'spline':
             points = self.background_method_dict['spline']
@@ -1578,9 +1579,9 @@ class WppfOptionsDialog(QObject):
 
         # Insert the background and peak shape dicts too
         method_dict['Background'] = self.background_tree_dict
-        method_dict['Instrumental Parameters']['Peak Parameters'] = (
-            self.peak_shape_tree_dict
-        )
+        method_dict['Instrumental Parameters'][
+            'Peak Parameters'
+        ] = self.peak_shape_tree_dict
         method_dict['Amorphous'] = self.amorphous_tree_dict
 
         return method_dict
