@@ -265,7 +265,7 @@ class MaterialEditorWidget(QObject):
         # We need to modify the opposite widget to keep c_to_a the same
         c_to_a = self.ui.c_to_a.value()
         other_w = w_a if w is w_c else w_c
-        other_v = w_a.value() * c_to_a if w is w_a else w_c.value() / c_to_a
+        other_v = w_a.value() * c_to_a if w is w_a else w_c.value() / c_to_a  # type: ignore[attr-defined]
         with block_signals(other_w):
             other_w.setValue(other_v)
 

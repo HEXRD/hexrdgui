@@ -415,8 +415,8 @@ class ZoomCanvas(FigureCanvas):
             a3_x[valid_a3] = np.nansum(roi, axis=1)
         else:
             if self.in_zoom_axis and self.vhlines:
-                (x,) = self.vhlines[0].get_xdata()  # type: ignore[misc]
-                (y,) = self.vhlines[1].get_ydata()  # type: ignore[misc]
+                (x,) = self.vhlines[0].get_xdata()  # type: ignore[misc, str-unpack]
+                (y,) = self.vhlines[1].get_ydata()  # type: ignore[misc, str-unpack]
             else:
                 # Use the center of the plot
                 xlims = roi[0:2, 0]

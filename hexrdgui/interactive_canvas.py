@@ -169,8 +169,8 @@ class InteractiveCanvasMixin(_CanvasBase):
     @staticmethod
     def _axis_bg_color(ax: Axes) -> QColor:
         """Return the axis facecolor as a QColor."""
-        r, g, b, a = ax.get_facecolor()  # type: ignore[misc]
-        return QColor.fromRgbF(r, g, b, a)
+        r, g, b, a = ax.get_facecolor()  # type: ignore[misc, str-unpack]
+        return QColor.fromRgbF(float(r), float(g), float(b), float(a))
 
     def _build_axis_data(self) -> None:
         """Compute widget rects, extract sub-pixmaps, and build full-data
