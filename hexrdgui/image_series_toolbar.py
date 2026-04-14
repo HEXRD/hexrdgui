@@ -126,13 +126,6 @@ class ImageSeriesToolbar(QWidget):
         self.omega_label = QLabel(self._parent_widget())
         self.omega_label.setVisible(False)
 
-        # Compute the text width for the maximum size label we will have
-        # with the current font, and set the label width to be fixed at
-        # this width. This will prevent the slider from shifting around
-        # while we are sliding.
-        example_label_text = omega_label_text(359.999, 359.999)
-        text_width = self.text_width(example_label_text)
-        self.omega_label.setFixedWidth(text_width)
         self.frame.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.layout = QGridLayout(self.widget)
@@ -164,10 +157,6 @@ class ImageSeriesToolbar(QWidget):
             elif size and not self._show and current_tab:
                 self._show = True
             self.widget.setVisible(self._show)
-            if not self.slider.minimumWidth():
-                parent = self._parent_widget()
-                if parent is not None:
-                    self.slider.setMinimumWidth(parent.width() // 2)
             if not size == self.slider.maximum():
                 self.slider.setMaximum(size)
                 self.frame.setToolTip(f'Max: {size}')
@@ -180,6 +169,7 @@ class ImageSeriesToolbar(QWidget):
             self.widget.setVisible(self._show)
 
         self.update_omega_label_text()
+        self.update_omega_label_minimum_width()
 
     def update_range(self, current_tab: bool) -> None:
         self.set_range(current_tab)
@@ -217,6 +207,23 @@ class ImageSeriesToolbar(QWidget):
             return
 
         self.omega_label.setText(omega_label_text(*ome_range))  # type: ignore[misc]
+
+    def update_omega_label_minimum_width(self) -> None:
+        """Set a minimum width based on the actual omega data so the
+        slider does not shift around while sliding. Find the pair
+        that produces the longest formatted string."""
+        assert self.omega_label is not None
+        imsd = HexrdConfig().omega_imageseries_dict
+        if imsd is None:
+            return
+
+        first_ims = next(iter(imsd.values()))
+        longest_text = ''
+        for pair in first_ims.omega:
+            text = omega_label_text(round(pair[0], 3), round(pair[1], 3))
+            if len(text) > len(longest_text):
+                longest_text = text
+        self.omega_label.setMinimumWidth(self.text_width(longest_text))
 
     def update_back_forward_buttons(self, val: int) -> None:
         assert self.back_button is not None
