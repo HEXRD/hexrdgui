@@ -50,6 +50,7 @@ def _load_dexelas_state_and_images(qtbot, main_window, dexelas_hedm_path):
     QApplication.processEvents()
 
 
+@pytest.mark.qt_no_exception_capture
 def test_save_images_writes_group_files(
     qtbot, main_window, dexelas_hedm_path, tmp_path
 ):
