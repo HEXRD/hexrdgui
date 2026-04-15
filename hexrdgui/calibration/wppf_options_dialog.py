@@ -482,9 +482,10 @@ class WppfOptionsDialog(QObject):
         if use_experiment_file and not Path(self.experiment_file).exists():
             raise Exception(f'Experiment file, {self.experiment_file}, does not exist')
 
-        if not any(x.vary for x in self.params.values()):
-            msg = 'All parameters are fixed. Need to vary at least one'
-            raise Exception(msg)
+        if self.method == 'Rietveld':
+            if not any(x.vary for x in self.params.values()):
+                msg = 'All parameters are fixed. Need to vary at least one'
+                raise Exception(msg)
 
         if self.background_method == 'spline':
             points = self.background_method_dict['spline']
