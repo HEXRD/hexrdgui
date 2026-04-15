@@ -64,6 +64,10 @@ class InstrumentViewer:
         return self.pv.snip_background
 
     @property
+    def unmasked_min(self) -> float | None:
+        return self.pv.unmasked_min
+
+    @property
     def erosion_mask(self) -> np.ndarray | None:
         return self.pv.erosion_mask
 

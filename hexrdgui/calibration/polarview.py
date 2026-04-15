@@ -90,6 +90,7 @@ class PolarView:
 
         self.raw_img: np.ma.MaskedArray | None = None
         self.snipped_img: np.ndarray | None = None
+        self.unmasked_min: float | None = None
         self.computation_img: np.ndarray | None = None
         self.display_image: np.ndarray | None = None
 
@@ -463,6 +464,7 @@ class PolarView:
 
         # We only apply "visible" masks to the display image
         img = self.apply_tth_distortion(img)
+        self.unmasked_min = float(np.nanmin(img))
         disp_img = self.apply_visible_masks(img)
         self.display_image = disp_img
 

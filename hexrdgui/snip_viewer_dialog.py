@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import h5py
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QFileDialog, QSizePolicy, QWidget
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.navigation_toolbar import NavigationToolbar
+from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.ui_loader import UiLoader
 
 
@@ -94,8 +95,8 @@ class SnipViewerDialog:
         self.im.set_norm(norm)
         self.draw_later()
 
-    def set_scaling(self, transform: Callable[[np.ndarray], np.ndarray]) -> None:
-        self.transform = transform
+    def set_scaling(self, scaling_name: str) -> None:
+        self.transform = SCALING_OPTIONS[scaling_name]
         self.im.set_data(self.scaled_image_data)
         self.draw_later()
 
