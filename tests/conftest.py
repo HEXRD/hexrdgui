@@ -1,5 +1,6 @@
 import gc
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -8,6 +9,7 @@ from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
 
 from hexrdgui.main_window import MainWindow
+from hexrdgui.messages_widget import MessagesWidget
 
 
 @pytest.fixture
@@ -44,10 +46,15 @@ def main_window(qtbot):
     qtbot.addWidget(window.ui)
     yield window
 
-    # Release messages widget Writers from stdout/stderr call stacks
-    # before Qt destroys the underlying C++ objects.
-    window.progress_dialog.messages_widget.release_output()
-    window.messages_widget.release_output()
+    # Release all messages widget Writers from stdout/stderr call stacks
+    # before Qt destroys the underlying C++ objects. Various components
+    # (e.g. indexing Runner, ImageLoadManager) may have created their own
+    # ProgressDialogs with MessagesWidgets that also capture output, so
+    # we drain the entire stack rather than releasing individual widgets.
+    MessagesWidget.STDOUT_CALL_STACK[:] = [sys.__stdout__]
+    MessagesWidget.STDERR_CALL_STACK[:] = [sys.__stderr__]
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
 
     # Destroy the MainWindow QObject so Qt auto-disconnects all signal
     # connections (e.g. HexrdConfig signals → this window's slots).

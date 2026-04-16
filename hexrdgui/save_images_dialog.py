@@ -5,6 +5,7 @@ from PySide6.QtCore import QThreadPool
 from PySide6.QtWidgets import QFileDialog, QInputDialog, QWidget
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.utils.imageseries import get_monolithic_ims
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.async_worker import AsyncWorker
@@ -25,7 +26,10 @@ class SaveImagesDialog:
 
     def setup_gui(self) -> None:
         self.ui.detectors.clear()
-        self.ui.detectors.addItems(HexrdConfig().detector_names)
+        if HexrdConfig().instrument_has_roi:
+            self.ui.detectors.addItems(HexrdConfig().detector_group_names)
+        else:
+            self.ui.detectors.addItems(HexrdConfig().detector_names)
         self.ui.pwd.setText(self.parent_dir)
         self.ui.pwd.setToolTip(self.parent_dir)
         if HexrdConfig().is_aggregated:
@@ -53,12 +57,39 @@ class SaveImagesDialog:
             self.ui.pwd.setText(self.parent_dir)
             self.ui.pwd.setToolTip(self.parent_dir)
 
+    def _get_ims(
+        self,
+        name: str,
+        ims_dict: dict | None,
+    ) -> Any:
+        """Get the image series for a detector or group name.
+
+        When the instrument has ROI-based detector groups, unwraps the
+        rectangle operation from the first sub-panel to recover the
+        monolithic image series.
+        """
+        if ims_dict is None:
+            return None
+
+        if HexrdConfig().instrument_has_roi:
+            first_det = HexrdConfig().detectors_in_group(name)[0]
+            subpanel_ims = ims_dict.get(first_det)
+            if subpanel_ims is None:
+                return None
+            return get_monolithic_ims(subpanel_ims)
+
+        return ims_dict.get(name)
+
     def save_images(self) -> None:
         if self.ui.ignore_agg.isChecked():
             ims_dict = HexrdConfig().unagg_images
         else:
             ims_dict = HexrdConfig().imageseries_dict
-        dets = HexrdConfig().detector_names
+
+        if HexrdConfig().instrument_has_roi:
+            dets = HexrdConfig().detector_group_names
+        else:
+            dets = HexrdConfig().detector_names
         if self.ui.single_detector.isChecked():
             dets = [self.ui.detectors.currentText()]
 
@@ -105,7 +136,7 @@ class SaveImagesDialog:
 
             worker = AsyncWorker(
                 HexrdConfig().save_imageseries,
-                ims_dict.get(det) if ims_dict is not None else None,
+                self._get_ims(det, ims_dict),
                 det,
                 path,
                 selected_format,
