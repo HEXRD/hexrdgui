@@ -65,10 +65,14 @@ class ImageTabWidget(QTabWidget):
         self.toolbars: list[dict[str, Any]] = []
         self.toolbar_visible = True
 
+        # Track which tabs need a deferred update
+        self._stale_tabs: set[int] = set()
+
         self.setup_connections()
 
     def setup_connections(self) -> None:
         self.tabBarClicked.connect(self.switch_toolbar)
+        self.currentChanged.connect(self._on_tab_changed)
         HexrdConfig().tab_images_changed.connect(self.load_images)
         HexrdConfig().detectors_changed.connect(self.reset_index)
 
@@ -100,6 +104,7 @@ class ImageTabWidget(QTabWidget):
             self.mpl_connections.append(cid)
 
     def load_images_tabbed(self) -> None:
+        self._stale_tabs.clear()
         self.clear()
         self.allocate_canvases()
         self.allocate_toolbars()
@@ -113,6 +118,7 @@ class ImageTabWidget(QTabWidget):
         self.setCurrentIndex(self.current_index)
 
     def load_images_untabbed(self) -> None:
+        self._stale_tabs.clear()
         self.clear()
         self.image_canvases[0].load_images(image_names=self.image_names)
         self.allocate_toolbars()
@@ -184,13 +190,63 @@ class ImageTabWidget(QTabWidget):
                 for canvas in self.active_canvases:
                     canvas.redraw_overlay(overlay)
 
-    def _update_raw_images(self) -> None:
-        """Update raw image data on existing canvases without rebuilding tabs."""
+    def update_images(self) -> None:
+        """Update image data, reusing existing tab structure when possible.
+
+        This is a lightweight alternative to load_images() for when only
+        image data or masks have changed (not the detector list).
+        """
+        self.update_image_names()
+        self.update_ims_toolbar()
+
+        if self._can_update_in_place():
+            self._update_raw_images()
+        else:
+            # Structure changed - need a full rebuild
+            if HexrdConfig().tab_images:
+                self.load_images_tabbed()
+            else:
+                self.load_images_untabbed()
+
+        self.switch_toolbar(self.currentIndex())
+
+    def _can_update_in_place(self) -> bool:
+        """Check if existing tab structure matches what we need."""
+        tab_count = self.count()
+        if tab_count == 0:
+            return False
+
         if HexrdConfig().tab_images:
+            if tab_count != len(self.image_names):
+                return False
+            return all(self.tabText(i) == self.image_names[i] for i in range(tab_count))
+        else:
+            return tab_count == 1
+
+    def _update_raw_images(self) -> None:
+        """Update raw image data on existing canvases without rebuilding tabs.
+
+        In tabbed mode, only updates the currently visible canvas.
+        Other tabs are marked stale and updated lazily on tab switch.
+        """
+        if HexrdConfig().tab_images:
+            idx = self.current_index
             for i, name in enumerate(self.image_names):
-                self.image_canvases[i].load_images(image_names=[name])
+                if i == idx:
+                    self.image_canvases[i].load_images(image_names=[name])
+                else:
+                    self._stale_tabs.add(i)
         else:
             self.image_canvases[0].load_images(image_names=self.image_names)
+
+    def _on_tab_changed(self, idx: int) -> None:
+        """Update a stale tab when the user switches to it."""
+        if idx in self._stale_tabs:
+            self._stale_tabs.discard(idx)
+            if idx < len(self.image_names):
+                self.image_canvases[idx].load_images(
+                    image_names=[self.image_names[idx]]
+                )
 
     @Slot(bool)
     def show_toolbar(self, b: bool) -> None:
