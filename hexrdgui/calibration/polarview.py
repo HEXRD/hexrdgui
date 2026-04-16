@@ -22,6 +22,7 @@ from hexrd import instrument
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.create_polar_mask import create_polar_mask_from_raw
 from hexrdgui.masking.mask_manager import MaskManager
 from hexrdgui.utils import SnipAlgorithmType, run_snip1d, snip_width_pixels
 
@@ -479,13 +480,43 @@ class PolarView:
         if HexrdConfig().polar_apply_snip1d:
             # !!! Fast snip1d (ndimage) cannot handle nans
             no_nan_methods = [SnipAlgorithmType.Fast_SNIP_1D]
+            algorithm = HexrdConfig().polar_snip1d_algorithm
 
-            if HexrdConfig().polar_snip1d_algorithm not in no_nan_methods:
-                img[self.warp_mask] = np.nan
+            if algorithm not in no_nan_methods:
+                # For NaN-capable SNIP algorithms, mask out visible and
+                # boundary mask regions (in undistorted coordinates) so
+                # they don't influence the SNIP background estimation.
+                visible_mask, boundary_mask = (
+                    self._undistorted_visible_and_boundary_masks()
+                )
+                # Boundary-only: regions shown in display but excluded
+                # from computation. These need special handling after SNIP.
+                boundary_only = boundary_mask & ~visible_mask & ~self.warp_mask
 
-            # Perform the background subtraction
-            self.snip_background = run_snip1d(img)
-            img -= self.snip_background
+                pre_snip_mask = (
+                    self.warp_mask | visible_mask | boundary_mask
+                )
+
+                # Save original data for boundary-only regions so we can
+                # restore them with the interpolated SNIP background.
+                original_boundary = img[boundary_only].copy()
+
+                img[pre_snip_mask] = np.nan
+
+                # Perform the background subtraction
+                self.snip_background = run_snip1d(img)
+                img -= self.snip_background
+
+                # Restore boundary-only regions: subtract the interpolated
+                # SNIP background from the original data so they have a
+                # similar value range to the rest of the image.
+                img[boundary_only] = (
+                    original_boundary - self.snip_background[boundary_only]
+                )
+            else:
+                # Fast SNIP can't handle NaN - keep current behavior
+                self.snip_background = run_snip1d(img)
+                img -= self.snip_background
 
             # FIXME: the erosion should be applied as a mask,
             #        NOT done inside snip computation!
@@ -576,6 +607,40 @@ class PolarView:
             total_mask = np.logical_or(total_mask, ~mask_arr)
         return total_mask
 
+    def _undistorted_visible_and_boundary_masks(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compute visible and boundary mask arrays in undistorted polar coords.
+
+        This bypasses the mask cache (which may contain distorted masks)
+        and generates masks with apply_tth_distortion=False, suitable for
+        use before SNIP (which runs before TTH distortion is applied).
+
+        Each mask's pixel array is computed only once, even if it belongs
+        to both the visible and boundary categories.
+        """
+        visible_mask = np.zeros(self.shape, dtype=bool)
+        boundary_mask = np.zeros(self.shape, dtype=bool)
+        for mask in MaskManager().masks.values():
+            if mask.type == MaskType.threshold:
+                continue
+            is_visible = mask.visible
+            is_boundary = mask.show_border
+            if not is_visible and not is_boundary:
+                continue
+
+            mask_arr = create_polar_mask_from_raw(
+                mask.data,
+                self.instr,
+                apply_tth_distortion=False,
+            )
+            inverted = ~mask_arr
+            if is_visible:
+                visible_mask |= inverted
+            if is_boundary:
+                boundary_mask |= inverted
+        return visible_mask, boundary_mask
+
     def apply_visible_masks(self, img: np.ndarray) -> np.ndarray:
         # Apply user-specified masks if they are present
         total_mask = np.logical_or(self.warp_mask, self.visible_mask_pv_array)
@@ -591,12 +656,20 @@ class PolarView:
         return img
 
     def reapply_masks(self) -> None:
-        # This will only re-run the final steps of the processing...
-        if self.snipped_img is None:
+        # When non-Fast SNIP is active, masks affect the SNIP background
+        # estimation, so we must re-run the full pipeline.
+        no_nan_methods = [SnipAlgorithmType.Fast_SNIP_1D]
+        if (
+            HexrdConfig().polar_apply_snip1d
+            and HexrdConfig().polar_snip1d_algorithm not in no_nan_methods
+        ):
+            self.apply_image_processing()
             return
 
-        # Apply the masks before the polar_tth_distortion, because the
-        # masks should also be distorted as well.
+        # For Fast SNIP or SNIP-off, we can skip re-running SNIP and
+        # just re-apply masks to the cached snipped image.
+        if self.snipped_img is None:
+            return
 
         # We only apply "visible" masks to the display image
         img = self.apply_tth_distortion(self.snipped_img)
