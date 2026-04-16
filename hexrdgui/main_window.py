@@ -1208,7 +1208,10 @@ class MainWindow(QObject):
             self.ui.image_tab_widget.show_stereo()
         else:
             rebuild_raw_masks()
-            self.ui.image_tab_widget.load_images()
+            if clear_canvases:
+                self.ui.image_tab_widget.load_images()
+            else:
+                self.ui.image_tab_widget.update_images()
 
         self.instrument_form_view_widget.unblock_all_signals(prev_blocked)
 
