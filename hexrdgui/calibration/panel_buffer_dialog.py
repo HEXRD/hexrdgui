@@ -2,15 +2,28 @@ from __future__ import annotations
 
 import copy
 import os
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from hexrd.instrument import Detector
 
 from PySide6.QtCore import Signal, QObject, Qt
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QWidget
+from PySide6.QtWidgets import (
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QLabel,
+    QMessageBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from hexrd.utils.panel_buffer import (
+    panel_buffer_as_2d_array,
     panel_buffer_from_str,
     valid_panel_buffer_names,
 )
@@ -61,6 +74,7 @@ class PanelBufferDialog(QObject):
         self.ui.select_file_button.clicked.connect(self.select_file)
         self.ui.show_panel_buffer.clicked.connect(self.show_panel_buffer)
         self.ui.clear_panel_buffer.clicked.connect(self.clear_panel_buffer)
+        self.ui.save_panel_buffer.clicked.connect(self.save_panel_buffer)
         self.ui.accepted.connect(self.on_accepted)
         self.ui.rejected.connect(self.on_rejected)
 
@@ -89,10 +103,13 @@ class PanelBufferDialog(QObject):
             self.show()
             return
 
-        if self.update_config():
-            self.accepted.emit()
-            HexrdConfig().rerender_needed.emit()
-            self.finished.emit(self.ui.result())
+        if not self.update_config():
+            self.show()
+            return
+
+        self.accepted.emit()
+        HexrdConfig().rerender_needed.emit()
+        self.finished.emit(self.ui.result())
 
     def on_rejected(self) -> None:
         self.rejected.emit()
@@ -175,11 +192,84 @@ class PanelBufferDialog(QObject):
         pixels = self.detector_config['pixels']
         return (pixels['rows'], pixels['columns'])
 
+    def _has_meaningful_buffer(self) -> bool:
+        """Check if the current saved buffer is non-trivial."""
+        buffer = self.current_saved_buffer_value
+        if buffer is None:
+            return False
+
+        if isinstance(buffer, str):
+            return True
+
+        buffer = np.asarray(buffer)
+        if buffer.size in (1, 2):
+            # Border mode: [0, 0] means no buffer
+            return not np.allclose(buffer, 0)
+
+        # 2D array is always meaningful
+        return True
+
+    def _prompt_combine_or_replace(self) -> str | None:
+        """Show a dialog to choose how to handle the existing buffer.
+
+        Returns the selected option text, or None if canceled.
+        """
+        dialog = QDialog(self.ui)
+        dialog.setWindowTitle('Existing Panel Buffer')
+        dialog.setMinimumSize(400, 150)
+        layout = QVBoxLayout()
+        dialog.setLayout(layout)
+
+        label = QLabel(
+            'A panel buffer already exists for this detector.\n'
+            'Would you like to replace the existing buffer, or combine them?',
+            dialog,
+        )
+        label.setWordWrap(True)
+        layout.addWidget(label)
+
+        options = QComboBox(dialog)
+        options.addItem('Replace buffer')
+        options.addItem('Union of old and new panel buffers')
+        options.addItem('Intersection of old and new panel buffers')
+        layout.addWidget(options)
+
+        buttons = (
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box = QDialogButtonBox(buttons, dialog)
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        if not dialog.exec():
+            return None
+
+        return options.currentText()
+
     def update_config(self) -> bool:
         # Set the new config options on the internal config
         value = self.current_editing_buffer_value
         if value is None:
             return False
+
+        if self._has_meaningful_buffer():
+            selection = self._prompt_combine_or_replace()
+            if selection is None:
+                # Canceled
+                return False
+
+            # NOTE: logical_and and logical_or here are applied to
+            # the valid-pixel arrays, so they are inverted relative
+            # to the union/intersection of the masked regions.
+            if selection == 'Union of old and new panel buffers':
+                old_2d = self._buffer_as_2d_array(self.current_saved_buffer_value)
+                new_2d = self._buffer_as_2d_array(value)
+                value = np.logical_and(old_2d, new_2d)
+            elif selection == 'Intersection of old and new panel buffers':
+                old_2d = self._buffer_as_2d_array(self.current_saved_buffer_value)
+                new_2d = self._buffer_as_2d_array(value)
+                value = np.logical_or(old_2d, new_2d)
 
         self.detector_config['buffer'] = value
 
@@ -251,12 +341,18 @@ class PanelBufferDialog(QObject):
         self.update_enable_states()
 
     def update_enable_states(self) -> None:
+        editing_value = self.current_editing_buffer_value
+
         has_numpy_array = False
-        if not isinstance(self.current_editing_buffer_value, str):
-            buffer = np.asarray(self.current_editing_buffer_value)
+        if not isinstance(editing_value, str):
+            buffer = np.asarray(editing_value)
             has_numpy_array = buffer.size > 2
 
         self.ui.show_panel_buffer.setEnabled(has_numpy_array)
+
+        # Save is available whenever any buffer is configured
+        can_save = editing_value is not None
+        self.ui.save_panel_buffer.setEnabled(can_save)
 
     def clear_panel_buffer(self) -> None:
         # Clear the config options on the internal config
@@ -268,11 +364,28 @@ class PanelBufferDialog(QObject):
     def default_buffer(self) -> list[float]:
         return [0.0, 0.0]
 
+    def _get_panel(self) -> Detector:
+        instr = create_hedm_instrument()
+        return instr.detectors[self.detector]
+
+    def _buffer_as_2d_array(self, buffer: Any) -> np.ndarray:
+        """Convert any buffer representation to a 2D boolean array."""
+        panel = self._get_panel()
+        # Temporarily set the panel buffer so panel_buffer_as_2d_array works
+        original = panel.panel_buffer
+        try:
+            if isinstance(buffer, str):
+                panel.panel_buffer = buffer
+            else:
+                panel.panel_buffer = np.asarray(buffer)
+            return panel_buffer_as_2d_array(panel)
+        finally:
+            panel.panel_buffer = original
+
     def show_panel_buffer(self) -> None:
         buffer = self.current_editing_buffer_value
         if isinstance(buffer, str):
-            instr = create_hedm_instrument()
-            panel = instr.detectors[self.detector]
+            panel = self._get_panel()
             buffer = panel_buffer_from_str(buffer, panel)
         else:
             buffer = np.asarray(buffer)
@@ -288,3 +401,28 @@ class PanelBufferDialog(QObject):
         ax.imshow(buffer, vmin=0, vmax=1)
         fig.canvas.draw_idle()
         fig.show()
+
+    def save_panel_buffer(self) -> None:
+        selected_file, _ = QFileDialog.getSaveFileName(
+            self.ui,
+            'Save Panel Buffer',
+            HexrdConfig().working_dir,
+            'NPY files (*.npy)',
+        )
+
+        if not selected_file:
+            return
+
+        if not selected_file.endswith('.npy'):
+            selected_file += '.npy'
+
+        HexrdConfig().working_dir = os.path.dirname(selected_file)
+
+        buffer = self.current_editing_buffer_value
+        if buffer is None:
+            return
+
+        array = self._buffer_as_2d_array(buffer)
+        np.save(selected_file, array)
+        msg = f'Panel buffer saved to "{selected_file}"'
+        print(msg)
