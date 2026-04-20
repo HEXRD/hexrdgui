@@ -257,6 +257,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
 
     def clear_figure(self) -> None:
         self._invalidate_interaction_cache()
+        self._clear_data_pixmap_cache()
         self.remove_all_overlay_artists()
         self.figure.clear()
         self.raw_axes.clear()
