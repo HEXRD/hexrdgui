@@ -120,6 +120,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         self.stereo_border_artists: list[Any] = []
         self.azimuthal_overlay_artists: list[Any] = []
         self.blit_manager = BlitManager(self)
+        self.display_images_dict: dict[str, np.ndarray] = {}
         self.raw_view_images_dict: dict[str, np.ndarray] = {}
         self._mask_boundary_artists: list[Any] = []
         self._latest_compute_view_worker: AsyncWorker | None = None
@@ -250,6 +251,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         self._invalidate_interaction_cache()
         self.iviewer = None
         self.mode = None
+        self.display_images_dict = {}
         self.raw_view_images_dict = {}
         self.clear_figure()
 
@@ -294,7 +296,12 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         while self.auto_picked_data_artists:
             remove_artist(self.auto_picked_data_artists.pop(0))
 
-    def load_images(self, image_names: Sequence[str]) -> None:
+    def load_images(
+        self,
+        image_names: Sequence[str],
+        *,
+        _tab_cache: dict[str, Any] | None = None,
+    ) -> None:
         HexrdConfig().emit_update_status_bar('Loading image view...')
 
         if self.mode != ViewType.raw or len(image_names) != len(self.axes_images):
@@ -304,9 +311,15 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
             self.mode = ViewType.raw
 
             # This will be used for drawing the rings
-            self.iviewer = raw_iviewer()
+            if _tab_cache is not None:
+                self.iviewer = _tab_cache['iviewer']
+            else:
+                self.iviewer = raw_iviewer()
 
-            images_dict = self.create_raw_view_images(image_names)
+            if _tab_cache is not None:
+                images_dict = _tab_cache['display_images']
+            else:
+                images_dict = self.create_raw_view_images(image_names)
 
             cols = 1
             if len(image_names) > 1:
@@ -330,13 +343,20 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
 
             self.figure.tight_layout()
         else:
-            images_dict = self.create_raw_view_images(image_names)
+            if _tab_cache is not None:
+                images_dict = _tab_cache['display_images']
+            else:
+                images_dict = self.create_raw_view_images(image_names)
             for i, name in enumerate(image_names):
                 img = images_dict[name]
                 self.axes_images[i].set_data(img)
 
+        self.display_images_dict = images_dict
+
         assert self.iviewer is not None
-        if MaskManager().contains_border_only_masks:
+        if _tab_cache is not None:
+            computed_images_dict = _tab_cache['computed_images']
+        elif MaskManager().contains_border_only_masks:
             # Create a computed version for the images dict
             computed_images_dict = self.scaled_image_dict
             if HexrdConfig().stitch_raw_roi_images:
@@ -361,12 +381,13 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
 
         self.update_beam_marker()
         self.update_auto_picked_data()
-        self.update_overlays()
+        self.update_overlays(skip_data_update=_tab_cache is not None)
 
-        # This always emits the full images dict, even if we are in
-        # tabbed mode and this canvas is only displaying one of the
-        # images from the dict.
-        HexrdConfig().image_view_loaded.emit(images_dict)
+        if _tab_cache is None:
+            # This always emits the full images dict, even if we are in
+            # tabbed mode and this canvas is only displaying one of the
+            # images from the dict.
+            HexrdConfig().image_view_loaded.emit(images_dict)
 
         msg = 'Image view loaded!'
         HexrdConfig().emit_update_status_bar(msg)
@@ -841,7 +862,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         # Redraw the overlay
         self.draw_overlay(overlay)
 
-    def update_overlays(self) -> None:
+    def update_overlays(self, *, skip_data_update: bool = False) -> None:
         if HexrdConfig().loading_state:
             # Skip the request if we are loading state
             return
@@ -867,7 +888,8 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
             if overlay.update_needed or not overlay.visible:
                 self.remove_overlay_artists(overlay.name)
 
-        self.iviewer.update_overlay_data()
+        if not skip_data_update:
+            self.iviewer.update_overlay_data()
 
         for overlay in HexrdConfig().overlays:
             self.draw_overlay(overlay)
