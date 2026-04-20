@@ -68,6 +68,10 @@ class ImageTabWidget(QTabWidget):
         # Track which tabs need a deferred update
         self._stale_tabs: set[int] = set()
 
+        # Cache of pre-computed data shared across tabbed canvases.
+        # Valid from load_images_tabbed until images/masks change.
+        self._tab_cache: dict[str, Any] | None = None
+
         self.setup_connections()
 
     def setup_connections(self) -> None:
@@ -108,16 +112,39 @@ class ImageTabWidget(QTabWidget):
         self.clear()
         self.allocate_canvases()
         self.allocate_toolbars()
+
+        idx = self.current_index
+
+        # Load the active canvas normally — it computes everything
+        # (iviewer, all-detector images, overlay data) as a side effect.
+        canvas = self.image_canvases[idx]
+        canvas.load_images(image_names=[self.image_names[idx]])
+
+        # Harvest results from the loaded canvas so remaining tabs can
+        # reuse them without recomputing.
+        self._tab_cache = {
+            'iviewer': canvas.iviewer,
+            'display_images': canvas.display_images_dict,
+            'computed_images': canvas.raw_view_images_dict,
+        }
+
+        # Build all tabs with signals blocked so _on_tab_changed doesn't
+        # fire prematurely. The rest are marked stale and loaded lazily
+        # when the user switches to them.
+        self.blockSignals(True)
         for i, name in enumerate(self.image_names):
-            self.image_canvases[i].load_images(image_names=[name])
+            if i != idx:
+                self._stale_tabs.add(i)
             self.addTab(self.image_canvases[i], name)
+        self.setCurrentIndex(idx)
+        self.blockSignals(False)
 
         self.update_canvas_cmaps()
         self.update_canvas_norms()
         self.tabBar().show()
-        self.setCurrentIndex(self.current_index)
 
     def load_images_untabbed(self) -> None:
+        self._tab_cache = None
         self._stale_tabs.clear()
         self.clear()
         self.image_canvases[0].load_images(image_names=self.image_names)
@@ -229,6 +256,7 @@ class ImageTabWidget(QTabWidget):
         In tabbed mode, only updates the currently visible canvas.
         Other tabs are marked stale and updated lazily on tab switch.
         """
+        self._tab_cache = None
         if HexrdConfig().tab_images:
             idx = self.current_index
             for i, name in enumerate(self.image_names):
@@ -245,7 +273,8 @@ class ImageTabWidget(QTabWidget):
             self._stale_tabs.discard(idx)
             if idx < len(self.image_names):
                 self.image_canvases[idx].load_images(
-                    image_names=[self.image_names[idx]]
+                    image_names=[self.image_names[idx]],
+                    _tab_cache=self._tab_cache,
                 )
 
     @Slot(bool)
