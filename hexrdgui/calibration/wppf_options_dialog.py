@@ -341,12 +341,13 @@ class WppfOptionsDialog(QObject):
 
         # Prepare the data to write out
         two_theta, intensity = obj.spectrum_sim.x, obj.spectrum_sim.y
+        sigma = obj.weights.y
         bkg = obj.background.y
         data = {
             'two_theta': two_theta,
             'intensity': intensity,
             'lineout_intensity': lineout_intensity,
-            'difference_curve': intensity - lineout_intensity,
+            'difference_curve': (intensity - lineout_intensity) * sigma**0.5,
             'background': bkg,
         }
         if obj.amorphous_model is not None:
