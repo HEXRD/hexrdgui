@@ -1580,9 +1580,9 @@ class WppfOptionsDialog(QObject):
 
         # Insert the background and peak shape dicts too
         method_dict['Background'] = self.background_tree_dict
-        method_dict['Instrumental Parameters'][
-            'Peak Parameters'
-        ] = self.peak_shape_tree_dict
+        method_dict['Instrumental Parameters']['Peak Parameters'] = (
+            self.peak_shape_tree_dict
+        )
         method_dict['Amorphous'] = self.amorphous_tree_dict
 
         return method_dict
