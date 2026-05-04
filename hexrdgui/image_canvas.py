@@ -2021,7 +2021,9 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
                 # Express `y` as a percentage instead
                 y *= 100 / last_lineout[1].filled(np.nan)
             else:
-                y /= np.sqrt(last_lineout[1].filled(np.nan))
+                denom = np.sqrt(last_lineout[1].filled(np.nan))
+                denom[denom == 0] = np.nan
+                y /= denom
 
             (self.wppf_difference_plot,) = diff_axis.plot(x, y, **style)
 
@@ -2043,7 +2045,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         if HexrdConfig().show_wppf_difference_as_percent:
             label = r'WPPF Diff (%)'
         else:
-            label = r'I/$\sigma$(I)'
+            label = r'$\Delta$I/$\sigma$(I)'
 
         axis.set_ylabel(label, **self.label_kwargs_polar_y)
 
