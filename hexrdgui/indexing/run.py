@@ -134,36 +134,27 @@ class IndexingRunner(Runner):
             self.ome_maps = EtaOmeMaps(dialog.file_name)
             self.ome_maps_select_dialog = None
 
-            # Perform a little validation to ensure the plane data matches the
-            # currently selected material. They should match *exactly*.
+            # Validate that the file's HKLs are present in the material.
+            # If the file is a subset, exclude the extra material HKLs.
             pd = self.ome_maps.planeData
             material = get_indexing_material()
 
             file_hkls = pd.getHKLs().tolist()
             mat_hkls = material.planeData.getHKLs().tolist()
-            missing1 = hkls_missing_in_list(mat_hkls, file_hkls)
-            missing2 = hkls_missing_in_list(file_hkls, mat_hkls)
-            if missing1 or missing2:
+            in_mat_not_file = hkls_missing_in_list(mat_hkls, file_hkls)
+            in_file_not_mat = hkls_missing_in_list(file_hkls, mat_hkls)
+            if in_file_not_mat:
                 msg = (
-                    'The selected material must match the material used to '
-                    'generate the eta omega maps exactly. The HKLs, however, '
-                    'do not match.'
+                    'The loaded eta omega maps contain HKLs that are '
+                    'not present in the selected material:\n\n'
                 )
-                if missing1:
-                    msg += (
-                        '\n\nThe following hkls were found in the selected '
-                        'material, but not in the file:\n\n'
-                    )
-                    msg += ', '.join([str(x) for x in missing1])
-                if missing2:
-                    msg += (
-                        '\n\nThe following hkls were found in the file, '
-                        'but not in the selected material:\n\n'
-                    )
-                    msg += ', '.join([str(x) for x in missing2])
+                msg += ', '.join([str(x) for x in in_file_not_mat])
                 print(msg)
                 QMessageBox.critical(self._parent, 'Error', msg)
                 return
+
+            if in_mat_not_file:
+                self._exclude_hkls_not_in_file(material, in_mat_not_file)
 
             # Save selected hkls as the active hkls. Convert them to tuples.
             omaps['active_hkls'] = pd.getHKLs(*self.ome_maps.iHKLList).tolist()
@@ -188,6 +179,21 @@ class IndexingRunner(Runner):
             worker.signals.error.connect(self.on_async_error)
             worker.signals.finished.connect(self.accept_progress)
             self.progress_dialog.exec()
+
+    @staticmethod
+    def _exclude_hkls_not_in_file(material: Any, hkls_to_exclude: list) -> None:
+        """Exclude HKLs on the material that are not present in the file."""
+        mat_pd = material.planeData
+        new_exclusions = mat_pd.exclusions.copy()
+        for i, hkl_dict in enumerate(mat_pd.hklDataList):
+            for hkl in hkls_to_exclude:
+                if np.array_equal(hkl_dict['hkl'], hkl):
+                    new_exclusions[i] = True
+
+        mat_pd.exclusions = new_exclusions
+
+        HexrdConfig().flag_overlay_updates_for_material(material.name)
+        HexrdConfig().overlay_config_changed.emit()
 
     def run_eta_ome_maps(self, config: Any) -> None:
         self.ome_maps = generate_eta_ome_maps(config, save=False)
