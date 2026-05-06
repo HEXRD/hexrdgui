@@ -595,6 +595,11 @@ class PolarView:
         if self.snipped_img is None:
             return
 
+        if self.snipped_img.shape != self.shape:
+            # The polar view settings changed since the last warp.
+            # A full re-warp is needed; skip the stale cached images.
+            return
+
         # Apply the masks before the polar_tth_distortion, because the
         # masks should also be distorted as well.
 

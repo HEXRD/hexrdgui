@@ -22,6 +22,7 @@ import hexrd.imageseries.save
 from hexrd.config.loader import NumPyIncludeLoader
 from hexrd.instrument import calc_beam_vec, HEDMInstrument
 from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS, PINHOLE_DEFAULTS
+from hexrd.instrument.detector_coatings import Coating, Filter, Phosphor
 from hexrd.instrument.physics_package import HEDPhysicsPackage
 from hexrd.material import load_materials_hdf5, save_materials_hdf5, Material
 from hexrd.rotations import angleAxisOfRotMat, RotMatEuler, rotMatOfExpMap
@@ -43,7 +44,6 @@ import hexrdgui.resources.materials
 from typing import Any, Sequence
 
 if TYPE_CHECKING:
-    from hexrd.core.instrument.detector_coatings import Coating, Filter, Phosphor
     from hexrd.imageseries import ImageSeries
     from hexrdgui.image_canvas import ImageCanvas
     from hexrdgui.overlays.overlay import Overlay
@@ -3390,7 +3390,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return None
         self._set_detector_coatings('filter')
         filter = self._detector_coatings[det_name]['filter']
-        filter.deserialize(**kwargs)
+        if filter is None:
+            filter = Filter(**kwargs)
+            self._detector_coatings[det_name]['filter'] = filter
+        else:
+            filter.deserialize(**kwargs)
 
     def detector_coating(self, det_name: str) -> Coating | None:
         self._detector_coatings.setdefault(det_name, {})
@@ -3401,7 +3405,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return None
         self._set_detector_coatings('coating')
         coating = self._detector_coatings[det_name]['coating']
-        coating.deserialize(**kwargs)
+        if coating is None:
+            coating = Coating(**kwargs)
+            self._detector_coatings[det_name]['coating'] = coating
+        else:
+            coating.deserialize(**kwargs)
 
     def detector_phosphor(self, det_name: str) -> Phosphor | None:
         self._detector_coatings.setdefault(det_name, {})
@@ -3412,7 +3420,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             return None
         self._set_detector_coatings('phosphor')
         phosphor = self._detector_coatings[det_name]['phosphor']
-        phosphor.deserialize(**kwargs)
+        if phosphor is None:
+            phosphor = Phosphor(**kwargs)
+            self._detector_coatings[det_name]['phosphor'] = phosphor
+        else:
+            phosphor.deserialize(**kwargs)
 
     @property
     def apply_median_filter_correction(self) -> bool:
