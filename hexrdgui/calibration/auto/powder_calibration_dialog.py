@@ -148,6 +148,7 @@ peak_types = [
     'pvoigt',
     'split_pvoigt',
     'pink_beam_dcs',
+    'pink_beam_heating',
 ]
 
 # If this gets added as a list to hexrd, we can import it from there
@@ -165,6 +166,7 @@ peak_type_to_label_map = {
     'pvoigt': 'PVoigt',
     'split_pvoigt': 'SplPVoigt',
     'pink_beam_dcs': 'DCS',
+    'pink_beam_heating': 'Pink Heating',
 }
 
 background_type_to_label_map: dict[str, Any] = {}
