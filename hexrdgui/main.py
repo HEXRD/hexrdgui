@@ -14,6 +14,19 @@ if sys.platform.startswith('darwin'):
     # Prevent crashing when using OpenBLAS
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
 
+if sys.platform == 'linux':
+    # Use OpenMP instead of TBB as the numba threading layer on Linux.
+    # TBB prints an unavoidable C-level warning to stderr on every
+    # non-main-thread fork ("Attempted to fork from a non-main thread"),
+    # which is harmless but noisy in our Qt background thread workflow.
+    # OpenMP is equally thread-safe and performant, emits no fork
+    # warning, and has a built-in safety net: it terminates any forked
+    # child that accidentally calls a numba parallel=True function,
+    # rather than silently running with undefined behavior.
+    # workqueue is not viable (crashes on concurrent thread access).
+    # macOS/Windows use spawn, so TBB's warning never appears there.
+    os.environ.setdefault('NUMBA_THREADING_LAYER', 'omp')
+
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import QApplication
