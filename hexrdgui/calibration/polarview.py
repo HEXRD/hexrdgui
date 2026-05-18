@@ -76,6 +76,10 @@ class PolarView:
             # This is a dummy polar view
             self._images_dict: dict[str, np.ndarray] | None = None
         else:
+            # Ensure the memoize cache is large enough for all detectors
+            num_dets = len(instrument.detectors)
+            project_on_detector.set_cache_maxsize(max(16, num_dets * 2))
+
             # Use an image dict with the panel buffers applied.
             # This keeps invalid pixels from bleeding out in the polar view
             self.images_dict = HexrdConfig().images_dict
@@ -341,6 +345,14 @@ class PolarView:
 
         return arg, kwargs
 
+    def _compute_xypts(self, det_key: str) -> np.ndarray:
+        panel = self.detectors[det_key]
+        args, kwargs = self.args_project_on_detector(panel)
+        func_projection = self.func_project_on_detector(panel)
+        return project_on_detector(
+            self.angular_grid, self.ntth, self.neta, func_projection, *args, **kwargs
+        )
+
     def warp_image(self, img: np.ndarray, panel: Detector) -> np.ma.MaskedArray:
         # The first 3 arguments of this function get converted into
         # the first argument of `_project_on_detector_plane`, and then
@@ -360,6 +372,86 @@ class PolarView:
         nan_mask = np.isnan(wimg)
         # Store as masked array
         return np.ma.masked_array(data=wimg, mask=nan_mask, fill_value=0.0)
+
+    def warp_binary_mask(self, raw_mask: np.ndarray, det_key: str) -> np.ndarray:
+        """Warp a binary mask from raw detector pixel space to polar.
+
+        Uses nearest-neighbor sampling via the same coordinate mapping
+        as warp_image (memoized in project_on_detector).
+
+        Parameters
+        ----------
+        raw_mask : np.ndarray
+            Boolean array in detector pixel space (True=unmasked).
+        det_key : str
+            Detector key in self.detectors.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array in polar space (True=unmasked).
+        """
+        panel = self.detectors[det_key]
+        xypts = self._compute_xypts(det_key)
+
+        result = np.ones(self.ntth * self.neta, dtype=bool)
+
+        valid = ~np.isnan(xypts[:, 0])
+        if not valid.any():
+            return result.reshape(self.shape)
+
+        pixel_coords = panel.cartToPixel(xypts[valid], pixels=True)
+        rows = pixel_coords[:, 0]
+        cols = pixel_coords[:, 1]
+
+        h, w = raw_mask.shape
+        in_bounds = (rows >= 0) & (rows < h) & (cols >= 0) & (cols < w)
+
+        idx = np.where(valid)[0][in_bounds]
+        result[idx] = raw_mask[rows[in_bounds], cols[in_bounds]]
+
+        return result.reshape(self.shape)
+
+    def create_polar_mask_from_raw_data(
+        self,
+        raw_data: list[tuple[str, np.ndarray]],
+        apply_tth_distortion: bool = True,
+    ) -> np.ndarray:
+        """Create polar mask by rasterizing in raw space and warping.
+
+        This avoids the coordinate-singularity bug that occurs when
+        converting polygon perimeters through the beam center.
+
+        Parameters
+        ----------
+        raw_data : list of (det_key, polygon_array) tuples
+            Raw mask polygon data.
+        apply_tth_distortion : bool
+            Whether to apply tth distortion to the result.
+
+        Returns
+        -------
+        np.ndarray
+            Boolean array (True=unmasked, False=masked).
+        """
+        from hexrdgui.masking.create_raw_mask import create_raw_mask
+
+        raw_masks = create_raw_mask(raw_data)
+        polar_mask = np.ones(self.shape, dtype=bool)
+        for det_key, raw_mask in raw_masks:
+            if det_key not in self.detectors:
+                continue
+            if raw_mask.all():
+                continue
+            warped = self.warp_binary_mask(raw_mask, det_key)
+            polar_mask &= warped
+
+        if apply_tth_distortion and HexrdConfig().polar_tth_distortion:
+            mask_float = (~polar_mask).astype(np.float64)
+            distorted = self.apply_tth_distortion(mask_float)
+            polar_mask = ~(np.asarray(distorted.filled(0)) > 0.5)
+
+        return polar_mask
 
     def invalidate_corr_field_polar_cache(self) -> None:
         self._corr_field_polar_cached = None
@@ -552,7 +644,7 @@ class PolarView:
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
             mask_arr = mask.get_masked_arrays(  # type: ignore[call-arg]
-                ViewType.polar, self.instr
+                ViewType.polar, self.instr, polar_view=self
             )
             total_mask = np.logical_or(total_mask, ~mask_arr)
         if (tm := MaskManager().threshold_mask) and tm.visible:
@@ -571,7 +663,7 @@ class PolarView:
             if mask.type == MaskType.threshold or not mask.show_border:
                 continue
             mask_arr = mask.get_masked_arrays(  # type: ignore[call-arg]
-                ViewType.polar, self.instr
+                ViewType.polar, self.instr, polar_view=self
             )
             total_mask = np.logical_or(total_mask, ~mask_arr)
         return total_mask
