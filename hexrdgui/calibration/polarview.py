@@ -100,6 +100,9 @@ class PolarView:
 
         # Cache this and invalidate it when needed
         self._corr_field_polar_cached: np.ma.MaskedArray | None = None
+        self._pixel_lookup_cache: dict[
+            str, tuple[np.ndarray, np.ndarray, np.ndarray]
+        ] = {}
 
         self.snip_background: np.ndarray | None = None
         self.erosion_mask: np.ndarray | None = None
@@ -373,42 +376,47 @@ class PolarView:
         # Store as masked array
         return np.ma.masked_array(data=wimg, mask=nan_mask, fill_value=0.0)
 
+    def _get_pixel_lookup(
+        self, det_key: str
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Get cached (polar_idx, raw_rows, raw_cols) for a detector.
+
+        These map polar pixel indices to raw detector pixel coordinates,
+        reusable across all masks on the same detector.
+        """
+        if det_key not in self._pixel_lookup_cache:
+            panel = self.detectors[det_key]
+            xypts = self._compute_xypts(det_key)
+
+            valid = ~np.isnan(xypts[:, 0])
+            if not valid.any():
+                empty = np.array([], dtype=int)
+                self._pixel_lookup_cache[det_key] = (empty, empty, empty)
+            else:
+                pixel_coords = panel.cartToPixel(xypts[valid], pixels=True)
+                rows = pixel_coords[:, 0]
+                cols = pixel_coords[:, 1]
+                idx = np.where(valid)[0]
+                self._pixel_lookup_cache[det_key] = (idx, rows, cols)
+
+        return self._pixel_lookup_cache[det_key]
+
     def warp_binary_mask(self, raw_mask: np.ndarray, det_key: str) -> np.ndarray:
         """Warp a binary mask from raw detector pixel space to polar.
 
         Uses nearest-neighbor sampling via the same coordinate mapping
         as warp_image (memoized in project_on_detector).
-
-        Parameters
-        ----------
-        raw_mask : np.ndarray
-            Boolean array in detector pixel space (True=unmasked).
-        det_key : str
-            Detector key in self.detectors.
-
-        Returns
-        -------
-        np.ndarray
-            Boolean array in polar space (True=unmasked).
         """
-        panel = self.detectors[det_key]
-        xypts = self._compute_xypts(det_key)
+        idx, rows, cols = self._get_pixel_lookup(det_key)
 
         result = np.ones(self.ntth * self.neta, dtype=bool)
-
-        valid = ~np.isnan(xypts[:, 0])
-        if not valid.any():
+        if len(idx) == 0:
             return result.reshape(self.shape)
-
-        pixel_coords = panel.cartToPixel(xypts[valid], pixels=True)
-        rows = pixel_coords[:, 0]
-        cols = pixel_coords[:, 1]
 
         h, w = raw_mask.shape
         in_bounds = (rows >= 0) & (rows < h) & (cols >= 0) & (cols < w)
 
-        idx = np.where(valid)[0][in_bounds]
-        result[idx] = raw_mask[rows[in_bounds], cols[in_bounds]]
+        result[idx[in_bounds]] = raw_mask[rows[in_bounds], cols[in_bounds]]
 
         return result.reshape(self.shape)
 
@@ -449,7 +457,7 @@ class PolarView:
         if apply_tth_distortion and HexrdConfig().polar_tth_distortion:
             mask_float = (~polar_mask).astype(np.float64)
             distorted = self.apply_tth_distortion(mask_float)
-            polar_mask = ~(np.asarray(distorted.filled(0)) > 0.5)
+            polar_mask = ~(np.ma.filled(distorted, 0) > 0.5)
 
         return polar_mask
 

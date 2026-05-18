@@ -13,6 +13,7 @@ from matplotlib.axes import Axes
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
+from matplotlib.colors import to_rgba
 from matplotlib.patches import Circle, Polygon
 from matplotlib.ticker import AutoLocator, AutoMinorLocator, Formatter, FuncFormatter
 
@@ -21,6 +22,7 @@ import matplotlib.pyplot as plt
 import matplotlib.transforms as tx
 
 import numpy as np
+from skimage import measure
 
 from hexrd import distortion as distortion_pkg
 
@@ -2429,27 +2431,43 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
                 if mask.type != MaskType.threshold:
                     # Do not apply tth distortion for the pinhole mask
                     apply_tth_distortion = mask.type != MaskType.pinhole
-                    verts = create_polar_line_data_from_raw(
-                        instr,
-                        mask.data,
-                        apply_tth_distortion=apply_tth_distortion,
-                    )
-                    if self.mode == ViewType.polar:
-                        # Check for any major jumps in eta. That probably means
-                        # the border is wrapping around.
-                        for i, vert in enumerate(verts):
-                            # If there are two points far away, assume there
-                            # is a gap in the eta range.
-                            eta_diff = np.abs(np.diff(vert[:, 1]))
-                            delta_eta_est = np.nanmedian(eta_diff)
-                            tolerance = delta_eta_est * 10
-                            (big_gaps,) = np.nonzero(eta_diff > tolerance)
-                            verts[i] = np.insert(
-                                vert,
-                                big_gaps + 1,
-                                np.nan,
-                                axis=0,
+                    if self.mode == ViewType.polar and hasattr(self.iviewer, 'pv'):
+                        pv = self.iviewer.pv
+                        polar_mask = pv.create_polar_mask_from_raw_data(
+                            mask.data,
+                            apply_tth_distortion=apply_tth_distortion,
+                        )
+                        contours = measure.find_contours(~polar_mask)
+                        verts = []
+                        for contour in contours:
+                            rows, cols = contour[:, 0], contour[:, 1]
+                            tth = (
+                                np.degrees(pv.tth_min)
+                                + (cols + 0.5) * pv.tth_pixel_size
                             )
+                            eta = (
+                                np.degrees(pv.eta_min)
+                                + (rows + 0.5) * pv.eta_pixel_size
+                            )
+                            verts.append(np.column_stack([tth, eta]))
+                    else:
+                        verts = create_polar_line_data_from_raw(
+                            instr,
+                            mask.data,
+                            apply_tth_distortion=apply_tth_distortion,
+                        )
+                        if self.mode == ViewType.polar:
+                            for i, vert in enumerate(verts):
+                                eta_diff = np.abs(np.diff(vert[:, 1]))
+                                delta_eta_est = np.nanmedian(eta_diff)
+                                tolerance = delta_eta_est * 10
+                                (big_gaps,) = np.nonzero(eta_diff > tolerance)
+                                verts[i] = np.insert(
+                                    vert,
+                                    big_gaps + 1,
+                                    np.nan,
+                                    axis=0,
+                                )
 
                     if self.mode == ViewType.stereo:
                         # Now convert from polar to stereo
@@ -2490,6 +2508,9 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
     def highlight_masks(self, axis: Axes, det: str | None = None) -> None:
         # Don't update the blit manager here, so we can better control
         # it elsewhere
+        if self._highlight_masks_polar(axis):
+            return
+
         all_verts = self.get_mask_verts('highlights', det)
         if not all_verts:
             return
@@ -2508,6 +2529,49 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
             polygon.set_animated(True)
             axis.add_patch(polygon)
             highlight_artists.append(polygon)
+
+    def _highlight_masks_polar(self, axis: Axes) -> bool:
+        """Overlay polar mask highlights as an RGBA image.
+
+        Returns True if handled (polar mode with PolarView available),
+        False to fall back to polygon-based highlighting.
+        """
+        if self.mode != ViewType.polar or not hasattr(self.iviewer, 'pv'):
+            return False
+
+        visible = MaskManager().visible_highlights
+        if not visible:
+            return True
+
+        pv = self.iviewer.pv
+        combined_mask = np.ones(pv.shape, dtype=bool)
+        for name in visible:
+            mask = MaskManager().masks[name]
+            if mask.type == MaskType.threshold:
+                continue
+            apply_tth_distortion = mask.type != MaskType.pinhole
+            polar_mask = pv.create_polar_mask_from_raw_data(
+                mask.data,
+                apply_tth_distortion=apply_tth_distortion,
+            )
+            combined_mask &= polar_mask
+
+        masked_pixels = ~combined_mask
+        if not masked_pixels.any():
+            return True
+
+        rgba = to_rgba(MaskManager().highlight_color)
+        overlay = np.zeros((*pv.shape, 4), dtype=np.float32)
+        overlay[masked_pixels] = rgba
+        overlay[masked_pixels, 3] = MaskManager().highlight_opacity
+
+        extent = np.degrees(pv.extent)
+        im = axis.imshow(overlay, extent=extent, interpolation='none')
+        im.set_animated(True)
+
+        highlight_artists = self.mask_highlight_artists.setdefault('default', [])
+        highlight_artists.append(im)
+        return True
 
     def remove_all_mask_highlight_artists(self) -> None:
         self.blit_manager.remove_artists('mask_highlights')
