@@ -2432,7 +2432,8 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
                     # Do not apply tth distortion for the pinhole mask
                     apply_tth_distortion = mask.type != MaskType.pinhole
                     if self.mode == ViewType.polar and hasattr(self.iviewer, 'pv'):
-                        pv = self.iviewer.pv
+                        polar_iviewer = cast('PolarViewer', self.iviewer)
+                        pv = polar_iviewer.pv
                         polar_mask = pv.create_polar_mask_from_raw_data(
                             mask.data,
                             apply_tth_distortion=apply_tth_distortion,
@@ -2539,11 +2540,12 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         if self.mode != ViewType.polar or not hasattr(self.iviewer, 'pv'):
             return False
 
+        polar_iviewer = cast('PolarViewer', self.iviewer)
+        pv = polar_iviewer.pv
+
         visible = MaskManager().visible_highlights
         if not visible:
             return True
-
-        pv = self.iviewer.pv
         combined_mask = np.ones(pv.shape, dtype=bool)
         for name in visible:
             mask = MaskManager().masks[name]
@@ -2565,7 +2567,7 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         overlay[masked_pixels] = rgba
         overlay[masked_pixels, 3] = MaskManager().highlight_opacity
 
-        extent = np.degrees(pv.extent)
+        extent = tuple(np.degrees(pv.extent))
         im = axis.imshow(overlay, extent=extent, interpolation='none')
         im.set_animated(True)
 
