@@ -163,12 +163,21 @@ class RegionMask(Mask):
         self._highlight = value
 
     def update_masked_arrays(
-        self, view: str = ViewType.raw, instr: HEDMInstrument | None = None
+        self,
+        view: str = ViewType.raw,
+        instr: HEDMInstrument | None = None,
+        polar_view: Any = None,
     ) -> None:
         self.masked_arrays_view_mode = view
         assert self._raw is not None
         if view == ViewType.raw:
             self.masked_arrays = create_raw_mask(self._raw)
+        elif polar_view is not None:
+            apply_tth_distortion = self.type != MaskType.pinhole
+            self.masked_arrays = polar_view.create_polar_mask_from_raw_data(
+                self._raw,
+                apply_tth_distortion=apply_tth_distortion,
+            )
         else:
             # Do not apply tth distortion for pinhole mask types
             apply_tth_distortion = self.type != MaskType.pinhole
@@ -182,9 +191,10 @@ class RegionMask(Mask):
         self,
         image_mode: str = ViewType.raw,
         instr: HEDMInstrument | None = None,
+        polar_view: Any = None,
     ) -> Any:
         if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
-            self.update_masked_arrays(image_mode, instr)
+            self.update_masked_arrays(image_mode, instr, polar_view=polar_view)
 
         return self.masked_arrays
 
