@@ -52,6 +52,13 @@ def main() -> None:
     QCoreApplication.setOrganizationName('hexrd')
     QCoreApplication.setApplicationName('hexrd')
 
+    if sys.platform.startswith('darwin'):
+        from hexrdgui.macos_fix_activation_policy import (
+            macos_fix_activation_policy,
+        )
+
+        macos_fix_activation_policy()
+
     app = QApplication(sys.argv)
 
     if sys.platform.startswith('darwin'):
