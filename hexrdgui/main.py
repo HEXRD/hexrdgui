@@ -25,6 +25,9 @@ if sys.platform in ('linux', 'darwin'):
     # rather than silently running with undefined behavior.
     # workqueue is not viable (crashes on concurrent thread access).
     os.environ.setdefault('NUMBA_THREADING_LAYER', 'omp')
+    # Suppress the "omp_set_nested routine deprecated" C-level warning
+    # from numba's omppool.cpp (https://github.com/numba/numba/issues/5275).
+    os.environ.setdefault('KMP_WARNINGS', 'false')
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QIcon, QPixmap
