@@ -84,7 +84,7 @@ def stereo_project(
     mask = np.logical_and(mask[:, 0], mask[:, 1])
 
     stereo = np.zeros((stereo_size, stereo_size))
-    fmask = np.ones_like(stereo)
+    fmask = np.ones_like(stereo, dtype=bool)
     for d in instr_cp.detectors:
         intensity = np.empty((angs.shape[0],))
         det = instr_cp.detectors[d]

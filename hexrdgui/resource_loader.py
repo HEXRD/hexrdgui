@@ -19,7 +19,10 @@ def load_resource(
     if binary:
         return resource.read_bytes()
 
-    return resource.read_text()
+    # Explicit utf-8: the legacy importlib.resources.read_text() defaulted to
+    # utf-8, but Traversable.read_text() uses the platform default encoding
+    # (cp1252 on Windows), which fails on utf-8 resources.
+    return resource.read_text(encoding='utf-8')
 
 
 def resource_path(module: types.ModuleType, name: str) -> Any:

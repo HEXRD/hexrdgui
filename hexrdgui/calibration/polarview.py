@@ -494,7 +494,7 @@ class PolarView:
                 corr_field_polar_dict[key] = self.warp_image(corr_field[key], panel)
 
             corr_field_polar = np.ma.sum(
-                np.ma.stack(corr_field_polar_dict.values()), axis=0
+                np.ma.stack(list(corr_field_polar_dict.values())), axis=0
             )
 
         self._corr_field_polar_cached = corr_field_polar
@@ -540,7 +540,7 @@ class PolarView:
         # !!! assignment to img fills NaNs with zeros
         # !!! NOTE: cannot set `data` attribute on masked_array,
         #           but can manipulate mask
-        self.raw_img = np.ma.sum(np.ma.stack(self.warp_dict.values()), axis=0)
+        self.raw_img = np.ma.sum(np.ma.stack(list(self.warp_dict.values())), axis=0)
         self.apply_image_processing()
 
     @property
@@ -619,7 +619,7 @@ class PolarView:
             corrections = intensity_corrections[det_key]
             output[det_key] = self.warp_image(corrections, panel)
 
-        stacked = np.ma.stack(output.values()).filled(np.nan)
+        stacked = np.ma.stack(list(output.values())).filled(np.nan)
 
         # In case there are overlapping detectors, we do nanmean for
         # the intensities instead of nansum.  All-NaN slices are expected
