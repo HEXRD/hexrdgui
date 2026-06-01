@@ -7,6 +7,7 @@ import numpy as np
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QMessageBox, QWidget
 
+from hexrd.core.fitting.spectrum import pink_beam_asymmetry_params
 from hexrd.fitting.calibration import InstrumentCalibrator, PowderCalibrator
 
 from hexrdgui.async_runner import AsyncRunner
@@ -65,6 +66,15 @@ class PowderRunner(QObject):
         else:
             fwhm_estimate = options['initial_fwhm']
 
+        # Pink-beam shape (asymmetry) parameters from a prior WPPF run, fixed
+        # for every peak. Only applied if the toggle is on AND the pktype is a
+        # pink-beam profile; the relevant params depend on the pktype.
+        fixed_pink_asymmetry = None
+        asym_cfg = options.get('fixed_pink_asymmetry')
+        asym_params = pink_beam_asymmetry_params.get(options['pk_type'])
+        if asym_cfg is not None and asym_cfg.get('enabled') and asym_params is not None:
+            fixed_pink_asymmetry = {k: float(asym_cfg[k]) for k in asym_params}
+
         engineering_constraints = guess_engineering_constraints(self.instr)
 
         # Get an intensity-corrected masked dict of the images
@@ -81,6 +91,7 @@ class PowderRunner(QObject):
             'bgtype': options['bg_type'],
             'tth_distortion': self.active_overlay.tth_distortion_dict,
             'xray_source': self.active_overlay.xray_source,
+            'fixed_pink_asymmetry': fixed_pink_asymmetry,
         }
 
         self.pc = PowderCalibrator(**kwargs)

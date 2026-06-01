@@ -2,15 +2,48 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QDoubleSpinBox, QLabel, QMessageBox, QWidget
 
 import numpy as np
+
+from hexrd.core.fitting.spectrum import pink_beam_asymmetry_params
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
 
 if TYPE_CHECKING:
     from hexrd.material import Material
+
+# Number of generic (label, spinbox) rows in the asymmetry group in the .ui.
+# Must be at least as large as the biggest set in pink_beam_asymmetry_params.
+NUM_ASYMMETRY_ROWS = 4
+
+# Pretty labels for each shape parameter shown in the dialog.
+ASYMMETRY_PARAM_LABELS = {
+    'alpha0': 'α₀',
+    'alpha1': 'α₁',
+    'beta0': 'β₀',
+    'beta1': 'β₁',
+    'sigma0': 'σ₀',
+    'sigma1': 'σ₁',
+    'tau0': 'τ₀',
+    'tau1': 'τ₁',
+    'tau2': 'τ₂',
+}
+
+# Sensible defaults (matching the hexrd/WPPF defaults for each profile), used
+# when a config has no value yet and the user never populates from WPPF.
+ASYMMETRY_PARAM_DEFAULTS = {
+    'alpha0': 14.4,
+    'alpha1': 0.0,
+    'beta0': 3.016,
+    'beta1': -7.94,
+    'sigma0': 0.1,
+    'sigma1': 0.1,
+    'tau0': 1.58,
+    'tau1': -1.35,
+    'tau2': 0.36,
+}
 
 
 class PowderCalibrationDialog:
@@ -20,7 +53,14 @@ class PowderCalibrationDialog:
 
         self.material = material
 
+        # All shape-parameter values, keyed by name. The visible spinboxes
+        # show whichever subset matches the selected pink-beam peak type;
+        # `_shown_params` tracks which params those spinboxes currently hold.
+        self._asymmetry_values = dict(ASYMMETRY_PARAM_DEFAULTS)
+        self._shown_params: list[str] = []
+
         self.setup_combo_boxes()
+        self.setup_connections()
         self.update_gui()
 
     def setup_combo_boxes(self) -> None:
@@ -33,6 +73,82 @@ class PowderCalibrationDialog:
         for t in background_types:
             label = background_type_to_label(t)
             self.ui.background_type.addItem(label, t)
+
+    def setup_connections(self) -> None:
+        # Re-sync the asymmetry fields when the peak fit type changes or the
+        # group is toggled (the inputs are hidden entirely while unchecked).
+        self.ui.peak_fit_type.currentIndexChanged.connect(self.sync_asymmetry_fields)
+        self.ui.use_wppf_asymmetry_check.toggled.connect(self.sync_asymmetry_fields)
+        self.ui.populate_from_wppf_button.clicked.connect(
+            self.populate_asymmetry_from_wppf
+        )
+
+    def asym_label(self, i: int) -> QLabel:
+        return getattr(self.ui, f'asym_label_{i}')
+
+    def asym_value(self, i: int) -> QDoubleSpinBox:
+        return getattr(self.ui, f'asym_value_{i}')
+
+    @property
+    def asymmetry_params(self) -> tuple[str, ...]:
+        # The shape params for the selected pink-beam type (empty otherwise).
+        return pink_beam_asymmetry_params.get(self.peak_fit_type, ())
+
+    def capture_shown_asymmetry_values(self) -> None:
+        # Preserve any edits in the spinboxes (which retain their values even
+        # while hidden) before they get repopulated for a different peak type.
+        for i, name in enumerate(self._shown_params):
+            self._asymmetry_values[name] = self.asym_value(i).value()
+
+    def render_asymmetry_fields(self) -> None:
+        params = self.asymmetry_params
+        # The whole section only makes sense for the pink-beam profiles.
+        self.ui.asymmetry_container.setVisible(bool(params))
+
+        # Hide the inputs entirely (not just disable them) while the option is
+        # off - they are only needed in rare cases and otherwise waste space.
+        checked = self.use_wppf_asymmetry
+        self.ui.populate_from_wppf_button.setVisible(checked)
+        for i in range(NUM_ASYMMETRY_ROWS):
+            label = self.asym_label(i)
+            spinbox = self.asym_value(i)
+            applies = i < len(params)
+            if applies:
+                name = params[i]
+                label.setText(f'{ASYMMETRY_PARAM_LABELS[name]}:')
+                spinbox.setValue(self._asymmetry_values[name])
+            label.setVisible(checked and applies)
+            spinbox.setVisible(checked and applies)
+
+        self._shown_params = list(params)
+
+    def sync_asymmetry_fields(self) -> None:
+        self.capture_shown_asymmetry_values()
+        self.render_asymmetry_fields()
+
+    def populate_asymmetry_from_wppf(self) -> None:
+        params = self.asymmetry_params
+        wppf_params = (
+            HexrdConfig()
+            .config.get('calibration', {})
+            .get('wppf', {})
+            .get('params_dict', {})
+        )
+        missing = [k for k in params if k not in wppf_params]
+        if not params or missing:
+            QMessageBox.warning(
+                self.ui,
+                'HEXRD',
+                'Could not find pink-beam asymmetry parameters from a '
+                'previous WPPF run. Missing: ' + ', '.join(missing) + '.\n\n'
+                'Run a WPPF refinement with the matching pink-beam peak '
+                'shape first.',
+            )
+            return
+
+        for name in params:
+            self._asymmetry_values[name] = float(wppf_params[name]['value'])
+        self.render_asymmetry_fields()
 
     def update_gui(self) -> None:
         if self.tth_tol is None:
@@ -51,8 +167,23 @@ class PowderCalibrationDialog:
         self.auto_guess_initial_fwhm = options['auto_guess_initial_fwhm']
         self.initial_fwhm = options['initial_fwhm']
 
+        # Asymmetry group (may not exist in older configs). Load all known
+        # shape values (with `_shown_params` empty) before touching the
+        # checkbox or peak type, so the signals they fire don't capture stale
+        # spinbox values over the values we just loaded.
+        asym_cfg = options.get('fixed_pink_asymmetry') or {}
+        self._asymmetry_values = {
+            name: float(asym_cfg.get(name, default))
+            for name, default in ASYMMETRY_PARAM_DEFAULTS.items()
+        }
+        self._shown_params = []
+        self.use_wppf_asymmetry = bool(asym_cfg.get('enabled', False))
+
         self.peak_fit_type = options['pk_type']
         self.background_type = options['bg_type']
+
+        # Render the fields for the current peak type (also sets visibility).
+        self.render_asymmetry_fields()
 
     def update_config(self) -> None:
         options = HexrdConfig().config['calibration']['powder']
@@ -66,6 +197,14 @@ class PowderCalibrationDialog:
 
         options['pk_type'] = self.peak_fit_type
         options['bg_type'] = self.background_type
+
+        # Capture any edits currently in the visible spinboxes, then persist
+        # the full set of shape values (all peak types) plus the toggle.
+        self.capture_shown_asymmetry_values()
+        options['fixed_pink_asymmetry'] = {
+            'enabled': self.use_wppf_asymmetry,
+            **self._asymmetry_values,
+        }
 
     def exec(self) -> bool:
         if not self.ui.exec():
@@ -140,6 +279,14 @@ class PowderCalibrationDialog:
 
         if not found:
             raise Exception(f'Unknown background type: {v}')
+
+    @property
+    def use_wppf_asymmetry(self) -> bool:
+        return self.ui.use_wppf_asymmetry_check.isChecked()
+
+    @use_wppf_asymmetry.setter
+    def use_wppf_asymmetry(self, b: bool) -> None:
+        self.ui.use_wppf_asymmetry_check.setChecked(b)
 
 
 # If this gets added as a list to hexrd, we can import it from there
