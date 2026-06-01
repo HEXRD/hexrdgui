@@ -21,6 +21,7 @@ class PowderCalibrationDialog:
         self.material = material
 
         self.setup_combo_boxes()
+        self.setup_connections()
         self.update_gui()
 
     def setup_combo_boxes(self) -> None:
@@ -33,6 +34,44 @@ class PowderCalibrationDialog:
         for t in background_types:
             label = background_type_to_label(t)
             self.ui.background_type.addItem(label, t)
+
+    def setup_connections(self) -> None:
+        # Show/hide the WPPF asymmetry group based on selected peak fit type.
+        self.ui.peak_fit_type.currentIndexChanged.connect(
+            self.update_use_wppf_asymmetry_visibility
+        )
+        self.ui.populate_from_wppf_button.clicked.connect(
+            self.populate_asymmetry_from_wppf
+        )
+
+    def update_use_wppf_asymmetry_visibility(self) -> None:
+        # The asymmetry parameters only make sense for the pink-beam profile.
+        visible = self.peak_fit_type == 'pink_beam_dcs'
+        self.ui.use_wppf_asymmetry_group.setVisible(visible)
+
+    def populate_asymmetry_from_wppf(self) -> None:
+        wppf_params = (
+            HexrdConfig().config.get('calibration', {})
+            .get('wppf', {})
+            .get('params_dict', {})
+        )
+        missing = [
+            k for k in ('alpha0', 'alpha1', 'beta0', 'beta1') if k not in wppf_params
+        ]
+        if missing:
+            QMessageBox.warning(
+                self.ui,
+                'HEXRD',
+                'Could not find pink-beam asymmetry parameters from a '
+                'previous WPPF run. Missing: ' + ', '.join(missing) + '.\n\n'
+                'Run a WPPF refinement with the pvpink peak shape first.',
+            )
+            return
+
+        self.alpha0 = float(wppf_params['alpha0']['value'])
+        self.alpha1 = float(wppf_params['alpha1']['value'])
+        self.beta0 = float(wppf_params['beta0']['value'])
+        self.beta1 = float(wppf_params['beta1']['value'])
 
     def update_gui(self) -> None:
         if self.tth_tol is None:
@@ -54,6 +93,17 @@ class PowderCalibrationDialog:
         self.peak_fit_type = options['pk_type']
         self.background_type = options['bg_type']
 
+        # Asymmetry group (may not exist in older configs).
+        pink_cfg = options.get('fixed_pink_asymmetry') or {}
+        self.use_wppf_asymmetry = bool(pink_cfg.get('enabled', False))
+        self.alpha0 = float(pink_cfg.get('alpha0', 14.4))
+        self.alpha1 = float(pink_cfg.get('alpha1', 0.0))
+        self.beta0 = float(pink_cfg.get('beta0', 3.016))
+        self.beta1 = float(pink_cfg.get('beta1', -7.94))
+
+        # Make sure the group's visibility matches the current pk type.
+        self.update_use_wppf_asymmetry_visibility()
+
     def update_config(self) -> None:
         options = HexrdConfig().config['calibration']['powder']
         self.tth_tol = self.ui.tth_tolerance.value()
@@ -66,6 +116,14 @@ class PowderCalibrationDialog:
 
         options['pk_type'] = self.peak_fit_type
         options['bg_type'] = self.background_type
+
+        options['fixed_pink_asymmetry'] = {
+            'enabled': self.use_wppf_asymmetry,
+            'alpha0': self.alpha0,
+            'alpha1': self.alpha1,
+            'beta0': self.beta0,
+            'beta1': self.beta1,
+        }
 
     def exec(self) -> bool:
         if not self.ui.exec():
@@ -140,6 +198,46 @@ class PowderCalibrationDialog:
 
         if not found:
             raise Exception(f'Unknown background type: {v}')
+
+    @property
+    def use_wppf_asymmetry(self) -> bool:
+        return self.ui.use_wppf_asymmetry_group.isChecked()
+
+    @use_wppf_asymmetry.setter
+    def use_wppf_asymmetry(self, b: bool) -> None:
+        self.ui.use_wppf_asymmetry_group.setChecked(b)
+
+    @property
+    def alpha0(self) -> float:
+        return self.ui.alpha0.value()
+
+    @alpha0.setter
+    def alpha0(self, v: float) -> None:
+        self.ui.alpha0.setValue(v)
+
+    @property
+    def alpha1(self) -> float:
+        return self.ui.alpha1.value()
+
+    @alpha1.setter
+    def alpha1(self, v: float) -> None:
+        self.ui.alpha1.setValue(v)
+
+    @property
+    def beta0(self) -> float:
+        return self.ui.beta0.value()
+
+    @beta0.setter
+    def beta0(self, v: float) -> None:
+        self.ui.beta0.setValue(v)
+
+    @property
+    def beta1(self) -> float:
+        return self.ui.beta1.value()
+
+    @beta1.setter
+    def beta1(self, v: float) -> None:
+        self.ui.beta1.setValue(v)
 
 
 # If this gets added as a list to hexrd, we can import it from there

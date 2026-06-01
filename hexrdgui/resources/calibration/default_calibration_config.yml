@@ -6,6 +6,17 @@ powder:
   bg_type: 'linear'
   auto_guess_initial_fwhm: true
   initial_fwhm: 1.0
+  # Fixed pink-beam asymmetry parameters (typically taken from a prior
+  # WPPF pvpink refinement). Only applied when `enabled` is true AND
+  # pk_type == 'pink_beam_dcs'. Defaults match the hexrd internal
+  # pink-beam defaults so they are sensible if the user enables the
+  # option without ever populating from WPPF.
+  fixed_pink_asymmetry:
+    enabled: false
+    alpha0: 14.4
+    alpha1: 0.0
+    beta0: 3.016
+    beta1: -7.94
 laue_auto_picker:
   npdiv: 2
   tth_tol: 5.0

@@ -65,6 +65,20 @@ class PowderRunner(QObject):
         else:
             fwhm_estimate = options['initial_fwhm']
 
+        # Pink-beam asymmetry parameters from a prior WPPF run, fixed for
+        # every peak. Only applied if both the toggle is on AND the pktype
+        # is the pink-beam profile.
+        fixed_pink_asymmetry = None
+        pink_cfg = options.get('fixed_pink_asymmetry')
+        if (
+            pink_cfg is not None
+            and pink_cfg.get('enabled')
+            and options['pk_type'] == 'pink_beam_dcs'
+        ):
+            fixed_pink_asymmetry = {
+                k: float(pink_cfg[k]) for k in ('alpha0', 'alpha1', 'beta0', 'beta1')
+            }
+
         engineering_constraints = guess_engineering_constraints(self.instr)
 
         # Get an intensity-corrected masked dict of the images
@@ -81,6 +95,7 @@ class PowderRunner(QObject):
             'bgtype': options['bg_type'],
             'tth_distortion': self.active_overlay.tth_distortion_dict,
             'xray_source': self.active_overlay.xray_source,
+            'fixed_pink_asymmetry': fixed_pink_asymmetry,
         }
 
         self.pc = PowderCalibrator(**kwargs)

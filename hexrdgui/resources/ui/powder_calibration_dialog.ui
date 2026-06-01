@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>750</width>
-    <height>395</height>
+    <height>560</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Auto Pick Powder Points</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
-   <item row="3" column="0" colspan="3">
+   <item row="4" column="0" colspan="3">
     <widget class="QDialogButtonBox" name="button_box">
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
@@ -22,6 +22,126 @@
      <property name="centerButtons">
       <bool>false</bool>
      </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="3">
+    <widget class="QGroupBox" name="use_wppf_asymmetry_group">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fix the pink-beam back-to-back exponential asymmetry parameters (α₀, α₁, β₀, β₁) to values taken from a prior WPPF (pvpink) refinement. Applied to every peak in every ring, with vary=False, replacing the per-ring asymmetry fit. Only used when the peak fit type is pink_beam_dcs.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
+      <string>Use WPPF peak asymmetry parameters (pink beam only)</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_asym">
+      <item row="0" column="0">
+       <widget class="QLabel" name="alpha0_label">
+        <property name="text">
+         <string>α₀:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="ScientificDoubleSpinBox" name="alpha0">
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="minimum">
+         <double>-10000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>14.400000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="alpha1_label">
+        <property name="text">
+         <string>α₁:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="ScientificDoubleSpinBox" name="alpha1">
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="minimum">
+         <double>-10000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>0.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="beta0_label">
+        <property name="text">
+         <string>β₀:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="ScientificDoubleSpinBox" name="beta0">
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="minimum">
+         <double>-10000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>3.016000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="beta1_label">
+        <property name="text">
+         <string>β₁:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="ScientificDoubleSpinBox" name="beta1">
+        <property name="decimals">
+         <number>6</number>
+        </property>
+        <property name="minimum">
+         <double>-10000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>-7.940000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="4">
+       <widget class="QPushButton" name="populate_from_wppf_button">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Populate the four asymmetry parameters from the most recent WPPF (pvpink) refinement.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Populate from last WPPF run</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item row="0" column="1" rowspan="2" colspan="2">
