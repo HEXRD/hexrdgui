@@ -1794,12 +1794,11 @@ class WppfOptionsDialog(QObject):
 
         if has_nan(expt_spectrum):
             # Store as masked array
-            kwargs = {
-                'data': expt_spectrum,
-                'mask': np.isnan(expt_spectrum),
-                'fill_value': 0.0,
-            }
-            expt_spectrum = np.ma.masked_array(**kwargs)
+            expt_spectrum = np.ma.masked_array(
+                data=expt_spectrum,
+                mask=np.isnan(expt_spectrum),
+                fill_value=0.0,
+            )
 
         if self.limit_tth:
             expt_spectrum = expt_spectrum[expt_spectrum[:, 0] >= self.min_tth]

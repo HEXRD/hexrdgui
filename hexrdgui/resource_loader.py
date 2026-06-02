@@ -15,10 +15,14 @@ def load_resource(
     module: types.ModuleType, name: str, binary: bool = False
 ) -> str | bytes:
     """This will return a string of a resource's contents"""
+    resource = importlib_resources.files(module) / name
     if binary:
-        return importlib_resources.read_binary(module, name)
+        return resource.read_bytes()
 
-    return importlib_resources.read_text(module, name)
+    # Explicit utf-8: the legacy importlib.resources.read_text() defaulted to
+    # utf-8, but Traversable.read_text() uses the platform default encoding
+    # (cp1252 on Windows), which fails on utf-8 resources.
+    return resource.read_text(encoding='utf-8')
 
 
 def resource_path(module: types.ModuleType, name: str) -> Any:
@@ -26,7 +30,7 @@ def resource_path(module: types.ModuleType, name: str) -> Any:
 
 
 def module_contents(module: types.ModuleType) -> Any:
-    return importlib_resources.contents(module)
+    return [r.name for r in importlib_resources.files(module).iterdir()]
 
 
 def import_dynamic_module(name: str) -> types.ModuleType:
@@ -34,4 +38,4 @@ def import_dynamic_module(name: str) -> types.ModuleType:
 
 
 def path(module: types.ModuleType, name: str) -> Any:
-    return importlib_resources.path(module, name)
+    return importlib_resources.as_file(importlib_resources.files(module) / name)
