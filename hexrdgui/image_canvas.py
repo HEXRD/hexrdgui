@@ -2568,7 +2568,9 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         overlay[masked_pixels, 3] = MaskManager().highlight_opacity
 
         extent = tuple(np.degrees(pv.extent))
-        im = axis.imshow(overlay, extent=extent, interpolation='none')
+        # Use aspect='auto' to match the main polar image. Otherwise, imshow
+        # would reset the axis aspect to 'equal' and resize the canvas.
+        im = axis.imshow(overlay, extent=extent, interpolation='none', aspect='auto')
         im.set_animated(True)
 
         highlight_artists = self.mask_highlight_artists.setdefault('default', [])
