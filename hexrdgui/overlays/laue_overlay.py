@@ -9,6 +9,7 @@ import numpy as np
 
 from hexrd.rotations import mapAngle
 from hexrd.instrument import switch_xray_source
+from hexrd.laue.simulation import simulate_laue_pattern_on_instrument
 from hexrd.utils.hkl import hkl_to_str
 
 from hexrdgui.constants import OverlayType, ViewType
@@ -231,7 +232,8 @@ class LaueOverlay(Overlay):
             return point_groups
 
         with switch_xray_source(instr, self.xray_source):
-            sim_data = instr.simulate_laue_pattern(
+            sim_data = simulate_laue_pattern_on_instrument(
+                instr,
                 self.plane_data_no_exclusions,
                 minEnergy=self.min_energy,
                 maxEnergy=self.max_energy,
