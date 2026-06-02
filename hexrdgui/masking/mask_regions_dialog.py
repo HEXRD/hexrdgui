@@ -42,7 +42,6 @@ class MaskRegionsDialog(QObject):
         self.added_templates: list[Any] = []
         self.interactive_templates: dict[str, Any] = {}
         self.canvas = parent.image_tab_widget.active_canvas  # type: ignore[union-attr]
-        self.image_mode = None
         self.raw_mask_coords: list[Any] = []
         self.drawing_axes: Axes | None = None
         self.det: str | None = None
@@ -149,9 +148,15 @@ class MaskRegionsDialog(QObject):
         self.update_undo_enable_state()
         self.interactive_template = None
 
-    def axes_entered(self, event: LocationEvent) -> None:
-        self.image_mode = self.canvas.mode
+    @property
+    def image_mode(self) -> str | None:
+        # Always read the current view straight from the canvas. axes_enter_event
+        # only fires when the cursor crosses into an axes, so a cached value can
+        # easily go stale (e.g. when the dialog is opened while the cursor is
+        # already inside the plot, or during an async redraw).
+        return self.canvas.mode if self.canvas is not None else None
 
+    def axes_entered(self, event: LocationEvent) -> None:
         if event.inaxes is self.canvas.azimuthal_integral_axis:
             # Ignore the azimuthal integral axis in the polar view
             return
@@ -246,8 +251,16 @@ class MaskRegionsDialog(QObject):
             )
             return
 
-        if not self.axes:
+        if event.inaxes is None or (
+            event.inaxes is self.canvas.azimuthal_integral_axis
+        ):
+            # Not in a maskable axes (outside the plot or in the azimuthal
+            # integral axis of the polar view).
             return
+
+        # Make sure axes reflects where the press actually happened, even if
+        # axes_entered() never ran for this axes.
+        self.axes = event.inaxes
 
         if event.button == 1:
             # Determine if selecting an existing template or drawing a new one
