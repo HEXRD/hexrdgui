@@ -2568,8 +2568,14 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         overlay[masked_pixels, 3] = MaskManager().highlight_opacity
 
         extent = tuple(np.degrees(pv.extent))
-        im = axis.imshow(overlay, extent=extent, interpolation='none')
+        # Use aspect='auto' to match the main polar image. Otherwise, imshow
+        # would reset the axis aspect to 'equal' and resize the canvas.
+        im = axis.imshow(overlay, extent=extent, interpolation='none', aspect='auto')
         im.set_animated(True)
+        # Keep it invisible to the normal draw so it isn't baked into the blit
+        # background (matplotlib does not skip animated *images* during a draw).
+        # BlitManager.draw_all_artists() makes it visible only while blitting.
+        im.set_visible(False)
 
         highlight_artists = self.mask_highlight_artists.setdefault('default', [])
         highlight_artists.append(im)

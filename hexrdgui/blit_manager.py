@@ -2,6 +2,7 @@ from collections.abc import Generator, Sequence, ValuesView
 from typing import Any
 
 from matplotlib.artist import Artist
+from matplotlib.image import AxesImage
 
 from hexrdgui.utils.matplotlib import remove_artist
 
@@ -77,7 +78,18 @@ class BlitManager:
         """Draw all of the animated artists."""
         fig = self.canvas.figure
         for artist in _recursive_yield_artists(self.artists):
-            fig.draw_artist(artist)
+            if isinstance(artist, AxesImage):
+                # matplotlib's normal draw skips animated artists for most
+                # types, but NOT images: they are composited separately and
+                # drawn regardless of the animated flag. Blit-managed images
+                # are therefore kept invisible (see where they are created) so
+                # they don't get baked into the captured background. Make them
+                # visible just long enough to draw them here.
+                artist.set_visible(True)
+                fig.draw_artist(artist)
+                artist.set_visible(False)
+            else:
+                fig.draw_artist(artist)
 
     def update(self) -> None:
         """Update the screen with animated artists."""
