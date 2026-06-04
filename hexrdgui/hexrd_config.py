@@ -1428,9 +1428,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             'active': current_material,
             # type: ignore[union-attr]
             'dmin': selected_material.dmin.getVal('angstrom'),
-            'tth_width': tth_width,
             'reset_exclusions': False,
         }
+
+        # Only write tth_width if the material actually has one. Writing
+        # `tth_width: null` would defeat HEXRD's default handling (the default
+        # only applies when the key is absent, not when it is null) and cause
+        # the workflow to fail. When it is absent, find-orientations supplies
+        # its own default width where one is required.
+        if tth_width is not None:
+            material['tth_width'] = tth_width
 
         if self.instrument_has_roi:
             names = self.detector_group_names
