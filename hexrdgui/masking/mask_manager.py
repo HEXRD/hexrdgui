@@ -408,7 +408,13 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def masks_changed(self) -> None:
         if self.view_mode in (ViewType.polar, ViewType.stereo):
-            self.polar_masks_changed.emit()
+            if self.threshold_mask is not None:
+                # The threshold mask is applied to the raw images *before*
+                # warping (HEXRD/hexrdgui#1689), so a change to it needs a full
+                # re-warp rather than the cheap polar mask re-application.
+                HexrdConfig().rerender_needed.emit()
+            else:
+                self.polar_masks_changed.emit()
         elif self.view_mode == ViewType.raw:
             self.raw_masks_changed.emit()
 
@@ -441,6 +447,14 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def remove_mask(self, name: str) -> Mask:
         removed_mask = self.masks.pop(name)
+        if removed_mask.type == MaskType.threshold and self.view_mode in (
+            ViewType.polar,
+            ViewType.stereo,
+        ):
+            # A threshold mask was baked into the warp, so removing it needs a
+            # full re-render (the following masks_changed() can no longer tell
+            # that a threshold mask was present).
+            HexrdConfig().rerender_needed.emit()
         self.mask_mgr_dialog_update.emit()
         return removed_mask
 
