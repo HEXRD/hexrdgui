@@ -323,10 +323,16 @@ class FitGrainsOptionsDialog(QObject):
         return [w.itemText(i) for i in range(w.count())]
 
     def selected_material_changed(self) -> None:
-        if self._table is not None:
-            self._table.material = self.material
+        # self.material can be None (e.g. transiently while the material combo
+        # box is being repopulated in update_materials(), where clear() emits
+        # currentIndexChanged with an empty selection). The reflections table
+        # cannot display a None material, so guard against it to avoid an
+        # AttributeError.
+        material = self.material
+        if self._table is not None and material is not None:
+            self._table.material = material
 
-        self.ui.grains_table_view.material = self.material
+        self.ui.grains_table_view.material = material
         self.update_num_hkls()
 
     @property
