@@ -170,11 +170,6 @@ def _switch_to_polar(main_window) -> None:
     assert HexrdConfig().image_mode == ViewType.polar
 
 
-# Other GUI tests (e.g. fit-grains) can leave dialogs alive whose slots fire
-# when this test loads a state file and changes the active material, raising
-# unrelated exceptions in the Qt event loop. Don't let that captured noise
-# fail this test (matches test_save_images.py).
-@pytest.mark.qt_no_exception_capture
 def test_polar_view_masks(qtbot, main_window, ge_wppf_state):
     _clear_masks()
     HexrdConfig().config['image']['polar']['apply_snip1d'] = False
