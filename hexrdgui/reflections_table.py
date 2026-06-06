@@ -85,6 +85,11 @@ class ReflectionsTable:
             self.update_table_if_name_matches
         )
 
+        # HexrdConfig is a singleton that outlives this dialog. Disconnect our
+        # slots when the dialog is destroyed so they cannot fire on a deleted
+        # C++ object afterwards.
+        self.ui.destroyed.connect(self.disconnect_hexrd_config)
+
         self.ui.relative_scale_material.currentIndexChanged.connect(
             self.on_relative_scale_material_changed
         )
@@ -92,6 +97,23 @@ class ReflectionsTable:
         self.ui.show_selection_helper.clicked.connect(self.show_selection_helper)
 
         self.selection_helper.apply_clicked.connect(self.on_selection_helper_apply)
+
+    def disconnect_hexrd_config(self) -> None:
+        signals_and_slots = [
+            (HexrdConfig().materials_removed, self.on_materials_removed),
+            (HexrdConfig().material_renamed, self.on_material_renamed),
+            (HexrdConfig().materials_dict_modified, self.on_materials_dict_modified),
+            (HexrdConfig().active_material_modified, self.active_material_modified),
+            (
+                HexrdConfig().update_reflections_tables,
+                self.update_table_if_name_matches,
+            ),
+        ]
+        for signal, slot in signals_and_slots:
+            try:
+                signal.disconnect(slot)
+            except (RuntimeError, TypeError):
+                pass
 
     def on_table_context_menu_requested(self, pos: QPoint) -> None:
         # This is the item that was right-clicked

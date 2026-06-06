@@ -296,8 +296,22 @@ class PolarView:
     def create_warp_image(self, det: str) -> np.ndarray:
         assert self.images_dict is not None
         img = self.images_dict[det]
-        panel = self.detectors[det]
 
+        # Apply the threshold mask *before* warping, so the threshold operates
+        # on raw detector intensities rather than on interpolated and
+        # background-subtracted polar values (see HEXRD/hexrdgui#1689).
+        # Thresholded pixels become NaN; `warp_image()` then folds them into
+        # the warp mask, so they are handled by the same machinery as the
+        # detector gaps (including the SNIP algorithms that cannot ingest
+        # NaNs -- those see the masked `.data` fill value rather than a NaN).
+        if (tm := MaskManager().threshold_mask) and tm.visible:
+            lt_val, gt_val = tm.data
+            # Copy so we never mutate the shared images dict.
+            img = img.astype(float, copy=True)
+            img[img < lt_val] = np.nan
+            img[img > gt_val] = np.nan
+
+        panel = self.detectors[det]
         self.warp_dict[det] = self.warp_image(img, panel)
         return self.warp_dict[det]
 
@@ -647,6 +661,11 @@ class PolarView:
 
     @property
     def visible_mask_pv_array(self) -> np.ndarray:
+        # NOTE: the threshold mask is intentionally NOT handled here. It is
+        # applied to the raw detector images before warping (see
+        # `create_warp_image()`), which folds it into the warp mask. That is
+        # both more correct (it thresholds raw intensities) and avoids the
+        # circular dependency on `self.img` that used to exist here.
         total_mask = np.zeros(self.shape, dtype=bool)
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
@@ -655,12 +674,6 @@ class PolarView:
                 ViewType.polar, self.instr, polar_view=self
             )
             total_mask = np.logical_or(total_mask, ~mask_arr)
-        if (tm := MaskManager().threshold_mask) and tm.visible:
-            lt_val, gt_val = tm.data
-            lt_mask = self.img < lt_val
-            gt_mask = self.img > gt_val
-            mask = np.logical_or(lt_mask, gt_mask)
-            total_mask = np.logical_or(total_mask, mask)
 
         return total_mask
 

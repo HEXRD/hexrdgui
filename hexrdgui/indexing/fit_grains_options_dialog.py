@@ -106,8 +106,24 @@ class FitGrainsOptionsDialog(QObject):
 
         HexrdConfig().materials_dict_modified.connect(self.update_materials)
 
+        # HexrdConfig is a singleton that outlives this dialog. Disconnect our
+        # slots when the dialog is destroyed so they cannot fire (and drive the
+        # reflections table) on a deleted C++ object afterwards.
+        self.ui.destroyed.connect(self.disconnect_hexrd_config)
+
         self.ui.plot_grains.clicked.connect(self.plot_grains)
         self.data_model.grains_table_modified.connect(self.on_grains_table_modified)
+
+    def disconnect_hexrd_config(self) -> None:
+        signals_and_slots = [
+            (HexrdConfig().overlay_config_changed, self.update_num_hkls),
+            (HexrdConfig().materials_dict_modified, self.update_materials),
+        ]
+        for signal, slot in signals_and_slots:
+            try:
+                signal.disconnect(slot)
+            except (RuntimeError, TypeError):
+                pass
 
     def all_widgets(self) -> list[Any]:
         """Only includes widgets directly related to config parameters"""

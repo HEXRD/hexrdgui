@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QEvent, QSettings
 from PySide6.QtWidgets import QApplication
 
 from hexrdgui.main_window import MainWindow
@@ -57,8 +57,19 @@ def main_window(qtbot):
     sys.stderr = sys.__stderr__
 
     # Destroy the MainWindow QObject so Qt auto-disconnects all signal
-    # connections (e.g. HexrdConfig signals → this window's slots).
+    # connections (e.g. HexrdConfig signals → this window's slots), and so
+    # dialogs created during the test fire their `destroyed` signal and
+    # disconnect from the HexrdConfig singleton.
+    #
+    # NOTE: processEvents() alone does NOT process DeferredDelete events, so
+    # deleteLater() would not actually destroy anything here -- the window and
+    # its dialogs would linger (and stay connected to HexrdConfig) until some
+    # later event-loop spin, leaking into subsequent tests. Force the deferred
+    # deletions so destruction happens now, deterministically, on every
+    # platform.
     window.deleteLater()
+    QApplication.processEvents()
+    QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     QApplication.processEvents()
 
 
