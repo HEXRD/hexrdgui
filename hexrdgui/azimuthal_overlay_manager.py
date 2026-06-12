@@ -19,7 +19,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.azimuthal_overlay_editor import AzimuthalOverlayEditor
 from hexrdgui.azimuthal_overlay_style_picker import AzimuthalOverlayStylePicker
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals
+from hexrdgui.utils import block_signals, HexrdConfigDisconnectMixin
 
 import numpy as np
 
@@ -30,7 +30,7 @@ COLUMNS = {
 }
 
 
-class AzimuthalOverlayManager:
+class AzimuthalOverlayManager(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('azimuthal_overlay_manager.ui', parent)
@@ -56,12 +56,15 @@ class AzimuthalOverlayManager:
         self.ui.save_plot.clicked.connect(
             HexrdConfig().azimuthal_plot_save_requested.emit
         )
-        HexrdConfig().materials_added.connect(self.update_table)
-        HexrdConfig().material_renamed.connect(self.on_material_renamed)
-        HexrdConfig().materials_removed.connect(self.update_table)
-
-        HexrdConfig().state_loaded.connect(self.update_table)
-        HexrdConfig().material_modified.connect(self.on_material_modified)
+        self.connect_hexrd_config(
+            [
+                ('materials_added', 'update_table'),
+                ('material_renamed', 'on_material_renamed'),
+                ('materials_removed', 'update_table'),
+                ('state_loaded', 'update_table'),
+                ('material_modified', 'on_material_modified'),
+            ]
+        )
 
     def show(self) -> None:
         self.update_table()

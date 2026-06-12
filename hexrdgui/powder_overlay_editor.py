@@ -23,13 +23,13 @@ from hexrdgui.pinhole_correction_editor import PinholeCorrectionEditor
 from hexrdgui.reflections_table import ReflectionsTable
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals
+from hexrdgui.utils import block_signals, HexrdConfigDisconnectMixin
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
 )
 
 
-class PowderOverlayEditor:
+class PowderOverlayEditor(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('powder_overlay_editor.ui', parent)
@@ -64,15 +64,19 @@ class PowderOverlayEditor:
 
         self.ui.reflections_table.pressed.connect(self.show_reflections_table)
 
-        HexrdConfig().material_tth_width_modified.connect(
-            self.material_tth_width_modified_externally
+        self.connect_hexrd_config(
+            [
+                (
+                    'material_tth_width_modified',
+                    'material_tth_width_modified_externally',
+                ),
+                ('instrument_config_loaded', 'update_visibility_states'),
+            ]
         )
 
         self.ui.distortion_type.currentIndexChanged.connect(
             self.distortion_type_changed
         )
-
-        HexrdConfig().instrument_config_loaded.connect(self.update_visibility_states)
 
     def update_refinement_options(self) -> None:
         if self.overlay is None:

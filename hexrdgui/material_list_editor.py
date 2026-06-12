@@ -5,12 +5,13 @@ from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox, QWidget
 from hexrd.material import Material
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.utils import HexrdConfigDisconnectMixin
 from hexrdgui.list_editor import ListEditor
 from hexrdgui.ui_loader import UiLoader
 from typing import Sequence
 
 
-class MaterialListEditor:
+class MaterialListEditor(HexrdConfigDisconnectMixin):
     """A list editor for materials"""
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -35,7 +36,11 @@ class MaterialListEditor:
         self.ui.import_from_defaults.clicked.connect(self.import_from_defaults)
         self.ui.export_to_cif.clicked.connect(self.export_to_cif)
 
-        HexrdConfig().materials_dict_modified.connect(self.update_editor_items)
+        self.connect_hexrd_config(
+            [
+                ('materials_dict_modified', 'update_editor_items'),
+            ]
+        )
 
     def update_editor_items(self) -> None:
         self.editor.items = self.materials_names

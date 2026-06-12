@@ -7,10 +7,10 @@ from PySide6.QtWidgets import QColorDialog, QWidget
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals
+from hexrdgui.utils import block_signals, HexrdConfigDisconnectMixin
 
 
-class BeamMarkerStyleEditor:
+class BeamMarkerStyleEditor(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('beam_marker_style_editor.ui', parent)
@@ -27,7 +27,11 @@ class BeamMarkerStyleEditor:
         self.ui.color.pressed.connect(self.pick_color)
         self.ui.marker.currentIndexChanged.connect(self.update_config)
         self.ui.markersize.valueChanged.connect(self.update_config)
-        HexrdConfig().beam_marker_modified.connect(self.update_gui)
+        self.connect_hexrd_config(
+            [
+                ('beam_marker_modified', 'update_gui'),
+            ]
+        )
 
     def setup_combo_boxes(self) -> None:
         self.ui.marker.clear()

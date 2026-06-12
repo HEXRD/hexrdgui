@@ -18,7 +18,7 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlay_editor import OverlayEditor
 from hexrdgui.overlay_style_picker import OverlayStylePicker
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals
+from hexrdgui.utils import block_signals, HexrdConfigDisconnectMixin
 from hexrdgui.utils.dialog import add_help_url
 
 
@@ -30,7 +30,7 @@ COLUMNS = {
 }
 
 
-class OverlayManager:
+class OverlayManager(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('overlay_manager.ui', parent)
@@ -54,13 +54,16 @@ class OverlayManager:
         self.ui.add_button.pressed.connect(self.add)
         self.ui.remove_button.pressed.connect(self.remove)
         self.ui.edit_style_button.pressed.connect(self.edit_style)
-        HexrdConfig().update_overlay_manager.connect(self.update_table)
-        HexrdConfig().update_overlay_editor.connect(self.update_overlay_editor)
-        HexrdConfig().materials_added.connect(self.update_table)
-        HexrdConfig().material_renamed.connect(self.on_material_renamed)
-        HexrdConfig().materials_removed.connect(self.update_table)
-
-        HexrdConfig().state_loaded.connect(self.update_table)
+        self.connect_hexrd_config(
+            [
+                ('update_overlay_manager', 'update_table'),
+                ('update_overlay_editor', 'update_overlay_editor'),
+                ('materials_added', 'update_table'),
+                ('material_renamed', 'on_material_renamed'),
+                ('materials_removed', 'update_table'),
+                ('state_loaded', 'update_table'),
+            ]
+        )
 
     def show(self) -> None:
         self.update_table()

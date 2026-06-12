@@ -11,13 +11,13 @@ from hexrd.material.jcpds import JCPDS_extend
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals
+from hexrdgui.utils import block_signals, HexrdConfigDisconnectMixin
 
 if TYPE_CHECKING:
     from hexrd.material import Material
 
 
-class PTSliderDialog:
+class PTSliderDialog(HexrdConfigDisconnectMixin):
     VAL_TO_SLIDER = 10
     SLIDER_TO_VAL = 1 / VAL_TO_SLIDER
 
@@ -64,7 +64,11 @@ class PTSliderDialog:
 
         self.ui.set_ambient_structure_button.clicked.connect(self.set_ambient_structure)
 
-        HexrdConfig().material_renamed.connect(self.update_window_title)
+        self.connect_hexrd_config(
+            [
+                ('material_renamed', 'update_window_title'),
+            ]
+        )
 
     def on_pt_param_widget_changed(self) -> None:
         self.update_material_from_gui()

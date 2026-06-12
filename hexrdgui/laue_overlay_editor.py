@@ -19,10 +19,15 @@ from hexrdgui.calibration_crystal_editor import CalibrationCrystalEditor
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.overlays.laue_overlay import LaueLabelType, LaueRangeShape
 from hexrdgui.ui_loader import UiLoader
-from hexrdgui.utils import block_signals, euler_angles_to_rmat, rmat_to_euler_angles
+from hexrdgui.utils import (
+    block_signals,
+    euler_angles_to_rmat,
+    rmat_to_euler_angles,
+    HexrdConfigDisconnectMixin,
+)
 
 
-class LaueOverlayEditor:
+class LaueOverlayEditor(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('laue_overlay_editor.ui', parent)
@@ -52,11 +57,13 @@ class LaueOverlayEditor:
             self.update_overlay_refinements
         )
 
-        HexrdConfig().euler_angle_convention_changed.connect(
-            self.euler_angle_convention_changed
+        self.connect_hexrd_config(
+            [
+                ('euler_angle_convention_changed', 'euler_angle_convention_changed'),
+                ('instrument_config_loaded', 'update_visibility_states'),
+                ('sample_tilt_modified', 'update_gui'),
+            ]
         )
-        HexrdConfig().instrument_config_loaded.connect(self.update_visibility_states)
-        HexrdConfig().sample_tilt_modified.connect(self.update_gui)
 
     def setup_combo_boxes(self) -> None:
         width_shapes = [x.value.capitalize() for x in LaueRangeShape]

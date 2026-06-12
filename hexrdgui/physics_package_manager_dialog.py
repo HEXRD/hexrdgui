@@ -17,6 +17,7 @@ from hexrdgui.utils import (
     block_signals,
     euler_angles_to_exp_map,
     exp_map_to_euler_angles,
+    HexrdConfigDisconnectMixin,
 )
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.utils.matplotlib import remove_artist
@@ -28,7 +29,7 @@ from hexrd.instrument.constants import FILTER_DEFAULTS, PINHOLE_DEFAULTS
 from hexrd.rotations import rotMatOfExpMap
 
 
-class PhysicsPackageManagerDialog:
+class PhysicsPackageManagerDialog(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
         loader = UiLoader()
         self.ui = loader.load_file('physics_package_manager_dialog.ui', parent)
@@ -94,13 +95,17 @@ class PhysicsPackageManagerDialog:
             w.currentIndexChanged.connect(  # type: ignore[attr-defined]
                 lambda index, k=k: self.material_changed(index, k)
             )
-        HexrdConfig().instrument_config_loaded.connect(self.update_instrument_type)
-        HexrdConfig().detectors_changed.connect(self.initialize_detector_coatings)
-
-        HexrdConfig().euler_angle_convention_changed.connect(
-            self.on_euler_angle_convention_changed
+        self.connect_hexrd_config(
+            [
+                ('instrument_config_loaded', 'update_instrument_type'),
+                ('detectors_changed', 'initialize_detector_coatings'),
+                (
+                    'euler_angle_convention_changed',
+                    'on_euler_angle_convention_changed',
+                ),
+                ('sample_tilt_modified', 'reset_sample_tilt'),
+            ]
         )
-        HexrdConfig().sample_tilt_modified.connect(self.reset_sample_tilt)
 
         for w in self.sample_tilt_widgets:
             w.valueChanged.connect(self.update_sample_normal)
