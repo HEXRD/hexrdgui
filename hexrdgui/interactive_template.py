@@ -120,7 +120,7 @@ class InteractiveTemplate:
             return
 
         if style:
-            self.shape.set_linestyle(style)
+            self.shape.set_linestyle(style)  # type: ignore[arg-type]
         if width:
             self.shape.set_linewidth(width)
         if color:
