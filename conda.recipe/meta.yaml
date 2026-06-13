@@ -23,7 +23,9 @@ requirements:
     - python >={{ python_min }}
     - fabio
     - hexrd=={{ hexrd_version }}
-    - matplotlib-base
+    # matplotlib 3.11.0 deadlocks the Qt GUI during image-series loading on
+    # Windows/macOS. Pin below 3.11 until resolved upstream.
+    - matplotlib-base <3.11
     - Pillow
     - pyhdf
     # This next one is needed to fix the app name on Mac
