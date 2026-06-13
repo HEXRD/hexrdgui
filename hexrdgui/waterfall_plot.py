@@ -178,7 +178,7 @@ class WaterfallPlot:
 
     def connect(self) -> None:
         for k, f in self._mpl_callbacks.items():
-            cid = self.canvas.mpl_connect(k, f)
+            cid = self.canvas.mpl_connect(k, f)  # type: ignore[call-overload]
             self._mpl_cids.append(cid)
 
     def disconnect(self) -> None:

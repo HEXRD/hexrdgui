@@ -58,5 +58,5 @@ class NavigationToolbar(NavigationToolbar2QT):
         if self.tight_savefig:
             context['savefig.bbox'] = 'tight'
 
-        with rc_context(context):
+        with rc_context(context):  # type: ignore[arg-type]
             return super().save_figure(*args, **kwargs)

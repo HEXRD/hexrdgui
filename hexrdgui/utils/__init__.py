@@ -45,6 +45,46 @@ class SnipAlgorithmType(IntEnum):
     SNIP_2D = 2
 
 
+class HexrdConfigDisconnectMixin:
+    """Mixin for plain dialog-wrapper classes (those with a `self.ui` widget)
+    that connect long-lived HexrdConfig() signals to their own methods.
+
+    HexrdConfig is a singleton that outlives these dialogs, so a connection left
+    in place would fire its slot on a deleted C++ widget after the dialog is
+    closed. Register the connections via `connect_hexrd_config()` (passing the
+    signal *name* and the slot); they are automatically disconnected when
+    `self.ui` is destroyed.
+
+    IMPORTANT: signals are referenced by NAME and re-fetched from HexrdConfig()
+    fresh at disconnect time. Caching the SignalInstance objects instead breaks
+    Qt teardown (the slot then still fires on a deleted C++ widget), so do not
+    "optimize" this by storing the signals. The disconnect must also stay a
+    bound method (this one) rather than a lambda for the same reason.
+    """
+
+    ui: Any  # provided by the subclass
+
+    def connect_hexrd_config(
+        self,
+        signal_slot_names: list[tuple[str, str]],
+    ) -> None:
+        from hexrdgui.hexrd_config import HexrdConfig
+
+        self._hexrd_config_names: list[tuple[str, str]] = list(signal_slot_names)
+        for signal_name, slot_name in self._hexrd_config_names:
+            getattr(HexrdConfig(), signal_name).connect(getattr(self, slot_name))
+        self.ui.destroyed.connect(self._disconnect_hexrd_config)
+
+    def _disconnect_hexrd_config(self, *_args: Any) -> None:
+        from hexrdgui.hexrd_config import HexrdConfig
+
+        for signal_name, slot_name in self._hexrd_config_names:
+            try:
+                getattr(HexrdConfig(), signal_name).disconnect(getattr(self, slot_name))
+            except (RuntimeError, TypeError):
+                pass
+
+
 def convert_tilt_convention(
     iconfig: dict[str, Any],
     old_convention: dict[str, Any] | None,

@@ -13,6 +13,7 @@ from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.utils import HexrdConfigDisconnectMixin
 from hexrdgui.tree_views.hkl_picks_tree_view import HKLPicksTreeView
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils.conversions import angles_to_cart, cart_to_angles
@@ -20,7 +21,7 @@ from hexrdgui.utils.dicts import ndarrays_to_lists
 from hexrdgui.utils.tth_distortion import apply_tth_distortion_if_needed
 
 
-class HKLPicksTreeViewDialog:
+class HKLPicksTreeViewDialog(HexrdConfigDisconnectMixin):
     def __init__(
         self,
         dictionary: dict,
@@ -63,7 +64,11 @@ class HKLPicksTreeViewDialog:
         self.ui.show_overlays.toggled.connect(HexrdConfig()._set_show_overlays)
         self.ui.show_all_picks.toggled.connect(self.show_all_picks_toggled)
 
-        HexrdConfig().overlay_config_changed.connect(self.update_gui)
+        self.connect_hexrd_config(
+            [
+                ('overlay_config_changed', 'update_gui'),
+            ]
+        )
 
     def update_gui(self) -> None:
         self.ui.show_overlays.setChecked(HexrdConfig().show_overlays)
