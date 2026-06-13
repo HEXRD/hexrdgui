@@ -39,7 +39,7 @@ from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
-from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.dialog import add_help_url, fit_window_to_screen
 from hexrdgui.utils.matplotlib import remove_artist
 
 import hexrdgui.constants
@@ -201,6 +201,13 @@ class OmeMapsViewerDialog(QObject):
     def show(self) -> None:
         self.update_plot()
         self.ui.show()
+
+        # The .ui file specifies a large default size (1900x1149). On any
+        # smaller display - and especially over remote desktops - that can
+        # open larger than the screen with its title bar/edges off-screen and
+        # unreachable for resizing or moving. Clamp it to the available screen
+        # area once the window has been mapped (so frame geometry is known).
+        QTimer.singleShot(0, lambda: fit_window_to_screen(self.ui))
 
     def show_later(self) -> None:
         # In case this was called in a separate thread (which will
