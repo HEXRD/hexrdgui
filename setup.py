@@ -6,7 +6,10 @@ from setuptools import setup, find_packages, Extension
 install_reqs = [
     'hexrd',
     'fabio>=0.11',
-    'matplotlib',
+    # matplotlib 3.11.0 deadlocks the Qt GUI during image-series loading on
+    # Windows/macOS (the GUI test suite hangs indefinitely). Pin below 3.11
+    # until the issue is resolved upstream.
+    'matplotlib<3.11',
     'Pillow',
     'pyside6',
     'pyyaml',
