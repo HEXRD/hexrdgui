@@ -1,5 +1,67 @@
+from PySide6.QtCore import QPoint, QRect, QSize
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QDialogButtonBox
+from PySide6.QtWidgets import QApplication, QDialogButtonBox, QWidget
+
+
+def fit_geometry_to_available(
+    geom: QRect, frame: QRect, available: QRect, margin: int = 0
+) -> tuple[QSize, QPoint]:
+    """Pure geometry behind `fit_window_to_screen` (no live Qt window calls).
+
+    Given a window's current geometry (decoration-exclusive), its frame
+    geometry (decoration-inclusive), and the screen's available rect, return
+    ``(size, frame_pos)``: the size to resize the window to and the position
+    to move the window frame's top-left to, such that the whole frame fits
+    inside ``available``. Kept side-effect-free so it can be unit tested with
+    a fabricated screen rect on any platform.
+    """
+    # The difference between frame and geometry is the decoration thickness
+    # (title bar, borders). Subtract it so the window plus its decorations
+    # fits on-screen.
+    decoration_w = frame.width() - geom.width()
+    decoration_h = frame.height() - geom.height()
+
+    max_w = max(available.width() - decoration_w - margin, 0)
+    max_h = max(available.height() - decoration_h - margin, 0)
+    size = geom.size().boundedTo(QSize(max_w, max_h))
+
+    # Clamp the (decoration-inclusive) frame top-left so the whole frame -
+    # and in particular the title bar - stays within the available area.
+    frame_w = size.width() + decoration_w
+    frame_h = size.height() + decoration_h
+    x = min(max(frame.x(), available.x()), available.x() + available.width() - frame_w)
+    y = min(max(frame.y(), available.y()), available.y() + available.height() - frame_h)
+    return size, QPoint(x, y)
+
+
+def fit_window_to_screen(window: QWidget, margin: int = 0) -> None:
+    """Ensure a top-level window fits within the available screen area.
+
+    Shrinks the window if it is larger than the screen's available
+    geometry, and moves it so that the whole window frame (including the
+    title bar and edges) stays on-screen. This prevents the window from
+    opening larger than the display - on any small screen, and especially
+    over remote desktops (VNC/RDP/NoMachine) - where its decorations would
+    otherwise be off-screen and therefore impossible to grab to resize or
+    move.
+
+    Should be called after the window has been shown, so that the frame
+    (decoration) geometry is known.
+    """
+    screen = window.screen() or QApplication.primaryScreen()
+    if screen is None:
+        return
+
+    size, pos = fit_geometry_to_available(
+        window.geometry(),
+        window.frameGeometry(),
+        screen.availableGeometry(),
+        margin,
+    )
+    if size != window.size():
+        window.resize(size)
+    # window.move() positions the frame top-left for top-level windows.
+    window.move(pos)
 
 
 def open_url(url: str) -> bool:
