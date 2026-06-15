@@ -360,6 +360,19 @@ class PolarView:
                 'rmat_s': ct.identity_3x3,
             }
 
+        # Add the distortion name and params to the cache key. The distortion
+        # object is hashed by identity, but calibration mutates its params in
+        # place, so without this the polar view returns a stale warp after a
+        # refine. The name covers toggling off/switching functions. These keys
+        # are popped before projecting (see `project_on_detector`).
+        distortion = detector.distortion
+        kwargs['_distortion_func_name'] = (
+            distortion.maptype if distortion is not None else None
+        )
+        kwargs['_distortion_params'] = (
+            np.asarray(distortion.params) if distortion is not None else None
+        )
+
         return arg, kwargs
 
     def _compute_xypts(self, det_key: str) -> np.ndarray:
@@ -796,6 +809,12 @@ def project_on_detector(
     # `gvec_angs` argument with them. Then, the `gvec_args` will be passed
     # first to `_project_on_detector_plane`, along with any extra args and
     # kwargs.
+
+    # These are only here to make the cache key distortion-aware (see
+    # `args_project_on_detector`); the projection function doesn't accept them.
+    kwargs.pop('_distortion_func_name', None)
+    kwargs.pop('_distortion_params', None)
+
     dummy_ome = np.zeros((ntth * neta))
 
     gvec_angs = np.vstack(

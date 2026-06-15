@@ -1604,6 +1604,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
                 }
 
             self.panel_distortion_modified.emit(path[1])
+            # Toggling/switching the distortion also affects the warped image.
+            self.rerender_needed.emit()
             return
 
         try:
@@ -1673,6 +1675,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         if path[2:4] == ['distortion', 'parameters']:
             self.panel_distortion_modified.emit(path[1])
+            # The distortion also affects the warped image, not just overlays.
+            self.rerender_needed.emit()
             return
 
         # Otherwise, assume we need to re-render the whole image
