@@ -272,12 +272,17 @@ class HEDMCalibrationOptionsDialog(QObject):
         self.ui.threshold.setValue(v)
 
     def choose_hkls(self) -> None:
-        kwargs = {
-            'material': self.material,
-            'title_prefix': 'Select hkls for HEDM calibration: ',
-            'parent': self.ui,
-        }
-        self._reflections_table = ReflectionsTable(**kwargs)
+        if not hasattr(self, '_reflections_table'):
+            kwargs = {
+                'material': self.material,
+                'title_prefix': 'Select hkls for HEDM calibration: ',
+                'parent': self.ui,
+            }
+            self._reflections_table = ReflectionsTable(**kwargs)
+        else:
+            # Make sure the material is up to date
+            self._reflections_table.material = self.material
+
         self._reflections_table.show()
 
     def update_num_hkls(self) -> None:
