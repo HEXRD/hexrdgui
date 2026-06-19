@@ -157,7 +157,10 @@ class InstrumentViewer:
                         continue
 
                     # We need to adjust these rbnd_indices. Find the max.
-                    prev_max = max(chain(*ret[group][data_key]))
+                    # Default to -1 (offset becomes 0) if nothing was
+                    # accumulated yet, e.g. the previous detector(s) in the
+                    # group contributed no ranges.
+                    prev_max = max(chain(*ret[group][data_key]), default=-1)
                     for i, x in enumerate(entry):
                         entry[i] = [j + prev_max + 1 for j in x]
                     ret[group][data_key] += entry
