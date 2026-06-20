@@ -282,7 +282,14 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         i = self.data['idx'] if 'idx' in self.data else idx
         dark_idx = self.state['dark'][i]
         if dark_idx == UI_DARK_INDEX_FILE:
-            ims = ImageFileManager().open_file(self.state['dark_files'][idx])
+            # The dark file may store its frames at a different dataset path
+            # than the data (e.g. /exchange/dark vs /exchange/data, possibly
+            # in the same HDF5 file). Pass that path through if we have one.
+            dark_paths = self.state.get('dark_paths') or []
+            dark_path = dark_paths[idx] if idx < len(dark_paths) else None
+            ims = ImageFileManager().open_file(
+                self.state['dark_files'][idx], path=dark_path
+            )
 
         # Create or load the dark image if selected
         frames = len(ims)

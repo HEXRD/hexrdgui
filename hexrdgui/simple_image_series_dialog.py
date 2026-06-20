@@ -20,6 +20,7 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
+from hexrdgui.load_hdf5_dialog import LoadHDF5Dialog
 from hexrdgui.load_images_dialog import LoadImagesDialog
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
@@ -129,6 +130,10 @@ class SimpleImageSeriesDialog(QObject):
             'trans': UI_TRANS_INDEX_NONE,
             'dark': UI_DARK_INDEX_NONE,
             'dark_files': None,
+            # Per-detector [group, dataname] for the dark dataset, used when
+            # the dark file is HDF5 and its frames are at a different path
+            # than the data (e.g. /exchange/dark vs /exchange/data).
+            'dark_paths': None,
         }
 
         for k, default in list_defaults.items():
@@ -166,6 +171,7 @@ class SimpleImageSeriesDialog(QObject):
             )
             self.enable_read()
             self.state['dark_files'][self.idx] = None
+            self.state['dark_paths'][self.idx] = None
         self.enable_read()
 
     def detectors_changed(self) -> None:
@@ -212,6 +218,10 @@ class SimpleImageSeriesDialog(QObject):
         self.enable_read()
 
     def select_dark_img(self, selected_file: bool | str = False) -> None:
+        # When called without a file, the user is actively choosing one, so we
+        # also prompt for the dark dataset path (HDF5). Re-entrant calls that
+        # pass an existing file (e.g. apply-to-all) keep the stored path.
+        prompt_path = not selected_file
         if not selected_file:
             # This takes one image to use for dark subtraction.
             caption = 'Select image file'
@@ -220,6 +230,15 @@ class SimpleImageSeriesDialog(QObject):
             )
 
         if selected_file:
+            # A truthy selected_file is always a path string here (either passed
+            # in or returned by the file dialog above).
+            assert isinstance(selected_file, str)
+            if prompt_path:
+                dark_path = self.select_dark_dataset_path(selected_file)
+            else:
+                # Propagate the dataset path already chosen for this detector.
+                dark_path = self.state['dark_paths'][self.idx]
+
             if self.ui.all_detectors.isChecked():
                 files = ImageLoadManager().match_files([selected_file])
                 if files and all(len(f) for f in files):
@@ -227,9 +246,11 @@ class SimpleImageSeriesDialog(QObject):
                     for i, f in enumerate(files):
                         self.dark_files[i] = files[i][0]
                         self.state['dark_files'][i] = files[i][0]
+                        self.state['dark_paths'][i] = dark_path
                 else:
                     self.dark_files = [selected_file] * self.num_dets
                     self.state['dark_files'] = [selected_file] * self.num_dets
+                    self.state['dark_paths'] = [dark_path] * self.num_dets
                     msg = (
                         'Unable to match files - using the same dark file'
                         'for each detector.\nIf this is incorrect please '
@@ -240,9 +261,31 @@ class SimpleImageSeriesDialog(QObject):
             else:
                 self.dark_files[self.idx] = selected_file
                 self.state['dark_files'][self.idx] = selected_file
+                self.state['dark_paths'][self.idx] = dark_path
 
             self.dark_mode_changed()
             self.enable_read()
+
+    def select_dark_dataset_path(self, selected_file: str) -> list[str] | None:
+        # For HDF5 dark files, the dark frames may live at a different dataset
+        # path than the data (e.g. /exchange/dark vs /exchange/data). Since the
+        # dark may even be in the same file as the data, auto-detection would
+        # wrongly pick the data path, so always let the user choose the dark
+        # dataset. Returns a [group, dataname] list, or None for non-HDF5 files
+        # (the data path is then reused as before).
+        if not ImageFileManager().is_hdf(Path(selected_file).suffix):
+            return None
+
+        dialog = LoadHDF5Dialog(selected_file)
+        if not dialog.paths:
+            return None
+        if not dialog.ui.exec():
+            return None
+        if dialog.ui.hdf5_paths.currentItem() is None:
+            return None
+
+        group, dataname, _ = dialog.results()
+        return [group, dataname]
 
     def select_images(self) -> None:
         # This takes one or more images for a single detector.
