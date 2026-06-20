@@ -211,12 +211,17 @@ class OmeMapsSelectDialog(QObject):
         self.ui.tab_widget.setCurrentWidget(method_tab)
 
     def choose_hkls(self) -> None:
-        kwargs = {
-            'material': self.material,
-            'title_prefix': 'Select hkls for eta omega map generation: ',
-            'parent': self.ui,
-        }
-        self._table = ReflectionsTable(**kwargs)
+        if not hasattr(self, '_table'):
+            kwargs = {
+                'material': self.material,
+                'title_prefix': 'Select hkls for eta omega map generation: ',
+                'parent': self.ui,
+            }
+            self._table = ReflectionsTable(**kwargs)
+        else:
+            # Make sure the material is up to date
+            self._table.material = self.material
+
         self._table.show()
 
     def update_num_hkls(self) -> None:
