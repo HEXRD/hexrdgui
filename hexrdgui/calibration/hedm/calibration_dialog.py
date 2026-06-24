@@ -319,6 +319,20 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
         )
         xyo_pred = compute_xyo(self.calibrators)
 
+        # Reuse the existing dialog if we already created one, so we don't
+        # leak duplicate windows. The grain ids and spots data are fixed for
+        # the calibration session, so updating the data is sufficient.
+        existing = getattr(self, '_spot_diagnostics_dialog', None)
+        if existing is not None:
+            existing.update_data(
+                self.instr,
+                xyo_pred=xyo_pred,
+                pred_angs=pred_angs,
+                meas_angs=meas_angs,
+            )
+            existing.show()
+            return
+
         self._spot_diagnostics_dialog = SpotDiagnosticsDialog(
             instr=self.instr,
             spots_data=self.spots_data,
