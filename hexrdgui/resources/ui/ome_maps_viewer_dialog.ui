@@ -10,7 +10,17 @@
     <height>1149</height>
    </rect>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
+  <layout class="QVBoxLayout" name="outer_layout">
+   <item>
+    <widget class="QScrollArea" name="scroll_area">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <widget class="QWidget" name="scroll_contents">
+      <layout class="QGridLayout" name="gridLayout">
    <item row="3" column="3" rowspan="7">
     <layout class="QVBoxLayout" name="canvas_layout"/>
    </item>
@@ -931,7 +941,11 @@
      </layout>
     </widget>
    </item>
-   <item row="11" column="1" colspan="4">
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
     <widget class="QDialogButtonBox" name="button_box">
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>

@@ -1,4 +1,4 @@
-from PySide6.QtCore import QPoint, QRect, QSize
+from PySide6.QtCore import QByteArray, QPoint, QRect, QSettings, QSize
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication, QDialogButtonBox, QWidget
 
@@ -62,6 +62,24 @@ def fit_window_to_screen(window: QWidget, margin: int = 0) -> None:
         window.resize(size)
     # window.move() positions the frame top-left for top-level windows.
     window.move(pos)
+
+
+def save_window_geometry(window: QWidget, key: str) -> None:
+    """Persist a window's size/position/state to QSettings under ``key``."""
+    QSettings().setValue(key, window.saveGeometry())
+
+
+def restore_window_geometry(window: QWidget, key: str) -> bool:
+    """Restore a window's geometry previously saved with `save_window_geometry`.
+
+    Returns True if a saved geometry was found and applied. Callers should still
+    run `fit_window_to_screen` after the window is shown so a geometry saved on a
+    larger display is clamped back onto the current screen.
+    """
+    data = QSettings().value(key)
+    if isinstance(data, QByteArray) and not data.isEmpty():
+        return bool(window.restoreGeometry(data))
+    return False
 
 
 def open_url(url: str) -> bool:

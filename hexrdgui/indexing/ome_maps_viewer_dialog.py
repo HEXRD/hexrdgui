@@ -39,7 +39,18 @@ from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.select_items_widget import SelectItemsWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
-from hexrdgui.utils.dialog import add_help_url, fit_window_to_screen
+from hexrdgui.utils.dialog import (
+    add_help_url,
+    fit_window_to_screen,
+    restore_window_geometry,
+    save_window_geometry,
+)
+
+# QSettings key for persisting this dialog's size/position across sessions.
+GEOMETRY_SETTINGS_KEY = 'ome_maps_viewer_dialog/geometry'
+# Leave a small margin so the window (and its resize handle) is not flush to the
+# screen edge after auto-fitting.
+FIT_MARGIN = 50
 from hexrdgui.utils.matplotlib import remove_artist
 
 import hexrdgui.constants
@@ -200,14 +211,24 @@ class OmeMapsViewerDialog(QObject):
 
     def show(self) -> None:
         self.update_plot()
+
+        # Restore the user's last size/position, if we have saved one.
+        restore_window_geometry(self.ui, GEOMETRY_SETTINGS_KEY)
+
+        # The .ui file specifies a large default size (1900x1149). On a smaller
+        # display - especially over remote desktops - that opens larger than the
+        # screen with its edges/resize-handle off-screen and unreachable.
+        # Shrink it to fit BEFORE showing: some window managers (notably over
+        # NoMachine) ignore a resize requested after an oversized window has been
+        # mapped, so it must map at a size that already fits. The dialog content
+        # is in a scroll area (see the .ui) so it can shrink to any size.
+        fit_window_to_screen(self.ui, FIT_MARGIN)
+
         self.ui.show()
 
-        # The .ui file specifies a large default size (1900x1149). On any
-        # smaller display - and especially over remote desktops - that can
-        # open larger than the screen with its title bar/edges off-screen and
-        # unreachable for resizing or moving. Clamp it to the available screen
-        # area once the window has been mapped (so frame geometry is known).
-        QTimer.singleShot(0, lambda: fit_window_to_screen(self.ui))
+        # Backstop: clamp again after mapping, once decoration geometry is known
+        # (also re-clamps a restored geometry saved on a larger display).
+        QTimer.singleShot(0, lambda: fit_window_to_screen(self.ui, FIT_MARGIN))
 
     def show_later(self) -> None:
         # In case this was called in a separate thread (which will
@@ -227,10 +248,16 @@ class OmeMapsViewerDialog(QObject):
             return
 
         self.save_config()
+        self._save_geometry()
         self.accepted.emit()
 
     def on_rejected(self) -> None:
+        self._save_geometry()
         self.rejected.emit()
+
+    def _save_geometry(self) -> None:
+        # Remember the dialog's size/position for next time.
+        save_window_geometry(self.ui, GEOMETRY_SETTINGS_KEY)
 
     def validate(self) -> None:
         if self.quaternion_method_name == 'hand_picked':
