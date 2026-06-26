@@ -22,6 +22,7 @@ from hexrdgui.calibration.material_calibration_dialog_callbacks import (
 )
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.overlays import reject_overlays_with_custom_energy
 from hexrdgui.utils import masks_applied_to_panel_buffers
 
 
@@ -50,6 +51,8 @@ class PowderRunner(QObject):
         overlays = self.visible_powder_overlays
         if len(overlays) != 1:
             raise Exception('There must be exactly one visible powder overlay')
+
+        reject_overlays_with_custom_energy(overlays, 'Powder calibration')
 
     def _run(self) -> None:
         # First, have the user pick some options

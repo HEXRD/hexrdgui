@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 import copy
-from typing import Any, TYPE_CHECKING
+from typing import Any, Generator, TYPE_CHECKING
 
 import numpy as np
 
@@ -16,7 +17,7 @@ from hexrd.rotations import mapAngle
 from hexrd.xrdutil.phutil import invalidate_past_critical_beta
 from hexrd.utils.hkl import hkl_to_str
 
-from hexrdgui.constants import OverlayType, ViewType
+from hexrdgui.constants import OverlayType, ViewType, WAVELENGTH_TO_KEV
 from hexrdgui.overlays.overlay import Overlay
 from hexrdgui.polar_distortion_object import PolarDistortionObject
 from hexrdgui.utils import array_index_in_list
@@ -38,6 +39,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         tth_distortion_type: str | None = None,
         tth_distortion_kwargs: dict | None = None,
         clip_with_panel_buffer: bool = False,
+        custom_energy: float | None = None,
         **overlay_kwargs: Any,
     ) -> None:
         self._xray_source: str | None = None
@@ -55,6 +57,11 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         self.tth_distortion_kwargs = tth_distortion_kwargs
         self.clip_with_panel_buffer = clip_with_panel_buffer
 
+        # If set, the powder rings are drawn at this beam energy (in keV)
+        # instead of the instrument's. This is for visualization only (e.g.
+        # checking for harmonics) and is rejected by analysis routines.
+        self.custom_energy = custom_energy
+
         self.validate_tth_distortion_kwargs()
 
         # Store hkl means if we are in the polar view (for azimuthal lineout)
@@ -70,6 +77,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
             'tth_distortion_type',
             'tth_distortion_kwargs',
             'clip_with_panel_buffer',
+            'custom_energy',
         ]
 
     @property
@@ -115,6 +123,35 @@ class PowderOverlay(Overlay, PolarDistortionObject):
     @property
     def has_widths(self) -> bool:
         return self.material.planeData.tThWidth is not None
+
+    @property
+    def has_custom_energy(self) -> bool:
+        return self.custom_energy is not None
+
+    @contextmanager
+    def custom_energy_override(self) -> Generator[None, None, None]:
+        """Temporarily set the material wavelength to this overlay's custom
+        beam energy, restoring it afterward.
+
+        This lets us draw the powder rings at a different beam energy (e.g.
+        to check for harmonics) without modifying the instrument, the
+        material's persistent state, or any other overlay. The restore
+        happens in a ``finally`` so the shared plane data is never left
+        perturbed.
+        """
+        if self.custom_energy is None:
+            yield
+            return
+
+        plane_data = self.plane_data
+        # The wavelength setter interprets a bare float as keV (see hexrd's
+        # processWavelength), while the getter returns Angstroms.
+        original_energy = WAVELENGTH_TO_KEV / plane_data.wavelength
+        try:
+            plane_data.wavelength = self.custom_energy
+            yield
+        finally:
+            plane_data.wavelength = original_energy
 
     @property
     def tvec(self) -> np.ndarray:
@@ -263,19 +300,22 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         plane_data = self.plane_data
         display_mode = self.display_mode
 
-        tths = plane_data.getTTh()
-        hkls = plane_data.getHKLs()
-        etas = np.radians(np.linspace(-180.0, 180.0, num=self.eta_steps + 1))
+        # Override the wavelength while reading tth/hkls/ranges if this
+        # overlay is being visualized at a custom beam energy.
+        with self.custom_energy_override():
+            tths = plane_data.getTTh()
+            hkls = plane_data.getHKLs()
+            etas = np.radians(np.linspace(-180.0, 180.0, num=self.eta_steps + 1))
 
-        if tths.size == 0:
-            # No overlays
-            return {}
+            if tths.size == 0:
+                # No overlays
+                return {}
 
-        if plane_data.tThWidth is not None:
-            # Need to get width data as well
-            indices, ranges = plane_data.getMergedRanges()
-            r_lower = [r[0] for r in ranges]
-            r_upper = [r[1] for r in ranges]
+            if plane_data.tThWidth is not None:
+                # Need to get width data as well
+                indices, ranges = plane_data.getMergedRanges()
+                r_lower = [r[0] for r in ranges]
+                r_upper = [r[1] for r in ranges]
 
         point_groups: dict[str, Any] = {}
         for det_key, panel in instr.detectors.items():

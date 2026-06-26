@@ -60,6 +60,9 @@ class PowderOverlayEditor(HexrdConfigDisconnectMixin):
         self.pinhole_correction_editor.settings_modified.connect(self.update_config)
 
         self.ui.enable_width.toggled.connect(self.update_enable_states)
+        self.ui.use_instrument_energy.toggled.connect(
+            self.on_use_instrument_energy_toggled
+        )
         self.refinements_selector.selection_changed.connect(self.update_refinements)
 
         self.ui.reflections_table.pressed.connect(self.show_reflections_table)
@@ -134,6 +137,23 @@ class PowderOverlayEditor(HexrdConfigDisconnectMixin):
         enable_width = self.ui.enable_width.isChecked()
         self.ui.tth_width.setEnabled(enable_width)
 
+        # The custom energy spinbox is only enabled when not using the
+        # instrument's energy.
+        use_instrument_energy = self.ui.use_instrument_energy.isChecked()
+        self.ui.custom_energy.setEnabled(not use_instrument_energy)
+
+    def on_use_instrument_energy_toggled(self, checked: bool) -> None:
+        if not checked:
+            # Switching to a custom energy: start from the current beam
+            # energy. This only fires for user toggles (signals are blocked
+            # while loading the GUI from an overlay), so a saved custom
+            # energy is never clobbered.
+            energy = HexrdConfig().beam_energy
+            if energy:
+                self.ui.custom_energy.setValue(energy)
+
+        self.update_enable_states()
+
     def update_gui(self) -> None:
         if self.overlay is None:
             return
@@ -144,6 +164,7 @@ class PowderOverlayEditor(HexrdConfigDisconnectMixin):
                 self.ui.xray_source.addItems(HexrdConfig().beam_names)
 
             self.tth_width_gui = self.tth_width_config
+            self.custom_energy_gui = self.custom_energy_config
             self.offset_gui = self.offset_config
             self.distortion_type_gui = self.distortion_type_config
             self.distortion_kwargs_gui = self.distortion_kwargs_config
@@ -156,6 +177,7 @@ class PowderOverlayEditor(HexrdConfigDisconnectMixin):
 
     def update_config(self) -> None:
         self.tth_width_config = self.tth_width_gui
+        self.custom_energy_config = self.custom_energy_gui
         self.offset_config = self.offset_gui
         self.distortion_config = self.distortion_gui
         self.clip_with_panel_buffer_config = self.clip_with_panel_buffer_gui
@@ -200,6 +222,41 @@ class PowderOverlayEditor(HexrdConfigDisconnectMixin):
         self.ui.enable_width.setChecked(enable_width)
         if enable_width and v is not None:
             self.ui.tth_width.setValue(np.degrees(v))
+
+    @property
+    def custom_energy_config(self) -> float | None:
+        if self.overlay is None:
+            return None
+
+        return self.overlay.custom_energy
+
+    @custom_energy_config.setter
+    def custom_energy_config(self, v: float | None) -> None:
+        if self.overlay is None:
+            return
+
+        # update_config() flags the overlay for regeneration after this.
+        self.overlay.custom_energy = v
+
+    @property
+    def custom_energy_gui(self) -> float | None:
+        if self.ui.use_instrument_energy.isChecked():
+            return None
+
+        return self.ui.custom_energy.value()
+
+    @custom_energy_gui.setter
+    def custom_energy_gui(self, v: float | None) -> None:
+        use_instrument_energy = v is None
+        self.ui.use_instrument_energy.setChecked(use_instrument_energy)
+        if v is not None:
+            self.ui.custom_energy.setValue(v)
+        else:
+            # Default the spinbox to the instrument energy, so that unchecking
+            # the box starts the user from a sensible value.
+            energy = HexrdConfig().beam_energy
+            if energy:
+                self.ui.custom_energy.setValue(energy)
 
     @property
     def offset_config(self) -> np.ndarray | None:
@@ -356,6 +413,8 @@ class PowderOverlayEditor(HexrdConfigDisconnectMixin):
         return [
             self.ui.enable_width,
             self.ui.tth_width,
+            self.ui.use_instrument_energy,
+            self.ui.custom_energy,
             self.ui.clip_with_panel_buffer,
             self.ui.xray_source,
         ] + distortion_widgets

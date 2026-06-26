@@ -46,6 +46,37 @@ def from_dict(d: Any) -> Any:
     return compatibility.from_dict(cls, d)
 
 
+def overlays_with_custom_energy(overlays: Any) -> list:
+    """Return powder overlays that are visualizing at a custom beam energy."""
+    return [
+        o for o in overlays
+        if isinstance(o, PowderOverlay) and o.has_custom_energy
+    ]
+
+
+def reject_overlays_with_custom_energy(
+    overlays: Any,
+    operation: str = 'This operation',
+) -> None:
+    """Raise if any of the overlays use a custom beam energy.
+
+    Custom beam energies are a visualization-only feature (for example, to
+    check for harmonics), so analysis routines must refuse them rather than
+    silently produce incorrect results.
+    """
+    bad = overlays_with_custom_energy(overlays)
+    if not bad:
+        return
+
+    names = ', '.join(o.name for o in bad)
+    raise Exception(
+        f'{operation} does not support powder overlays with a custom beam '
+        f'energy.\n\nThe following overlays use a custom energy: {names}.\n\n'
+        'Re-check "Use energy from instrument?" for these overlays before '
+        'continuing.'
+    )
+
+
 def update_overlay_data(instr: HEDMInstrument, display_mode: Any) -> None:
     from hexrdgui.hexrd_config import HexrdConfig
 
@@ -80,4 +111,6 @@ __all__ = [
     'Overlay',
     'PowderOverlay',
     'RotationSeriesOverlay',
+    'overlays_with_custom_energy',
+    'reject_overlays_with_custom_energy',
 ]
