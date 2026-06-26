@@ -2270,6 +2270,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             material_name=material_name,
             type=type,
         )
+        # Give it a distinct color if other overlays already exist.
+        overlays.assign_cycled_style(overlay, self.overlays)
         self.overlays.append(overlay)
         self.overlay_list_modified.emit()
         self.overlay_config_changed.emit()
