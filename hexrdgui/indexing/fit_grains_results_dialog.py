@@ -736,6 +736,12 @@ class FitGrainsResultsDialog(QObject):
         instr = cfg.instrument.hedm
         grain_ids = sorted(self.spots_data.keys())
 
+        # Close any previously-opened dialog so we don't leak duplicate
+        # windows. The data is recomputed below, so we build a fresh one.
+        existing = getattr(self, '_spot_diagnostics_dialog', None)
+        if existing is not None:
+            existing.ui.close()
+
         self._spot_diagnostics_dialog = SpotDiagnosticsDialog(
             instr=instr,
             spots_data=self.spots_data,

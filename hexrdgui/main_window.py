@@ -1068,6 +1068,14 @@ class MainWindow(QObject):
 
     def on_show_raw_zoom_dialog(self) -> None:
         assert self.active_canvas is not None
+
+        # Close any existing zoom dialog first, so we don't leak a duplicate
+        # window or leave its canvas button-press handler connected. Closing
+        # emits "finished", which triggers its cleanup.
+        existing = getattr(self, '_zoom_dialog', None)
+        if existing is not None:
+            existing.ui.close()
+
         dialog = ZoomCanvasDialog(self.active_canvas, parent=self.ui)
         self._zoom_dialog = dialog
         dialog.show()
