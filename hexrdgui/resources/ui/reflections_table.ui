@@ -40,7 +40,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0" colspan="4">
+   <item row="0" column="0" colspan="6">
     <widget class="QTableWidget" name="table">
      <property name="contextMenuPolicy">
       <enum>Qt::CustomContextMenu</enum>
@@ -141,7 +141,24 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="3">
+   <item row="2" column="4">
+    <widget class="QLabel" name="relative_scale_powder_material_label">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale the powder intensity relative to the selected material (by default, the same material). The powder intensity is then rescaled to be between 0 and 100.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="text">
+      <string>Scale Iₚ relative to:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="5">
+    <widget class="QComboBox" name="relative_scale_powder_material">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Scale the powder intensity relative to the selected material (by default, the same material). The powder intensity is then rescaled to be between 0 and 100.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1" colspan="5">
     <widget class="QPushButton" name="show_selection_helper">
      <property name="text">
       <string>Show Selection Helper</string>

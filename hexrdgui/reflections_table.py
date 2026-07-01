@@ -95,6 +95,9 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
         self.ui.relative_scale_material.currentIndexChanged.connect(
             self.on_relative_scale_material_changed
         )
+        self.ui.relative_scale_powder_material.currentIndexChanged.connect(
+            self.on_relative_scale_material_changed
+        )
 
         self.ui.show_selection_helper.clicked.connect(self.show_selection_helper)
 
@@ -150,13 +153,16 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
             clipboard.setText(string_io.getvalue())
 
     def populate_relative_scale_options(self) -> None:
-        old_setting = self.relative_scale_material_name
+        self._populate_relative_scale_combo(self.ui.relative_scale_material)
+        self._populate_relative_scale_combo(self.ui.relative_scale_powder_material)
+
+    def _populate_relative_scale_combo(self, w: Any) -> None:
+        old_setting = w.currentText()
         if not old_setting:
             old_setting = self.material.name
 
         old_setting_found = False
 
-        w = self.ui.relative_scale_material
         with block_signals(w):
             w.clear()
             names = list(HexrdConfig().materials)
@@ -189,9 +195,10 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
 
         self._material = m
         self.update_material_name()
-        # Change the relative scale material name to match the
+        # Change the relative scale material names to match the
         # new material's name.
         self.relative_scale_material_name = self.material.name
+        self.relative_scale_powder_material_name = self.material.name
         self.update_selection_helper_material()
         self.update_table()
 
@@ -206,6 +213,18 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
     @relative_scale_material_name.setter
     def relative_scale_material_name(self, v: str) -> None:
         self.ui.relative_scale_material.setCurrentText(v)
+
+    @property
+    def relative_scale_powder_material(self) -> Material | None:
+        return HexrdConfig().material(self.relative_scale_powder_material_name)
+
+    @property
+    def relative_scale_powder_material_name(self) -> str:
+        return self.ui.relative_scale_powder_material.currentText()
+
+    @relative_scale_powder_material_name.setter
+    def relative_scale_powder_material_name(self, v: str) -> None:
+        self.ui.relative_scale_powder_material.setCurrentText(v)
 
     def show(self) -> None:
         self.update_table(only_if_visible=False)
@@ -225,10 +244,14 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
             self.hide()
 
     def on_material_renamed(self, old_name: str, new_name: str) -> None:
-        if self.relative_scale_material_name == old_name:
-            # Need to update the combo box text
-            cb = self.ui.relative_scale_material
-            cb.setItemText(cb.currentIndex(), new_name)
+        relative_scale_combos = (
+            self.ui.relative_scale_material,
+            self.ui.relative_scale_powder_material,
+        )
+        for cb in relative_scale_combos:
+            if cb.currentText() == old_name:
+                # Need to update the combo box text
+                cb.setItemText(cb.currentIndex(), new_name)
 
         self.update_material_name()
 
@@ -330,13 +353,14 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
                     hkls = [hkl_to_str(x) for x in plane_data.getHKLs()]
                     d_spacings = plane_data.getPlaneSpacings()
                     tth = plane_data.getTTh()
-                    powder_intensity = plane_data.powder_intensity
                     hedm_intensity = plane_data.hedm_intensity
                     multiplicity = plane_data.getMultiplicity()
 
-                    # Since structure factors use arbitrary scaling, re-scale
-                    # them to a range that's easier on the eyes.
+                    # Since structure factors and powder intensities use
+                    # arbitrary scaling, re-scale them to a range that's
+                    # easier on the eyes.
                     sf = self.rescaled_structure_factor
+                    powder_intensity = self.rescaled_powder_intensity
 
             # Grab the hkl ids
             hkl_ids = [-1] * len(hkls)
@@ -470,6 +494,39 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
 
         # Rescale the other structure factor to be between 0 and 100
         return (sf - compare_sf.min()) / (compare_sf.max() - compare_sf.min()) * 100
+
+    @property
+    def rescaled_powder_intensity(self) -> np.ndarray:
+        # Rescale powder intensities according to the current relative
+        # material.
+
+        def get_powder_intensity(pd: PlaneData) -> np.ndarray:
+            with exclusions_off(pd):
+                with tth_max_off(pd):
+                    return pd.powder_intensity
+
+        this_pd = self.material.planeData
+        compare_material = self.relative_scale_powder_material
+        if compare_material is None:
+            # This shouldn't happen, but in case it does, reset the relative
+            # scale material to the current material.
+            self.relative_scale_powder_material_name = self.material.name
+            compare_material = self.material
+
+        compare_pd = compare_material.planeData
+
+        intensity = get_powder_intensity(this_pd)
+        if len(intensity) == 0:
+            return intensity
+
+        if this_pd is compare_pd:
+            compare_intensity = intensity
+        else:
+            compare_intensity = get_powder_intensity(compare_pd)
+
+        # Rescale the powder intensity to be between 0 and 100
+        intensity_range = compare_intensity.max() - compare_intensity.min()
+        return (intensity - compare_intensity.min()) / intensity_range * 100
 
     def update_selection_helper_material(self) -> None:
         self.selection_helper.material = self.material
