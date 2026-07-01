@@ -38,6 +38,7 @@ from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.constants import OverlayType, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.line_picker_dialog import LinePickerDialog
+from hexrdgui.overlays import reject_overlays_with_custom_energy
 from hexrdgui.overlays.overlay import Overlay
 from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.select_item_dialog import SelectItemDialog
@@ -86,6 +87,8 @@ class CalibrationRunner(QObject):
         active_overlays = self.active_overlays
         if not active_overlays:
             raise Exception('No visible overlays')
+
+        reject_overlays_with_custom_energy(active_overlays, 'Calibration')
 
         any_updates = False
         for overlay in active_overlays:

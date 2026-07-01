@@ -61,6 +61,7 @@ from hexrdgui.masking.create_raw_mask import convert_polar_to_raw, rebuild_raw_m
 from hexrdgui.constants import ViewType, DOCUMENTATION_URL
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_calculator_dialog import ImageCalculatorDialog
+from hexrdgui.overlays import overlays_with_custom_energy
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.llnl_import_tool_dialog import LLNLImportToolDialog
@@ -1278,6 +1279,19 @@ class MainWindow(QObject):
         canvas = self.ui.image_tab_widget.image_canvases[0]
 
         overlays = HexrdConfig().overlays
+
+        # Picks are tied to the instrument energy, so refuse overlays that are
+        # being visualized at a custom beam energy.
+        bad = overlays_with_custom_energy(overlays)
+        if bad:
+            names = ', '.join(o.name for o in bad)
+            msg = (
+                'Viewing overlay picks is not supported for powder overlays '
+                'with a custom beam energy.\n\nThese overlays use a custom '
+                f'energy: {names}.'
+            )
+            QMessageBox.critical(self.ui, 'HEXRD', msg)
+            return
 
         kwargs = {
             'dictionary': overlays_to_tree_format(overlays),

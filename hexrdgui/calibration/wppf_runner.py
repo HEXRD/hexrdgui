@@ -11,6 +11,7 @@ from hexrd.wppf import Rietveld
 
 from hexrdgui.calibration.wppf_options_dialog import WppfOptionsDialog
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.overlays import reject_overlays_with_custom_energy
 
 
 class WppfRunner:
@@ -45,6 +46,8 @@ class WppfRunner:
     def validate(self) -> None:
         if not self.visible_powder_overlays:
             raise Exception('At least one visible powder overlay is required')
+
+        reject_overlays_with_custom_energy(self.visible_powder_overlays, 'WPPF')
 
     @property
     def visible_powder_overlays(self) -> list:
