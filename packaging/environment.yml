@@ -5,7 +5,10 @@ channels:
 dependencies:
   - python=3.13
   - coloredlogs
-  - conda
+  # conda 26.5.3 ships bin/conda with a "#!/usr/bin/env python" shebang; during
+  # conda-build the host env (no conda) shadows python on PATH, so conda runs
+  # under the wrong interpreter and dies with "No module named 'conda'".
+  - conda!=26.5.3
   - cmake
   - conda-build
   - conda-pack
