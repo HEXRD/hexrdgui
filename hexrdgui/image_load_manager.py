@@ -26,6 +26,7 @@ from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.constants import (
     UI_AGG_INDEX_MAXIMUM,
     UI_AGG_INDEX_MEDIAN,
+    UI_AGG_INDEX_SUM,
     UI_DARK_INDEX_AVERAGE,
     UI_DARK_INDEX_EMPTY_FRAMES,
     UI_DARK_INDEX_FILE,
@@ -384,6 +385,8 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
             agg_func = imageseries.stats.max_iter
         elif self.state['agg'] == UI_AGG_INDEX_MEDIAN:
             agg_func = imageseries.stats.median_iter
+        elif self.state['agg'] == UI_AGG_INDEX_SUM:
+            agg_func = imageseries.stats.sum_iter
         else:
             agg_func = imageseries.stats.average_iter
 
