@@ -6,6 +6,7 @@ from typing import Any, TextIO
 from PySide6.QtCore import QTimer
 
 import h5py
+import hdf5plugin
 import numpy as np
 import yaml
 
@@ -192,7 +193,7 @@ def save(h5_file: h5py.File) -> None:
     # Finally, write the imageseries...
     root = 'images'
     for det, ims in HexrdConfig().imageseries_dict.items():
-        imageseries.write(ims, h5_file, 'hdf5', path=f'{root}/{det}')
+        write_imageseries(h5_file, f'{root}/{det}', ims)
 
 
 def load(h5_file: h5py.File) -> None:
@@ -276,3 +277,24 @@ def load_imageseries_dict(h5_file: h5py.File) -> None:
 
 def update_if_needed(file_path: str) -> Any:
     return state_compatibility.update_if_needed(file_path)
+
+
+# Compression used for image data in state files. blosc-zstd compresses our
+# (often sparse) image data dramatically better than the previous gzip-1
+# default, while staying lossless. h5py reads it back transparently as long as
+# hdf5plugin is imported (which it is, above).
+STATE_IMAGE_COMPRESSION = hdf5plugin.Blosc(
+    cname='zstd', clevel=5, shuffle=hdf5plugin.Blosc.SHUFFLE
+)
+
+
+def write_imageseries(h5_file: h5py.File, path: str, ims: Any) -> None:
+    """Write an imageseries into the state file with blosc-zstd compression.
+
+    Delegates to hexrd's 'hdf5' imageseries writer with a custom compression
+    filter (instead of its gzip-1 default), so it still reads back via
+    ``imageseries.open(h5_file, 'hdf5', path=...)``.
+    """
+    imageseries.write(
+        ims, h5_file, 'hdf5', path=path, compression=STATE_IMAGE_COMPRESSION
+    )
