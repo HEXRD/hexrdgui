@@ -32,7 +32,7 @@ def calculate_coverage_data(polar_view, nan_mask):
         sa_total += v.pixel_solid_angles.sum()
 
     frac_sa = sa_total/2/np.pi
-    msg = fr"total covered solid angle out of 2$\pi$ is {frac_sa*100:.2f}%"
+    msg = fr"total covered solid angle out of 2$\pi$ is {frac_sa*100:.1f}%"
 
     tth = np.degrees(polar_view.angular_grid[1][0,:])
     azimuthal_frac = 100*np.nansum(~nan_mask, axis=0)/nan_mask.shape[0]
@@ -161,6 +161,9 @@ class CoveragePlotDialog(QDialog):
 
         # Calculate coverage data
         (x_data, y_data), msg = calculate_coverage_data(polar_viewer, nan_mask)
+        y_mean = np.nanmean(y_data) * np.ones_like(x_data)
+
+        msg2 = fr"Average azimuthal coverage in 2$\theta$ FOV = {np.nanmean(y_data):0.1f}%"
 
         # Clear and redraw with proper styling
         self.ax.clear()
@@ -169,10 +172,16 @@ class CoveragePlotDialog(QDialog):
         # Plot data with black line matching azimuthal average
         self.line, = self.ax.plot(x_data, y_data, '-k', linewidth=2.5)
 
+        # Plot average coverage over angular field of view
+        self.line, = self.ax.plot(x_data, y_mean, '--k', linewidth=2.5)
+
         # Add centered text annotation with smaller font
         base_font_size = HexrdConfig().font_size
         text_fontsize = base_font_size + 2  # Slightly smaller than labels
         self.ax.text(0.5, 0.95, msg, transform=self.ax.transAxes,
+                    fontsize=text_fontsize, color='red',
+                    ha='center', va='top', family='serif')
+        self.ax.text(0.5, 0.85, msg2, transform=self.ax.transAxes,
                     fontsize=text_fontsize, color='red',
                     ha='center', va='top', family='serif')
 
