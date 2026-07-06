@@ -86,6 +86,7 @@ from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
 )
+from hexrdgui.utils.coverage_plot import CoveragePlotDialog
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
 from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
@@ -289,6 +290,7 @@ class MainWindow(QObject):
             self.view_fit_grains_config
         )
         self.ui.action_view_overlay_picks.triggered.connect(self.view_overlay_picks)
+        self.ui.action_view_coverage.triggered.connect(self.on_action_view_coverage_triggered)
         self.ui.calibration_tab_widget.currentChanged.connect(self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.threshold_mask_dialog.mask_applied.connect(self.update_all)
@@ -1122,6 +1124,7 @@ class MainWindow(QObject):
         self.ui.action_edit_apply_laue_mask_to_polar.setEnabled(is_polar)
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
         self.ui.action_export_to_maud.setEnabled(is_polar and has_images)
+        self.ui.action_view_coverage.setEnabled(is_polar)
 
     def start_fast_powder_calibration(self) -> None:
         if not HexrdConfig().has_images:
@@ -1329,6 +1332,15 @@ class MainWindow(QObject):
         dialog.ui.accepted.connect(on_accepted)
         dialog.ui.finished.connect(on_finished)
 
+    def on_action_view_coverage_triggered(self, checked: bool) -> None:
+        if checked:
+            if not hasattr(self, '_coverage_plot_dialog'):
+                self._coverage_plot_dialog = CoveragePlotDialog(self.ui)
+            self._coverage_plot_dialog.show()
+        else:
+            if hasattr(self, '_coverage_plot_dialog'):
+                self._coverage_plot_dialog.hide()
+
     def new_mouse_position(self, info: dict[str, Any]) -> None:
         if self.image_mode == ViewType.polar:
             # Use a special function for polar
@@ -1514,6 +1526,10 @@ class MainWindow(QObject):
             'action_transform_detectors': {
                 True: '',
                 False: 'Image data must be loaded',
+            },
+            'action_view_coverage': {
+                True: '',
+                False: 'Polar view must be active',
             },
         }
 
