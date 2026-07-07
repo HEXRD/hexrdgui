@@ -676,7 +676,8 @@ class MainWindow(QObject):
             self.ui,
             'Load Materials File',
             HexrdConfig().working_dir,
-            'All supported files (*.h5 *.hdf5 *.cif);;HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
+            'All supported files (*.h5 *.hdf5 *.cif);;'
+            'HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
         )
         if not selected_file:
             return
@@ -1048,7 +1049,10 @@ class MainWindow(QObject):
                 ph_masks.append((det_key, contour))
 
         if not ph_masks:
-            msg = 'Failed to find contours to generate the pinhole mask. Please ensure the input is reasonable.'
+            msg = (
+                'Failed to find contours to generate the pinhole mask. '
+                'Please ensure the input is reasonable.'
+            )
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
@@ -1776,7 +1780,10 @@ class MainWindow(QObject):
 
     def load_recent_state_file(self, path: str) -> None:
         if not Path(path).exists():
-            msg = f'Recent state file: "{path}"\n\nno longer exists. Remove from recent files list?'
+            msg = (
+                f'Recent state file: "{path}"\n\nno longer exists. '
+                'Remove from recent files list?'
+            )
             response = QMessageBox.question(self.ui, 'HEXRD', msg)
             if response == QMessageBox.StandardButton.Yes:
                 HexrdConfig().recent_state_files.remove(path)
@@ -1925,5 +1932,8 @@ class MainWindow(QObject):
             # extension is not in known list
             self.open_image_files(selected_files=[str(p) for p in paths])
         except Exception:
-            error_message = 'Unable to guess file type (state, instrument, materials, or image). Please use File menu to load.'
+            error_message = (
+                'Unable to guess file type (state, instrument, materials, or '
+                'image). Please use File menu to load.'
+            )
             QMessageBox.critical(self.ui, 'Error', error_message)
