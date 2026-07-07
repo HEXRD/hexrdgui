@@ -65,11 +65,15 @@ class CoveragePlotDialog(QDialog):
         # Setup axis styling to match polar view azimuthal average
         self._setup_axis_style()
 
-        # Centered summary labels displayed above the plot
+        # Centered summary labels displayed above the plot, with a font
+        # size matching the plot's axis labels
         self.solid_angle_label = QLabel()
         self.average_label = QLabel()
         for label in (self.solid_angle_label, self.average_label):
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            font = label.font()
+            font.setPointSize(HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE)
+            label.setFont(font)
 
         # Setup layout
         layout = QVBoxLayout()
