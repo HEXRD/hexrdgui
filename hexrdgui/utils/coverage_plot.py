@@ -6,7 +6,8 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoLocator, AutoMinorLocator
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
 
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -32,7 +33,7 @@ def calculate_coverage_data(
     sa_total = sum(panel.pixel_solid_angles.sum() for panel in instr.detectors.values())
 
     frac_sa = sa_total / 2 / np.pi
-    msg = rf'total covered solid angle out of 2$\pi$ is {frac_sa * 100:.1f}%'
+    msg = f'Total covered solid angle out of 2π is {frac_sa * 100:.1f}%'
 
     raw_img = polar_view.raw_img
     assert raw_img is not None
@@ -61,23 +62,19 @@ class CoveragePlotDialog(QDialog):
         (self.coverage_line,) = self.ax.plot([], [], '-k', linewidth=2.5)
         (self.mean_line,) = self.ax.plot([], [], '--k', linewidth=2.5)
 
-        # Centered text annotations, slightly smaller than the labels
-        text_kwargs: dict[str, Any] = {
-            'transform': self.ax.transAxes,
-            'fontsize': HexrdConfig().font_size + 2,
-            'color': 'red',
-            'ha': 'center',
-            'va': 'top',
-            'family': 'serif',
-        }
-        self.solid_angle_text = self.ax.text(0.5, 0.95, '', **text_kwargs)
-        self.average_text = self.ax.text(0.5, 0.85, '', **text_kwargs)
-
         # Setup axis styling to match polar view azimuthal average
         self._setup_axis_style()
 
+        # Centered summary labels displayed above the plot
+        self.solid_angle_label = QLabel()
+        self.average_label = QLabel()
+        for label in (self.solid_angle_label, self.average_label):
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
         # Setup layout
         layout = QVBoxLayout()
+        layout.addWidget(self.solid_angle_label)
+        layout.addWidget(self.average_label)
         layout.addWidget(self.canvas)
         self.setLayout(layout)
 
@@ -190,9 +187,9 @@ class CoveragePlotDialog(QDialog):
 
         self.coverage_line.set_data(x_data, y_data)
         self.mean_line.set_data(x_data, np.full_like(x_data, mean))
-        self.solid_angle_text.set_text(solid_angle_msg)
-        self.average_text.set_text(
-            rf'Average azimuthal coverage in 2$\theta$ FOV = {mean:0.1f}%'
+        self.solid_angle_label.setText(solid_angle_msg)
+        self.average_label.setText(
+            f'Average azimuthal coverage in 2θ FOV = {mean:0.1f}%'
         )
 
         self.ax.relim()
