@@ -115,6 +115,7 @@ class MainWindow(QObject):
         self._powder_runner: PowderRunner | None = None
         self._indexing_config_view: IndexingTreeViewDialog | None = None
         self._fit_grains_config_view: FitGrainsTreeViewDialog | None = None
+        self._coverage_plot_dialog: CoveragePlotDialog | None = None
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -1331,12 +1332,15 @@ class MainWindow(QObject):
 
     def on_action_view_coverage_triggered(self, checked: bool) -> None:
         if checked:
-            if not hasattr(self, '_coverage_plot_dialog'):
+            if self._coverage_plot_dialog is None:
                 self._coverage_plot_dialog = CoveragePlotDialog(self.ui)
+                # Uncheck the menu action when the dialog is closed
+                self._coverage_plot_dialog.rejected.connect(
+                    lambda: self.ui.action_view_coverage.setChecked(False)
+                )
             self._coverage_plot_dialog.show()
-        else:
-            if hasattr(self, '_coverage_plot_dialog'):
-                self._coverage_plot_dialog.hide()
+        elif self._coverage_plot_dialog is not None:
+            self._coverage_plot_dialog.hide()
 
     def new_mouse_position(self, info: dict[str, Any]) -> None:
         if self.image_mode == ViewType.polar:

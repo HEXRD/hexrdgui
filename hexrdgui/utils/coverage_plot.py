@@ -1,40 +1,44 @@
 """Coverage plot dialog for viewing detector coverage in polar mode."""
 
+from typing import TYPE_CHECKING, Any, cast
+
 import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoLocator, AutoMinorLocator
-from PySide6.QtWidgets import QDialog, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QWidget
 
-from hexrdgui.calibration.polar_plot import polar_viewer
+from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
+
+if TYPE_CHECKING:
+    from hexrdgui.calibration.polar_plot import InstrumentViewer
 
 # Font size increases matching image_canvas.py
 FONTSIZE_LABEL_INCREASE = 4
 FONTSIZE_TICKS_INCREASE = 4
 
 
-def calculate_coverage_data(polar_view, nan_mask):
-    """Calculate coverage data from polar view.
+def calculate_coverage_data(
+    polar_view: 'InstrumentViewer',
+) -> tuple[tuple[np.ndarray, np.ndarray], str]:
+    """Calculate coverage data from the polar view.
 
-    this portion calculates the total solid angle that
-    is captured as the % of maximum possible i.e. hemisphere
-
-    Args:
-        polar_view: PolarView instance
-        nan_mask: Boolean mask indicating NaN/masked pixels
+    Returns the azimuthal coverage (in %) as a function of two-theta,
+    along with a message describing the total solid angle captured as a
+    % of the maximum possible (i.e. hemisphere).
     """
     instr = polar_view.instr
-    sa_total = 0.0
-
-    for k, v in instr.detectors.items():
-        sa_total += v.pixel_solid_angles.sum()
+    sa_total = sum(panel.pixel_solid_angles.sum() for panel in instr.detectors.values())
 
     frac_sa = sa_total / 2 / np.pi
     msg = rf'total covered solid angle out of 2$\pi$ is {frac_sa * 100:.1f}%'
 
+    raw_img = polar_view.raw_img
+    assert raw_img is not None
+    nan_mask = np.ma.getmaskarray(raw_img)
     tth = np.degrees(polar_view.angular_grid[1][0, :])
-    azimuthal_frac = 100 * np.nansum(~nan_mask, axis=0) / nan_mask.shape[0]
+    azimuthal_frac = 100 * (~nan_mask).sum(axis=0) / nan_mask.shape[0]
 
     return (tth, azimuthal_frac), msg
 
@@ -42,19 +46,32 @@ def calculate_coverage_data(polar_view, nan_mask):
 class CoveragePlotDialog(QDialog):
     """Dialog displaying live-updating coverage plot for polar view."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         self.setWindowTitle('Coverage')
-        # self.resize(800, 600)
 
         # Create matplotlib figure and canvas
         self.figure = Figure(figsize=(12, 4))
         self.canvas = FigureCanvas(self.figure)
         self.ax = self.figure.add_subplot(111)
 
-        # Initialize plot with empty data (black line matching azimuthal average)
-        (self.line,) = self.ax.plot([], [], '-k', linewidth=2.5)
+        # Coverage curve and its average (black lines matching the
+        # azimuthal average plot)
+        (self.coverage_line,) = self.ax.plot([], [], '-k', linewidth=2.5)
+        (self.mean_line,) = self.ax.plot([], [], '--k', linewidth=2.5)
+
+        # Centered text annotations, slightly smaller than the labels
+        text_kwargs: dict[str, Any] = {
+            'transform': self.ax.transAxes,
+            'fontsize': HexrdConfig().font_size + 2,
+            'color': 'red',
+            'ha': 'center',
+            'va': 'top',
+            'family': 'serif',
+        }
+        self.solid_angle_text = self.ax.text(0.5, 0.95, '', **text_kwargs)
+        self.average_text = self.ax.text(0.5, 0.85, '', **text_kwargs)
 
         # Setup axis styling to match polar view azimuthal average
         self._setup_axis_style()
@@ -67,17 +84,30 @@ class CoveragePlotDialog(QDialog):
         # Adjust subplot parameters to prevent label clipping
         self.figure.tight_layout()
 
-        # Connect to HexrdConfig signals for live updates
-        HexrdConfig().rerender_needed.connect(self.update_plot)
-        HexrdConfig().instrument_config_loaded.connect(self.update_plot)
-        HexrdConfig().detector_transforms_modified.connect(
-            self.on_detector_transforms_modified
-        )
+        self.setup_connections()
 
-        # Track parent UI for menu action access
-        self._parent_ui = parent
+    def setup_connections(self) -> None:
+        # The image canvas emits this after it finishes regenerating the
+        # view, so we can reuse its polar view rather than computing our
+        # own. This covers rerenders, config loads, etc.
+        HexrdConfig().image_view_loaded.connect(self.update_plot)
 
-    def _setup_axis_style(self):
+        # Interactive detector translation/tilt edits update the canvas's
+        # polar view in place without emitting image_view_loaded, so listen
+        # for those separately. The image canvas connects to this signal
+        # before this dialog is created, so its polar view has already been
+        # updated by the time our slot runs.
+        HexrdConfig().detector_transforms_modified.connect(self.update_plot)
+
+    @property
+    def polar_view(self) -> 'InstrumentViewer | None':
+        """The active canvas's polar view, or None if not in polar mode."""
+        canvas = HexrdConfig().active_canvas
+        if canvas is None or canvas.mode != ViewType.polar:
+            return None
+        return cast('InstrumentViewer', canvas.iviewer)
+
+    def _setup_axis_style(self) -> None:
         """Setup axis styling to match polar view azimuthal average plot."""
         # Get font sizes from HexrdConfig (matching image_canvas.py)
         base_font_size = HexrdConfig().font_size
@@ -97,7 +127,7 @@ class CoveragePlotDialog(QDialog):
         self.ax.xaxis.set_minor_locator(AutoMinorLocator())
 
         # Configure tick parameters (matching image_canvas.py)
-        major_tick_kwargs = {
+        major_tick_kwargs: dict[str, Any] = {
             'left': True,
             'right': True,
             'bottom': True,
@@ -118,7 +148,7 @@ class CoveragePlotDialog(QDialog):
         self.ax.tick_params(**minor_tick_kwargs)
 
         # Setup grid (matching polar axis style)
-        default_grid_kwargs = {
+        default_grid_kwargs: dict[str, Any] = {
             'visible': True,
             'linewidth': 0.075,
             'linestyle': '--',
@@ -141,119 +171,37 @@ class CoveragePlotDialog(QDialog):
         # Grid for major ticks
         self.ax.grid(**{**default_grid_kwargs, 'which': 'major'})
 
-    def on_detector_transforms_modified(self, detectors):
-        """Called when detector transforms (translation/tilt) are modified."""
-        self.update_plot()
-
-    def update_plot(self):
+    def update_plot(self, *args: Any) -> None:
         """Update the plot with current coverage data."""
         # Only update if dialog is visible
         if not self.isVisible():
             return
 
-        # Get fresh polar viewer instance (reflects current config)
-        polar_viewer = self._get_polar_viewer()
-        if polar_viewer is None:
+        if HexrdConfig().loading_state:
+            # A rerender will occur when state loading finishes
             return
 
-        # Get the warped image and compute nan mask
-        if polar_viewer.raw_img is None:
+        polar_view = self.polar_view
+        if polar_view is None or polar_view.raw_img is None:
             return
 
-        # Use the mask from the masked array
-        nan_mask = polar_viewer.raw_img.mask
+        (x_data, y_data), solid_angle_msg = calculate_coverage_data(polar_view)
+        mean = np.nanmean(y_data)
 
-        # Calculate coverage data
-        (x_data, y_data), msg = calculate_coverage_data(polar_viewer, nan_mask)
-        y_mean = np.nanmean(y_data) * np.ones_like(x_data)
-
-        msg2 = (
-            rf'Average azimuthal coverage in 2$\theta$ FOV = {np.nanmean(y_data):0.1f}%'
+        self.coverage_line.set_data(x_data, y_data)
+        self.mean_line.set_data(x_data, np.full_like(x_data, mean))
+        self.solid_angle_text.set_text(solid_angle_msg)
+        self.average_text.set_text(
+            rf'Average azimuthal coverage in 2$\theta$ FOV = {mean:0.1f}%'
         )
 
-        # Clear and redraw with proper styling
-        self.ax.clear()
-        self._setup_axis_style()
-
-        # Plot data with black line matching azimuthal average
-        (self.line,) = self.ax.plot(x_data, y_data, '-k', linewidth=2.5)
-
-        # Plot average coverage over angular field of view
-        (self.line,) = self.ax.plot(x_data, y_mean, '--k', linewidth=2.5)
-
-        # Add centered text annotation with smaller font
-        base_font_size = HexrdConfig().font_size
-        text_fontsize = base_font_size + 2  # Slightly smaller than labels
-        self.ax.text(
-            0.5,
-            0.95,
-            msg,
-            transform=self.ax.transAxes,
-            fontsize=text_fontsize,
-            color='red',
-            ha='center',
-            va='top',
-            family='serif',
-        )
-        self.ax.text(
-            0.5,
-            0.85,
-            msg2,
-            transform=self.ax.transAxes,
-            fontsize=text_fontsize,
-            color='red',
-            ha='center',
-            va='top',
-            family='serif',
-        )
-
-        # Apply tight layout to prevent label clipping
-        self.figure.tight_layout()
+        self.ax.relim()
+        self.ax.autoscale_view()
 
         # Redraw canvas (non-blocking)
         self.canvas.draw_idle()
 
-    def _get_polar_viewer(self):
-        """Get the current polar viewer instance.
-
-        Creates a fresh InstrumentViewer to reflect current configuration.
-        """
-        try:
-            instrument_viewer = polar_viewer()
-            if hasattr(instrument_viewer, 'pv'):
-                return instrument_viewer.pv
-        except Exception:
-            pass
-        return None
-
-    def show(self):
+    def show(self) -> None:
         """Show the dialog and update plot."""
         super().show()
         self.update_plot()
-
-    def closeEvent(self, event):
-        """Handle dialog close event."""
-        # Uncheck the menu action when dialog is closed
-        if self._parent_ui and hasattr(self._parent_ui, 'action_view_coverage'):
-            self._parent_ui.action_view_coverage.setChecked(False)
-
-        # Disconnect signals to prevent memory leaks
-        # Use try-except to handle cases where signals are already disconnected
-        try:
-            HexrdConfig().rerender_needed.disconnect(self.update_plot)
-        except (RuntimeError, TypeError):
-            pass
-
-        try:
-            HexrdConfig().instrument_config_loaded.disconnect(self.update_plot)
-        except (RuntimeError, TypeError):
-            pass
-
-        try:
-            HexrdConfig().detector_transforms_modified.disconnect(
-                self.on_detector_transforms_modified
-            )
-        except (RuntimeError, TypeError):
-            pass
-
-        super().closeEvent(event)
