@@ -1,19 +1,18 @@
 """Coverage plot dialog for viewing detector coverage in polar mode."""
 
 import numpy as np
-from PySide6.QtWidgets import QDialog, QVBoxLayout
-from PySide6.QtCore import Qt
-
-from matplotlib.backends.backend_qtagg import FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoLocator, AutoMinorLocator
+from PySide6.QtWidgets import QDialog, QVBoxLayout
 
-from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.calibration.polar_plot import polar_viewer
+from hexrdgui.hexrd_config import HexrdConfig
 
 # Font size increases matching image_canvas.py
 FONTSIZE_LABEL_INCREASE = 4
 FONTSIZE_TICKS_INCREASE = 4
+
 
 def calculate_coverage_data(polar_view, nan_mask):
     """Calculate coverage data from polar view.
@@ -31,13 +30,14 @@ def calculate_coverage_data(polar_view, nan_mask):
     for k, v in instr.detectors.items():
         sa_total += v.pixel_solid_angles.sum()
 
-    frac_sa = sa_total/2/np.pi
-    msg = fr"total covered solid angle out of 2$\pi$ is {frac_sa*100:.1f}%"
+    frac_sa = sa_total / 2 / np.pi
+    msg = rf'total covered solid angle out of 2$\pi$ is {frac_sa * 100:.1f}%'
 
-    tth = np.degrees(polar_view.angular_grid[1][0,:])
-    azimuthal_frac = 100*np.nansum(~nan_mask, axis=0)/nan_mask.shape[0]
+    tth = np.degrees(polar_view.angular_grid[1][0, :])
+    azimuthal_frac = 100 * np.nansum(~nan_mask, axis=0) / nan_mask.shape[0]
 
     return (tth, azimuthal_frac), msg
+
 
 class CoveragePlotDialog(QDialog):
     """Dialog displaying live-updating coverage plot for polar view."""
@@ -45,7 +45,7 @@ class CoveragePlotDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle("Coverage")
+        self.setWindowTitle('Coverage')
         # self.resize(800, 600)
 
         # Create matplotlib figure and canvas
@@ -54,7 +54,7 @@ class CoveragePlotDialog(QDialog):
         self.ax = self.figure.add_subplot(111)
 
         # Initialize plot with empty data (black line matching azimuthal average)
-        self.line, = self.ax.plot([], [], '-k', linewidth=2.5)
+        (self.line,) = self.ax.plot([], [], '-k', linewidth=2.5)
 
         # Setup axis styling to match polar view azimuthal average
         self._setup_axis_style()
@@ -70,7 +70,9 @@ class CoveragePlotDialog(QDialog):
         # Connect to HexrdConfig signals for live updates
         HexrdConfig().rerender_needed.connect(self.update_plot)
         HexrdConfig().instrument_config_loaded.connect(self.update_plot)
-        HexrdConfig().detector_transforms_modified.connect(self.on_detector_transforms_modified)
+        HexrdConfig().detector_transforms_modified.connect(
+            self.on_detector_transforms_modified
+        )
 
         # Track parent UI for menu action access
         self._parent_ui = parent
@@ -84,7 +86,9 @@ class CoveragePlotDialog(QDialog):
 
         # Set labels with serif font
         self.ax.set_xlabel(r'2$\theta$ [deg]', fontsize=label_fontsize, family='serif')
-        self.ax.set_ylabel(r'% azimuthal coverage', fontsize=label_fontsize, family='serif')
+        self.ax.set_ylabel(
+            r'% azimuthal coverage', fontsize=label_fontsize, family='serif'
+        )
 
         # Setup major and minor tick locators
         self.ax.yaxis.set_major_locator(AutoLocator())
@@ -163,27 +167,45 @@ class CoveragePlotDialog(QDialog):
         (x_data, y_data), msg = calculate_coverage_data(polar_viewer, nan_mask)
         y_mean = np.nanmean(y_data) * np.ones_like(x_data)
 
-        msg2 = fr"Average azimuthal coverage in 2$\theta$ FOV = {np.nanmean(y_data):0.1f}%"
+        msg2 = (
+            rf'Average azimuthal coverage in 2$\theta$ FOV = {np.nanmean(y_data):0.1f}%'
+        )
 
         # Clear and redraw with proper styling
         self.ax.clear()
         self._setup_axis_style()
 
         # Plot data with black line matching azimuthal average
-        self.line, = self.ax.plot(x_data, y_data, '-k', linewidth=2.5)
+        (self.line,) = self.ax.plot(x_data, y_data, '-k', linewidth=2.5)
 
         # Plot average coverage over angular field of view
-        self.line, = self.ax.plot(x_data, y_mean, '--k', linewidth=2.5)
+        (self.line,) = self.ax.plot(x_data, y_mean, '--k', linewidth=2.5)
 
         # Add centered text annotation with smaller font
         base_font_size = HexrdConfig().font_size
         text_fontsize = base_font_size + 2  # Slightly smaller than labels
-        self.ax.text(0.5, 0.95, msg, transform=self.ax.transAxes,
-                    fontsize=text_fontsize, color='red',
-                    ha='center', va='top', family='serif')
-        self.ax.text(0.5, 0.85, msg2, transform=self.ax.transAxes,
-                    fontsize=text_fontsize, color='red',
-                    ha='center', va='top', family='serif')
+        self.ax.text(
+            0.5,
+            0.95,
+            msg,
+            transform=self.ax.transAxes,
+            fontsize=text_fontsize,
+            color='red',
+            ha='center',
+            va='top',
+            family='serif',
+        )
+        self.ax.text(
+            0.5,
+            0.85,
+            msg2,
+            transform=self.ax.transAxes,
+            fontsize=text_fontsize,
+            color='red',
+            ha='center',
+            va='top',
+            family='serif',
+        )
 
         # Apply tight layout to prevent label clipping
         self.figure.tight_layout()
@@ -228,7 +250,9 @@ class CoveragePlotDialog(QDialog):
             pass
 
         try:
-            HexrdConfig().detector_transforms_modified.disconnect(self.on_detector_transforms_modified)
+            HexrdConfig().detector_transforms_modified.disconnect(
+                self.on_detector_transforms_modified
+            )
         except (RuntimeError, TypeError):
             pass
 

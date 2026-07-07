@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from functools import partial
 import os
-from pathlib import Path
 import shutil
 import tempfile
 from collections.abc import Sequence
-from typing import Any, TYPE_CHECKING
+from functools import partial
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import h5py
 import numpy as np
-from skimage import measure
-
-from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, Signal, QTimer, QUrl
+from hexrd.resources import instrument_templates
+from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication,
@@ -23,31 +22,18 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QWidget,
 )
+from skimage import measure
 
+from hexrdgui import resource_loader, state
 from hexrdgui.about_dialog import AboutDialog
 from hexrdgui.absorption_correction_options_dialog import (
     AbsorptionCorrectionOptionsDialog,
 )
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.beam_marker_style_editor import BeamMarkerStyleEditor
-from hexrdgui.calibration_slider_widget import CalibrationSliderWidget
-from hexrdgui.create_hedm_instrument import create_hedm_instrument
-from hexrdgui.color_map_editor import ColorMapEditor
-from hexrdgui.config_dialog import ConfigDialog
-from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
-from hexrdgui.masking.constants import MaskType
-from hexrdgui.masking.mask_manager import MaskManager
-from hexrdgui.median_filter_dialog import MedianFilterDialog
-from hexrdgui.progress_dialog import ProgressDialog
 from hexrdgui.cal_tree_view import CalTreeView
-from hexrdgui.masking.hand_drawn_mask_dialog import HandDrawnMaskDialog
-from hexrdgui.image_stack_dialog import ImageStackDialog
-from hexrdgui.indexing.run import FitGrainsRunner, IndexingRunner
-from hexrdgui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
-from hexrdgui.input_dialog import InputDialog
-from hexrdgui.instrument_form_view_widget import InstrumentFormViewWidget
-from hexrdgui.calibration.calibration_runner import CalibrationRunner
 from hexrdgui.calibration.auto.powder_runner import PowderRunner
+from hexrdgui.calibration.calibration_runner import CalibrationRunner
 from hexrdgui.calibration.hedm.calibration_runner import HEDMCalibrationRunner
 from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
     HKLPicksTreeViewDialog,
@@ -56,42 +42,55 @@ from hexrdgui.calibration.hkl_picks_tree_view_dialog import (
 )
 from hexrdgui.calibration.structureless import StructurelessCalibrationRunner
 from hexrdgui.calibration.wppf_runner import WppfRunner
-from hexrdgui.masking.create_polar_mask import rebuild_polar_masks
-from hexrdgui.masking.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
-from hexrdgui.constants import ViewType, DOCUMENTATION_URL
+from hexrdgui.calibration_slider_widget import CalibrationSliderWidget
+from hexrdgui.color_map_editor import ColorMapEditor
+from hexrdgui.config_dialog import ConfigDialog
+from hexrdgui.constants import DOCUMENTATION_URL, ViewType
+from hexrdgui.create_hedm_instrument import create_hedm_instrument
+from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_calculator_dialog import ImageCalculatorDialog
-from hexrdgui.overlays import overlays_with_custom_energy
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
+from hexrdgui.image_mode_widget import ImageModeWidget
+from hexrdgui.image_stack_dialog import ImageStackDialog
+from hexrdgui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
+from hexrdgui.indexing.fit_grains_tree_view_dialog import FitGrainsTreeViewDialog
+from hexrdgui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
+from hexrdgui.indexing.run import FitGrainsRunner, IndexingRunner
+from hexrdgui.input_dialog import InputDialog
+from hexrdgui.instrument_form_view_widget import InstrumentFormViewWidget
 from hexrdgui.llnl_import_tool_dialog import LLNLImportToolDialog
 from hexrdgui.load_images_dialog import LoadImagesDialog
-from hexrdgui.simple_image_series_dialog import SimpleImageSeriesDialog
+from hexrdgui.masking.constants import MaskType
+from hexrdgui.masking.create_polar_mask import rebuild_polar_masks
+from hexrdgui.masking.create_raw_mask import convert_polar_to_raw, rebuild_raw_masks
+from hexrdgui.masking.hand_drawn_mask_dialog import HandDrawnMaskDialog
+from hexrdgui.masking.mask_manager import MaskManager
+from hexrdgui.masking.mask_manager_dialog import MaskManagerDialog
+from hexrdgui.masking.mask_regions_dialog import MaskRegionsDialog
+from hexrdgui.masking.threshold_mask_dialog import ThresholdMaskDialog
+from hexrdgui.materials_panel import MaterialsPanel
+from hexrdgui.median_filter_dialog import MedianFilterDialog
+from hexrdgui.messages_widget import MessagesWidget
+from hexrdgui.overlays import overlays_with_custom_energy
+from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
 from hexrdgui.pinhole_mask_dialog import PinholeMaskDialog
 from hexrdgui.pinhole_panel_buffer import generate_pinhole_panel_buffer
 from hexrdgui.polarization_options_dialog import PolarizationOptionsDialog
-from hexrdgui.masking.mask_manager_dialog import MaskManagerDialog
-from hexrdgui.masking.mask_regions_dialog import MaskRegionsDialog
-from hexrdgui.materials_panel import MaterialsPanel
-from hexrdgui.messages_widget import MessagesWidget
+from hexrdgui.progress_dialog import ProgressDialog
+from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
 from hexrdgui.save_images_dialog import SaveImagesDialog
-from hexrdgui.masking.threshold_mask_dialog import ThresholdMaskDialog
+from hexrdgui.simple_image_series_dialog import SimpleImageSeriesDialog
 from hexrdgui.transform_dialog import TransformDialog
-from hexrdgui.indexing.indexing_tree_view_dialog import IndexingTreeViewDialog
-from hexrdgui.indexing.fit_grains_tree_view_dialog import FitGrainsTreeViewDialog
-from hexrdgui.image_mode_widget import ImageModeWidget
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
+from hexrdgui.utils.coverage_plot import CoveragePlotDialog
 from hexrdgui.utils.dialog import add_help_url
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
 )
-from hexrdgui.utils.coverage_plot import CoveragePlotDialog
 from hexrdgui.zoom_canvas_dialog import ZoomCanvasDialog
-from hexrdgui.rerun_clustering_dialog import RerunClusteringDialog
-from hexrdgui.physics_package_manager_dialog import PhysicsPackageManagerDialog
-from hexrdgui import resource_loader, state
-from hexrd.resources import instrument_templates
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QIcon
@@ -290,7 +289,9 @@ class MainWindow(QObject):
             self.view_fit_grains_config
         )
         self.ui.action_view_overlay_picks.triggered.connect(self.view_overlay_picks)
-        self.ui.action_view_coverage.triggered.connect(self.on_action_view_coverage_triggered)
+        self.ui.action_view_coverage.triggered.connect(
+            self.on_action_view_coverage_triggered
+        )
         self.ui.calibration_tab_widget.currentChanged.connect(self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.threshold_mask_dialog.mask_applied.connect(self.update_all)
@@ -674,8 +675,7 @@ class MainWindow(QObject):
             self.ui,
             'Load Materials File',
             HexrdConfig().working_dir,
-            'All supported files (*.h5 *.hdf5 *.cif);;'
-            'HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
+            'All supported files (*.h5 *.hdf5 *.cif);;HDF5 files (*.h5 *.hdf5);;CIF files (*.cif)',
         )
         if not selected_file:
             return
@@ -1047,10 +1047,7 @@ class MainWindow(QObject):
                 ph_masks.append((det_key, contour))
 
         if not ph_masks:
-            msg = (
-                'Failed to find contours to generate the pinhole mask. '
-                'Please ensure the input is reasonable.'
-            )
+            msg = 'Failed to find contours to generate the pinhole mask. Please ensure the input is reasonable.'
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             return
 
@@ -1775,10 +1772,7 @@ class MainWindow(QObject):
 
     def load_recent_state_file(self, path: str) -> None:
         if not Path(path).exists():
-            msg = (
-                f'Recent state file: "{path}"\n\nno longer exists. '
-                'Remove from recent files list?'
-            )
+            msg = f'Recent state file: "{path}"\n\nno longer exists. Remove from recent files list?'
             response = QMessageBox.question(self.ui, 'HEXRD', msg)
             if response == QMessageBox.StandardButton.Yes:
                 HexrdConfig().recent_state_files.remove(path)
@@ -1927,8 +1921,5 @@ class MainWindow(QObject):
             # extension is not in known list
             self.open_image_files(selected_files=[str(p) for p in paths])
         except Exception:
-            error_message = (
-                'Unable to guess file type (state, instrument, materials, or '
-                'image). Please use File menu to load.'
-            )
+            error_message = 'Unable to guess file type (state, instrument, materials, or image). Please use File menu to load.'
             QMessageBox.critical(self.ui, 'Error', error_message)
