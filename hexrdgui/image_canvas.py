@@ -1754,7 +1754,13 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         try:
             if self.mode == ViewType.raw:
                 images = HexrdConfig().images_dict
-                return float(min(np.nanmin(img) for img in images.values()))
+                # Skip fully-NaN images (e.g. after a bad dark
+                # subtraction), so a single bad detector doesn't turn the
+                # global minimum into NaN and wipe out every image after
+                # scaling subtracts it.
+                mins = [np.nanmin(img) for img in images.values()]
+                finite = [m for m in mins if not np.isnan(m)]
+                return float(min(finite)) if finite else None
             elif self.iviewer is not None:
                 iviewer = cast(
                     'PolarViewer | CartesianViewer | StereoViewer',

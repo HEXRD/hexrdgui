@@ -174,8 +174,16 @@ class ColorMapEditor:
         # We can't do this in PySide6 for some reason:
         # self.ui.maximum.valueChanged.connect(self.ui.minimum.setMaximum)
         # self.ui.minimum.valueChanged.connect(self.ui.maximum.setMinimum)
-        self.ui.maximum.setMinimum(self.ui.minimum.value())
-        self.ui.minimum.setMaximum(self.ui.maximum.value())
+        min_value = self.ui.minimum.value()
+        max_value = self.ui.maximum.value()
+        if np.isnan(min_value) or np.isnan(max_value):
+            # NaN bounds make setMinimum()/setMaximum() re-emit
+            # valueChanged endlessly (NaN != NaN), causing infinite
+            # recursion between the two spin boxes.
+            return
+
+        self.ui.maximum.setMinimum(min_value)
+        self.ui.minimum.setMaximum(max_value)
 
     def block_updates(self, blocked: bool) -> None:
         self.updates_blocked = blocked
@@ -208,6 +216,12 @@ class ColorMapEditor:
 
         lo = min([np.nanpercentile(v, low) for v in values])
         hi = min([np.nanpercentile(v, high) for v in values])
+
+        if not np.isfinite(lo) or not np.isfinite(hi):
+            # This can happen if an image is fully NaN (e.g. after a bad
+            # dark subtraction). NaN spin box values cause infinite
+            # recursion, so fall back to a sane default range.
+            return 0.0, 5.0
 
         if hi - lo < 5:
             hi = lo + 5
