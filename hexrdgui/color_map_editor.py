@@ -230,6 +230,15 @@ class ColorMapEditor:
         self.ui.minimum.setValue(self.bounds[0])
         self.ui.maximum.setValue(self.bounds[1])
 
+    def enable_show_invalid(self, color: Any = constants.DEFAULT_INVALID_COLOR) -> None:
+        # Set the invalid (NaN) pixel color and enable displaying it,
+        # without prompting the user with a color dialog
+        self.bad_color = np.asarray(color, dtype=float)
+        with block_signals(self.ui.show_invalid):
+            self.ui.show_invalid.setChecked(True)
+
+        self.update_cmap()
+
     def show_invalid_toggled(self, b: bool) -> None:
         if b:
             color = QColor.fromRgbF(*self.bad_color)
