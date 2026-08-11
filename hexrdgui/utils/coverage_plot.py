@@ -30,7 +30,22 @@ def calculate_coverage_data(
     % of the maximum possible (i.e. hemisphere).
     """
     instr = polar_view.instr
-    sa_total = sum(panel.pixel_solid_angles.sum() for panel in instr.detectors.values())
+
+    # Calculate total solid angle, excluding panel buffer pixels
+    sa_total = 0.0
+    for panel in instr.detectors.values():
+        pixel_sa = panel.pixel_solid_angles
+
+        # Check if panel has a buffer set
+        if panel.panel_buffer is not None and np.any(panel.panel_buffer):
+            # panel_buffer is True for masked/buffered pixels, False for valid pixels
+            # So we want to sum solid angles where panel_buffer is False (not buffered)
+            panel_buffer = np.asarray(panel.panel_buffer, dtype=bool)
+            valid_mask = ~panel_buffer
+            sa_total += pixel_sa[valid_mask].sum()
+        else:
+            # No panel buffer, count all pixels
+            sa_total += pixel_sa.sum()
 
     frac_sa = sa_total / 2 / np.pi
     msg = f'Total covered solid angle out of 2π is {frac_sa * 100:.1f}%'
