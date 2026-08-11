@@ -153,6 +153,17 @@ KNOWN_DETECTOR_NAMES = {
         'CAMERA-07',
         'CAMERA-08',
     ],
+    'FALCON': [
+        'CAMERA-01',
+        'CAMERA-02',
+        'CAMERA-03',
+        'CAMERA-04',
+        'CAMERA-05',
+        'CAMERA-06',
+        'CAMERA-07',
+        'CAMERA-08',
+        'STREAK',
+    ],
     'DEXELAS_COMPOSITE': [
         'ff1_0_0',
         # There are others, but let's just check the first one
