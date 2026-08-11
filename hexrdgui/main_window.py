@@ -31,6 +31,9 @@ from hexrdgui.absorption_correction_options_dialog import (
 )
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.beam_marker_style_editor import BeamMarkerStyleEditor
+from hexrdgui.target_body_style_editor import TargetBodyStyleEditor
+from hexrdgui.stay_out_zone_editor import StayOutZoneEditor
+from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.cal_tree_view import CalTreeView
 from hexrdgui.calibration.auto.powder_runner import PowderRunner
 from hexrdgui.calibration.calibration_runner import CalibrationRunner
@@ -116,6 +119,27 @@ class MainWindow(QObject):
         self._indexing_config_view: IndexingTreeViewDialog | None = None
         self._fit_grains_config_view: FitGrainsTreeViewDialog | None = None
         self._coverage_plot_dialog: CoveragePlotDialog | None = None
+        self._target_body_style_editors: dict[str, TargetBodyStyleEditor] = {}
+        self._target_body_styles: dict[str, dict] = {
+            'aluminum': {
+                'line_color': '#ff0000',  # Red
+                'line_style': 'solid',
+                'line_width': 1.0,
+                'fill_enabled': True,
+                'fill_color': '#ff0000',  # Red
+                'fill_alpha': 0.1,
+            },
+            'stainless_steel': {
+                'line_color': '#0000ff',  # Blue
+                'line_style': 'solid',
+                'line_width': 1.0,
+                'fill_enabled': True,
+                'fill_color': '#0000ff',  # Blue
+                'fill_alpha': 0.1,
+            },
+        }
+        self._stay_out_zone_editor: StayOutZoneEditor | None = None
+        self._stay_out_zone_config: dict = StayOutZoneEditor.default_config()
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -196,6 +220,9 @@ class MainWindow(QObject):
         self.set_live_update(HexrdConfig().live_update)
 
         self.on_action_show_all_colormaps_toggled(HexrdConfig().show_all_colormaps)
+
+        # Reset overlay options to off by default
+        self._reset_overlay_options()
 
         ImageFileManager().load_dummy_images(True)
 
@@ -292,6 +319,21 @@ class MainWindow(QObject):
         self.ui.action_view_overlay_picks.triggered.connect(self.view_overlay_picks)
         self.ui.action_view_coverage.triggered.connect(
             self.on_action_view_coverage_triggered
+        )
+        self.ui.action_view_body_overlay_aluminum.toggled.connect(
+            self.on_action_view_body_overlay_aluminum_toggled
+        )
+        self.ui.action_view_body_overlay_stainless_steel.toggled.connect(
+            self.on_action_view_body_overlay_stainless_steel_toggled
+        )
+        self.ui.action_edit_body_overlay_style_aluminum.triggered.connect(
+            self.on_action_edit_body_overlay_style_aluminum_triggered
+        )
+        self.ui.action_edit_body_overlay_style_stainless_steel.triggered.connect(
+            self.on_action_edit_body_overlay_style_stainless_steel_triggered
+        )
+        self.ui.action_view_stay_out_zone.toggled.connect(
+            self.on_action_view_stay_out_zone_toggled
         )
         self.ui.calibration_tab_widget.currentChanged.connect(self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
@@ -445,6 +487,7 @@ class MainWindow(QObject):
         self.update_action_check_states()
         self.update_action_enable_states()
         self.materials_panel.update_gui_from_config()
+        self._reset_overlay_options()
 
     def update_action_check_states(self) -> None:
         checkbox_to_hexrd_config_mappings = {
@@ -577,6 +620,10 @@ class MainWindow(QObject):
         self.load_dummy_images()
         self.ui.image_tab_widget.switch_toolbar(0)
         self.simple_image_series_dialog.config_changed()
+        # Reset overlays when instrument changes
+        self._reset_overlay_options()
+        # Update target body overlay menu state for new instrument
+        self.update_image_mode_enable_states()
 
     def on_detector_shape_changed(self, det_key: str) -> None:
         # We need to load/reset the dummy images if a detector's shape changes.
@@ -1096,6 +1143,10 @@ class MainWindow(QObject):
         self.update_drawn_mask_line_picker_canvas()
         self.update_mask_region_canvas()
         self.image_mode = mode
+
+        # Reset target body and stay out zone overlays when changing view modes
+        self._reset_overlay_options()
+
         self.update_image_mode_enable_states()
 
         # Clear the overlays
@@ -1127,6 +1178,14 @@ class MainWindow(QObject):
         self.ui.action_edit_apply_powder_mask_to_polar.setEnabled(is_polar)
         self.ui.action_export_to_maud.setEnabled(is_polar and has_images)
         self.ui.action_view_coverage.setEnabled(is_polar)
+
+        # Target body overlay menu - enable only in cartesian view with FIDDLE/FALCON
+        target_body_enabled = is_cartesian and self._is_target_body_overlay_supported()
+        self.ui.menu_view_body_overlay.setEnabled(target_body_enabled)
+
+        # Stay out zone - enable only in cartesian view with FIDDLE/FALCON
+        stay_out_zone_enabled = is_cartesian and self._is_target_body_overlay_supported()
+        self.ui.action_view_stay_out_zone.setEnabled(stay_out_zone_enabled)
 
     def start_fast_powder_calibration(self) -> None:
         if not HexrdConfig().has_images:
@@ -1345,6 +1404,424 @@ class MainWindow(QObject):
             self._coverage_plot_dialog.show()
         elif self._coverage_plot_dialog is not None:
             self._coverage_plot_dialog.hide()
+
+    def _is_target_body_overlay_supported(self) -> bool:
+        """
+        Check if target body overlay is supported for current instrument.
+
+        Returns:
+            True if instrument is FIDDLE or FALCON
+        """
+        instrument_type = guess_instrument_type(HexrdConfig().detector_names)
+        return instrument_type in ('FIDDLE', 'FALCON')
+
+    def _reset_overlay_options(self) -> None:
+        """
+        Reset all overlay options to off (unchecked).
+
+        Called when state is loaded or application starts.
+        """
+        # Uncheck target body overlay options
+        with block_signals(self.ui.action_view_body_overlay_aluminum):
+            self.ui.action_view_body_overlay_aluminum.setChecked(False)
+        with block_signals(self.ui.action_view_body_overlay_stainless_steel):
+            self.ui.action_view_body_overlay_stainless_steel.setChecked(False)
+
+        # Uncheck stay out zone option
+        with block_signals(self.ui.action_view_stay_out_zone):
+            self.ui.action_view_stay_out_zone.setChecked(False)
+
+        # Clear any existing overlay artists
+        if hasattr(self, '_body_overlay_artists'):
+            for body_type in list(self._body_overlay_artists.keys()):
+                self._remove_body_overlay_from_cartesian(body_type)
+
+        if hasattr(self, '_stay_out_zone_artists'):
+            self._remove_stay_out_zone_from_cartesian()
+
+    def on_action_view_body_overlay_aluminum_toggled(self, checked: bool) -> None:
+        """Toggle the aluminum body overlay on the cartesian view."""
+        if self.image_mode != ViewType.cartesian:
+            msg = 'Body overlays can only be displayed in cartesian view with FIDDLE or FALCON instruments'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_view_body_overlay_aluminum.setChecked(False)
+            return
+
+        if not self._is_target_body_overlay_supported():
+            msg = 'Body overlays are only supported for FIDDLE and FALCON instruments'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_view_body_overlay_aluminum.setChecked(False)
+            return
+
+        if checked:
+            self._show_body_overlay('aluminum')
+        else:
+            self._hide_body_overlay('aluminum')
+
+    def on_action_view_body_overlay_stainless_steel_toggled(
+        self, checked: bool
+    ) -> None:
+        """Toggle the stainless steel body overlay on the cartesian view."""
+        if self.image_mode != ViewType.cartesian:
+            msg = 'Body overlays can only be displayed in cartesian view with FIDDLE or FALCON instruments'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_view_body_overlay_stainless_steel.setChecked(False)
+            return
+
+        if not self._is_target_body_overlay_supported():
+            msg = 'Body overlays are only supported for FIDDLE and FALCON instruments'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_view_body_overlay_stainless_steel.setChecked(False)
+            return
+
+        if checked:
+            self._show_body_overlay('stainless_steel')
+        else:
+            self._hide_body_overlay('stainless_steel')
+
+    def on_action_edit_body_overlay_style_aluminum_triggered(self) -> None:
+        """Open the aluminum body overlay style editor."""
+        self._open_target_body_style_editor('aluminum')
+
+    def on_action_edit_body_overlay_style_stainless_steel_triggered(self) -> None:
+        """Open the stainless steel body overlay style editor."""
+        self._open_target_body_style_editor('stainless_steel')
+
+    def _open_target_body_style_editor(self, body_type: str) -> None:
+        """
+        Open the style editor for the specified body type.
+
+        Args:
+            body_type: Either 'aluminum' or 'stainless_steel'
+        """
+        if body_type not in self._target_body_style_editors:
+            editor = TargetBodyStyleEditor(body_type, self.ui)
+            editor.style = self._target_body_styles[body_type]
+            editor.set_style_changed_callback(self._on_target_body_style_changed)
+            self._target_body_style_editors[body_type] = editor
+
+        self._target_body_style_editors[body_type].show()
+
+    def _on_target_body_style_changed(self, body_type: str, style: dict) -> None:
+        """
+        Called when target body overlay style is changed.
+
+        Args:
+            body_type: Either 'aluminum' or 'stainless_steel'
+            style: The new style dictionary
+        """
+        # Update stored style
+        self._target_body_styles[body_type] = style
+
+        # If the overlay is currently visible, redraw it with the new style
+        action_name = f'action_view_body_overlay_{body_type}'
+        action = getattr(self.ui, action_name)
+        if action.isChecked():
+            # Redraw the overlay
+            self._hide_body_overlay(body_type)
+            self._show_body_overlay(body_type)
+
+    def _show_body_overlay(self, body_type: str) -> None:
+        """
+        Show body overlay on the cartesian view.
+
+        Args:
+            body_type: Either 'aluminum' or 'stainless_steel'
+        """
+        # Load the CSV data for the specified body type
+        csv_data = self._load_body_overlay_data(body_type)
+
+        if csv_data is None:
+            msg = f'Failed to load {body_type} body overlay data'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            return
+
+        # Plot the overlay on the cartesian view
+        self._plot_body_overlay_on_cartesian(csv_data, body_type)
+
+    def _hide_body_overlay(self, body_type: str) -> None:
+        """
+        Hide body overlay from the cartesian view.
+
+        Args:
+            body_type: Either 'aluminum' or 'stainless_steel'
+        """
+        # Remove the overlay artists from the canvas
+        self._remove_body_overlay_from_cartesian(body_type)
+
+    def _load_body_overlay_data(self, body_type: str) -> np.ndarray | None:
+        """
+        Load body overlay coordinates from CSV file.
+
+        Args:
+            body_type: Either 'aluminum' or 'stainless_steel'
+
+        Returns:
+            numpy array of (x, y) coordinates or None if loading fails
+        """
+        # TODO: Implement CSV loading from resources/calibration folder
+        # Expected file names:
+        #   - aluminum_body_overlay.csv
+        #   - stainless_steel_body_overlay.csv
+        #
+        # CSV format should be two columns: x, y
+        #
+        # Example implementation:
+        # from hexrdgui import resource_loader
+        # from hexrdgui.resources import calibration
+        # filename = f'{body_type}_body_overlay.csv'
+        # with resource_loader.resource_path(calibration, filename) as f:
+        #     data = np.loadtxt(f, delimiter=',')
+        # return data
+
+        from hexrdgui import resource_loader
+        from hexrdgui.resources import calibration
+
+        filename = f'{body_type}_body_overlay.csv'
+        with resource_loader.resource_path(calibration, filename) as f:
+            data = np.loadtxt(f, delimiter=',')
+
+        return data
+
+    def _plot_body_overlay_on_cartesian(self, data: np.ndarray, body_type: str) -> None:
+        """
+        Plot the body overlay data on the cartesian view canvas.
+
+        Args:
+            data: numpy array of (x, y) coordinates
+            body_type: Either 'aluminum' or 'stainless_steel'
+        """
+        # Get the active canvas
+        canvas = self.active_canvas
+
+        # Get style settings for this body type
+        style = self._target_body_styles[body_type]
+
+        # Prepare line style kwargs
+        line_kwargs = {
+            'color': style['line_color'],
+            'linestyle': style['line_style'],
+            'linewidth': style['line_width'],
+        }
+
+        # Plot the x,y coordinates
+        line_artist = canvas.axis.plot(
+            data[:, 0], data[:, 1], **line_kwargs
+        )
+
+        # Store the artists for later removal
+        if not hasattr(self, '_body_overlay_artists'):
+            self._body_overlay_artists = {}
+
+        artists = {'line': line_artist}
+
+        # If fill is enabled, create a filled polygon
+        if style['fill_enabled']:
+            from matplotlib.patches import Polygon
+            from matplotlib.colors import to_rgba
+
+            # Create RGBA color with alpha
+            fill_color = to_rgba(style['fill_color'], style['fill_alpha'])
+
+            polygon = Polygon(
+                data,
+                closed=True,
+                facecolor=fill_color,
+                edgecolor='none',
+            )
+            canvas.axis.add_patch(polygon)
+            artists['fill'] = polygon
+
+        self._body_overlay_artists[body_type] = artists
+
+        # Redraw the canvas
+        canvas.draw()
+
+    def _remove_body_overlay_from_cartesian(self, body_type: str) -> None:
+        """
+        Remove the body overlay from the cartesian view canvas.
+
+        Args:
+            body_type: Either 'aluminum' or 'stainless_steel'
+        """
+        if not hasattr(self, '_body_overlay_artists'):
+            return
+
+        if body_type in self._body_overlay_artists:
+            artists = self._body_overlay_artists[body_type]
+
+            # Remove line artist
+            if 'line' in artists:
+                for line in artists['line']:
+                    line.remove()
+
+            # Remove fill artist (polygon patch)
+            if 'fill' in artists:
+                artists['fill'].remove()
+
+            del self._body_overlay_artists[body_type]
+
+        # Redraw the canvas
+        canvas = self.active_canvas
+        canvas.draw()
+
+    def on_action_view_stay_out_zone_toggled(self, checked: bool) -> None:
+        """Toggle the stay out zone on the cartesian view."""
+        if self.image_mode != ViewType.cartesian:
+            msg = 'Stay out zone can only be displayed in cartesian view with FIDDLE or FALCON instruments'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_view_stay_out_zone.setChecked(False)
+            return
+
+        if not self._is_target_body_overlay_supported():
+            msg = 'Stay out zone is only supported for FIDDLE and FALCON instruments'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_view_stay_out_zone.setChecked(False)
+            return
+
+        if checked:
+            self._show_stay_out_zone()
+        else:
+            self._hide_stay_out_zone()
+
+    def _show_stay_out_zone(self) -> None:
+        """Show the stay out zone circles on the cartesian view."""
+        # Open editor if it doesn't exist
+        if self._stay_out_zone_editor is None:
+            self._stay_out_zone_editor = StayOutZoneEditor(self.ui)
+            self._stay_out_zone_editor.config = self._stay_out_zone_config
+            self._stay_out_zone_editor.set_config_changed_callback(
+                self._on_stay_out_zone_config_changed
+            )
+
+        # Show the editor dialog
+        self._stay_out_zone_editor.show()
+
+        # Plot the stay out zone
+        self._plot_stay_out_zone()
+
+    def _hide_stay_out_zone(self) -> None:
+        """Hide the stay out zone from the cartesian view."""
+        self._remove_stay_out_zone_from_cartesian()
+
+    def _on_stay_out_zone_config_changed(self, config: dict) -> None:
+        """
+        Called when stay out zone configuration changes.
+
+        Args:
+            config: The new configuration dictionary
+        """
+        # Update stored config
+        self._stay_out_zone_config = config
+
+        # If the stay out zone is currently visible, redraw it
+        if self.ui.action_view_stay_out_zone.isChecked():
+            self._remove_stay_out_zone_from_cartesian()
+            self._plot_stay_out_zone()
+
+    def _plot_stay_out_zone(self) -> None:
+        """Plot the stay out zone circles on the cartesian view."""
+        canvas = self.active_canvas
+        config = self._stay_out_zone_config
+
+        # Get center coordinates from config
+        center_x = config['center_x']
+        center_y = config['center_y']
+
+        # Get the projection distance from cartesian config
+        projection_distance = HexrdConfig()._cartesian_virtual_plane_distance()
+
+        # Calculate radii using opening half-angles
+        angle1_rad = np.radians(config['angle1'])
+        angle2_rad = np.radians(config['angle2'])
+        radius1 = projection_distance * np.sin(angle1_rad)
+        radius2 = projection_distance * np.sin(angle2_rad)
+
+        # Store artists for later removal
+        if not hasattr(self, '_stay_out_zone_artists'):
+            self._stay_out_zone_artists = []
+
+        # Plot circle 1
+        artists = self._plot_stay_out_zone_circle(
+            canvas, center_x, center_y, radius1, config['circle1']
+        )
+        self._stay_out_zone_artists.extend(artists)
+
+        # Plot circle 2
+        artists = self._plot_stay_out_zone_circle(
+            canvas, center_x, center_y, radius2, config['circle2']
+        )
+        self._stay_out_zone_artists.extend(artists)
+
+        # Redraw the canvas
+        canvas.draw()
+
+    def _plot_stay_out_zone_circle(
+        self,
+        canvas,
+        center_x: float,
+        center_y: float,
+        radius: float,
+        style: dict,
+    ) -> list:
+        """
+        Plot a single stay out zone circle.
+
+        Args:
+            canvas: The canvas to plot on
+            center_x: Circle center x coordinate
+            center_y: Circle center y coordinate
+            radius: Circle radius
+            style: Style dictionary for the circle
+
+        Returns:
+            List of artists created
+        """
+        from matplotlib.patches import Circle as CirclePatch
+        from matplotlib.colors import to_rgba
+
+        artists = []
+
+        # Create the circle outline
+        circle_line = CirclePatch(
+            (center_x, center_y),
+            radius,
+            fill=False,
+            edgecolor=style['line_color'],
+            linestyle=style['line_style'],
+            linewidth=style['line_width'],
+        )
+        canvas.axis.add_patch(circle_line)
+        artists.append(circle_line)
+
+        # Add fill if enabled
+        if style['fill_enabled']:
+            fill_color = to_rgba(style['fill_color'], style['fill_alpha'])
+            circle_fill = CirclePatch(
+                (center_x, center_y),
+                radius,
+                fill=True,
+                facecolor=fill_color,
+                edgecolor='none',
+            )
+            canvas.axis.add_patch(circle_fill)
+            artists.append(circle_fill)
+
+        return artists
+
+    def _remove_stay_out_zone_from_cartesian(self) -> None:
+        """Remove the stay out zone from the cartesian view."""
+        if not hasattr(self, '_stay_out_zone_artists'):
+            return
+
+        for artist in self._stay_out_zone_artists:
+            artist.remove()
+
+        self._stay_out_zone_artists = []
+
+        # Redraw the canvas
+        canvas = self.active_canvas
+        canvas.draw()
 
     def new_mouse_position(self, info: dict[str, Any]) -> None:
         if self.image_mode == ViewType.polar:

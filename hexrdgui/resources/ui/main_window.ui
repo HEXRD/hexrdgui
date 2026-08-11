@@ -160,6 +160,27 @@
      <addaction name="action_show_all_colormaps"/>
      <addaction name="action_edit_defaults"/>
     </widget>
+    <widget class="QMenu" name="menu_view_body_overlay">
+     <property name="title">
+      <string>Target Body Overlay</string>
+     </property>
+     <widget class="QMenu" name="menu_aluminum_body">
+      <property name="title">
+       <string>Aluminum Body</string>
+      </property>
+      <addaction name="action_view_body_overlay_aluminum"/>
+      <addaction name="action_edit_body_overlay_style_aluminum"/>
+     </widget>
+     <widget class="QMenu" name="menu_stainless_steel_body">
+      <property name="title">
+       <string>Stainless Steel Body</string>
+      </property>
+      <addaction name="action_view_body_overlay_stainless_steel"/>
+      <addaction name="action_edit_body_overlay_style_stainless_steel"/>
+     </widget>
+     <addaction name="menu_aluminum_body"/>
+     <addaction name="menu_stainless_steel_body"/>
+    </widget>
     <addaction name="view_dock_widgets"/>
     <addaction name="action_show_toolbar"/>
     <addaction name="action_show_live_updates"/>
@@ -169,6 +190,8 @@
     <addaction name="action_view_fit_grains_config"/>
     <addaction name="action_view_overlay_picks"/>
     <addaction name="action_view_coverage"/>
+    <addaction name="menu_view_body_overlay"/>
+    <addaction name="action_view_stay_out_zone"/>
     <addaction name="colormaps_menu"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
@@ -807,6 +830,55 @@
    </property>
    <property name="toolTip">
     <string>Show coverage plot</string>
+   </property>
+  </action>
+  <action name="action_view_body_overlay_aluminum">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Plot</string>
+   </property>
+   <property name="toolTip">
+    <string>Overlay aluminum body coordinates on cartesian view</string>
+   </property>
+  </action>
+  <action name="action_view_body_overlay_stainless_steel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Plot</string>
+   </property>
+   <property name="toolTip">
+    <string>Overlay stainless steel body coordinates on cartesian view</string>
+   </property>
+  </action>
+  <action name="action_edit_body_overlay_style_aluminum">
+   <property name="text">
+    <string>Edit Plot Style</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit aluminum body overlay style</string>
+   </property>
+  </action>
+  <action name="action_edit_body_overlay_style_stainless_steel">
+   <property name="text">
+    <string>Edit Plot Style</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit stainless steel body overlay style</string>
+   </property>
+  </action>
+  <action name="action_view_stay_out_zone">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stay Out Zone</string>
+   </property>
+   <property name="toolTip">
+    <string>Display stay out zone circles on cartesian view</string>
    </property>
   </action>
   <action name="action_show_beam_marker">
