@@ -47,6 +47,7 @@ from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.config_dialog import ConfigDialog
 from hexrdgui.constants import DOCUMENTATION_URL, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
+from hexrdgui.crystal_structure_viewer import CrystalStructureDialog
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_calculator_dialog import ImageCalculatorDialog
@@ -116,6 +117,7 @@ class MainWindow(QObject):
         self._indexing_config_view: IndexingTreeViewDialog | None = None
         self._fit_grains_config_view: FitGrainsTreeViewDialog | None = None
         self._coverage_plot_dialog: CoveragePlotDialog | None = None
+        self._crystal_structure_dialog: CrystalStructureDialog | None = None
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -290,6 +292,9 @@ class MainWindow(QObject):
             self.view_fit_grains_config
         )
         self.ui.action_view_overlay_picks.triggered.connect(self.view_overlay_picks)
+        self.ui.action_view_crystal_structure.triggered.connect(
+            self.view_crystal_structure
+        )
         self.ui.action_view_coverage.triggered.connect(
             self.on_action_view_coverage_triggered
         )
@@ -1279,6 +1284,14 @@ class MainWindow(QObject):
 
         view = self._fit_grains_config_view = FitGrainsTreeViewDialog(self.ui)
         view.show()
+
+    def view_crystal_structure(self) -> None:
+        if self._crystal_structure_dialog is None:
+            self._crystal_structure_dialog = CrystalStructureDialog(self.ui)
+
+        self._crystal_structure_dialog.show()
+        self._crystal_structure_dialog.raise_()
+        self._crystal_structure_dialog.activateWindow()
 
     def view_overlay_picks(self) -> None:
         # Only works in the polar view right now, but could in theory work in
