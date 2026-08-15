@@ -9,6 +9,7 @@ import numpy as np
 from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt
 from PySide6.QtGui import (
     QColor,
+    QFont,
     QMouseEvent,
     QPainter,
     QPen,
@@ -28,6 +29,7 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHeaderView,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
@@ -59,6 +61,7 @@ DEFAULT_AXIS_COLORS: dict[str, Color] = {
 }
 DEFAULT_AXIS_LABELS = {'a': 'a', 'b': 'b', 'c': 'c'}
 DEFAULT_AXIS_SIZE = 54.0
+DEFAULT_AXIS_TEXT_SIZE = 12.0
 DEFAULT_CELL_COLOR: Color = (35, 38, 42)
 DEFAULT_CELL_WIDTH = 1.4
 
@@ -89,6 +92,7 @@ class CrystalStructureDialog(QDialog):
         self.cell_width = QDoubleSpinBox(self)
         self.show_axes = QCheckBox(self)
         self.axis_size = QDoubleSpinBox(self)
+        self.axis_text_size = QDoubleSpinBox(self)
         self.axis_label_edits: dict[str, QLineEdit] = {}
         self.axis_color_buttons: dict[str, QPushButton] = {}
         self.atom_table = QTableWidget(self)
@@ -153,7 +157,12 @@ class CrystalStructureDialog(QDialog):
         self.axis_size.setSingleStep(4.0)
         self.axis_size.setDecimals(1)
         self.axis_size.setValue(DEFAULT_AXIS_SIZE)
-        axes_form.addRow('Arrow size', self.axis_size)
+
+        self.axis_text_size.setRange(6.0, 48.0)
+        self.axis_text_size.setSingleStep(1.0)
+        self.axis_text_size.setDecimals(1)
+        self.axis_text_size.setValue(DEFAULT_AXIS_TEXT_SIZE)
+        axes_form.addRow('Sizes', self.create_axis_size_controls())
 
         for axis in ('a', 'b', 'c'):
             axes_form.addRow(f'{axis} axis', self.create_axis_controls(axis))
@@ -220,6 +229,7 @@ class CrystalStructureDialog(QDialog):
         self.cell_width.valueChanged.connect(self.render_style_changed)
         self.show_axes.toggled.connect(self.render_style_changed)
         self.axis_size.valueChanged.connect(self.render_style_changed)
+        self.axis_text_size.valueChanged.connect(self.render_style_changed)
         for axis, edit in self.axis_label_edits.items():
             edit.textChanged.connect(partial(self.axis_label_changed, axis))
         for axis, button in self.axis_color_buttons.items():
@@ -249,6 +259,16 @@ class CrystalStructureDialog(QDialog):
 
         layout.addWidget(edit, stretch=1)
         layout.addWidget(button)
+        return widget
+
+    def create_axis_size_controls(self) -> QWidget:
+        widget = QWidget(self)
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(QLabel('Arrow', widget))
+        layout.addWidget(self.axis_size, stretch=1)
+        layout.addWidget(QLabel('Text', widget))
+        layout.addWidget(self.axis_text_size, stretch=1)
         return widget
 
     def update_materials(self) -> None:
@@ -302,6 +322,7 @@ class CrystalStructureDialog(QDialog):
             self.cell_width,
             self.show_axes,
             self.axis_size,
+            self.axis_text_size,
             *self.axis_label_edits.values(),
         ):
             self.radius_scale.setValue(1.0)
@@ -311,6 +332,7 @@ class CrystalStructureDialog(QDialog):
             self.cell_width.setValue(DEFAULT_CELL_WIDTH)
             self.show_axes.setChecked(True)
             self.axis_size.setValue(DEFAULT_AXIS_SIZE)
+            self.axis_text_size.setValue(DEFAULT_AXIS_TEXT_SIZE)
             for axis, edit in self.axis_label_edits.items():
                 edit.setText(DEFAULT_AXIS_LABELS[axis])
             for axis, button in self.axis_color_buttons.items():
@@ -337,6 +359,7 @@ class CrystalStructureDialog(QDialog):
         self.viewer.set_axis_options(
             show=self.show_axes.isChecked(),
             size=self.axis_size.value(),
+            text_size=self.axis_text_size.value(),
             colors=self._axis_colors,
             labels=labels,
         )
@@ -501,6 +524,7 @@ class CrystalStructureWidget(QOpenGLWidget):
         self.cell_width = DEFAULT_CELL_WIDTH
         self.show_axes = True
         self.axis_size = DEFAULT_AXIS_SIZE
+        self.axis_text_size = DEFAULT_AXIS_TEXT_SIZE
         self.axis_offset = self.default_axis_offset()
         self.axis_colors = {
             axis: QColor(*color) for axis, color in DEFAULT_AXIS_COLORS.items()
@@ -549,11 +573,13 @@ class CrystalStructureWidget(QOpenGLWidget):
         *,
         show: bool,
         size: float,
+        text_size: float,
         colors: dict[str, Color],
         labels: dict[str, str],
     ) -> None:
         self.show_axes = show
         self.axis_size = size
+        self.axis_text_size = text_size
         self.axis_colors = {axis: QColor(*color) for axis, color in colors.items()}
         self.axis_labels = labels.copy()
         if not self._axis_position_custom:
@@ -780,6 +806,10 @@ class CrystalStructureWidget(QOpenGLWidget):
     def draw_axes(self, painter: QPainter) -> None:
         origin = self.axis_origin()
         axes = np.eye(3) @ rotation_matrix(self.rotation_x, self.rotation_y).T
+        old_font = painter.font()
+        font = QFont(old_font)
+        font.setPointSizeF(self.axis_text_size)
+        painter.setFont(font)
 
         for vector, axis in zip(axes, ('a', 'b', 'c')):
             end = origin + QPointF(
@@ -793,6 +823,8 @@ class CrystalStructureWidget(QOpenGLWidget):
             painter.drawLine(origin, end)
             self.draw_axis_arrowhead(painter, origin, end, color)
             painter.drawText(end + QPointF(6.0, -6.0), self.axis_labels.get(axis, axis))
+
+        painter.setFont(old_font)
 
     def draw_axis_arrowhead(
         self,
