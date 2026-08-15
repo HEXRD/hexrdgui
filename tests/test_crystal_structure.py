@@ -13,6 +13,11 @@ os.environ.setdefault(
 from hexrd.material import Material
 
 from hexrdgui.crystal_structure import crystal_structure_scene, lattice_vectors
+from hexrdgui.crystal_structure_viewer import (
+    DISPLAY_MODE_BALL_AND_STICK,
+    DISPLAY_MODE_SPHERES,
+    automatic_display_mode,
+)
 
 
 def make_material(
@@ -149,6 +154,23 @@ def test_metal_metal_bonds_are_disabled_by_default():
 
     assert len(scene.atoms) == 14
     assert scene.bonds == ()
+
+
+def test_automatic_display_mode_uses_ball_and_stick_only_when_bonded():
+    bonded = make_material(
+        'bonded',
+        1,
+        [2.0, 2.0, 2.0, 90.0, 90.0, 90.0],
+        atom_types=[6, 1],
+        atom_positions=[
+            [0.9, 0.5, 0.5, 1.0],
+            [0.2, 0.5, 0.5, 1.0],
+        ],
+    )
+    metal = make_material('metal', 225, [3.6, 3.6, 3.6, 90.0, 90.0, 90.0])
+
+    assert automatic_display_mode(bonded) == DISPLAY_MODE_BALL_AND_STICK
+    assert automatic_display_mode(metal) == DISPLAY_MODE_SPHERES
 
 
 def test_lattice_vectors_preserve_triclinic_angles():
