@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from PySide6.QtCore import QPoint, QPointF, QSize, Qt
+from PySide6.QtCore import QPoint, QPointF, QRectF, QSize, Qt
 from PySide6.QtGui import (
     QColor,
     QMouseEvent,
@@ -18,17 +18,20 @@ from PySide6.QtGui import (
 from PySide6.QtOpenGLWidgets import QOpenGLWidget
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
     QColorDialog,
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
+    QGroupBox,
     QHeaderView,
     QHBoxLayout,
-    QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -45,6 +48,21 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import block_signals
 
 
+DISPLAY_MODE_SPHERES = 'Spheres'
+DISPLAY_MODE_BALL_AND_STICK = 'Ball and stick'
+
+DEFAULT_BACKGROUND_COLOR: Color = (255, 255, 255)
+DEFAULT_AXIS_COLORS: dict[str, Color] = {
+    'a': (230, 80, 80),
+    'b': (80, 170, 95),
+    'c': (80, 125, 230),
+}
+DEFAULT_AXIS_LABELS = {'a': 'a', 'b': 'b', 'c': 'c'}
+DEFAULT_AXIS_SIZE = 54.0
+DEFAULT_CELL_COLOR: Color = (35, 38, 42)
+DEFAULT_CELL_WIDTH = 1.4
+
+
 class CrystalStructureDialog(QDialog):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -54,6 +72,9 @@ class CrystalStructureDialog(QDialog):
 
         self._atom_colors: dict[str, Color] = {}
         self._atom_radii: dict[str, float] = {}
+        self._axis_colors = DEFAULT_AXIS_COLORS.copy()
+        self._background_color = DEFAULT_BACKGROUND_COLOR
+        self._cell_color = DEFAULT_CELL_COLOR
         self._updating_controls = False
 
         self.viewer = CrystalStructureWidget(self)
@@ -62,6 +83,14 @@ class CrystalStructureDialog(QDialog):
         self.radius_scale = QDoubleSpinBox(self)
         self.bond_cutoff_scale = QDoubleSpinBox(self)
         self.stick_radius = QDoubleSpinBox(self)
+        self.background_color_button = QPushButton(self)
+        self.show_cell = QCheckBox(self)
+        self.cell_color_button = QPushButton(self)
+        self.cell_width = QDoubleSpinBox(self)
+        self.show_axes = QCheckBox(self)
+        self.axis_size = QDoubleSpinBox(self)
+        self.axis_label_edits: dict[str, QLineEdit] = {}
+        self.axis_color_buttons: dict[str, QPushButton] = {}
         self.atom_table = QTableWidget(self)
 
         self.setup_ui()
@@ -73,29 +102,61 @@ class CrystalStructureDialog(QDialog):
         controls.setMinimumWidth(280)
         controls.setMaximumWidth(340)
 
-        form = QFormLayout()
-        form.addRow('Material', self.materials_combo)
+        structure_form = QFormLayout()
+        structure_form.addRow('Material', self.materials_combo)
 
-        self.display_mode.addItems(['Spheres', 'Ball and stick'])
-        form.addRow('Display mode', self.display_mode)
+        self.display_mode.addItems([DISPLAY_MODE_SPHERES, DISPLAY_MODE_BALL_AND_STICK])
+        structure_form.addRow('Display mode', self.display_mode)
+
+        self.background_color_button.setToolTip('Change background color')
+        self.update_background_button()
+        scene_form = QFormLayout()
+        scene_form.addRow('Background', self.background_color_button)
 
         self.radius_scale.setRange(0.1, 5.0)
         self.radius_scale.setSingleStep(0.1)
         self.radius_scale.setDecimals(2)
         self.radius_scale.setValue(1.0)
-        form.addRow('Radius scale', self.radius_scale)
+        structure_form.addRow('Radius scale', self.radius_scale)
 
         self.bond_cutoff_scale.setRange(0.5, 2.0)
         self.bond_cutoff_scale.setSingleStep(0.05)
         self.bond_cutoff_scale.setDecimals(2)
         self.bond_cutoff_scale.setValue(1.15)
-        form.addRow('Bond tolerance', self.bond_cutoff_scale)
+        structure_form.addRow('Bond tolerance', self.bond_cutoff_scale)
 
         self.stick_radius.setRange(0.005, 0.5)
         self.stick_radius.setSingleStep(0.005)
         self.stick_radius.setDecimals(3)
         self.stick_radius.setValue(0.055)
-        form.addRow('Stick radius', self.stick_radius)
+        structure_form.addRow('Stick radius', self.stick_radius)
+
+        cell_form = QFormLayout()
+        self.show_cell.setChecked(True)
+        cell_form.addRow('Show outline', self.show_cell)
+
+        self.cell_color_button.setToolTip('Change unit cell outline color')
+        self.update_cell_button()
+        cell_form.addRow('Color', self.cell_color_button)
+
+        self.cell_width.setRange(0.25, 8.0)
+        self.cell_width.setSingleStep(0.25)
+        self.cell_width.setDecimals(2)
+        self.cell_width.setValue(DEFAULT_CELL_WIDTH)
+        cell_form.addRow('Width', self.cell_width)
+
+        self.show_axes.setChecked(True)
+        axes_form = QFormLayout()
+        axes_form.addRow('Show axes', self.show_axes)
+
+        self.axis_size.setRange(12.0, 180.0)
+        self.axis_size.setSingleStep(4.0)
+        self.axis_size.setDecimals(1)
+        self.axis_size.setValue(DEFAULT_AXIS_SIZE)
+        axes_form.addRow('Arrow size', self.axis_size)
+
+        for axis in ('a', 'b', 'c'):
+            axes_form.addRow(f'{axis} axis', self.create_axis_controls(axis))
 
         self.atom_table.setColumnCount(3)
         self.atom_table.setHorizontalHeaderLabels(['Atom', 'Color', 'Radius'])
@@ -122,17 +183,30 @@ class CrystalStructureDialog(QDialog):
         buttons.rejected.connect(self.close)
 
         controls_layout = QVBoxLayout(controls)
-        controls_layout.addLayout(form)
-        controls_layout.addWidget(QLabel('Atom styles', controls))
-        controls_layout.addWidget(self.atom_table)
-        controls_layout.addWidget(reset_view)
-        controls_layout.addWidget(reset_styles)
+        controls_layout.addWidget(group_box('Structure', structure_form, controls))
+        controls_layout.addWidget(group_box('Scene', scene_form, controls))
+        controls_layout.addWidget(group_box('Unit Cell', cell_form, controls))
+        controls_layout.addWidget(group_box('Axes', axes_form, controls))
+        atom_group = QGroupBox('Atom Styles', controls)
+        atom_layout = QVBoxLayout(atom_group)
+        atom_layout.addWidget(self.atom_table)
+        controls_layout.addWidget(atom_group)
+        action_group = QGroupBox('Actions', controls)
+        action_layout = QVBoxLayout(action_group)
+        action_layout.addWidget(reset_view)
+        action_layout.addWidget(reset_styles)
+        controls_layout.addWidget(action_group)
         controls_layout.addStretch()
         controls_layout.addWidget(buttons)
 
         layout = QHBoxLayout(self)
         layout.addWidget(self.viewer, stretch=1)
-        layout.addWidget(controls)
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(controls)
+        scroll_area.setMinimumWidth(300)
+        scroll_area.setMaximumWidth(370)
+        layout.addWidget(scroll_area)
 
     def setup_connections(self) -> None:
         self.materials_combo.currentTextChanged.connect(self.material_changed)
@@ -140,13 +214,42 @@ class CrystalStructureDialog(QDialog):
         self.radius_scale.valueChanged.connect(self.style_changed)
         self.bond_cutoff_scale.valueChanged.connect(self.style_changed)
         self.stick_radius.valueChanged.connect(self.render_style_changed)
+        self.background_color_button.clicked.connect(self.select_background_color)
+        self.show_cell.toggled.connect(self.render_style_changed)
+        self.cell_color_button.clicked.connect(self.select_cell_color)
+        self.cell_width.valueChanged.connect(self.render_style_changed)
+        self.show_axes.toggled.connect(self.render_style_changed)
+        self.axis_size.valueChanged.connect(self.render_style_changed)
+        for axis, edit in self.axis_label_edits.items():
+            edit.textChanged.connect(partial(self.axis_label_changed, axis))
+        for axis, button in self.axis_color_buttons.items():
+            button.clicked.connect(partial(self.select_axis_color, axis))
         HexrdConfig().materials_dict_modified.connect(self.update_materials)
         HexrdConfig().active_material_changed.connect(self.active_material_changed)
         HexrdConfig().active_material_modified.connect(self.style_changed)
 
     @property
     def ball_and_stick(self) -> bool:
-        return self.display_mode.currentText() == 'Ball and stick'
+        return self.display_mode.currentText() == DISPLAY_MODE_BALL_AND_STICK
+
+    def create_axis_controls(self, axis: str) -> QWidget:
+        widget = QWidget(self)
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        edit = QLineEdit(DEFAULT_AXIS_LABELS[axis], widget)
+        edit.setMaxLength(8)
+        self.axis_label_edits[axis] = edit
+
+        button = QPushButton(widget)
+        button.setToolTip(f'Change {axis} axis color')
+        button.setFixedWidth(44)
+        button.setStyleSheet(color_stylesheet(self._axis_colors[axis]))
+        self.axis_color_buttons[axis] = button
+
+        layout.addWidget(edit, stretch=1)
+        layout.addWidget(button)
+        return widget
 
     def update_materials(self) -> None:
         material_names = list(HexrdConfig().materials)
@@ -160,6 +263,7 @@ class CrystalStructureDialog(QDialog):
             if selected_name in material_names:
                 self.materials_combo.setCurrentText(selected_name)
 
+        self.set_default_display_mode()
         self.update_scene(reset_view=True)
 
     def active_material_changed(self) -> None:
@@ -175,6 +279,7 @@ class CrystalStructureDialog(QDialog):
     def material_changed(self) -> None:
         self._atom_colors.clear()
         self._atom_radii.clear()
+        self.set_default_display_mode()
         self.update_scene(reset_view=True)
 
     def style_changed(self) -> None:
@@ -186,18 +291,115 @@ class CrystalStructureDialog(QDialog):
     def reset_styles(self) -> None:
         self._atom_colors.clear()
         self._atom_radii.clear()
+        self._axis_colors = DEFAULT_AXIS_COLORS.copy()
+        self._background_color = DEFAULT_BACKGROUND_COLOR
+        self._cell_color = DEFAULT_CELL_COLOR
         with block_signals(
             self.radius_scale,
             self.bond_cutoff_scale,
             self.stick_radius,
+            self.show_cell,
+            self.cell_width,
+            self.show_axes,
+            self.axis_size,
+            *self.axis_label_edits.values(),
         ):
             self.radius_scale.setValue(1.0)
             self.bond_cutoff_scale.setValue(1.15)
             self.stick_radius.setValue(0.055)
+            self.show_cell.setChecked(True)
+            self.cell_width.setValue(DEFAULT_CELL_WIDTH)
+            self.show_axes.setChecked(True)
+            self.axis_size.setValue(DEFAULT_AXIS_SIZE)
+            for axis, edit in self.axis_label_edits.items():
+                edit.setText(DEFAULT_AXIS_LABELS[axis])
+            for axis, button in self.axis_color_buttons.items():
+                button.setStyleSheet(color_stylesheet(self._axis_colors[axis]))
+            self.update_background_button()
+            self.update_cell_button()
+        self.apply_render_options()
+        self.viewer.reset_axis_position()
         self.update_scene()
 
     def render_style_changed(self) -> None:
+        self.apply_render_options()
+
+    def apply_render_options(self) -> None:
+        labels = {
+            axis: edit.text() or axis for axis, edit in self.axis_label_edits.items()
+        }
+        self.viewer.set_background_color(self._background_color)
+        self.viewer.set_cell_options(
+            show=self.show_cell.isChecked(),
+            color=self._cell_color,
+            width=self.cell_width.value(),
+        )
+        self.viewer.set_axis_options(
+            show=self.show_axes.isChecked(),
+            size=self.axis_size.value(),
+            colors=self._axis_colors,
+            labels=labels,
+        )
         self.viewer.set_stick_radius(self.stick_radius.value())
+
+    def set_default_display_mode(self) -> None:
+        material_name = self.materials_combo.currentText()
+        material = HexrdConfig().materials.get(material_name)
+        if material is None:
+            return
+
+        mode = automatic_display_mode(
+            material,
+            bond_cutoff_scale=self.bond_cutoff_scale.value(),
+        )
+        with block_signals(self.display_mode):
+            self.display_mode.setCurrentText(mode)
+
+    def select_background_color(self) -> None:
+        color = QColorDialog.getColor(
+            QColor(*self._background_color), self, 'Background color'
+        )
+        if not color.isValid():
+            return
+
+        self._background_color = color.getRgb()[:3]
+        self.update_background_button()
+        self.apply_render_options()
+
+    def update_background_button(self) -> None:
+        self.background_color_button.setStyleSheet(
+            color_stylesheet(self._background_color)
+        )
+
+    def select_cell_color(self) -> None:
+        color = QColorDialog.getColor(
+            QColor(*self._cell_color), self, 'Unit cell color'
+        )
+        if not color.isValid():
+            return
+
+        self._cell_color = color.getRgb()[:3]
+        self.update_cell_button()
+        self.apply_render_options()
+
+    def update_cell_button(self) -> None:
+        self.cell_color_button.setStyleSheet(color_stylesheet(self._cell_color))
+
+    def select_axis_color(self, axis: str) -> None:
+        color = QColorDialog.getColor(
+            QColor(*self._axis_colors[axis]), self, f'{axis} axis color'
+        )
+        if not color.isValid():
+            return
+
+        self._axis_colors[axis] = color.getRgb()[:3]
+        self.axis_color_buttons[axis].setStyleSheet(
+            color_stylesheet(self._axis_colors[axis])
+        )
+        self.apply_render_options()
+
+    def axis_label_changed(self, axis: str, text: str) -> None:
+        self.apply_render_options()
 
     def update_scene(self, *, reset_view: bool = False) -> None:
         material_name = self.materials_combo.currentText()
@@ -222,7 +424,7 @@ class CrystalStructureDialog(QDialog):
             return
 
         self.viewer.set_ball_and_stick(self.ball_and_stick)
-        self.viewer.set_stick_radius(self.stick_radius.value())
+        self.apply_render_options()
         self.viewer.set_scene(scene, reset_view=reset_view)
         self.update_atom_table(scene.atoms)
 
@@ -293,6 +495,19 @@ class CrystalStructureWidget(QOpenGLWidget):
         self._last_button: Qt.MouseButton | None = None
         self.ball_and_stick = False
         self.stick_radius = 0.055
+        self.background_color = QColor(*DEFAULT_BACKGROUND_COLOR)
+        self.show_cell = True
+        self.cell_color = QColor(*DEFAULT_CELL_COLOR)
+        self.cell_width = DEFAULT_CELL_WIDTH
+        self.show_axes = True
+        self.axis_size = DEFAULT_AXIS_SIZE
+        self.axis_offset = self.default_axis_offset()
+        self.axis_colors = {
+            axis: QColor(*color) for axis, color in DEFAULT_AXIS_COLORS.items()
+        }
+        self.axis_labels = DEFAULT_AXIS_LABELS.copy()
+        self._dragging_axes = False
+        self._axis_position_custom = False
 
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setMouseTracking(True)
@@ -319,6 +534,41 @@ class CrystalStructureWidget(QOpenGLWidget):
         self.stick_radius = radius
         self.update()
 
+    def set_background_color(self, color: Color) -> None:
+        self.background_color = QColor(*color)
+        self.update()
+
+    def set_cell_options(self, *, show: bool, color: Color, width: float) -> None:
+        self.show_cell = show
+        self.cell_color = QColor(*color)
+        self.cell_width = width
+        self.update()
+
+    def set_axis_options(
+        self,
+        *,
+        show: bool,
+        size: float,
+        colors: dict[str, Color],
+        labels: dict[str, str],
+    ) -> None:
+        self.show_axes = show
+        self.axis_size = size
+        self.axis_colors = {axis: QColor(*color) for axis, color in colors.items()}
+        self.axis_labels = labels.copy()
+        if not self._axis_position_custom:
+            self.axis_offset = self.default_axis_offset()
+        self.update()
+
+    def default_axis_offset(self) -> QPointF:
+        margin = max(36.0, self.axis_size * 1.05)
+        return QPointF(margin, margin)
+
+    def reset_axis_position(self) -> None:
+        self._axis_position_custom = False
+        self.axis_offset = self.default_axis_offset()
+        self.update()
+
     def reset_view(self, *, update: bool = True) -> None:
         self.rotation_x = 25.0
         self.rotation_y = -35.0
@@ -330,10 +580,10 @@ class CrystalStructureWidget(QOpenGLWidget):
     def paintGL(self) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.fillRect(self.rect(), QColor(24, 27, 31))
+        painter.fillRect(self.rect(), self.background_color)
 
         if self.scene is None:
-            painter.setPen(QColor(210, 214, 220))
+            painter.setPen(foreground_color_for_background(self.background_color))
             painter.drawText(
                 self.rect(),
                 Qt.AlignmentFlag.AlignCenter,
@@ -343,16 +593,23 @@ class CrystalStructureWidget(QOpenGLWidget):
             return
 
         projected = self.project_scene()
-        self.draw_cell(painter, projected)
+        if self.show_cell:
+            self.draw_cell(painter, projected)
         if self.ball_and_stick:
             self.draw_bonds(painter, projected)
         self.draw_atoms(painter, projected)
-        self.draw_axes(painter)
+        if self.show_axes:
+            self.draw_axes(painter)
         painter.end()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         self._last_pos = event.position().toPoint()
         self._last_button = event.button()
+        self._dragging_axes = (
+            event.button() == Qt.MouseButton.LeftButton
+            and self.show_axes
+            and self.axis_bounds().contains(event.position())
+        )
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._last_pos is None:
@@ -361,6 +618,13 @@ class CrystalStructureWidget(QOpenGLWidget):
         pos = event.position().toPoint()
         delta = pos - self._last_pos
         self._last_pos = pos
+
+        if self._dragging_axes:
+            self.axis_offset += QPointF(delta.x(), -delta.y())
+            self.axis_offset = self.clamped_axis_offset(self.axis_offset)
+            self._axis_position_custom = True
+            self.update()
+            return
 
         pan_requested = self._last_button in (
             Qt.MouseButton.MiddleButton,
@@ -378,6 +642,7 @@ class CrystalStructureWidget(QOpenGLWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self._last_pos = None
         self._last_button = None
+        self._dragging_axes = False
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         angle = event.angleDelta().y()
@@ -413,7 +678,11 @@ class CrystalStructureWidget(QOpenGLWidget):
 
         screen = projected['screen']
         depth = projected['depth']
-        pen = QPen(QColor(185, 195, 210, 190), 1.4)
+        base_color = self.cell_color
+        pen = QPen(
+            QColor(base_color.red(), base_color.green(), base_color.blue(), 180),
+            self.cell_width,
+        )
         painter.setPen(pen)
 
         for i1, i2 in self.scene.cell_edges:
@@ -421,7 +690,9 @@ class CrystalStructureWidget(QOpenGLWidget):
             p2 = QPointF(*screen[i2])
             avg_depth = (depth[i1] + depth[i2]) / 2.0
             alpha = 145 + int(65 * normalized_depth(avg_depth, self.scene.extent))
-            pen.setColor(QColor(185, 195, 210, alpha))
+            pen.setColor(
+                QColor(base_color.red(), base_color.green(), base_color.blue(), alpha)
+            )
             painter.setPen(pen)
             painter.drawLine(p1, p2)
 
@@ -507,19 +778,77 @@ class CrystalStructureWidget(QOpenGLWidget):
         painter.drawEllipse(center, radius, radius)
 
     def draw_axes(self, painter: QPainter) -> None:
-        origin = QPointF(44.0, self.height() - 42.0)
+        origin = self.axis_origin()
         axes = np.eye(3) @ rotation_matrix(self.rotation_x, self.rotation_y).T
-        labels = [
-            ('a', QColor(230, 80, 80)),
-            ('b', QColor(80, 190, 100)),
-            ('c', QColor(90, 140, 240)),
+
+        for vector, axis in zip(axes, ('a', 'b', 'c')):
+            end = origin + QPointF(
+                vector[0] * self.axis_size,
+                -vector[1] * self.axis_size,
+            )
+            color = self.axis_colors.get(axis, QColor(*DEFAULT_AXIS_COLORS[axis]))
+            pen = QPen(color, max(2.0, self.axis_size * 0.045))
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            painter.setPen(pen)
+            painter.drawLine(origin, end)
+            self.draw_axis_arrowhead(painter, origin, end, color)
+            painter.drawText(end + QPointF(6.0, -6.0), self.axis_labels.get(axis, axis))
+
+    def draw_axis_arrowhead(
+        self,
+        painter: QPainter,
+        origin: QPointF,
+        end: QPointF,
+        color: QColor,
+    ) -> None:
+        direction = end - origin
+        length = math.hypot(direction.x(), direction.y())
+        if length <= 0:
+            return
+
+        unit = QPointF(direction.x() / length, direction.y() / length)
+        normal = QPointF(-unit.y(), unit.x())
+        arrow_length = max(8.0, self.axis_size * 0.18)
+        arrow_width = arrow_length * 0.45
+        p1 = end - unit * arrow_length + normal * arrow_width
+        p2 = end - unit * arrow_length - normal * arrow_width
+
+        pen = QPen(color, max(2.0, self.axis_size * 0.04))
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.drawLine(end, p1)
+        painter.drawLine(end, p2)
+
+    def axis_origin(self) -> QPointF:
+        return QPointF(self.axis_offset.x(), self.height() - self.axis_offset.y())
+
+    def axis_endpoints(self) -> list[QPointF]:
+        origin = self.axis_origin()
+        axes = np.eye(3) @ rotation_matrix(self.rotation_x, self.rotation_y).T
+        return [
+            origin + QPointF(vector[0] * self.axis_size, -vector[1] * self.axis_size)
+            for vector in axes
         ]
 
-        for axis, (label, color) in zip(axes, labels):
-            end = origin + QPointF(axis[0] * 28.0, -axis[1] * 28.0)
-            painter.setPen(QPen(color, 2.0))
-            painter.drawLine(origin, end)
-            painter.drawText(end + QPointF(4.0, -4.0), label)
+    def axis_bounds(self) -> QRectF:
+        origin = self.axis_origin()
+        points = [origin, *self.axis_endpoints()]
+        min_x = min(point.x() for point in points)
+        max_x = max(point.x() for point in points)
+        min_y = min(point.y() for point in points)
+        max_y = max(point.y() for point in points)
+        padding = max(18.0, self.axis_size * 0.28)
+        return QRectF(
+            QPointF(min_x - padding, min_y - padding),
+            QPointF(max_x + padding, max_y + padding),
+        )
+
+    def clamped_axis_offset(self, offset: QPointF) -> QPointF:
+        padding = max(12.0, self.axis_size * 0.2)
+        return QPointF(
+            min(max(offset.x(), padding), max(padding, self.width() - padding)),
+            min(max(offset.y(), padding), max(padding, self.height() - padding)),
+        )
 
 
 def rotation_matrix(rotation_x: float, rotation_y: float) -> np.ndarray:
@@ -549,6 +878,26 @@ def rotation_matrix(rotation_x: float, rotation_y: float) -> np.ndarray:
 
 def normalized_depth(depth: float, extent: float) -> float:
     return min(max((depth / extent + 1.0) / 2.0, 0.0), 1.0)
+
+
+def automatic_display_mode(material: Any, *, bond_cutoff_scale: float = 1.15) -> str:
+    scene = crystal_structure_scene(
+        material,
+        include_bonds=True,
+        bond_cutoff_scale=bond_cutoff_scale,
+    )
+    return DISPLAY_MODE_BALL_AND_STICK if scene.bonds else DISPLAY_MODE_SPHERES
+
+
+def foreground_color_for_background(color: QColor) -> QColor:
+    luminance = 0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue()
+    return QColor(35, 38, 42) if luminance > 140 else QColor(220, 225, 232)
+
+
+def group_box(title: str, layout: QFormLayout, parent: QWidget) -> QGroupBox:
+    box = QGroupBox(title, parent)
+    box.setLayout(layout)
+    return box
 
 
 def color_stylesheet(color: Color) -> str:
