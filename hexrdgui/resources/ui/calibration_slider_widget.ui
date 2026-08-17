@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>448</width>
-    <height>781</height>
+    <height>830</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -26,7 +26,7 @@
    <item row="1" column="1">
     <widget class="QComboBox" name="detector"/>
    </item>
-   <item row="8" column="0" colspan="2">
+   <item row="9" column="0" colspan="2">
     <widget class="QPushButton" name="push_reset_config">
      <property name="toolTip">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reset the instrument configuration to the state when the most recent instrument file was loaded, or when the program started.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -60,7 +60,7 @@
      </item>
     </widget>
    </item>
-   <item row="6" column="0" colspan="2">
+   <item row="7" column="0" colspan="2">
     <widget class="QGroupBox" name="tilt_group">
      <property name="title">
       <string>Tilt</string>
@@ -230,7 +230,7 @@
      </layout>
     </widget>
    </item>
-   <item row="7" column="0" colspan="2">
+   <item row="8" column="0" colspan="2">
     <widget class="QGroupBox" name="beam_group">
      <property name="title">
       <string>Beam</string>
@@ -400,7 +400,7 @@
      </layout>
     </widget>
    </item>
-   <item row="5" column="0" colspan="2">
+   <item row="6" column="0" colspan="2">
     <widget class="QGroupBox" name="translation_group">
      <property name="title">
       <string>Translation</string>
@@ -561,7 +561,7 @@
      </layout>
     </widget>
    </item>
-   <item row="9" column="0" colspan="2">
+   <item row="10" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -611,9 +611,120 @@
          <string>Origin</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>User Specified</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
+   </item>
+   <item row="5" column="0" colspan="2">
+    <widget class="QWidget" name="user_center_of_rotation_widget" native="true">
+     <layout class="QHBoxLayout" name="user_center_of_rotation_layout">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="user_center_of_rotation_label">
+        <property name="text">
+         <string>User Center:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="user_center_of_rotation_x_label">
+        <property name="text">
+         <string>X:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ScientificDoubleSpinBox" name="user_center_of_rotation_x">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="user_center_of_rotation_y_label">
+        <property name="text">
+         <string>Y:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ScientificDoubleSpinBox" name="user_center_of_rotation_y">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="user_center_of_rotation_z_label">
+        <property name="text">
+         <string>Z:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="ScientificDoubleSpinBox" name="user_center_of_rotation_z">
+        <property name="keyboardTracking">
+         <bool>false</bool>
+        </property>
+        <property name="decimals">
+         <number>8</number>
+        </property>
+        <property name="minimum">
+         <double>-1000000.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="value">
+         <double>42.799999999999997</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
@@ -629,6 +740,9 @@
   <tabstop>lock_relative_transforms</tabstop>
   <tabstop>lock_relative_transforms_setting</tabstop>
   <tabstop>locked_center_of_rotation</tabstop>
+  <tabstop>user_center_of_rotation_x</tabstop>
+  <tabstop>user_center_of_rotation_y</tabstop>
+  <tabstop>user_center_of_rotation_z</tabstop>
   <tabstop>sb_translation_range</tabstop>
   <tabstop>slider_translation_0</tabstop>
   <tabstop>sb_translation_0</tabstop>

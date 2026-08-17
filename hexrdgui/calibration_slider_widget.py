@@ -45,6 +45,9 @@ class CalibrationSliderWidget(QObject):
         self.ui.lock_relative_transforms_setting.currentIndexChanged.connect(
             self.on_lock_relative_transforms_setting_changed
         )
+        self.ui.locked_center_of_rotation.currentIndexChanged.connect(
+            self.update_visibility_states
+        )
 
         HexrdConfig().euler_angle_convention_changed.connect(self.update_labels)
 
@@ -169,6 +172,10 @@ class CalibrationSliderWidget(QObject):
         for w in widgets:
             w.setVisible(visible)
 
+        self.ui.user_center_of_rotation_widget.setVisible(
+            visible and self.locked_center_of_rotation == 'User Specified'
+        )
+
     def update_enable_states(self) -> None:
         enable = not (
             self.lock_relative_transforms and self.transform_instrument_rigid_body
@@ -233,6 +240,16 @@ class CalibrationSliderWidget(QObject):
     @property
     def locked_center_of_rotation(self) -> str:
         return self.ui.locked_center_of_rotation.currentText()
+
+    @property
+    def user_center_of_rotation(self) -> np.ndarray:
+        return np.array(
+            [
+                self.ui.user_center_of_rotation_x.value(),
+                self.ui.user_center_of_rotation_y.value(),
+                self.ui.user_center_of_rotation_z.value(),
+            ]
+        )
 
     def update_detectors_from_config(self) -> None:
         widget = self.ui.detector
@@ -354,6 +371,8 @@ class CalibrationSliderWidget(QObject):
                 center_of_rotation = detector_centers.mean(axis=0)
             elif self.locked_center_of_rotation == 'Origin':
                 center_of_rotation = np.array([0.0, 0.0, 0.0])
+            elif self.locked_center_of_rotation == 'User Specified':
+                center_of_rotation = self.user_center_of_rotation
             else:
                 raise NotImplementedError(self.locked_center_of_rotation)
 
