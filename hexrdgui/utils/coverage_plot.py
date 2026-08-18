@@ -1,5 +1,6 @@
 """Coverage plot dialog for viewing detector coverage in polar mode."""
 
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
@@ -7,7 +8,15 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoLocator, AutoMinorLocator
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QDialog,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
@@ -95,6 +104,14 @@ class CoveragePlotDialog(QDialog):
         layout.addWidget(self.solid_angle_label)
         layout.addWidget(self.average_label)
         layout.addWidget(self.canvas)
+
+        footer_layout = QHBoxLayout()
+        self.coordinates_label = QLabel()
+        self.export_button = QPushButton('Export Lineout')
+        footer_layout.addWidget(self.coordinates_label)
+        footer_layout.addStretch()
+        footer_layout.addWidget(self.export_button)
+        layout.addLayout(footer_layout)
         self.setLayout(layout)
 
         # Adjust subplot parameters to prevent label clipping
@@ -114,6 +131,37 @@ class CoveragePlotDialog(QDialog):
         # before this dialog is created, so its polar view has already been
         # updated by the time our slot runs.
         HexrdConfig().detector_transforms_modified.connect(self.update_plot)
+
+        self.canvas.mpl_connect('motion_notify_event', self.on_mouse_move)
+        self.export_button.clicked.connect(self.export_lineout)
+
+    def on_mouse_move(self, event: Any) -> None:
+        if event.inaxes is not self.ax:
+            self.coordinates_label.clear()
+            return
+
+        self.coordinates_label.setText(
+            f'tth={event.xdata:.2f},  coverage={event.ydata:.1f}%'
+        )
+
+    def export_lineout(self) -> None:
+        default_path = Path(HexrdConfig().working_dir) / 'azimuthal_coverage.xy'
+        selected_file, _ = QFileDialog.getSaveFileName(
+            self,
+            'Export Azimuthal Coverage',
+            str(default_path),
+            'XY files (*.xy)',
+        )
+        if not selected_file:
+            return
+
+        path = Path(selected_file)
+        if path.suffix.lower() != '.xy':
+            path = Path(f'{path}.xy')
+
+        HexrdConfig().working_dir = str(path.parent)
+        x_data, y_data = self.coverage_line.get_data()
+        np.savetxt(path, np.column_stack((x_data, y_data)))
 
     @property
     def polar_view(self) -> 'InstrumentViewer | None':
