@@ -952,6 +952,11 @@
            </item>
            <item>
             <property name="text">
+             <string>GE_41RT_newton</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
              <string>Dexela_2923</string>
             </property>
            </item>
