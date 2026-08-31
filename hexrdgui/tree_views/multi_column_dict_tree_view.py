@@ -26,6 +26,9 @@ from hexrdgui.tree_views.tree_item import TreeItem
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
 
+# Display-only float format for value/min/max/delta columns
+FLOAT_DISPLAY_FORMAT = '{:.8g}'
+
 
 class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
     UNEDITABLE_COLUMN_INDICES: list[int] = []
@@ -52,10 +55,15 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
     ) -> Any:
         value = super().data(index, role)
 
-        if isinstance(value, bool) and role == Qt.ItemDataRole.DisplayRole:
-            # If it's a bool, we want to display a checkbox via
-            # a persistent editor, rather than the default display.
-            return
+        if role == Qt.ItemDataRole.DisplayRole:
+            if isinstance(value, bool):
+                # If it's a bool, we want to display a checkbox via
+                # a persistent editor, rather than the default display.
+                return
+            if isinstance(value, float):
+                # Round for display only; the underlying value keeps
+                # full precision (editors receive it via EditRole).
+                return FLOAT_DISPLAY_FORMAT.format(value)
 
         return value
 
