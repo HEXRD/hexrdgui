@@ -2889,6 +2889,9 @@ def load_yaml_dict(module: types.ModuleType, filename: str) -> dict:
 
 
 class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
+    # Keep the previous behavior of displaying full float values
+    FORMAT_FLOATS_FOR_DISPLAY = False
+
     COLUMNS = {
         **DefaultCalibrationTreeItemModel.COLUMNS,
         'Uncertainty': '_stderr',
@@ -2901,6 +2904,9 @@ class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
 
 
 class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
+    # Keep the previous behavior of displaying full float values
+    FORMAT_FLOATS_FOR_DISPLAY = False
+
     COLUMNS = {
         **DeltaCalibrationTreeItemModel.COLUMNS,
         'Uncertainty': '_stderr',
