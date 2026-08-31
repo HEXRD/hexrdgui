@@ -36,6 +36,9 @@ PRECISE_PARAM_SUFFIXES = ('_a', '_b', '_c', '_alpha', '_beta', '_gamma')
 class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
     UNEDITABLE_COLUMN_INDICES: list[int] = []
 
+    # Whether float values are rounded for display (see data())
+    FORMAT_FLOATS_FOR_DISPLAY = True
+
     def __init__(
         self,
         dictionary: dict[str, Any],
@@ -63,7 +66,7 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
                 # If it's a bool, we want to display a checkbox via
                 # a persistent editor, rather than the default display.
                 return
-            if isinstance(value, float):
+            if isinstance(value, float) and self.FORMAT_FLOATS_FOR_DISPLAY:
                 # Round for display only; the underlying value keeps
                 # full precision (editors receive it via EditRole).
                 text = self.display_format(index).format(value)
