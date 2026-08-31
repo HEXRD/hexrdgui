@@ -34,8 +34,6 @@ from hexrdgui.utils.matplotlib import remove_artist
 
 
 # Number of decimal places to round calibration parameters
-ROUND_DECIMALS = 3
-
 
 class CalibrationDialogCallbacks(ABCQObject):
     """A class with default behavior for calibration dialog callbacks"""
@@ -63,7 +61,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.draw_picks_lines: list[Artist] = []
         self.undo_stack: list[dict[str, Any]] = []
 
-        self.round_param_numbers()
         # Make sure the tree view is updated
         self.dialog.update_tree_view()
 
@@ -262,7 +259,6 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         constraints.params.update(**params)
         self.calibrator.reset_lmfit_params()
-        self.round_param_numbers()
         self.update_dialog_from_calibrator()
 
     def reset_saved_constraint_params(self) -> None:
@@ -371,9 +367,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         x0 = self.calibrator.params.valuesdict()
         result = self.calibrator.run_calibration(odict=odict, **extra_kwargs)
 
-        # Round the calibrator numbers to 3 decimal places
-        self.round_param_numbers()
-
         x1 = result.params.valuesdict()
 
         results_message = 'Calibration Results:\n'
@@ -413,18 +406,6 @@ class CalibrationDialogCallbacks(ABCQObject):
         if self.calibrator_is_structureless:
             # Only do this for structureless calibration
             self.calibrator.tth_distortion = self.dialog.tth_distortion
-
-    def round_param_numbers(self) -> None:
-        params_dict = self.calibrator.params
-
-        attrs = [
-            'value',
-            'min',
-            'max',
-        ]
-        for param in params_dict.values():
-            for attr in attrs:
-                setattr(param, attr, round(getattr(param, attr), ROUND_DECIMALS))
 
     def on_edit_picks_finished(self) -> None:
         # Show this again
