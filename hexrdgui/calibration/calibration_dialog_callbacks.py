@@ -33,8 +33,6 @@ from hexrdgui.utils.abc_qobject import ABCQObject
 from hexrdgui.utils.matplotlib import remove_artist
 
 
-# Number of decimal places to round calibration parameters
-
 class CalibrationDialogCallbacks(ABCQObject):
     """A class with default behavior for calibration dialog callbacks"""
 
