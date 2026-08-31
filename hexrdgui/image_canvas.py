@@ -84,6 +84,10 @@ if TYPE_CHECKING:
 FONTSIZE_LABEL_INCREASE = 4
 FONTSIZE_TICKS_INCREASE = 4
 
+# Draw the azimuthal overlays above the azimuthal lineout lines (which use
+# matplotlib's default zorder), so that they are easier to see.
+AZIMUTHAL_OVERLAY_ZORDER = 5
+
 
 class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
     cmap_modified = Signal()
@@ -1909,9 +1913,17 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
             result = material.powder_overlay
             # Plot the result so that the plot scales correctly with the data
             # since the fill artist is not taken into account for rescaling.
-            (line,) = self.azimuthal_integral_axis.plot(tth, result, lw=0)
+            # Draw the overlays on top of the lineout lines (which use the
+            # default zorder) so they do not get hidden underneath them.
+            (line,) = self.azimuthal_integral_axis.plot(
+                tth, result, lw=0, zorder=AZIMUTHAL_OVERLAY_ZORDER
+            )
             fill = self.azimuthal_integral_axis.fill_between(
-                tth, result, color=overlay['color'], alpha=overlay['opacity']
+                tth,
+                result,
+                color=overlay['color'],
+                alpha=overlay['opacity'],
+                zorder=AZIMUTHAL_OVERLAY_ZORDER,
             )
             fill.set_label(f'{overlay["name"]}({density}g/cm³)')
             self.azimuthal_overlay_artists.append(

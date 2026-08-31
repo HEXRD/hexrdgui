@@ -1,12 +1,13 @@
 import gc
 import os
 import sys
+import traceback
 from pathlib import Path
 
 import pytest
 
 from PySide6.QtCore import QEvent, QSettings
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from hexrdgui.main_window import MainWindow
 from hexrdgui.messages_widget import MessagesWidget
@@ -34,6 +35,45 @@ def default_config_path(single_ge_path):
 @pytest.fixture
 def default_data_path(single_ge_path):
     return single_ge_path / 'imageseries/RUBY_0000-fc_GE.npz'
+
+
+@pytest.fixture(autouse=True)
+def message_boxes(monkeypatch):
+    """Record modal message boxes instead of letting them hang the run.
+
+    Under `offscreen` nobody clicks "OK", so these block forever and the job
+    goes quiet with no failing test to point at. Any box still recorded at
+    teardown fails the test; a test that expects one checks it and clears it.
+    """
+    shown: list[str] = []
+
+    def make_stub(method, result):
+        def stub(parent, title, text='', *args, **kwargs):
+            # The stack says which error path popped the box, which is what a
+            # job that just went quiet cannot tell you.
+            shown.append(
+                f'QMessageBox.{method}({title!r}, {text!r})\n'
+                + ''.join(traceback.format_stack()[:-1])
+            )
+            return result
+
+        return stub
+
+    # The helpers that spin their own modal event loop, and what each should
+    # return in place of the button nobody is there to click.
+    results = {
+        'about': None,
+        'critical': QMessageBox.StandardButton.Ok,
+        'information': QMessageBox.StandardButton.Ok,
+        'question': QMessageBox.StandardButton.No,
+        'warning': QMessageBox.StandardButton.Ok,
+    }
+    for method, result in results.items():
+        monkeypatch.setattr(QMessageBox, method, make_stub(method, result))
+
+    yield shown
+
+    assert not shown, 'Unexpected modal message box(es):\n' + '\n'.join(shown)
 
 
 @pytest.fixture

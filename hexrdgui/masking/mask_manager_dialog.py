@@ -160,6 +160,8 @@ class MaskManagerDialog(QObject):
         scroll_value = scrollbar.value()
         item = self.mask_tree_items.pop(name)
         parent = item.parent()
+        # Mask items always sit under a mask-type item
+        assert parent is not None
         parent.removeChild(item)
         MaskManager().remove_mask(name)
         # If parent has no more children, remove it too
