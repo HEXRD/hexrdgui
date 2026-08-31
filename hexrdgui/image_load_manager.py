@@ -4,6 +4,7 @@ import functools
 import os
 import time
 import glob
+import weakref
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Any, TYPE_CHECKING
 from collections.abc import Callable
@@ -61,6 +62,17 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
     def __init__(self) -> None:
         super().__init__(None)
         self.transformed_images = False
+        self.progress_dialog: ProgressDialog | None = None
+        self._ui_parent_ref: weakref.ref[QWidget] | None = None
+
+    @property
+    def ui_parent(self) -> QWidget | None:
+        # Weak: this singleton outlives every window handed to it.
+        return self._ui_parent_ref() if self._ui_parent_ref is not None else None
+
+    @ui_parent.setter
+    def ui_parent(self, parent: QWidget | None) -> None:
+        self._ui_parent_ref = weakref.ref(parent) if parent is not None else None
 
     @property
     def thread_pool(self) -> QThreadPool:
@@ -203,6 +215,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         worker.signals.error.connect(self.on_process_ims_error)
         worker.signals.finished.connect(progress_dialog.accept)
         progress_dialog.exec()
+        self.progress_dialog = None
 
     def set_state(
         self,
@@ -527,6 +540,7 @@ class ImageLoadManager(QObject, metaclass=QSingleton):
         dict.
         """
         n_macro_steps = self.progress_macro_steps
+        assert self.progress_dialog is not None
         orig_progress = self.progress_dialog.value()
         while not all([f.done() for f in futures]):
             total = sum([v for v in progress_dict.values()])

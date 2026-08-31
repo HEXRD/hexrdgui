@@ -23,8 +23,8 @@ import numpy as np
 import pytest
 import yaml
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication
 
 from hexrdgui.hexrd_config import HexrdConfig
 
@@ -36,7 +36,9 @@ def dexelas_hedm_path(example_repo_path):
     return example_repo_path / 'state_examples' / 'Dexelas_HEDM'
 
 
-def test_hedm_full_workflow(qtbot, main_window, dexelas_hedm_path, tmp_path):
+def test_hedm_full_workflow(
+    qtbot, main_window, message_boxes, dexelas_hedm_path, tmp_path
+):
     # ── paths ──────────────────────────────────────────────────────────
     state_file = dexelas_hedm_path / 'roi_dexelas_hedm.h5'
     npz1 = dexelas_hedm_path / 'mruby-0129_000004_ff1_000012-cachefile.npz'
@@ -131,19 +133,14 @@ def test_hedm_full_workflow(qtbot, main_window, dexelas_hedm_path, tmp_path):
     QApplication.processEvents()
 
     # ── Step I: click "Fit Grains" (accept options dialog) ─────────────
-    # Applying min sfac excludes [0,0,6] which was an active HKL.
-    # validate() will show a QMessageBox.critical() informing the user
-    # that it will re-enable those HKLs.  Auto-close it.
-    def close_active_hkl_warning():
-        for w in QApplication.topLevelWidgets():
-            if isinstance(w, QMessageBox):
-                w.accept()
-                return
-        # If not found yet, try again shortly
-        QTimer.singleShot(50, close_active_hkl_warning)
-
-    QTimer.singleShot(0, close_active_hkl_warning)
+    # Applying min sfac excludes [0,0,6], which was an active HKL, so
+    # validate() warns that it will re-enable those HKLs. The `message_boxes`
+    # fixture recorded it rather than showing it; consume it.
     options_dialog.ui.accept()
+
+    (hkl_warning,) = message_boxes
+    assert 'Active HKLs' in hkl_warning and '[0, 0, 6]' in hkl_warning
+    message_boxes.clear()
 
     # fit_grains runs asynchronously via progress_dialog.exec().
     # On completion, fit_grains_finished() → view_fit_grains_results()

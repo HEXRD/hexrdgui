@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 from typing import TYPE_CHECKING
+import weakref
 
 from PySide6.QtCore import Signal, QCoreApplication, QObject, QSettings, QTimer
 
@@ -357,7 +358,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.default_cmap = constants.DEFAULT_CMAP
         self._previous_structureless_calibration_picks_data = None
         self._image_mode = constants.ViewType.raw
-        self._active_canvas = None
+        self._active_canvas: weakref.ref[ImageCanvas] | None = None
         self._sample_tilt = np.asarray([0, 0, 0], float)
         self.recent_state_files: list[str] = []
         self._apply_absorption_correction = False
@@ -920,14 +921,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def active_canvas(self) -> ImageCanvas | None:
-        return self._active_canvas
+        # Weak: this singleton outlives every canvas, and a strong reference
+        # would pin the canvas (and its window) past its C++ destruction.
+        return self._active_canvas() if self._active_canvas is not None else None
 
     @active_canvas.setter
     def active_canvas(self, v: ImageCanvas | None) -> None:
-        if v is self._active_canvas:
+        if v is self.active_canvas:
             return
 
-        self._active_canvas = v
+        self._active_canvas = weakref.ref(v) if v is not None else None
         self.active_canvas_changed.emit()
 
     def image(self, name: str, idx: int) -> np.ndarray:
@@ -966,10 +969,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     @property
     def omega_imageseries_dict(self) -> dict[str, Any] | None:
+        # Snapshot, for the same reason as `raw_images_dict` below.
         if self.is_aggregated:
-            imsd = self.unagg_images
+            imsd = dict(self.unagg_images)
         else:
-            imsd = self.imageseries_dict
+            imsd = dict(self.imageseries_dict)
 
         if not imsd:
             return None
@@ -999,11 +1003,12 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def raw_images_dict(self) -> dict[str, np.ndarray]:
         """Get a dict of images with the current index"""
         idx = self.current_imageseries_idx
-        ret = {}
-        for key in self.imageseries_dict.keys():
-            ret[key] = self.image(key, idx)
 
-        return ret
+        # Snapshot first. This runs in the view-generation worker thread
+        # while the main thread may be clearing and refilling the dict, and
+        # reading a frame releases the GIL.
+        imsd = dict(self.imageseries_dict)
+        return {key: ims[idx] for key, ims in imsd.items()}
 
     @property
     def intensity_corrected_images_dict(self) -> dict[str, np.ndarray]:

@@ -10,8 +10,12 @@ jobs:
   pytest:
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
+    # A green run takes 7-12 minutes. Without a bound, a test that blocks
+    # (nothing dismisses a modal dialog under `offscreen`) burns the 6h default.
+    timeout-minutes: 30
     strategy:
-      fail-fast: true
+      # Don't cancel the other platforms; their failure modes differ.
+      fail-fast: false
       matrix:
         python-version: ['3.11', '3.14']
         config:

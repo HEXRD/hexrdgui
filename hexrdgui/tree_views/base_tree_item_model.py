@@ -79,7 +79,8 @@ class BaseTreeItemModel(QAbstractItemModel):
         self, index: QModelIndex | QPersistentModelIndex | None = None
     ) -> QObject | QModelIndex:
         if index is None:
-            return super().parent()
+            # PySide6 6.11 stubs made this `QObject | None`
+            return super().parent()  # type: ignore[return-value]
 
         if not index.isValid():
             return QModelIndex()
