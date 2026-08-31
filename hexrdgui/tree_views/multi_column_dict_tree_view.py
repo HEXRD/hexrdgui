@@ -26,8 +26,11 @@ from hexrdgui.tree_views.tree_item import TreeItem
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
 
-# Display-only float format for value/min/max/delta columns
-FLOAT_DISPLAY_FORMAT = '{:.8g}'
+# Display-only float formats for value/min/max/delta columns.
+# Lattice and distortion parameters need more precision than the rest.
+FLOAT_DISPLAY_FORMAT = '{:.3f}'
+PRECISE_FLOAT_DISPLAY_FORMAT = '{:.5g}'
+PRECISE_PARAM_SUFFIXES = ('_a', '_b', '_c', '_alpha', '_beta', '_gamma')
 
 
 class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
@@ -63,9 +66,19 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
             if isinstance(value, float):
                 # Round for display only; the underlying value keeps
                 # full precision (editors receive it via EditRole).
-                return FLOAT_DISPLAY_FORMAT.format(value)
+                return self.display_format(index).format(value)
 
         return value
+
+    def display_format(self, index: QModelIndex | QPersistentModelIndex) -> str:
+        # Lattice and distortion parameters are displayed with more
+        # precision than other parameters.
+        config = self.config_path(self.path_to_item(self.get_item(index)))
+        name = getattr(config.get('_param'), 'name', '')
+        if '_distortion_param' in name or name.endswith(PRECISE_PARAM_SUFFIXES):
+            return PRECISE_FLOAT_DISPLAY_FORMAT
+
+        return FLOAT_DISPLAY_FORMAT
 
     def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
