@@ -66,7 +66,11 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
             if isinstance(value, float):
                 # Round for display only; the underlying value keeps
                 # full precision (editors receive it via EditRole).
-                return self.display_format(index).format(value)
+                text = self.display_format(index).format(value)
+                if '.' in text and 'e' not in text:
+                    # Don't display trailing zeros
+                    text = text.rstrip('0').rstrip('.')
+                return '0' if text == '-0' else text
 
         return value
 
