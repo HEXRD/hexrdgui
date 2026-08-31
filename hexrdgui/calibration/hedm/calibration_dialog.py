@@ -453,8 +453,6 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
             # The dialog parameters should have the deltas set on them
             prev_params = dialog.params_dict
             self._copy_deltas(prev_params, params_dict, copy_vary=False)
-            # Round the calibrator numbers to 3 decimal places
-            self.round_param_numbers()
             dialog.params_dict = params_dict
 
         # Next, apply strain settings
@@ -612,9 +610,6 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
 
         # And trigger that calibrator to update its calibrator parameters
         self.calibrator.update_all_from_params(ic.params)
-
-        # Round the calibrator numbers to 3 decimal places
-        self.round_param_numbers()
 
         x1 = result.params.valuesdict()
 
