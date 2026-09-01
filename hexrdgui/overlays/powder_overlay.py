@@ -561,10 +561,13 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 assert sd is not None
                 ang_crds = sd.apply(xys)
             elif offset_distortion:
-                # Compute ang_crds in the regular way
+                # Compute ang_crds in the regular way.
+                # The xys are in the raw frame, so undo the panel
+                # distortion to match the corrected polar image.
                 ang_crds, _ = panel.cart_to_angles(
                     xys,
                     tvec_s=instr.tvec,
+                    apply_distortion=True,
                 )
 
             if offset_distortion:
@@ -602,9 +605,12 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                     # In the polar view, the nominal angles refer to the SAMPLE
                     # CS origin, so we omit the addition of any offset to the
                     # diffraction COM in the sample frame!
+                    # The xys are in the raw frame, so undo the panel
+                    # distortion to match the corrected polar image.
                     ang_crds, _ = panel.cart_to_angles(
                         xys,
                         tvec_s=instr.tvec,
+                        apply_distortion=True,
                     )
 
                 if len(ang_crds) == 0:
