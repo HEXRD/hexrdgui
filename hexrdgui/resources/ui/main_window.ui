@@ -192,6 +192,8 @@
     <addaction name="action_view_coverage"/>
     <addaction name="menu_view_body_overlay"/>
     <addaction name="action_view_stay_out_zone"/>
+    <addaction name="action_draw_pinhole_cutoff"/>
+    <addaction name="action_draw_fiddle_axes"/>
     <addaction name="colormaps_menu"/>
    </widget>
    <widget class="QMenu" name="menu_edit">
@@ -879,6 +881,28 @@
    </property>
    <property name="toolTip">
     <string>Display stay out zone circles on cartesian view</string>
+   </property>
+  </action>
+  <action name="action_draw_pinhole_cutoff">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Draw Pinhole Cutoff</string>
+   </property>
+   <property name="toolTip">
+    <string>Display pinhole cutoff circle on cartesian view</string>
+   </property>
+  </action>
+  <action name="action_draw_fiddle_axes">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Draw FIDDLE Axes</string>
+   </property>
+   <property name="toolTip">
+    <string>Display FIDDLE coordinate axes on cartesian view</string>
    </property>
   </action>
   <action name="action_show_beam_marker">
