@@ -33,6 +33,8 @@ from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.beam_marker_style_editor import BeamMarkerStyleEditor
 from hexrdgui.target_body_style_editor import TargetBodyStyleEditor
 from hexrdgui.stay_out_zone_editor import StayOutZoneEditor
+from hexrdgui.pinhole_cutoff_editor import PinholeCutoffEditor
+from hexrdgui.fiddle_axes_editor import FiddleAxesEditor
 from hexrdgui.utils.guess_instrument_type import guess_instrument_type
 from hexrdgui.cal_tree_view import CalTreeView
 from hexrdgui.calibration.auto.powder_runner import PowderRunner
@@ -140,6 +142,12 @@ class MainWindow(QObject):
         }
         self._stay_out_zone_editor: StayOutZoneEditor | None = None
         self._stay_out_zone_config: dict = StayOutZoneEditor.default_config()
+        self._pinhole_cutoff_editor: PinholeCutoffEditor | None = None
+        self._pinhole_cutoff_config: dict = PinholeCutoffEditor.default_config()
+        self._fiddle_axes_editor: FiddleAxesEditor | None = None
+        self._fiddle_axes_config: dict = FiddleAxesEditor.default_config()
+        self._fiddle_axes_rotation_angle: float = 0.0  # Track delta Z-rotation in degrees
+        self._fiddle_axes_initial_rotation: float | None = None  # Initial Z-rotation when axes shown
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -335,6 +343,12 @@ class MainWindow(QObject):
         self.ui.action_view_stay_out_zone.toggled.connect(
             self.on_action_view_stay_out_zone_toggled
         )
+        self.ui.action_draw_pinhole_cutoff.toggled.connect(
+            self.on_action_draw_pinhole_cutoff_toggled
+        )
+        self.ui.action_draw_fiddle_axes.toggled.connect(
+            self.on_action_draw_fiddle_axes_toggled
+        )
         self.ui.calibration_tab_widget.currentChanged.connect(self.update_config_gui)
         self.image_mode_widget.tab_changed.connect(self.change_image_mode)
         self.threshold_mask_dialog.mask_applied.connect(self.update_all)
@@ -418,6 +432,9 @@ class MainWindow(QObject):
         HexrdConfig().update_status_bar.connect(self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(self.on_detectors_changed)
         HexrdConfig().detector_shape_changed.connect(self.on_detector_shape_changed)
+        HexrdConfig().detector_transforms_modified.connect(
+            self.on_detector_transforms_modified
+        )
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
         MaskManager().raw_masks_changed.connect(self.update_all)
@@ -630,6 +647,41 @@ class MainWindow(QObject):
         # Otherwise, the HexrdConfig().images_dict object will not have images
         # with the correct shape.
         self.load_dummy_images()
+
+    def on_detector_transforms_modified(self, det_keys: list[str]) -> None:
+        """Handle detector transform changes for FIDDLE axes rotation."""
+        # Only update FIDDLE axes if they're visible and this is a group/instrument transformation
+        if not self.ui.action_draw_fiddle_axes.isChecked():
+            return
+
+        # Group/instrument transformations affect multiple detectors
+        if len(det_keys) <= 1:
+            return
+
+        # Get the first detector's tilt to extract Z-rotation
+        # For group rotations, all detectors have the same rotation applied
+        if len(det_keys) > 0:
+            det_name = det_keys[0]
+            det = HexrdConfig().detector(det_name)
+            tilt = det['transform']['tilt']
+
+            # Extract Z-rotation angle (tilt[2] is the Z-axis rotation)
+            # Convert from radians to degrees
+            z_rotation_rad = tilt[2] if len(tilt) > 2 else 0.0
+            z_rotation_deg = np.degrees(z_rotation_rad)
+
+            # Compute the delta rotation
+            # _fiddle_axes_initial_rotation is set in _show_fiddle_axes based on stored rotation
+            if self._fiddle_axes_initial_rotation is not None:
+                self._fiddle_axes_rotation_angle = z_rotation_deg - self._fiddle_axes_initial_rotation
+            else:
+                # Fallback: if no initial rotation stored, start from current position
+                self._fiddle_axes_initial_rotation = z_rotation_deg
+                self._fiddle_axes_rotation_angle = 0.0
+
+            # Redraw the FIDDLE axes with the new rotation
+            self._remove_fiddle_axes_from_cartesian()
+            self._plot_fiddle_axes()
 
     def load_dummy_images(self) -> None:
         if HexrdConfig().loading_state:
@@ -1187,6 +1239,14 @@ class MainWindow(QObject):
         stay_out_zone_enabled = is_cartesian and self._is_target_body_overlay_supported()
         self.ui.action_view_stay_out_zone.setEnabled(stay_out_zone_enabled)
 
+        # Pinhole cutoff - enable only in cartesian view
+        pinhole_cutoff_enabled = is_cartesian
+        self.ui.action_draw_pinhole_cutoff.setEnabled(pinhole_cutoff_enabled)
+
+        # FIDDLE axes - enable only in cartesian view
+        fiddle_axes_enabled = is_cartesian
+        self.ui.action_draw_fiddle_axes.setEnabled(fiddle_axes_enabled)
+
     def start_fast_powder_calibration(self) -> None:
         if not HexrdConfig().has_images:
             msg = 'No images available for calibration.'
@@ -1431,6 +1491,14 @@ class MainWindow(QObject):
         with block_signals(self.ui.action_view_stay_out_zone):
             self.ui.action_view_stay_out_zone.setChecked(False)
 
+        # Uncheck pinhole cutoff option
+        with block_signals(self.ui.action_draw_pinhole_cutoff):
+            self.ui.action_draw_pinhole_cutoff.setChecked(False)
+
+        # Uncheck FIDDLE axes option
+        with block_signals(self.ui.action_draw_fiddle_axes):
+            self.ui.action_draw_fiddle_axes.setChecked(False)
+
         # Clear any existing overlay artists
         if hasattr(self, '_body_overlay_artists'):
             for body_type in list(self._body_overlay_artists.keys()):
@@ -1438,6 +1506,12 @@ class MainWindow(QObject):
 
         if hasattr(self, '_stay_out_zone_artists'):
             self._remove_stay_out_zone_from_cartesian()
+
+        if hasattr(self, '_pinhole_cutoff_artists'):
+            self._remove_pinhole_cutoff_from_cartesian()
+
+        if hasattr(self, '_fiddle_axes_artists'):
+            self._remove_fiddle_axes_from_cartesian()
 
     def on_action_view_body_overlay_aluminum_toggled(self, checked: bool) -> None:
         """Toggle the aluminum body overlay on the cartesian view."""
@@ -1734,8 +1808,8 @@ class MainWindow(QObject):
         # Calculate radii using opening half-angles
         angle1_rad = np.radians(config['angle1'])
         angle2_rad = np.radians(config['angle2'])
-        radius1 = projection_distance * np.sin(angle1_rad)
-        radius2 = projection_distance * np.sin(angle2_rad)
+        radius1 = projection_distance * np.tan(angle1_rad)
+        radius2 = projection_distance * np.tan(angle2_rad)
 
         # Store artists for later removal
         if not hasattr(self, '_stay_out_zone_artists'):
@@ -1818,6 +1892,273 @@ class MainWindow(QObject):
             artist.remove()
 
         self._stay_out_zone_artists = []
+
+        # Redraw the canvas
+        canvas = self.active_canvas
+        canvas.draw()
+
+    def on_action_draw_pinhole_cutoff_toggled(self, checked: bool) -> None:
+        """Toggle the pinhole cutoff on the cartesian view."""
+        if self.image_mode != ViewType.cartesian:
+            msg = 'Pinhole cutoff can only be displayed in cartesian view'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_draw_pinhole_cutoff.setChecked(False)
+            return
+
+        if checked:
+            self._show_pinhole_cutoff()
+        else:
+            self._hide_pinhole_cutoff()
+
+    def _show_pinhole_cutoff(self) -> None:
+        """Show the pinhole cutoff circle on the cartesian view."""
+        # Open editor if it doesn't exist
+        if self._pinhole_cutoff_editor is None:
+            self._pinhole_cutoff_editor = PinholeCutoffEditor(self.ui)
+            self._pinhole_cutoff_editor.config = self._pinhole_cutoff_config
+            self._pinhole_cutoff_editor.set_config_changed_callback(
+                self._on_pinhole_cutoff_config_changed
+            )
+
+        # Show the editor dialog
+        self._pinhole_cutoff_editor.show()
+
+        # Plot the pinhole cutoff
+        self._plot_pinhole_cutoff()
+
+    def _hide_pinhole_cutoff(self) -> None:
+        """Hide the pinhole cutoff from the cartesian view."""
+        self._remove_pinhole_cutoff_from_cartesian()
+
+    def _on_pinhole_cutoff_config_changed(self, config: dict) -> None:
+        """
+        Called when pinhole cutoff configuration changes.
+
+        Args:
+            config: The new configuration dictionary
+        """
+        # Update stored config
+        self._pinhole_cutoff_config = config
+
+        # If the pinhole cutoff is currently visible, redraw it
+        if self.ui.action_draw_pinhole_cutoff.isChecked():
+            self._remove_pinhole_cutoff_from_cartesian()
+            self._plot_pinhole_cutoff()
+
+    def _plot_pinhole_cutoff(self) -> None:
+        """Plot the pinhole cutoff circle on the cartesian view."""
+        canvas = self.active_canvas
+        config = self._pinhole_cutoff_config
+
+        # Get center coordinates from config
+        center_x = config['center_x']
+        center_y = config['center_y']
+
+        # Get the projection distance from cartesian config
+        projection_distance = HexrdConfig()._cartesian_virtual_plane_distance()
+
+        # Calculate radius using opening angle
+        angle_rad = np.radians(config['opening_angle'])
+        radius = projection_distance * np.tan(angle_rad)
+
+        # Store artists for later removal
+        if not hasattr(self, '_pinhole_cutoff_artists'):
+            self._pinhole_cutoff_artists = []
+
+        # Plot circle
+        from matplotlib.patches import Circle as CirclePatch
+        from matplotlib.colors import to_rgba
+
+        # Create the circle outline
+        circle_line = CirclePatch(
+            (center_x, center_y),
+            radius,
+            fill=False,
+            edgecolor=config['line_color'],
+            linestyle=config['line_style'],
+            linewidth=config['line_width'],
+        )
+        canvas.axis.add_patch(circle_line)
+        self._pinhole_cutoff_artists.append(circle_line)
+
+        # Add fill if enabled
+        if config['fill_enabled']:
+            fill_color = to_rgba(config['fill_color'], config['fill_alpha'])
+            circle_fill = CirclePatch(
+                (center_x, center_y),
+                radius,
+                fill=True,
+                facecolor=fill_color,
+                edgecolor='none',
+            )
+            canvas.axis.add_patch(circle_fill)
+            self._pinhole_cutoff_artists.append(circle_fill)
+
+        # Redraw the canvas
+        canvas.draw()
+
+    def _remove_pinhole_cutoff_from_cartesian(self) -> None:
+        """Remove the pinhole cutoff from the cartesian view."""
+        if not hasattr(self, '_pinhole_cutoff_artists'):
+            return
+
+        for artist in self._pinhole_cutoff_artists:
+            artist.remove()
+
+        self._pinhole_cutoff_artists = []
+
+        # Redraw the canvas
+        canvas = self.active_canvas
+        canvas.draw()
+
+    def on_action_draw_fiddle_axes_toggled(self, checked: bool) -> None:
+        """Toggle the FIDDLE axes on the cartesian view."""
+        if self.image_mode != ViewType.cartesian:
+            msg = 'FIDDLE axes can only be displayed in cartesian view'
+            QMessageBox.warning(self.ui, 'HEXRD', msg)
+            self.ui.action_draw_fiddle_axes.setChecked(False)
+            return
+
+        if checked:
+            self._show_fiddle_axes()
+        else:
+            self._hide_fiddle_axes()
+
+    def _show_fiddle_axes(self) -> None:
+        """Show the FIDDLE axes on the cartesian view."""
+        # Reset initial rotation tracking when showing axes (to re-establish baseline)
+        # But keep the rotation angle from previous state (memory)
+        self._fiddle_axes_initial_rotation = None
+
+        # Get current detector rotation to set up the baseline
+        # This will be used as the reference point for future rotations
+        det_names = HexrdConfig().detector_names
+        if det_names:
+            det = HexrdConfig().detector(det_names[0])
+            tilt = det['transform']['tilt']
+            z_rotation_rad = tilt[2] if len(tilt) > 2 else 0.0
+            z_rotation_deg = np.degrees(z_rotation_rad)
+
+            # Set initial rotation to current detector rotation minus our stored rotation angle
+            # This way, when detector is at current position, axes show at stored rotation angle
+            self._fiddle_axes_initial_rotation = z_rotation_deg - self._fiddle_axes_rotation_angle
+
+        # Open editor if it doesn't exist
+        if self._fiddle_axes_editor is None:
+            self._fiddle_axes_editor = FiddleAxesEditor(self.ui)
+            self._fiddle_axes_editor.config = self._fiddle_axes_config
+            self._fiddle_axes_editor.set_config_changed_callback(
+                self._on_fiddle_axes_config_changed
+            )
+
+        # Show the editor dialog
+        self._fiddle_axes_editor.show()
+
+        # Plot the FIDDLE axes
+        self._plot_fiddle_axes()
+
+    def _hide_fiddle_axes(self) -> None:
+        """Hide the FIDDLE axes from the cartesian view."""
+        self._remove_fiddle_axes_from_cartesian()
+        # Keep rotation angle as memory (don't reset)
+        # Only reset initial rotation so it re-establishes baseline when shown again
+        self._fiddle_axes_initial_rotation = None
+
+    def _on_fiddle_axes_config_changed(self, config: dict) -> None:
+        """
+        Called when FIDDLE axes configuration changes.
+
+        Args:
+            config: The new configuration dictionary
+        """
+        # Update stored config
+        self._fiddle_axes_config = config
+
+        # If the FIDDLE axes are currently visible, redraw them
+        if self.ui.action_draw_fiddle_axes.isChecked():
+            self._remove_fiddle_axes_from_cartesian()
+            self._plot_fiddle_axes()
+
+    def _plot_fiddle_axes(self) -> None:
+        """Plot the FIDDLE coordinate axes on the cartesian view."""
+        canvas = self.active_canvas
+        config = self._fiddle_axes_config
+
+        # Get origin coordinates from config
+        origin_x = config['origin_x']
+        origin_y = config['origin_y']
+
+        # Get axes length from config
+        axes_length = config['axes_length']
+
+        # FIDDLE coordinate system angles (base angles)
+        x_angle_base = 16.55  # degrees
+        y_angle_base = 106.55  # degrees
+
+        # Apply the Z-rotation to the base angles
+        x_angle = x_angle_base + self._fiddle_axes_rotation_angle
+        y_angle = y_angle_base + self._fiddle_axes_rotation_angle
+
+        # Calculate end points for X-axis
+        x_angle_rad = np.radians(x_angle)
+        x_end_x = origin_x + axes_length * np.cos(x_angle_rad)
+        x_end_y = origin_y + axes_length * np.sin(x_angle_rad)
+
+        # Calculate end points for Y-axis
+        y_angle_rad = np.radians(y_angle)
+        y_end_x = origin_x + axes_length * np.cos(y_angle_rad)
+        y_end_y = origin_y + axes_length * np.sin(y_angle_rad)
+
+        # Store artists for later removal
+        if not hasattr(self, '_fiddle_axes_artists'):
+            self._fiddle_axes_artists = []
+
+        # Get style from config
+        color = config['color']
+        style = config['style']
+        width = config['width']
+
+        # Import FancyArrowPatch for drawing arrows
+        from matplotlib.patches import FancyArrowPatch
+
+        # Plot X-axis with arrow
+        x_arrow = FancyArrowPatch(
+            (origin_x, origin_y),
+            (x_end_x, x_end_y),
+            arrowstyle='->',
+            color=color,
+            linestyle=style,
+            linewidth=width,
+            mutation_scale=20,
+        )
+        canvas.axis.add_patch(x_arrow)
+        self._fiddle_axes_artists.append(x_arrow)
+
+        # Plot Y-axis with arrow
+        y_arrow = FancyArrowPatch(
+            (origin_x, origin_y),
+            (y_end_x, y_end_y),
+            arrowstyle='->',
+            color=color,
+            linestyle=style,
+            linewidth=width,
+            mutation_scale=20,
+        )
+        canvas.axis.add_patch(y_arrow)
+        self._fiddle_axes_artists.append(y_arrow)
+
+        # Redraw the canvas
+        canvas.draw()
+
+    def _remove_fiddle_axes_from_cartesian(self) -> None:
+        """Remove the FIDDLE axes from the cartesian view."""
+        if not hasattr(self, '_fiddle_axes_artists'):
+            return
+
+        for artist in self._fiddle_axes_artists:
+            artist.remove()
+
+        self._fiddle_axes_artists = []
 
         # Redraw the canvas
         canvas = self.active_canvas
