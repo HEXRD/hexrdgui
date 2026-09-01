@@ -26,9 +26,18 @@ from hexrdgui.tree_views.tree_item import TreeItem
 # Global constants
 KEY_COL = BaseTreeItemModel.KEY_COL
 
+# Display-only float formats for value/min/max/delta columns.
+# Lattice and distortion parameters need more precision than the rest.
+FLOAT_DISPLAY_FORMAT = '{:.3f}'
+PRECISE_FLOAT_DISPLAY_FORMAT = '{:.5g}'
+PRECISE_PARAM_SUFFIXES = ('_a', '_b', '_c', '_alpha', '_beta', '_gamma')
+
 
 class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
     UNEDITABLE_COLUMN_INDICES: list[int] = []
+
+    # Whether float values are rounded for display (see data())
+    FORMAT_FLOATS_FOR_DISPLAY = True
 
     def __init__(
         self,
@@ -52,12 +61,31 @@ class MultiColumnDictTreeItemModel(BaseDictTreeItemModel):
     ) -> Any:
         value = super().data(index, role)
 
-        if isinstance(value, bool) and role == Qt.ItemDataRole.DisplayRole:
-            # If it's a bool, we want to display a checkbox via
-            # a persistent editor, rather than the default display.
-            return
+        if role == Qt.ItemDataRole.DisplayRole:
+            if isinstance(value, bool):
+                # If it's a bool, we want to display a checkbox via
+                # a persistent editor, rather than the default display.
+                return
+            if isinstance(value, float) and self.FORMAT_FLOATS_FOR_DISPLAY:
+                # Round for display only; the underlying value keeps
+                # full precision (editors receive it via EditRole).
+                text = self.display_format(index).format(value)
+                if '.' in text and 'e' not in text:
+                    # Don't display trailing zeros
+                    text = text.rstrip('0').rstrip('.')
+                return '0' if text == '-0' else text
 
         return value
+
+    def display_format(self, index: QModelIndex | QPersistentModelIndex) -> str:
+        # Lattice and distortion parameters are displayed with more
+        # precision than other parameters.
+        config = self.config_path(self.path_to_item(self.get_item(index)))
+        name = getattr(config.get('_param'), 'name', '')
+        if '_distortion_param' in name or name.endswith(PRECISE_PARAM_SUFFIXES):
+            return PRECISE_FLOAT_DISPLAY_FORMAT
+
+        return FLOAT_DISPLAY_FORMAT
 
     def flags(self, index: QModelIndex | QPersistentModelIndex) -> Qt.ItemFlag:
         if not index.isValid():

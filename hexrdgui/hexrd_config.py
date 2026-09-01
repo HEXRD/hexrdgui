@@ -2934,7 +2934,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def num_distortion_parameters(func_name: str) -> int:
         if func_name == 'None':
             return 0
-        elif func_name == 'GE_41RT':
+        elif func_name in ('GE_41RT', 'GE_41RT_newton'):
             return 6
         elif func_name == 'Dexela_2923':
             return 8
