@@ -665,6 +665,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                         stereo_ang_crds, _ = panel.cart_to_angles(
                             xys,
                             tvec_s=instr.tvec,
+                            apply_distortion=True,
                         )
                         stereo_ij = angles_to_stereo(
                             stereo_ang_crds,

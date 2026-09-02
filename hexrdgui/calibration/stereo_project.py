@@ -88,7 +88,7 @@ def stereo_project(
     for d in instr_cp.detectors:
         intensity = np.empty((angs.shape[0],))
         det = instr_cp.detectors[d]
-        cart = det.angles_to_cart(angs[mask, :])
+        cart = det.angles_to_cart(angs[mask, :], apply_distortion=True)
         out = det.interpolate_bilinear(cart, raw[d])
         intensity[mask] = out
         im = np.reshape(intensity, (stereo_size, stereo_size))
