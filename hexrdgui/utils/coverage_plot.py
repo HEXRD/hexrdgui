@@ -65,7 +65,14 @@ def calculate_coverage_data(
     tth = np.degrees(polar_view.angular_grid[1][0, :])
     azimuthal_frac = 100 * (~nan_mask).sum(axis=0) / nan_mask.shape[0]
 
-    return (tth, azimuthal_frac), msg
+    # Find 2θ bins with at least one non-NaN value
+    has_valid_data = (~nan_mask).any(axis=0)
+
+    # Filter to only valid 2θ bins
+    tth_valid = tth[has_valid_data]
+    azimuthal_frac_valid = azimuthal_frac[has_valid_data]
+
+    return (tth_valid, azimuthal_frac_valid), msg
 
 
 class CoveragePlotDialog(QDialog):
@@ -85,6 +92,10 @@ class CoveragePlotDialog(QDialog):
         # azimuthal average plot)
         (self.coverage_line,) = self.ax.plot([], [], '-k', linewidth=2.5)
         (self.mean_line,) = self.ax.plot([], [], '--k', linewidth=2.5)
+        # 5% reference line (solid red, underneath other plots)
+        (self.reference_5_line,) = self.ax.plot(
+            [], [], '-r', linewidth=0.8, zorder=0
+        )
 
         # Setup axis styling to match polar view azimuthal average
         self._setup_axis_style()
@@ -250,10 +261,19 @@ class CoveragePlotDialog(QDialog):
             return
 
         (x_data, y_data), solid_angle_msg = calculate_coverage_data(polar_view)
-        mean = np.nanmean(y_data)
+
+        # Calculate average excluding zero-coverage regions (fully masked 2θ bins)
+        # Since calculate_coverage_data already filters to valid bins, we just need
+        # to exclude any remaining zeros from panel buffers within valid bins
+        nonzero_mask = y_data > 0
+        if nonzero_mask.any():
+            mean = np.mean(y_data[nonzero_mask])
+        else:
+            mean = 0.0
 
         self.coverage_line.set_data(x_data, y_data)
         self.mean_line.set_data(x_data, np.full_like(x_data, mean))
+        self.reference_5_line.set_data(x_data, np.full_like(x_data, 5.0))
         self.solid_angle_label.setText(solid_angle_msg)
         self.average_label.setText(
             f'Average azimuthal coverage in 2θ FOV = {mean:0.1f}%'
