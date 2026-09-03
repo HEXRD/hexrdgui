@@ -1727,11 +1727,19 @@ class MainWindow(QObject):
             # Remove line artist
             if 'line' in artists:
                 for line in artists['line']:
-                    line.remove()
+                    try:
+                        line.remove()
+                    except (NotImplementedError, ValueError):
+                        # Some artists can't be removed or are already removed
+                        pass
 
             # Remove fill artist (polygon patch)
             if 'fill' in artists:
-                artists['fill'].remove()
+                try:
+                    artists['fill'].remove()
+                except (NotImplementedError, ValueError):
+                    # Some artists can't be removed or are already removed
+                    pass
 
             del self._body_overlay_artists[body_type]
 
@@ -1889,13 +1897,18 @@ class MainWindow(QObject):
             return
 
         for artist in self._stay_out_zone_artists:
-            artist.remove()
+            try:
+                artist.remove()
+            except (NotImplementedError, ValueError):
+                # Some artists can't be removed or are already removed
+                pass
 
         self._stay_out_zone_artists = []
 
         # Redraw the canvas
         canvas = self.active_canvas
-        canvas.draw()
+        if canvas is not None:
+            canvas.draw()
 
     def on_action_draw_pinhole_cutoff_toggled(self, checked: bool) -> None:
         """Toggle the pinhole cutoff on the cartesian view."""
@@ -2003,13 +2016,18 @@ class MainWindow(QObject):
             return
 
         for artist in self._pinhole_cutoff_artists:
-            artist.remove()
+            try:
+                artist.remove()
+            except (NotImplementedError, ValueError):
+                # Some artists can't be removed or are already removed
+                pass
 
         self._pinhole_cutoff_artists = []
 
         # Redraw the canvas
         canvas = self.active_canvas
-        canvas.draw()
+        if canvas is not None:
+            canvas.draw()
 
     def on_action_draw_fiddle_axes_toggled(self, checked: bool) -> None:
         """Toggle the FIDDLE axes on the cartesian view."""
@@ -2156,13 +2174,18 @@ class MainWindow(QObject):
             return
 
         for artist in self._fiddle_axes_artists:
-            artist.remove()
+            try:
+                artist.remove()
+            except (NotImplementedError, ValueError):
+                # Some artists can't be removed or are already removed
+                pass
 
         self._fiddle_axes_artists = []
 
         # Redraw the canvas
         canvas = self.active_canvas
-        canvas.draw()
+        if canvas is not None:
+            canvas.draw()
 
     def new_mouse_position(self, info: dict[str, Any]) -> None:
         if self.image_mode == ViewType.polar:
