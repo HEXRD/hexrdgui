@@ -46,7 +46,7 @@ def make_physics_package_from_old_overlay_config(overlay_config: list[dict]) -> 
             if settings.get('pinhole_thickness'):
                 physics.pinhole_thickness = settings['pinhole_thickness'] * 1e3
         else:
-            # Assume it contains pinhole settings (Rygg or JHE)
+            # Assume it contains pinhole settings
             if settings.get('pinhole_radius'):
                 physics.pinhole_radius = settings['pinhole_radius'] * 1e3
             if settings.get('pinhole_diameter'):

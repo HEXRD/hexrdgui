@@ -21,8 +21,7 @@ import hexrd.resources
 from hexrd.material import _angstroms, _kev, Material
 from hexrd.utils.panel_buffer import panel_buffer_as_2d_array
 from hexrd.xrdutil.phutil import (
-    JHEPinholeDistortion,
-    RyggPinholeDistortion,
+    PinholeDistortion,
     LayerDistortion,
 )
 
@@ -116,8 +115,7 @@ class PinholeCorrectionEditor(QObject):
 
         conversions = {
             'None': None,
-            'Pinhole (JHE)': 'JHEPinholeDistortion',
-            'Pinhole (Rygg)': 'RyggPinholeDistortion',
+            'Pinhole': 'PinholeDistortion',
             'Layer': 'LayerDistortion',
         }
         if v in conversions:
@@ -129,8 +127,7 @@ class PinholeCorrectionEditor(QObject):
     def correction_type(self, v: str | None) -> None:
         conversions = {
             None: 'None',
-            'JHEPinholeDistortion': 'Pinhole (JHE)',
-            'RyggPinholeDistortion': 'Pinhole (Rygg)',
+            'PinholeDistortion': 'Pinhole',
             'LayerDistortion': 'Layer',
         }
         if v in conversions:
@@ -160,12 +157,7 @@ class PinholeCorrectionEditor(QObject):
                 'pinhole_thickness': physics.pinhole_thickness * 1e-3,
                 'pinhole_radius': physics.pinhole_radius * 1e-3,
             }
-        elif dtype == 'JHEPinholeDistortion':
-            return {
-                'pinhole_radius': physics.pinhole_radius * 1e-3,
-                'pinhole_thickness': physics.pinhole_thickness * 1e-3,
-            }
-        elif dtype == 'RyggPinholeDistortion':
+        elif dtype == 'PinholeDistortion':
             output = {
                 'pinhole_radius': physics.pinhole_radius * 1e-3,
                 'pinhole_thickness': physics.pinhole_thickness * 1e-3,
@@ -222,17 +214,13 @@ class PinholeCorrectionEditor(QObject):
                 'absorption_length',
                 HexrdConfig().absorption_length(),
             ),
-            'jhe_diameter': ('pinhole_diameter', physics.pinhole_diameter),
-            'jhe_thickness': ('pinhole_thickness', physics.pinhole_thickness),
         }
 
         dtype = self.correction_type
         if dtype == 'LayerDistortion':
             widget_prefix = 'layer_'
-        elif dtype == 'RyggPinholeDistortion':
+        elif dtype == 'PinholeDistortion':
             widget_prefix = 'rygg_'
-        elif dtype == 'JHEPinholeDistortion':
-            widget_prefix = 'jhe_'
         elif dtype is None:
             widget_prefix = '_'
         else:
@@ -255,7 +243,7 @@ class PinholeCorrectionEditor(QObject):
                 f = w.setValue
             f(value)
 
-        if dtype == 'RyggPinholeDistortion':
+        if dtype == 'PinholeDistortion':
             self.auto_select_rygg_absorption_length()
 
     @property
@@ -266,13 +254,6 @@ class PinholeCorrectionEditor(QObject):
             self.ui.layer_thickness,
             self.ui.layer_pinhole_thickness,
             self.ui.layer_pinhole_diameter,
-        ]
-
-    @property
-    def jhe_widgets(self) -> list:
-        return [
-            self.ui.jhe_diameter,
-            self.ui.jhe_thickness,
         ]
 
     @property
@@ -294,7 +275,6 @@ class PinholeCorrectionEditor(QObject):
     @property
     def apply_panel_buffer_buttons(self) -> list:
         return [
-            self.ui.jhe_apply_panel_buffers,
             self.ui.rygg_apply_panel_buffers,
         ]
 
@@ -303,7 +283,6 @@ class PinholeCorrectionEditor(QObject):
         # Except for the correction type
         return [
             *self.layer_widgets,
-            *self.jhe_widgets,
             *self.rygg_widgets,
             *self.apply_panel_buffer_buttons,
         ]
@@ -319,7 +298,7 @@ class PinholeCorrectionEditor(QObject):
 
         self.update_tab_widget_visibility()
 
-        if self.correction_type == 'RyggPinholeDistortion':
+        if self.correction_type == 'PinholeDistortion':
             self.auto_select_rygg_absorption_length()
 
         self.validate()
@@ -344,7 +323,7 @@ class PinholeCorrectionEditor(QObject):
 
         source_distance_needed_types = (
             'LayerDistortion',
-            'RyggPinholeDistortion',
+            'PinholeDistortion',
         )
         if self.correction_type in source_distance_needed_types:
             beam = HexrdConfig().active_beam
@@ -608,8 +587,7 @@ class PinholeCorrectionEditor(QObject):
 
 TYPE_MAP = {
     'LayerDistortion': LayerDistortion,
-    'JHEPinholeDistortion': JHEPinholeDistortion,
-    'RyggPinholeDistortion': RyggPinholeDistortion,
+    'PinholeDistortion': PinholeDistortion,
 }
 REVERSED_TYPE_MAP = {v: k for k, v in TYPE_MAP.items()}
 

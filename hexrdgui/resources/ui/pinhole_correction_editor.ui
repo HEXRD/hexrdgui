@@ -246,7 +246,7 @@
      </widget>
      <widget class="QWidget" name="rygg_tab">
       <attribute name="title">
-       <string>Pinhole (Rygg)</string>
+       <string>Pinhole</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_5">
        <item row="0" column="0">
@@ -430,112 +430,6 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="jhe_tab">
-      <attribute name="title">
-       <string>Pinhole (JHE)</string>
-      </attribute>
-      <layout class="QGridLayout" name="gridLayout_7">
-       <item row="2" column="0" colspan="2">
-        <widget class="QPushButton" name="jhe_apply_panel_buffers">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Apply panel buffers computed via the pinhole dimensions. These will be merged with any other panel buffers already present on the detectors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string>Apply Panel Buffers from Pinhole Dimensions</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="jhe_diameter_label">
-         <property name="text">
-          <string>Pinhole Diameter</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="ScientificDoubleSpinBox" name="jhe_diameter">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="suffix">
-          <string> μm</string>
-         </property>
-         <property name="decimals">
-          <number>8</number>
-         </property>
-         <property name="maximum">
-          <double>100000000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.010000000000000</double>
-         </property>
-         <property name="value">
-          <double>200.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLabel" name="jhe_thickness_label">
-         <property name="text">
-          <string>Pinhole Thickness</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="ScientificDoubleSpinBox" name="jhe_thickness">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="keyboardTracking">
-          <bool>false</bool>
-         </property>
-         <property name="suffix">
-          <string> μm</string>
-         </property>
-         <property name="decimals">
-          <number>8</number>
-         </property>
-         <property name="maximum">
-          <double>100000000.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.010000000000000</double>
-         </property>
-         <property name="value">
-          <double>100.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="2">
-        <spacer name="verticalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>10</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </widget>
     </widget>
    </item>
    <item row="0" column="1">
@@ -552,12 +446,7 @@
      </item>
      <item>
       <property name="text">
-       <string>Pinhole (Rygg)</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Pinhole (JHE)</string>
+       <string>Pinhole</string>
       </property>
      </item>
     </widget>
@@ -613,9 +502,6 @@ This will override any overlays that are currently being used for polar distorti
   <tabstop>rygg_absorption_length_selector</tabstop>
   <tabstop>rygg_absorption_length_value</tabstop>
   <tabstop>rygg_apply_panel_buffers</tabstop>
-  <tabstop>jhe_diameter</tabstop>
-  <tabstop>jhe_thickness</tabstop>
-  <tabstop>jhe_apply_panel_buffers</tabstop>
   <tabstop>apply_to_polar_view</tabstop>
  </tabstops>
  <resources/>

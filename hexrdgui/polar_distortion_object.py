@@ -9,10 +9,8 @@ if TYPE_CHECKING:
 
 from hexrd.xrdutil.phutil import (
     polar_tth_corr_map_rygg_pinhole,
-    JHEPinholeDistortion,
-    RyggPinholeDistortion,
+    PinholeDistortion,
     LayerDistortion,
-    tth_corr_map_pinhole,
     tth_corr_map_rygg_pinhole,
     tth_corr_map_layer,
 )
@@ -49,8 +47,7 @@ class PolarDistortionObject:
         """
         rets = {
             None: False,
-            'JHEPinholeDistortion': False,
-            'RyggPinholeDistortion': True,
+            'PinholeDistortion': True,
             'LayerDistortion': False,
         }
 
@@ -70,8 +67,7 @@ class PolarDistortionObject:
         tth displacement field.
         """
         funcs = {
-            'JHEPinholeDistortion': tth_corr_map_pinhole,
-            'RyggPinholeDistortion': tth_corr_map_rygg_pinhole,
+            'PinholeDistortion': tth_corr_map_rygg_pinhole,
             'LayerDistortion': tth_corr_map_layer,
         }
 
@@ -102,9 +98,9 @@ class PolarDistortionObject:
         is more direct and more efficient than first obtaining the
         `self.tth_displacement_field` and then warping it to the polar view.
 
-        For the Rygg pinhole distortion, this is significantly more efficient.
+        For the pinhole distortion, this is significantly more efficient.
         """
-        if self.pinhole_distortion_type == 'RyggPinholeDistortion':
+        if self.pinhole_distortion_type == 'PinholeDistortion':
             kwargs = {
                 **self.pinhole_distortion_kwargs,
                 'instrument': instr,
@@ -117,19 +113,12 @@ class PolarDistortionObject:
         if not self.has_pinhole_distortion or instr is None:
             return None
 
-        def tth_jhe_pinhole_distortion(panel: Any) -> JHEPinholeDistortion:
+        def tth_pinhole_distortion(panel: Any) -> PinholeDistortion:
             kwargs = {
                 **self.pinhole_distortion_kwargs,
                 'panel': panel,
             }
-            return JHEPinholeDistortion(**kwargs)
-
-        def tth_rygg_pinhole_distortion(panel: Any) -> RyggPinholeDistortion:
-            kwargs = {
-                **self.pinhole_distortion_kwargs,
-                'panel': panel,
-            }
-            return RyggPinholeDistortion(**kwargs)
+            return PinholeDistortion(**kwargs)
 
         def tth_layer_distortion(panel: Any) -> LayerDistortion:
             kwargs = {
@@ -140,8 +129,7 @@ class PolarDistortionObject:
             return LayerDistortion(**kwargs)
 
         known_types = {
-            'JHEPinholeDistortion': tth_jhe_pinhole_distortion,
-            'RyggPinholeDistortion': tth_rygg_pinhole_distortion,
+            'PinholeDistortion': tth_pinhole_distortion,
             'LayerDistortion': tth_layer_distortion,
         }
 
