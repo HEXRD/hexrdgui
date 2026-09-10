@@ -14,6 +14,15 @@ def apply():
         message=r'resource_tracker:.*leaked semaphore',
         category=UserWarning,
     )
+    # Panels cover only part of the polar and stereo views, so regions
+    # with no detector behind them are entirely NaN.  Reductions over
+    # those regions are expected and their result is used as-is.
+    warnings.filterwarnings(
+        'ignore',
+        message=r'All-NaN (slice|axis) encountered',
+        category=RuntimeWarning,
+    )
+
     _pw = os.environ.get('PYTHONWARNINGS', '')
     _filter = 'ignore:resource_tracker:UserWarning'
     if _filter not in _pw:
