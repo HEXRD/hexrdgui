@@ -27,9 +27,18 @@ def from_dict(cls: Any, d: dict) -> Any:
         # This is now always taken from HexrdConfig() and is not a setting
         del d['eta_period']
 
-    if d.get('tth_distortion_type') == 'PinholeDistortion':
-        # This was renamed to `RyggPinholeDistortion` in 93c5a50b
-        d['tth_distortion_type'] = 'RyggPinholeDistortion'
+    if d.get('tth_distortion_type') == 'RyggPinholeDistortion':
+        # Renamed back to `PinholeDistortion` when the second pinhole
+        # model was removed (it had been renamed away from that name in
+        # 93c5a50b, so older files may already use the current name).
+        d['tth_distortion_type'] = 'PinholeDistortion'
+
+    if d.get('tth_distortion_type') == 'JHEPinholeDistortion':
+        # That model was removed.  Its kwargs do not carry an absorption
+        # length, so it cannot be converted; drop the distortion and let
+        # the user re-enable the remaining pinhole correction.
+        d['tth_distortion_type'] = None
+        d['tth_distortion_kwargs'] = {}
 
     if version != CURRENT_DICT_VERSION:
         # Convert to the current version

@@ -762,7 +762,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
         from hexrdgui.hexrd_config import HexrdConfig
 
         kwargs = self.tth_distortion_kwargs.copy()
-        if self.pinhole_distortion_type == 'RyggPinholeDistortion':
+        if self.pinhole_distortion_type == 'PinholeDistortion':
             # Add our absorption length
             kwargs['absorption_length'] = HexrdConfig().absorption_length() * 1e-3
         return kwargs
