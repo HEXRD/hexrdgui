@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import copy
-from functools import partial
-from pathlib import Path
 import re
 import sys
 import time
 import types
+from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import h5py
@@ -14,9 +14,7 @@ import lmfit
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
-
 from PySide6.QtCore import QCoreApplication, QObject, Signal, SignalInstance
-from PySide6.QtWidgets import QWidget
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -24,6 +22,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QMessageBox,
+    QWidget,
 )
 
 if TYPE_CHECKING:
@@ -41,29 +40,32 @@ from hexrd.wppf.tds import (
     TDS,
     TDS_MODEL_TYPES,
     TDS_material,
+)
+from hexrd.wppf.tds import (
     VALID_SGNUMS as VALID_TDS_SGNUMS,
 )
 from hexrd.wppf.texture import HarmonicModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
-    background_methods,
     _generate_default_parameters_LeBail,
     _generate_default_parameters_Rietveld,
+    background_methods,
 )
 
+import hexrdgui.resources.wppf.tree_views as tree_view_resources
 from hexrdgui import resource_loader
 from hexrdgui.async_runner import AsyncRunner
 from hexrdgui.calibration.tree_item_models import (
-    _tree_columns_to_indices,
     DefaultCalibrationTreeItemModel,
     DeltaCalibrationTreeItemModel,
+    _tree_columns_to_indices,
 )
 from hexrdgui.calibration.wppf_simulated_polar_dialog import (
     WppfSimulatedPolarDialog,
 )
 from hexrdgui.dynamic_widget import DynamicWidget
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.html_delegate import aligned_sub_sup_html, HtmlDelegate
+from hexrdgui.html_delegate import HtmlDelegate, aligned_sub_sup_html
 from hexrdgui.point_picker_dialog import PointPickerDialog
 from hexrdgui.select_items_dialog import SelectItemsDialog
 from hexrdgui.tree_views.multi_column_dict_tree_view import (
@@ -72,8 +74,6 @@ from hexrdgui.tree_views.multi_column_dict_tree_view import (
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals, clear_layout, has_nan
 from hexrdgui.wppf_style_picker import WppfStylePicker
-import hexrdgui.resources.wppf.tree_views as tree_view_resources
-
 
 inverted_peakshape_dict = {v: k for k, v in peakshape_dict.items()}
 
@@ -482,11 +482,6 @@ class WppfOptionsDialog(QObject):
         use_experiment_file = self.use_experiment_file
         if use_experiment_file and not Path(self.experiment_file).exists():
             raise Exception(f'Experiment file, {self.experiment_file}, does not exist')
-
-        if self.method == 'Rietveld':
-            if not any(x.vary for x in self.params.values()):
-                msg = 'All parameters are fixed. Need to vary at least one'
-                raise Exception(msg)
 
         if self.background_method == 'spline':
             points = self.background_method_dict['spline']
@@ -1329,10 +1324,7 @@ class WppfOptionsDialog(QObject):
                 d['_delta'] = convert_if_needed(param.delta)
             else:
                 d.update(
-                    **{
-                        '_min': convert_if_needed(param.min),
-                        '_max': convert_if_needed(param.max),
-                    }
+                    _min=convert_if_needed(param.min), _max=convert_if_needed(param.max)
                 )
                 if min_max_inverted:
                     # Swap the min and max
@@ -1594,7 +1586,7 @@ class WppfOptionsDialog(QObject):
     @property
     def tree_view_model_class(
         self,
-    ) -> type[DefaultWPPFTreeItemModel] | type[DeltaWPPFTreeItemModel]:
+    ) -> type[DefaultWPPFTreeItemModel | DeltaWPPFTreeItemModel]:
         if self.delta_boundaries:
             return DeltaWPPFTreeItemModel
         else:
