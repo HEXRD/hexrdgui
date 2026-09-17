@@ -2905,6 +2905,11 @@ class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
 
+    @property
+    def units_indices(self) -> tuple[int, ...]:
+        # Uncertainties are in the same units as the values
+        return self.BOUND_INDICES + (self.COLUMN_INDICES['Uncertainty'],)
+
     def on_boolean_toggled(self, b: bool, path: tuple[str, ...]) -> None:
         pass
 
@@ -2919,6 +2924,11 @@ class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
     }
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
+
+    @property
+    def units_indices(self) -> tuple[int, ...]:
+        # Uncertainties are in the same units as the values
+        return self.BOUND_INDICES + (self.COLUMN_INDICES['Uncertainty'],)
 
     def on_boolean_toggled(self, b: bool, path: tuple[str, ...]) -> None:
         pass
