@@ -27,6 +27,12 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
     VARY_IDX: int
     BOUND_INDICES: tuple[int, ...]
 
+    # Columns that get the parameter's units appended for display.
+    # Subclasses may extend this (e.g., to include an uncertainty column).
+    @property
+    def units_indices(self) -> tuple[int, ...]:
+        return self.BOUND_INDICES
+
     # These are defined by specific subclasses
     DELTA_IDX: int  # DeltaCalibrationTreeItemModel
     MIN_IDX: int  # DefaultCalibrationTreeItemModel
@@ -132,24 +138,25 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
         data = super().data(index, role)
 
         if (
-            role in (Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole)
-            and index.column() in self.BOUND_INDICES
-            and data is not None
+            role == Qt.ItemDataRole.DisplayRole
+            and index.column() in self.units_indices
+            # Only numbers get units (skips placeholders like '--')
+            and isinstance(data, (int, float))
+            and not isinstance(data, bool)
+            # Don't attach units to infinity
+            and not np.isinf(data)
         ):
             # Check if there are any units that should be displayed
             item = self.get_item(index)
             path = self.path_to_item(item)
             config = self.config_path(path)
 
-            if role == Qt.ItemDataRole.DisplayRole and config.get('_units'):
-                is_inf = isinstance(data, float) and np.isinf(data)
-                # Don't attach units to infinity
-                if not is_inf:
-                    if isinstance(data, float):
-                        # Format it into a string
-                        data = f'{data:.6g}'
+            if config.get('_units'):
+                if isinstance(data, float):
+                    # Format it into a string
+                    data = f'{data:.6g}'
 
-                    data = f'{data}{config["_units"]}'
+                data = f'{data}{config["_units"]}'
 
         return data
 

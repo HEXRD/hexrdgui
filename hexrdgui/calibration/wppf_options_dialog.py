@@ -1366,6 +1366,8 @@ class WppfOptionsDialog(QObject):
                         units = None
                         if v == 'zero_error':
                             units = '°'
+                        elif v in ('U', 'V', 'W'):
+                            units = ' × 10⁻⁴ °²'
 
                         this_config[k] = create_param_item(params[v], units=units)
                         param_set = True
@@ -1452,7 +1454,11 @@ class WppfOptionsDialog(QObject):
                         v = v.format(**kwargs)
 
                     if v in params:
-                        this_config[k] = create_param_item(params[v])
+                        units = None
+                        if v == f'{sanitized_mat}_{site_id}_dw':
+                            units = ' Å²'
+
+                        this_config[k] = create_param_item(params[v], units=units)
 
         def recursively_format_mat(
             mat: str,
@@ -2896,6 +2902,11 @@ class DefaultWPPFTreeItemModel(DefaultCalibrationTreeItemModel):
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
 
+    @property
+    def units_indices(self) -> tuple[int, ...]:
+        # Uncertainties are in the same units as the values
+        return self.BOUND_INDICES + (self.COLUMN_INDICES['Uncertainty'],)
+
     def on_boolean_toggled(self, b: bool, path: tuple[str, ...]) -> None:
         pass
 
@@ -2910,6 +2921,11 @@ class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
     }
     COLUMN_INDICES = _tree_columns_to_indices(COLUMNS)
     UNEDITABLE_COLUMN_INDICES = [COLUMN_INDICES['Uncertainty']]
+
+    @property
+    def units_indices(self) -> tuple[int, ...]:
+        # Uncertainties are in the same units as the values
+        return self.BOUND_INDICES + (self.COLUMN_INDICES['Uncertainty'],)
 
     def on_boolean_toggled(self, b: bool, path: tuple[str, ...]) -> None:
         pass
