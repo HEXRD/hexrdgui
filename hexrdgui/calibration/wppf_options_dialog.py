@@ -540,9 +540,17 @@ class WppfOptionsDialog(QObject):
 
         params = self.generate_params()
 
+        # Phase fractions are coupled (the last one is an expression of
+        # the others), so if the set of phases changed, take the fresh
+        # ones rather than carrying over stale values and expressions.
+        suffix = '_phase_fraction'
+        old_pf_names = {k for k in self.params if k.endswith(suffix)}
+        new_pf_names = {k for k in params if k.endswith(suffix)}
+        reset_pf = old_pf_names != new_pf_names
+
         # Remake the dict to use the ordering of `params`
         for key, param in params.items():
-            if key in self.params:
+            if key in self.params and not (reset_pf and key in new_pf_names):
                 # Preserve previous settings
                 param = self.params[key]
             params[key] = param
