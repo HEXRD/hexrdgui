@@ -1688,6 +1688,13 @@ class WppfOptionsDialog(QObject):
             for k, v in cur.items():
                 if '_param' in v:
                     param = v['_param']
+                    if param.expr is not None or param.name.endswith('_phase_fraction'):
+                        # lmfit clamps an expression's result to its
+                        # bounds, and phase fractions are fit through a
+                        # parametrization that keeps them in [0, 1] and
+                        # cannot honor narrower bounds.
+                        continue
+
                     # There should be a delta.
                     # We want an exception if it is missing.
                     param.min = param.value - param.delta
