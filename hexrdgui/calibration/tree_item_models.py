@@ -117,20 +117,19 @@ class CalibrationTreeItemModel(MultiColumnDictTreeItemModel):
         index: QModelIndex | QPersistentModelIndex,
         role: int = Qt.ItemDataRole.DisplayRole,
     ) -> Any:
+        column = index.column()
         if (
             role in (Qt.ItemDataRole.BackgroundRole, Qt.ItemDataRole.ForegroundRole)
-            and index.column() in (self.VALUE_IDX, self.VARY_IDX)
+            and column in (*self.BOUND_INDICES, self.VARY_IDX)
             and self.has_uneditable_paths()
         ):
-            # Check if this value is uneditable. If so, gray it out.
+            # Gray out uneditable cells. The vary checkbox follows its value.
             item = self.get_item(index)
-            uneditable_path = tuple(self.path_to_item(item) + [self.VALUE_IDX])
+            check_column = self.VALUE_IDX if column == self.VARY_IDX else column
+            uneditable_path = tuple(self.path_to_item(item) + [check_column])
             if uneditable_path in self.uneditable_paths:
                 color = 'gray'
-                if (
-                    index.column() == self.VALUE_IDX
-                    and role == Qt.ItemDataRole.ForegroundRole
-                ):
+                if column != self.VARY_IDX and role == Qt.ItemDataRole.ForegroundRole:
                     color = 'white'
 
                 return QColor(color)
