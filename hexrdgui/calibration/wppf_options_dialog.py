@@ -78,6 +78,7 @@ from hexrdgui.wppf_style_picker import WppfStylePicker
 inverted_peakshape_dict = {v: k for k, v in peakshape_dict.items()}
 
 DEFAULT_PEAK_SHAPE = 'pvtch'
+PHASE_FRACTION_SUFFIX = '_phase_fraction'
 
 
 class WppfOptionsDialog(QObject):
@@ -543,7 +544,7 @@ class WppfOptionsDialog(QObject):
         # Phase fractions are coupled (the last one is an expression of
         # the others), so if the set of phases changed, take the fresh
         # ones rather than carrying over stale values and expressions.
-        suffix = '_phase_fraction'
+        suffix = PHASE_FRACTION_SUFFIX
         old_pf_names = {k for k in self.params if k.endswith(suffix)}
         new_pf_names = {k for k in params if k.endswith(suffix)}
         reset_pf = old_pf_names != new_pf_names
@@ -1634,10 +1635,10 @@ class WppfOptionsDialog(QObject):
         uneditable_paths.clear()
         disabled_paths.clear()
 
-        # Recurse through all params and find any that have an expression
-        # Those will be disabled.
-        results = []
-        cur_path = []
+        # Recurse through all params and find the expression parameters
+        # and the phase fractions. Those will be (partially) disabled.
+        results: list[tuple[tuple[str | int, ...], lmfit.Parameter]] = []
+        cur_path: list[str | int] = []
 
         def recurse(d: Any) -> None:
             if isinstance(d, list):
@@ -1650,8 +1651,9 @@ class WppfOptionsDialog(QObject):
             # Should be a dict
             if '_param' in d:
                 param = d['_param']
-                if param.expr is not None:
-                    results.append(cur_path.copy())
+                is_phase_fraction = param.name.endswith(PHASE_FRACTION_SUFFIX)
+                if param.expr is not None or is_phase_fraction:
+                    results.append((tuple(cur_path), param))
                 return
 
             for k, v in d.items():
@@ -1662,15 +1664,22 @@ class WppfOptionsDialog(QObject):
         config = self.tree_view.model().config
         recurse(config)
 
-        for path in results:
-            value_idx = self.tree_view_model_class.VALUE_IDX
-            vary_idx = self.tree_view_model_class.VARY_IDX
+        model_class = self.tree_view_model_class
+        for path, param in results:
+            if param.expr is not None:
+                # The checkbox is disabled
+                disabled_paths.append(path + (model_class.VARY_IDX,))
 
-            # The checkbox is disabled
-            disabled_paths.append(tuple(path) + (vary_idx,))
+                # The value is uneditable
+                uneditable_paths.append(path + (model_class.VALUE_IDX,))
 
-            # The value is uneditable
-            uneditable_paths.append(tuple(path) + (value_idx,))
+            # The bounds are uneditable: lmfit clamps an expression's
+            # result to them, and phase fractions are fit through a
+            # parametrization that keeps them in [0, 1] and cannot honor
+            # narrower bounds. Fix a phase fraction to constrain it.
+            for idx in model_class.BOUND_INDICES:
+                if idx != model_class.VALUE_IDX:
+                    uneditable_paths.append(path + (idx,))
 
     @property
     def delta_boundaries(self) -> bool:
@@ -1696,7 +1705,9 @@ class WppfOptionsDialog(QObject):
             for k, v in cur.items():
                 if '_param' in v:
                     param = v['_param']
-                    if param.expr is not None or param.name.endswith('_phase_fraction'):
+                    if param.expr is not None or param.name.endswith(
+                        PHASE_FRACTION_SUFFIX
+                    ):
                         # lmfit clamps an expression's result to its
                         # bounds, and phase fractions are fit through a
                         # parametrization that keeps them in [0, 1] and
