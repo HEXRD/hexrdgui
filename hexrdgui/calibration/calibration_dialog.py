@@ -337,6 +337,11 @@ class CalibrationDialog(QObject):
             for k, v in cur.items():
                 if '_param' in v:
                     param = v['_param']
+                    if param.expr is not None:
+                        # Expression parameters must stay unbounded, or
+                        # lmfit clamps the expression's result.
+                        continue
+
                     # There should be a delta.
                     # We want an exception if it is missing.
                     param.min = param.value - param.delta
@@ -513,14 +518,16 @@ class CalibrationDialog(QObject):
         uneditable_paths.clear()
         disabled_paths.clear()
         if self.has_tardis_constraints:
-            value_idx = self.tree_view_model_class.VALUE_IDX
-            vary_idx = self.tree_view_model_class.VARY_IDX
+            model_class = self.tree_view_model_class
 
             # The checkbox is disabled
-            disabled_paths.append(self.tardis_ip4_y_path + (vary_idx,))
+            disabled_paths.append(self.tardis_ip4_y_path + (model_class.VARY_IDX,))
 
-            # The value is uneditable
-            uneditable_paths.append(self.tardis_ip4_y_path + (value_idx,))
+            # The value is computed, and the bounds must stay unbounded
+            # (lmfit would clamp the computed value to them), so none of
+            # them are editable.
+            for idx in model_class.BOUND_INDICES:
+                uneditable_paths.append(self.tardis_ip4_y_path + (idx,))
 
         # A tree view update is necessary after changing the disabled editors
         self.update_tree_view()
