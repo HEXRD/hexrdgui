@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import numpy as np
+from hexrd.core.utils.panel_buffer import panel_buffer_as_2d_array
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import AutoLocator, AutoMinorLocator
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 # Font size increases matching image_canvas.py
 FONTSIZE_LABEL_INCREASE = 4
 FONTSIZE_TICKS_INCREASE = 4
+COVERAGE_REFERENCE = 8.0
 
 
 def calculate_coverage_data(
@@ -92,10 +94,9 @@ class CoveragePlotDialog(QDialog):
         # azimuthal average plot)
         (self.coverage_line,) = self.ax.plot([], [], '-k', linewidth=2.5)
         (self.mean_line,) = self.ax.plot([], [], '--k', linewidth=2.5)
-        # 5% reference line (solid red, underneath other plots)
-        (self.reference_5_line,) = self.ax.plot(
-            [], [], '-r', linewidth=0.8, zorder=0
-        )
+        # 8% reference line (solid red, underneath other plots)
+        (self.reference_8_line,) = self.ax.plot([], [], '-r', linewidth=0.8, zorder=0)
+        (self.streak_line,) = self.ax.plot([], [], '-r', linewidth=2)
 
         # Setup axis styling to match polar view azimuthal average
         self._setup_axis_style()
@@ -104,7 +105,12 @@ class CoveragePlotDialog(QDialog):
         # size matching the plot's axis labels
         self.solid_angle_label = QLabel()
         self.average_label = QLabel()
-        for label in (self.solid_angle_label, self.average_label):
+        self.fraction_above_reference_label = QLabel()
+        for label in (
+            self.solid_angle_label,
+            self.average_label,
+            self.fraction_above_reference_label,
+        ):
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             font = label.font()
             font.setPointSize(HexrdConfig().font_size + FONTSIZE_LABEL_INCREASE)
@@ -114,6 +120,7 @@ class CoveragePlotDialog(QDialog):
         layout = QVBoxLayout()
         layout.addWidget(self.solid_angle_label)
         layout.addWidget(self.average_label)
+        layout.addWidget(self.fraction_above_reference_label)
         layout.addWidget(self.canvas)
 
         footer_layout = QHBoxLayout()
@@ -270,13 +277,33 @@ class CoveragePlotDialog(QDialog):
             mean = np.mean(y_data[nonzero_mask])
         else:
             mean = 0.0
+        fraction_above_reference = (
+            100 * np.mean(y_data > COVERAGE_REFERENCE) if y_data.size else 0.0
+        )
 
         self.coverage_line.set_data(x_data, y_data)
         self.mean_line.set_data(x_data, np.full_like(x_data, mean))
-        self.reference_5_line.set_data(x_data, np.full_like(x_data, 5.0))
+        self.reference_8_line.set_data(x_data, np.full_like(x_data, COVERAGE_REFERENCE))
+
+        streak_panel = polar_view.instr.detectors.get('STREAK')
+        if streak_panel is None:
+            self.streak_line.set_data([], [])
+        else:
+            streak_tth, _ = streak_panel.pixel_angles()
+            active_tth = streak_tth[panel_buffer_as_2d_array(streak_panel)]
+            if active_tth.size:
+                streak_range = np.degrees([active_tth.min(), active_tth.max()])
+                self.streak_line.set_data(streak_range, [0, 0])
+            else:
+                self.streak_line.set_data([], [])
+
         self.solid_angle_label.setText(solid_angle_msg)
         self.average_label.setText(
             f'Average azimuthal coverage in 2θ FOV = {mean:0.1f}%'
+        )
+        self.fraction_above_reference_label.setText(
+            'Fraction of 2θ FOV with coverage '
+            f'> {COVERAGE_REFERENCE:g}% = {fraction_above_reference:.1f}%'
         )
 
         self.ax.relim()
