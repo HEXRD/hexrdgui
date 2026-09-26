@@ -478,14 +478,14 @@
                    <item row="0" column="4">
                     <widget class="QComboBox" name="polar_active_beam">
                      <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place int he program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place in the program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                     </widget>
                    </item>
                    <item row="0" column="2" colspan="2">
                     <widget class="QLabel" name="polar_active_beam_label">
                      <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place int he program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set the X-Ray Source used to create the polar view. This X-Ray Source will also be used in any place in the program where a single x-ray source is expected.&lt;/p&gt;&lt;p&gt;This option is only visible if an instrument with multiple x-ray sources is loaded.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                      </property>
                      <property name="text">
                       <string>X-Ray Source:</string>
