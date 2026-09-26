@@ -529,13 +529,17 @@ class MaskManager(QObject, metaclass=QSingleton):
             self.rebuild_masks()
         self.view_mode = actual_view_mode
 
+        if HexrdConfig().loading_state:
+            # The state loaded signal will rebuild and redraw the masks
+            if self.view_mode == ViewType.polar:
+                self._hide_masks_for_inactive_beams()
+        else:
+            self.update_masks_for_active_beam()
+
     def load_state(self, h5py_group: h5py.Group) -> None:
         self.masks = {}
         if 'masks' in h5py_group:
             self.load_masks(h5py_group['masks'])
-        if self.view_mode == ViewType.polar:
-            # The state_loaded signal will rebuild and redraw the masks
-            self._hide_masks_for_inactive_beams()
         if self.view_mode is None:
             self.view_mode_changed(ViewType.raw)
         self.mask_mgr_dialog_update.emit()
