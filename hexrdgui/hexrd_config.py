@@ -3325,6 +3325,54 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             **self.physics_package_dictified,
             **kwargs,
         }
+        self.apply_physics_package_to_distortions()
+
+    def apply_physics_package_to_distortions(self) -> None:
+        # Every overlay and the custom polar view distortion keeps its own
+        # copy of the physics package dimensions. Update them all.
+        # Loading a state sets temporary package defaults, so keep the
+        # loaded copies unchanged then.
+        physics = self.physics_package
+        if physics is None or self.loading_state:
+            return
+
+        custom = self.saved_custom_polar_tth_distortion_object
+        objs = [x for x in self.overlays if x.is_powder and x.has_tth_distortion]
+        if custom is not None and custom.has_pinhole_distortion:
+            objs.append(custom)
+
+        modified = []
+        for obj in objs:
+            # Overlays add an absorption length to `pinhole_distortion_kwargs`,
+            # so read and write their stored `tth_distortion_kwargs` instead.
+            is_custom = obj is custom
+            if is_custom:
+                old = obj.pinhole_distortion_kwargs
+            else:
+                old = obj.tth_distortion_kwargs
+
+            new = {
+                **old,
+                'pinhole_thickness': physics.pinhole_thickness * 1e-3,
+                'pinhole_radius': physics.pinhole_radius * 1e-3,
+            }
+            if obj.pinhole_distortion_type == 'LayerDistortion':
+                layer_type = new.get('layer_type', 'sample')
+                new['layer_standoff'] = physics.layer_standoff(layer_type) * 1e-3
+                new['layer_thickness'] = physics.layer_thickness(layer_type) * 1e-3
+
+            if new != old:
+                if is_custom:
+                    obj.pinhole_distortion_kwargs = new
+                else:
+                    obj.tth_distortion_kwargs = new
+                modified.append(obj.name)
+
+        if modified:
+            self.flag_overlay_updates_for_all_materials()
+            for name in modified:
+                self.overlay_distortions_modified.emit(name)
+            self.overlay_config_changed.emit()
 
     @property
     def physics_package(self) -> HEDPhysicsPackage | None:
