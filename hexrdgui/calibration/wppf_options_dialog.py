@@ -132,7 +132,9 @@ class WppfOptionsDialog(QObject):
     def setup_connections(self) -> None:
         self.ui.method.currentIndexChanged.connect(self.on_method_changed)
         self.ui.select_materials_button.pressed.connect(self.select_materials)
-        self.ui.peak_shape.currentIndexChanged.connect(self.update_params)
+        # Don't pass the index through: index 0 would be taken as
+        # `update_tree_view=False`.
+        self.ui.peak_shape.currentIndexChanged.connect(lambda: self.update_params())
         self.ui.delta_boundaries.toggled.connect(self.on_delta_boundaries_toggled)
         self.ui.select_experiment_file_button.pressed.connect(
             self.select_experiment_file
