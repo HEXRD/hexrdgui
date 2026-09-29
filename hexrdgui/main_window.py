@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 import h5py
 import numpy as np
+from hexrd.powder.cake import CakeOperatorSummary, export_cake_matrix
 from hexrd.resources import instrument_templates
 from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
@@ -242,6 +243,9 @@ class MainWindow(QObject):
         self.ui.action_open_state.triggered.connect(self.on_action_load_state_triggered)
         self.ui.action_export_current_plot.triggered.connect(
             self.on_action_export_current_plot_triggered
+        )
+        self.ui.action_export_cake_matrix.triggered.connect(
+            self.on_action_export_cake_matrix_triggered
         )
         self.ui.action_export_to_maud.triggered.connect(
             self.on_action_export_to_maud_triggered
@@ -742,6 +746,73 @@ class MainWindow(QObject):
             HexrdConfig().working_dir = os.path.dirname(selected_file)
             return self.ui.image_tab_widget.export_current_plot(selected_file)
 
+    def on_action_export_cake_matrix_triggered(self) -> None:
+        iviewer = getattr(self.active_canvas, 'iviewer', None)
+        polar_view = getattr(iviewer, 'pv', None)
+        if polar_view is None:
+            QMessageBox.warning(
+                self.ui,
+                'HEXRD',
+                'A polar view must be active to export a cake matrix.',
+            )
+            return
+
+        config = HexrdConfig()
+        default_path = os.path.join(config.working_dir, 'cake_matrix.hexrdcake')
+        selected_file, _ = QFileDialog.getSaveFileName(
+            self.ui,
+            'Export Cake Matrix',
+            default_path,
+            'HEXRD cake matrices (*.hexrdcake)',
+        )
+        if not selected_file:
+            return
+        if Path(selected_file).suffix.lower() != '.hexrdcake':
+            selected_file += '.hexrdcake'
+
+        if any(
+            (
+                config.polar_tth_distortion,
+                config.polar_apply_snip1d,
+                config.any_intensity_corrections,
+                MaskManager().visible_masks,
+            )
+        ):
+            QMessageBox.information(
+                self.ui,
+                'Cake Matrix Export',
+                'The matrix includes detector geometry and static panel buffers. '
+                'Polar distortion, SNIP, intensity corrections, and display masks '
+                'are not included.',
+            )
+
+        config.working_dir = os.path.dirname(selected_file)
+        if not hasattr(self, '_cake_matrix_async_runner'):
+            self._cake_matrix_async_runner = AsyncRunner(self.ui)
+        runner = self._cake_matrix_async_runner
+        runner.progress_title = 'Exporting Cake Matrix'
+        runner.success_callback = self.on_cake_matrix_exported
+        runner.run(
+            export_cake_matrix,
+            selected_file,
+            polar_view.instr,
+            tth_range=tuple(np.degrees([polar_view.tth_min, polar_view.tth_max])),
+            eta_range=tuple(np.degrees([polar_view.eta_min, polar_view.eta_max])),
+            pixel_size=(polar_view.tth_pixel_size, polar_view.eta_pixel_size),
+            overwrite=True,
+        )
+
+    def on_cake_matrix_exported(self, summary: CakeOperatorSummary) -> None:
+        active_fraction = summary.active_pixel_count / summary.full_panel_pixel_count
+        message = (
+            f'Wrote {summary.path.name}: polar image '
+            f'{summary.grid_shape[0]} eta rows x {summary.grid_shape[1]} two-theta columns, '
+            f'{active_fraction:.2%} of detector pixels used by interpolation, '
+            f'{summary.file_size / 1024**2:.1f} MiB.'
+        )
+        HexrdConfig().emit_update_status_bar(message)
+        QMessageBox.information(self.ui, 'Cake Matrix Export', message)
+
     def on_action_export_to_maud_triggered(self) -> None:
         filters = 'ESG files (*.esg)'
 
@@ -1115,6 +1186,7 @@ class MainWindow(QObject):
         self.ui.action_export_current_plot.setEnabled(
             (is_polar or is_cartesian or is_stereo) and has_images
         )
+        self.ui.action_export_cake_matrix.setEnabled(is_polar)
         self.ui.action_run_laue_and_powder_calibration.setEnabled(
             is_polar and has_images
         )
@@ -1495,6 +1567,10 @@ class MainWindow(QObject):
                 False: (
                     'Cartesian/polar/stereo view must be active with image data loaded'
                 ),
+            },
+            'action_export_cake_matrix': {
+                True: '',
+                False: 'Polar view must be active',
             },
             'action_export_to_maud': {
                 True: '',

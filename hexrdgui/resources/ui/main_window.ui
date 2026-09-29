@@ -112,6 +112,7 @@
       <bool>true</bool>
      </property>
      <addaction name="action_export_current_plot"/>
+     <addaction name="action_export_cake_matrix"/>
      <addaction name="action_export_to_maud"/>
     </widget>
     <widget class="QMenu" name="menu_import">
@@ -598,6 +599,17 @@
    </property>
    <property name="text">
     <string>Current View</string>
+   </property>
+  </action>
+  <action name="action_export_cake_matrix">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Cake Matrix</string>
+   </property>
+   <property name="toolTip">
+    <string>Export the current polar geometry as a reusable .hexrdcake matrix.</string>
    </property>
   </action>
   <action name="action_export_to_maud">
