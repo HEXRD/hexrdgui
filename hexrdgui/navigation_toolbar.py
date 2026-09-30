@@ -16,6 +16,7 @@ class NavigationToolbar(NavigationToolbar2QT):
         coordinates: bool = True,
         button_blacklist: list | None = None,
         tight_savefig: bool = True,
+        savefig_scale: float = 2.0,
     ) -> None:
         # This adds the option to blacklist some of the buttons for the
         # toolbar. Options are currently: Home, Back, Forward, Pan, Zoom,
@@ -23,6 +24,8 @@ class NavigationToolbar(NavigationToolbar2QT):
         # Blacklisting the None object removes separators.
         # tight_savefig causes the figure to use the "tight" bbox when it is
         # saved.
+        # savefig_scale multiplies the resolution of saved figures relative
+        # to the screen, so that they are sharp enough to print.
         if button_blacklist is None:
             button_blacklist = self.default_button_blacklist
         elif not isinstance(button_blacklist, (list, tuple)):
@@ -40,6 +43,7 @@ class NavigationToolbar(NavigationToolbar2QT):
         NavigationToolbar2QT.toolitems = old_toolitems
 
         self.tight_savefig = tight_savefig
+        self.savefig_scale = savefig_scale
 
     @wrap_with_callbacks
     def home(self, *args: Any) -> None:
@@ -54,7 +58,9 @@ class NavigationToolbar(NavigationToolbar2QT):
         super().back(*args)
 
     def save_figure(self, *args: Any, **kwargs: Any) -> Any:
-        context = {}
+        context: dict[str, Any] = {
+            'savefig.dpi': self.savefig_scale * self.canvas.figure.dpi,
+        }
         if self.tight_savefig:
             context['savefig.bbox'] = 'tight'
 
