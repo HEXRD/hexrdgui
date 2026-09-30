@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
 import csv
-from io import StringIO
 import math
-from typing import Any, Generator, TYPE_CHECKING
+from collections.abc import Generator
+from contextlib import contextmanager
+from io import StringIO
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-
-from PySide6.QtCore import Qt, QItemSelectionModel, QPoint
+from hexrd.utils.hkl import hkl_to_str
+from PySide6.QtCore import QItemSelectionModel, QPoint, Qt
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QApplication,
@@ -18,15 +19,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from hexrd.utils.hkl import hkl_to_str
-
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.reflections_selection_helper import ReflectionsSelectionHelper
 from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import (
+    HexrdConfigDisconnectMixin,
     block_signals,
     exclusions_off,
-    HexrdConfigDisconnectMixin,
     tth_max_off,
 )
 from hexrdgui.utils.dialog import add_help_url
@@ -348,19 +347,18 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
             # For the table, we will turn off exclusions so that all
             # rows are displayed, even the excluded ones. The user
             # picks the exclusions by selecting the rows.
-            with exclusions_off(plane_data):
-                with tth_max_off(plane_data):
-                    hkls = [hkl_to_str(x) for x in plane_data.getHKLs()]
-                    d_spacings = plane_data.getPlaneSpacings()
-                    tth = plane_data.getTTh()
-                    hedm_intensity = plane_data.hedm_intensity
-                    multiplicity = plane_data.getMultiplicity()
+            with exclusions_off(plane_data), tth_max_off(plane_data):
+                hkls = [hkl_to_str(x) for x in plane_data.getHKLs()]
+                d_spacings = plane_data.getPlaneSpacings()
+                tth = plane_data.getTTh()
+                hedm_intensity = plane_data.hedm_intensity
+                multiplicity = plane_data.getMultiplicity()
 
-                    # Since structure factors and powder intensities use
-                    # arbitrary scaling, re-scale them to a range that's
-                    # easier on the eyes.
-                    sf = self.rescaled_structure_factor
-                    powder_intensity = self.rescaled_powder_intensity
+                # Since structure factors and powder intensities use
+                # arbitrary scaling, re-scale them to a range that's
+                # easier on the eyes.
+                sf = self.rescaled_structure_factor
+                powder_intensity = self.rescaled_powder_intensity
 
             # Grab the hkl ids
             hkl_ids = [-1] * len(hkls)
@@ -469,9 +467,8 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
         # material.
 
         def get_sfact(pd: PlaneData) -> np.ndarray:
-            with exclusions_off(pd):
-                with tth_max_off(pd):
-                    return pd.structFact
+            with exclusions_off(pd), tth_max_off(pd):
+                return pd.structFact
 
         this_pd = self.material.planeData
         compare_material = self.relative_scale_material
@@ -493,7 +490,11 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
             compare_sf = get_sfact(compare_pd)
 
         # Rescale the other structure factor to be between 0 and 100
-        return (sf - compare_sf.min()) / (compare_sf.max() - compare_sf.min()) * 100
+        return (
+            (sf - np.nanmin(compare_sf))
+            / (np.nanmax(compare_sf) - np.nanmin(compare_sf))
+            * 100
+        )
 
     @property
     def rescaled_powder_intensity(self) -> np.ndarray:
@@ -501,9 +502,8 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
         # material.
 
         def get_powder_intensity(pd: PlaneData) -> np.ndarray:
-            with exclusions_off(pd):
-                with tth_max_off(pd):
-                    return pd.powder_intensity
+            with exclusions_off(pd), tth_max_off(pd):
+                return pd.powder_intensity
 
         this_pd = self.material.planeData
         compare_material = self.relative_scale_powder_material
@@ -525,8 +525,8 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
             compare_intensity = get_powder_intensity(compare_pd)
 
         # Rescale the powder intensity to be between 0 and 100
-        intensity_range = compare_intensity.max() - compare_intensity.min()
-        return (intensity - compare_intensity.min()) / intensity_range * 100
+        intensity_range = np.nanmax(compare_intensity) - np.nanmin(compare_intensity)
+        return (intensity - np.nanmin(compare_intensity)) / intensity_range * 100
 
     def update_selection_helper_material(self) -> None:
         self.selection_helper.material = self.material
