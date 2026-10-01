@@ -264,10 +264,8 @@ def load_imageseries_dict(h5_file: h5py.File) -> None:
     imsd.clear()
 
     root = 'images'
-    for det, ims in list(h5_file[root].items()):
-        imsd[det] = imageseries.open(
-            h5_file, 'hdf5', path=f'{root}/{det}', close_when_finished=False
-        )
+    for det in list(h5_file[root]):
+        imsd[det] = open_imageseries(h5_file, f'{root}/{det}')
 
     HexrdConfig().reset_unagg_imgs(new_imgs=True)
 
@@ -287,14 +285,58 @@ STATE_IMAGE_COMPRESSION = hdf5plugin.Blosc(
     cname='zstd', clevel=5, shuffle=hdf5plugin.Blosc.SHUFFLE
 )
 
+# Maximum nonzero fraction (sampled) for which the sparse fch5 format is used.
+# Matches hexrd's frame-cache sparsity warning cutoff; above it, dense storage
+# compresses as well or better.
+FCH5_MAX_NZ_FRACTION = 0.1
+
+
+def _write_as_fch5(ims: Any) -> bool:
+    """Decide whether an imageseries should be stored as an fch5 frame cache.
+
+    The frame cache zeroes out values at or below the threshold, so with a
+    threshold of 0 it is only guaranteed lossless for unsigned integer data.
+    Anything else (or data that is not actually sparse) keeps the dense hdf5
+    layout.
+    """
+    if len(ims) == 0 or np.dtype(ims.dtype).kind != 'u':
+        return False
+
+    # Sample a few frames to estimate sparsity
+    sample_idx = {0, len(ims) // 2, len(ims) - 1}
+    fullness = max(np.count_nonzero(ims[i]) / ims[i].size for i in sample_idx)
+    return fullness <= FCH5_MAX_NZ_FRACTION
+
 
 def write_imageseries(h5_file: h5py.File, path: str, ims: Any) -> None:
-    """Write an imageseries into the state file with blosc-zstd compression.
+    """Write an imageseries into the state file.
 
-    Delegates to hexrd's 'hdf5' imageseries writer with a custom compression
-    filter (instead of its gzip-1 default), so it still reads back via
-    ``imageseries.open(h5_file, 'hdf5', path=...)``.
+    Sparse unsigned-integer data is written as an fch5 frame cache (sparse
+    storage, blosc-zstd compressed by hexrd). Everything else keeps the dense
+    'hdf5' imageseries layout with a blosc-zstd filter (instead of its gzip-1
+    default). Either way, it reads back via ``open_imageseries()``.
     """
-    imageseries.write(
-        ims, h5_file, 'hdf5', path=path, compression=STATE_IMAGE_COMPRESSION
-    )
+    if _write_as_fch5(ims):
+        # threshold=0 drops only exact zeros, which the sparse format
+        # reconstructs implicitly, so this round-trips losslessly.
+        imageseries.write(
+            ims, h5_file, 'frame-cache', style='fch5', threshold=0, path=path
+        )
+    else:
+        imageseries.write(
+            ims, h5_file, 'hdf5', path=path, compression=STATE_IMAGE_COMPRESSION
+        )
+
+
+def open_imageseries(h5_file: h5py.File, path: str) -> Any:
+    """Open an imageseries stored in a state file at the given path.
+
+    Detects whether the group holds an fch5 frame cache (new state files) or
+    a dense hdf5 imageseries (older state files, and the dense fallback) and
+    opens it with the matching format. Either way the returned imageseries
+    reads from the open ``h5_file``, so the file must stay open.
+    """
+    if 'HEXRD_FRAMECACHE_VERSION' in h5_file[path].attrs:
+        return imageseries.open(h5_file, 'frame-cache', style='fch5', path=path)
+
+    return imageseries.open(h5_file, 'hdf5', path=path, close_when_finished=False)
