@@ -1527,6 +1527,9 @@ class WppfOptionsDialog(QObject):
                     elif v == f'{prefix}_Y':
                         units = '%'
                         conversion_funcs = mat_ly_to_s_funcs
+                    elif v == f'{prefix}_phase_fraction':
+                        units = '%'
+                        conversion_funcs = fraction_to_percent_funcs
                     elif v == f'{prefix}_P':
                         # Provide wavelength in micrometers
                         assert beam_wlen is not None
@@ -2987,6 +2990,12 @@ def changed_signal(w: QWidget) -> SignalInstance:
 nm_to_angstroms_funcs = {
     'to_display': lambda x: x * 10,
     'from_display': lambda x: x / 10,
+}
+
+
+fraction_to_percent_funcs = {
+    'to_display': lambda x: x * 100,
+    'from_display': lambda x: x / 100,
 }
 
 

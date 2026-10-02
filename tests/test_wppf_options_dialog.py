@@ -63,6 +63,12 @@ def test_phase_fractions(qtbot: QtBot, monkeypatch: pytest.MonkeyPatch) -> None:
         assert cell + (model.MIN_IDX,) in model.uneditable_paths
         assert cell + (model.VALUE_IDX,) not in model.uneditable_paths
 
+        # Fractions are shown and edited as percentages
+        config = model.config_path(list(cell))
+        assert (config['_value'], config['_max'], config['_units']) == (50, 100, '%')
+        model.set_config_val(list(cell) + ['_value'], 30)
+        assert cu.value == pytest.approx(0.3)
+
         # The remainder shows its uncertainty
         cu2o.stderr = 0.01
         result = SimpleNamespace(res=SimpleNamespace(params=dialog.params))
@@ -71,7 +77,6 @@ def test_phase_fractions(qtbot: QtBot, monkeypatch: pytest.MonkeyPatch) -> None:
 
         # Delta boundaries skip the fractions, and a fixed fraction over 1
         # (typing a value moves the bounds) is caught before running
-        cu.value = 0.3
         dialog.delta_boundaries = True
         dialog.apply_delta_boundaries()
         assert (cu.min, cu.max) == (0, 1)
