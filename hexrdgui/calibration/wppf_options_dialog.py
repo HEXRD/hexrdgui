@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 from hexrd import constants as ct
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
-from hexrd.projections.polar import bin_polar_view
+from hexrd.projections.polar import N_valid, bin_polar_view
 from hexrd.utils.hkl import hkl_to_str
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
@@ -235,6 +235,7 @@ class WppfOptionsDialog(QObject):
             'method',
             'method_label',
             'use_experiment_file',
+            'use_statistical_weights',
             'experiment_file',
             'select_experiment_file_button',
             'limit_tth',
@@ -857,6 +858,14 @@ class WppfOptionsDialog(QObject):
         self.ui.use_experiment_file.setChecked(b)
 
     @property
+    def use_statistical_weights(self) -> bool:
+        return self.ui.use_statistical_weights.isChecked()
+
+    @use_statistical_weights.setter
+    def use_statistical_weights(self, b: bool) -> None:
+        self.ui.use_statistical_weights.setChecked(b)
+
+    @property
     def experiment_file(self) -> str:
         return self.ui.experiment_file.text()
 
@@ -983,6 +992,7 @@ class WppfOptionsDialog(QObject):
             'peak_shape',
             'background_method_dict',
             'use_experiment_file',
+            'use_statistical_weights',
             'experiment_file',
             'display_wppf_plot',
             'plot_background',
@@ -1737,6 +1747,7 @@ class WppfOptionsDialog(QObject):
             'peak_shape',
             'background_method',
             'experiment_file',
+            'use_statistical_weights',
             'display_wppf_plot',
             'show_difference_curve',
             'show_difference_as_percent',
@@ -1824,7 +1835,7 @@ class WppfOptionsDialog(QObject):
                 **self.amorphous_kwargs,  # type: ignore[arg-type]
             )
 
-        extra_kwargs: dict[str, Any] = {}
+        extra_kwargs = self._statistical_weights_kwargs
         if self.includes_texture:
             extra_kwargs = {
                 **extra_kwargs,
@@ -1848,6 +1859,25 @@ class WppfOptionsDialog(QObject):
             'amorphous_model': amorphous_model,
             **extra_kwargs,
         }
+
+    @property
+    def _statistical_weights_kwargs(self) -> dict[str, Any]:
+        if not self.use_statistical_weights:
+            return {}
+
+        canvas = HexrdConfig().active_canvas
+        assert canvas is not None
+        assert canvas.iviewer is not None
+        n_sampling = N_valid(canvas.iviewer.display_img)
+
+        if self.limit_tth:
+            data = HexrdConfig().last_unscaled_azimuthal_integral_data
+            assert data is not None
+            tth = data[0]
+            selected = (tth >= self.min_tth) & (tth <= self.max_tth)
+            n_sampling = n_sampling[selected]
+
+        return {'N_sampling': n_sampling}
 
     @property
     def _wppf_wavelength_arg(self) -> dict[str, list[float]]:
