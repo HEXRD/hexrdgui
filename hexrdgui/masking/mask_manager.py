@@ -377,6 +377,11 @@ class MaskManager(QObject, metaclass=QSingleton):
         if self.view_mode != ViewType.polar:
             return
 
+        self._hide_masks_for_inactive_beams()
+        self.mask_mgr_dialog_update.emit()
+        self.masks_changed()
+
+    def _hide_masks_for_inactive_beams(self) -> None:
         xrs = HexrdConfig().active_beam_name
         for mask in self.masks.values():
             # If mask's mode or source doesn't match current, hide it
@@ -396,8 +401,6 @@ class MaskManager(QObject, metaclass=QSingleton):
                     # Clear the stored states
                     delattr(mask, '_original_visible')
                     delattr(mask, '_original_show_border')
-        self.mask_mgr_dialog_update.emit()
-        self.masks_changed()
 
     def view_mode_changed(self, mode: str) -> None:
         self.view_mode = mode
@@ -464,9 +467,18 @@ class MaskManager(QObject, metaclass=QSingleton):
         h5py_group.attrs['_version'] = CURRENT_MASK_VERSION
         unwrap_dict_to_h5(h5py_group, data, asattr=False)
 
+    def serialize_mask(self, mask: Mask) -> dict[str, Any]:
+        data = mask.serialize()
+        if hasattr(mask, '_original_visible'):
+            # The mask is only hidden because another x-ray source is
+            # active. Save the states it will be restored to instead.
+            data['visible'] = mask._original_visible
+            data['border'] = mask._original_show_border
+        return data
+
     def write_single_mask(self, name: str) -> None:
         d = {
-            name: self.masks[name].serialize(),
+            name: self.serialize_mask(self.masks[name]),
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
             '__boundary_width': self.boundary_width,
@@ -484,7 +496,7 @@ class MaskManager(QObject, metaclass=QSingleton):
             '__highlight_opacity': self.highlight_opacity,
         }
         for name, mask_info in self.masks.items():
-            d[name] = mask_info.serialize()
+            d[name] = self.serialize_mask(mask_info)
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
         else:
@@ -516,6 +528,13 @@ class MaskManager(QObject, metaclass=QSingleton):
             # don't wait for the state loaded signal
             self.rebuild_masks()
         self.view_mode = actual_view_mode
+
+        if HexrdConfig().loading_state:
+            # The state loaded signal will rebuild and redraw the masks
+            if self.view_mode == ViewType.polar:
+                self._hide_masks_for_inactive_beams()
+        else:
+            self.update_masks_for_active_beam()
 
     def load_state(self, h5py_group: h5py.Group) -> None:
         self.masks = {}
