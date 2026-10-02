@@ -157,7 +157,17 @@ def _load_config(h5_file: h5py.File) -> dict[str, Any]:
     config_yaml = h5_file[CONFIG_YAML_PATH][()]
 
     # Load it, which will cause the numpy type to be loaded as well.
-    return yaml.load(config_yaml, Loader=_create_loader)  # type: ignore[arg-type]
+    state = yaml.load(config_yaml, Loader=_create_loader)  # type: ignore[arg-type]
+
+    # Statistical WPPF weights were not available in older state files.
+    # Keep them off for those files, while retaining the default-on behavior
+    # for a fresh GUI session.
+    calibration = state.get('config_calibration')
+    if calibration is not None:
+        wppf = calibration.setdefault('wppf', {})
+        wppf.setdefault('use_statistical_weights', False)
+
+    return state
 
 
 def save(h5_file: h5py.File) -> None:
