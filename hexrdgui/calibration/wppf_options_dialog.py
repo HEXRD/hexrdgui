@@ -2135,7 +2135,7 @@ class WppfOptionsDialog(QObject):
 
         with block_signals(*self.texture_material_setting_widgets):
             self.ui.include_texture_model.setChecked(checked)
-            model_type = settings.get('model_type', AXIS_DISTRIBUTION_MODEL)
+            model_type = self.texture_model_type(mat_name)
             self.ui.texture_model_type.setCurrentText(
                 TEXTURE_MODEL_LABELS.get(
                     model_type,
@@ -2149,7 +2149,7 @@ class WppfOptionsDialog(QObject):
             self.ui.texture_ell_max.setValue(
                 settings.get('ell_max', defaults['ell_max'])
             )
-            hkl = settings.get('hkl', [1, 1, 1])
+            hkl = self.texture_preferred_axes.get(mat_name, [1, 1, 1])
             for widget, value in zip(self.texture_preferred_axis_widgets, hkl):
                 widget.setValue(value)
 
@@ -2214,12 +2214,16 @@ class WppfOptionsDialog(QObject):
         mat_name = self.ui.selected_texture_material.currentText()
         checked = self.ui.include_texture_model.isChecked()
         model_kwargs = self.texture_model_kwargs
+        model_types = self.texture_model_types
+        preferred_axes = self.texture_preferred_axes
 
         if not checked:
-            if mat_name in model_kwargs:
-                del model_kwargs[mat_name]
+            model_kwargs.pop(mat_name, None)
+            model_types.pop(mat_name, None)
+            preferred_axes.pop(mat_name, None)
         else:
             model_type = self.current_texture_model_type
+            model_types[mat_name] = model_type
             if model_type == MARCH_DOLLASE_MODEL:
                 hkl = [widget.value() for widget in self.texture_preferred_axis_widgets]
                 if not any(hkl):
@@ -2228,21 +2232,22 @@ class WppfOptionsDialog(QObject):
                         'Invalid Preferred Axis',
                         'Preferred axis cannot be 0 0 0.',
                     )
-                    settings = model_kwargs.get(
-                        mat_name, self._default_texture_model_settings
-                    )
                     with block_signals(*self.texture_preferred_axis_widgets):
                         for widget, value in zip(
                             self.texture_preferred_axis_widgets,
-                            settings.get('hkl', [1, 1, 1]),
+                            preferred_axes.get(mat_name, [1, 1, 1]),
                         ):
                             widget.setValue(value)
                     return
 
-                model_kwargs[mat_name] = {
-                    'model_type': model_type,
-                    'hkl': hkl,
-                }
+                preferred_axes[mat_name] = hkl
+                model_kwargs.setdefault(
+                    mat_name,
+                    {
+                        'ssym': self._default_texture_model_settings['ssym'],
+                        'ell_max': self._default_texture_model_settings['ell_max'],
+                    },
+                )
             else:
                 ssym = self.ui.texture_sample_symmetry.currentText()
                 # Force ell_max to be an even number
@@ -2258,7 +2263,6 @@ class WppfOptionsDialog(QObject):
                         w.setValue(ell_max)
 
                 model_kwargs[mat_name] = {
-                    'model_type': model_type,
                     'ssym': ssym,
                     'ell_max': ell_max,
                 }
@@ -2619,6 +2623,25 @@ class WppfOptionsDialog(QObject):
 
     @texture_settings.setter
     def texture_settings(self, v: dict) -> None:
+        # GUI-only model metadata used to be stored inside model_kwargs.
+        # Move it out so model_kwargs retains its legacy, constructor-safe
+        # shape and state files remain usable by older HEXRDGUI versions.
+        v.setdefault('model_types', {})
+        v.setdefault('preferred_axes', {})
+        for name, kwargs in v.setdefault('model_kwargs', {}).items():
+            model_type = kwargs.pop('model_type', None)
+            if model_type is not None:
+                v['model_types'].setdefault(name, model_type)
+
+            hkl = kwargs.pop('hkl', None)
+            if hkl is not None:
+                v['preferred_axes'].setdefault(name, hkl)
+
+            kwargs.setdefault('ssym', self._default_texture_model_settings['ssym'])
+            kwargs.setdefault(
+                'ell_max', self._default_texture_model_settings['ell_max']
+            )
+
         self._texture_settings = v
 
         # Validate materials in the texture model dict are selected
@@ -2628,14 +2651,22 @@ class WppfOptionsDialog(QObject):
 
     def prune_invalid_texture_materials(self) -> None:
         valid_mats = self.selected_materials
-        for name in list(self.texture_model_kwargs):
-            if name not in valid_mats:
-                self.texture_model_kwargs.pop(name)
+        settings_maps = [
+            self.texture_model_kwargs,
+            self.texture_model_types,
+            self.texture_preferred_axes,
+        ]
+        for settings in settings_maps:
+            for name in list(settings):
+                if name not in valid_mats:
+                    settings.pop(name)
 
     @property
     def _default_texture_settings(self) -> dict:
         return {
             'model_kwargs': {},
+            'model_types': {},
+            'preferred_axes': {},
             'azimuthal_interval': 5,
             'integration_range': 1,
         }
@@ -2643,10 +2674,8 @@ class WppfOptionsDialog(QObject):
     @property
     def _default_texture_model_settings(self) -> dict:
         return {
-            'model_type': AXIS_DISTRIBUTION_MODEL,
             'ssym': 'axial',
             'ell_max': 16,
-            'hkl': [1, 1, 1],
         }
 
     @property
@@ -2669,13 +2698,20 @@ class WppfOptionsDialog(QObject):
         return self.texture_settings['model_kwargs']
 
     @property
+    def texture_model_types(self) -> dict[str, str]:
+        return self.texture_settings.setdefault('model_types', {})
+
+    @property
+    def texture_preferred_axes(self) -> dict[str, list[int]]:
+        return self.texture_settings.setdefault('preferred_axes', {})
+
+    @property
     def current_texture_model_type(self) -> str:
         label = self.ui.texture_model_type.currentText()
         return next(k for k, v in TEXTURE_MODEL_LABELS.items() if v == label)
 
     def texture_model_type(self, mat_name: str) -> str:
-        settings = self.texture_model_kwargs.get(mat_name, {})
-        return settings.get('model_type', AXIS_DISTRIBUTION_MODEL)
+        return self.texture_model_types.get(mat_name, AXIS_DISTRIBUTION_MODEL)
 
     @property
     def texture_model_dict(self) -> dict[str, HarmonicModel | MarchDollaseModel]:
@@ -2687,11 +2723,11 @@ class WppfOptionsDialog(QObject):
         for k, kwargs in settings['model_kwargs'].items():
             mat = HexrdConfig().material(k)
             material = Material_Rietveld(material_obj=mat)
-            model_type = kwargs.get('model_type', AXIS_DISTRIBUTION_MODEL)
+            model_type = self.texture_model_type(k)
             if model_type == MARCH_DOLLASE_MODEL:
                 ret[k] = MarchDollaseModel(
                     material=material,
-                    HKL=kwargs.get('hkl', [1, 1, 1]),
+                    HKL=self.texture_preferred_axes.get(k, [1, 1, 1]),
                 )
             else:
                 ret[k] = HarmonicModel(
