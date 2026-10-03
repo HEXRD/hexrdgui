@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from hexrd.material import Material
 
 from hexrd import constants as ct
+from hexrd.core.fitting import stick_breaking
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
 from hexrd.projections.polar import bin_polar_view
@@ -50,6 +51,7 @@ from hexrd.wppf.wppfsupport import (
     _generate_default_parameters_LeBail,
     _generate_default_parameters_Rietveld,
     background_methods,
+    fraction_groups,
 )
 
 import hexrdgui.resources.wppf.tree_views as tree_view_resources
@@ -507,6 +509,9 @@ class WppfOptionsDialog(QObject):
                     msg = f'Failed to load amorphous experiment file: {e}'
                     raise Exception(msg)
 
+        # For example, fixed phase fractions that sum to more than one
+        stick_breaking.validate(self.params, fraction_groups(self.params))
+
         if self.varying_texture_and_non_texture_params:
             msg = (
                 'Texture parameters cannot be varied at the same time as '
@@ -542,9 +547,15 @@ class WppfOptionsDialog(QObject):
 
         params = self.generate_params()
 
+        # Fractions are coupled (the remainder is an expression of the
+        # others), so if they changed (e.g., a phase was added), take the
+        # fresh ones instead of carrying over stale values and expressions.
+        fractions = fraction_names(params)
+        reset = fractions if fractions != fraction_names(self.params) else set()
+
         # Remake the dict to use the ordering of `params`
         for key, param in params.items():
-            if key in self.params:
+            if key in self.params and key not in reset:
                 # Preserve previous settings
                 param = self.params[key]
             params[key] = param
@@ -1516,6 +1527,9 @@ class WppfOptionsDialog(QObject):
                     elif v == f'{prefix}_Y':
                         units = '%'
                         conversion_funcs = mat_ly_to_s_funcs
+                    elif v == f'{prefix}_phase_fraction':
+                        units = '%'
+                        conversion_funcs = fraction_to_percent_funcs
                     elif v == f'{prefix}_P':
                         # Provide wavelength in micrometers
                         assert beam_wlen is not None
@@ -1631,7 +1645,9 @@ class WppfOptionsDialog(QObject):
         # Recurse through all params and find any that have an expression
         # Those will be disabled.
         results = []
+        locked_bounds = []
         cur_path = []
+        fractions = fraction_names(self.params)
 
         def recurse(d: Any) -> None:
             if isinstance(d, list):
@@ -1646,6 +1662,8 @@ class WppfOptionsDialog(QObject):
                 param = d['_param']
                 if param.expr is not None:
                     results.append(cur_path.copy())
+                if param.expr is not None or param.name in fractions:
+                    locked_bounds.append(cur_path.copy())
                 return
 
             for k, v in d.items():
@@ -1665,6 +1683,15 @@ class WppfOptionsDialog(QObject):
 
             # The value is uneditable
             uneditable_paths.append(tuple(path) + (value_idx,))
+
+        # The bounds are uneditable too: lmfit clamps an expression's result
+        # to them, and fractions are fit in a way that keeps them in [0, 1]
+        # and cannot honor narrower ones. Fix a fraction to constrain it.
+        model_class = self.tree_view_model_class
+        for path in locked_bounds:
+            for idx in model_class.BOUND_INDICES:
+                if idx != model_class.VALUE_IDX:
+                    uneditable_paths.append(tuple(path) + (idx,))
 
     @property
     def delta_boundaries(self) -> bool:
@@ -1686,10 +1713,16 @@ class WppfOptionsDialog(QObject):
             # We don't actually need to apply delta boundaries...
             return
 
+        fractions = fraction_names(self.params)
+
         def recurse(cur: dict) -> None:
             for k, v in cur.items():
                 if '_param' in v:
                     param = v['_param']
+                    if param.expr is not None or param.name in fractions:
+                        # Their bounds are locked (see update_disabled_paths)
+                        continue
+
                     # There should be a delta.
                     # We want an exception if it is missing.
                     param.min = param.value - param.delta
@@ -1709,7 +1742,13 @@ class WppfOptionsDialog(QObject):
         if res is None:
             return {}
 
-        return {k: v.stderr for k, v in res.params.items() if v.vary and v.stderr}
+        # Expressions, like the remainder phase fraction, have propagated
+        # uncertainties
+        return {
+            k: v.stderr
+            for k, v in res.params.items()
+            if (v.vary or v.expr is not None) and v.stderr
+        }
 
     def on_param_vary_modified(self, param: lmfit.Parameter) -> None:
         # If it is a texture parameter, mark all other texture
@@ -2850,6 +2889,12 @@ def generate_params(
     )
 
 
+def fraction_names(params: lmfit.Parameters) -> set[str]:
+    # Fractions of a whole, like the phase fractions, which hexrd fits
+    # through a parametrization that keeps them in [0, 1]
+    return {k for g in fraction_groups(params) for k in g}
+
+
 def param_to_dict(param: lmfit.Parameter) -> dict:
     return _dict_to_basic(
         {
@@ -2945,6 +2990,12 @@ def changed_signal(w: QWidget) -> SignalInstance:
 nm_to_angstroms_funcs = {
     'to_display': lambda x: x * 10,
     'from_display': lambda x: x / 10,
+}
+
+
+fraction_to_percent_funcs = {
+    'to_display': lambda x: x * 100,
+    'from_display': lambda x: x / 100,
 }
 
 
