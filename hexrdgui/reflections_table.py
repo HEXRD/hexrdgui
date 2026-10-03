@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from hexrd.utils.hkl import hkl_to_str
-from PySide6.QtCore import QItemSelectionModel, QPoint, Qt
+from PySide6.QtCore import QItemSelection, QItemSelectionModel, QPoint, Qt
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import (
     QApplication,
@@ -296,7 +296,8 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
             return
 
         indices = range(len(self.exclusions))
-        self.exclusions = [i not in selections for i in indices]
+        selected = set(selections)
+        self.exclusions = [i not in selected for i in indices]
 
     @property
     def selected_rows(self) -> list[int]:
@@ -313,9 +314,13 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
                 QItemSelectionModel.SelectionFlag.Select
                 | QItemSelectionModel.SelectionFlag.Rows
             )
+            # Selecting rows one at a time is quadratic, so select them all
+            # at once
+            selection = QItemSelection()
             for i in rows:
                 model_index = selection_model.model().index(i, 0)
-                selection_model.select(model_index, command)
+                selection.select(model_index, model_index)
+            selection_model.select(selection, command)
 
     def active_material_modified(self) -> None:
         if HexrdConfig().active_material is self.material:
@@ -360,17 +365,17 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
                 sf = self.rescaled_structure_factor
                 powder_intensity = self.rescaled_powder_intensity
 
+            self.update_hkl_index_maps(hkls)
+
             # Grab the hkl ids
             hkl_ids = [-1] * len(hkls)
             for hkl_data in plane_data.hklDataList:
                 try:
-                    idx = hkls.index(hkl_to_str(hkl_data['hkl']))
-                except ValueError:
+                    idx = self.hkl_to_index_map[hkl_to_str(hkl_data['hkl'])]
+                except KeyError:
                     continue
                 else:
                     hkl_ids[idx] = hkl_data['hklID']
-
-            self.update_hkl_index_maps(hkls)
 
             table.clearContents()
             table.setRowCount(len(hkls))
@@ -404,12 +409,10 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
                     table_item = IntTableItem(multiplicity[i])
                     table.setItem(i, COLUMNS.MULTIPLICITY, table_item)
 
-                    # Set the selectability for the entire row
-                    selectable = True
-                    if plane_data.tThMax is not None:
-                        selectable = tth[i] <= plane_data.tThMax
-
-                    self.set_row_selectable(i, selectable)
+                    # New items are selectable, so only update rows that
+                    # are not
+                    if plane_data.tThMax is not None and tth[i] > plane_data.tThMax:
+                        self.set_row_selectable(i, False)
 
             table.resizeColumnsToContents()
 
@@ -434,12 +437,12 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
         return ret
 
     def map_selections_to_rows(self, selections: list[int]) -> list[int]:
-        selected_hkls = []
+        selected_hkls: set[str] = set()
         for x in selections:
             if x not in self.index_to_hkl_map:
                 continue
 
-            selected_hkls.append(self.index_to_hkl_map[x])
+            selected_hkls.add(self.index_to_hkl_map[x])
 
         table = self.ui.table
         rows = []
@@ -451,15 +454,13 @@ class ReflectionsTable(HexrdConfigDisconnectMixin):
 
     def set_row_selectable(self, i: int, selectable: bool) -> None:
         table = self.ui.table
+        mask = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
         for j in range(table.columnCount()):
             item = table.item(i, j)
-            flags = item.flags()
             if selectable:
-                flags |= Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+                item.setFlags(item.flags() | mask)
             else:
-                flags &= ~Qt.ItemFlag.ItemIsSelectable & ~Qt.ItemFlag.ItemIsEnabled
-
-            item.setFlags(flags)
+                item.setFlags(item.flags() & ~mask)
 
     @property
     def rescaled_structure_factor(self) -> np.ndarray:
