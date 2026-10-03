@@ -45,7 +45,7 @@ from hexrd.wppf.tds import (
 from hexrd.wppf.tds import (
     VALID_SGNUMS as VALID_TDS_SGNUMS,
 )
-from hexrd.wppf.texture import HarmonicModel
+from hexrd.wppf.texture import HarmonicModel, MarchDollaseModel
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
     _generate_default_parameters_LeBail,
@@ -80,6 +80,13 @@ from hexrdgui.wppf_style_picker import WppfStylePicker
 inverted_peakshape_dict = {v: k for k, v in peakshape_dict.items()}
 
 DEFAULT_PEAK_SHAPE = 'pvtch'
+
+AXIS_DISTRIBUTION_MODEL = 'axis_distribution'
+MARCH_DOLLASE_MODEL = 'march_dollase'
+TEXTURE_MODEL_LABELS = {
+    AXIS_DISTRIBUTION_MODEL: 'Axis Distribution Function',
+    MARCH_DOLLASE_MODEL: 'March-Dollase',
+}
 
 
 class WppfOptionsDialog(QObject):
@@ -462,7 +469,7 @@ class WppfOptionsDialog(QObject):
         self.save_settings()
         self.push_undo_stack()
 
-        if self.varying_texture_params:
+        if self.varying_harmonic_texture_params:
             # Ensure texture data is set on the WPPF object.
             # This might be time-consuming.
             # We also have to ensure there is a WPPF object
@@ -473,7 +480,7 @@ class WppfOptionsDialog(QObject):
                 # If there was some exception, remove the last undo stack entry
                 self.remove_last_undo_stack_entry()
                 raise
-        else:
+        elif not self.varying_texture_params:
             # If there are any non-texture refinements, we ought
             # to clear the texture data.
             self.clear_texture_data()
@@ -1577,12 +1584,20 @@ class WppfOptionsDialog(QObject):
             for mat_name in self.textured_materials:
                 # Look for param names that match
                 mat_name_sanitized = mat_name.replace('-', '_')
+                mat_config = texture_dict.setdefault(mat_name, {})
+                model_type = self.texture_model_type(mat_name)
+                if model_type == MARCH_DOLLASE_MODEL:
+                    name = f'{mat_name_sanitized}_p_md'
+                    if name in params:
+                        mat_config['P_md'] = create_param_item(params[name])
+                    continue
+
                 prefix = f'{mat_name_sanitized}_c_'
                 matching_names = [k for k in params if k.startswith(prefix)]
                 if not matching_names:
+                    texture_dict.pop(mat_name)
                     continue
 
-                mat_config = texture_dict.setdefault(mat_name, {})
                 for name in matching_names:
                     suffix = name[len(prefix) :]
                     ell, i, j = [int(k) for k in suffix.split('_')]
@@ -2114,8 +2129,18 @@ class WppfOptionsDialog(QObject):
     def texture_material_setting_widgets(self) -> list:
         return [
             self.ui.include_texture_model,
+            self.ui.texture_model_type,
             self.ui.texture_ell_max,
             self.ui.texture_sample_symmetry,
+            *self.texture_preferred_axis_widgets,
+        ]
+
+    @property
+    def texture_preferred_axis_widgets(self) -> list:
+        return [
+            self.ui.texture_preferred_axis_h,
+            self.ui.texture_preferred_axis_k,
+            self.ui.texture_preferred_axis_l,
         ]
 
     @property
@@ -2155,8 +2180,23 @@ class WppfOptionsDialog(QObject):
 
         with block_signals(*self.texture_material_setting_widgets):
             self.ui.include_texture_model.setChecked(checked)
-            self.ui.texture_sample_symmetry.setCurrentText(settings['ssym'])
-            self.ui.texture_ell_max.setValue(settings['ell_max'])
+            model_type = settings.get('model_type', AXIS_DISTRIBUTION_MODEL)
+            self.ui.texture_model_type.setCurrentText(
+                TEXTURE_MODEL_LABELS.get(
+                    model_type,
+                    TEXTURE_MODEL_LABELS[AXIS_DISTRIBUTION_MODEL],
+                )
+            )
+            defaults = self._default_texture_model_settings
+            self.ui.texture_sample_symmetry.setCurrentText(
+                settings.get('ssym', defaults['ssym'])
+            )
+            self.ui.texture_ell_max.setValue(
+                settings.get('ell_max', defaults['ell_max'])
+            )
+            hkl = settings.get('hkl', [1, 1, 1])
+            for widget, value in zip(self.texture_preferred_axis_widgets, hkl):
+                widget.setValue(value)
 
         self.update_texture_model_enable_states()
         self.update_texture_index_label()
@@ -2175,17 +2215,42 @@ class WppfOptionsDialog(QObject):
 
         # Now enable/disable all the other widgets
         enable = w.isChecked() and not has_object
-        widgets = [
+        for child in [
+            self.ui.texture_model_type_label,
+            self.ui.texture_model_type,
+        ]:
+            child.setEnabled(enable)
+
+        is_march_dollase = self.current_texture_model_type == MARCH_DOLLASE_MODEL
+        harmonic_widgets = [
             self.ui.texture_sample_symmetry_label,
             self.ui.texture_sample_symmetry,
             self.ui.texture_ell_max_label,
             self.ui.texture_ell_max,
         ]
+        march_dollase_widgets = [
+            self.ui.texture_preferred_axis_label,
+            self.ui.texture_preferred_axis_h_label,
+            self.ui.texture_preferred_axis_k_label,
+            self.ui.texture_preferred_axis_l_label,
+            *self.texture_preferred_axis_widgets,
+        ]
 
-        for w in widgets:
-            w.setEnabled(enable)
+        for child in harmonic_widgets:
+            child.setVisible(not is_march_dollase)
+            child.setEnabled(enable)
 
-        self.ui.spectrum_binning_group.setEnabled(is_rietveld)
+        for child in march_dollase_widgets:
+            child.setVisible(is_march_dollase)
+            child.setEnabled(enable)
+
+        only_march_dollase = self.includes_texture and all(
+            self.texture_model_type(name) == MARCH_DOLLASE_MODEL
+            for name in self.textured_materials
+        )
+        self.ui.spectrum_binning_group.setEnabled(
+            is_rietveld and not only_march_dollase
+        )
 
         # Now figure out if we should enable pole figure plotting
         self.ui.texture_plot_pole_figures.setEnabled(self.can_plot_pole_figures)
@@ -2199,23 +2264,49 @@ class WppfOptionsDialog(QObject):
             if mat_name in model_kwargs:
                 del model_kwargs[mat_name]
         else:
-            ssym = self.ui.texture_sample_symmetry.currentText()
-            # Force ell_max to be an even number
-            ell_max = self.ui.texture_ell_max.value()
-            if ell_max % 2 != 0:
-                msg = 'Spherical harmonic max must be an even number'
-                QMessageBox.critical(self.ui, 'HEXRD', msg)
-                print(msg, file=sys.stderr)
+            model_type = self.current_texture_model_type
+            if model_type == MARCH_DOLLASE_MODEL:
+                hkl = [widget.value() for widget in self.texture_preferred_axis_widgets]
+                if not any(hkl):
+                    QMessageBox.critical(
+                        self.ui,
+                        'Invalid Preferred Axis',
+                        'Preferred axis cannot be 0 0 0.',
+                    )
+                    settings = model_kwargs.get(
+                        mat_name, self._default_texture_model_settings
+                    )
+                    with block_signals(*self.texture_preferred_axis_widgets):
+                        for widget, value in zip(
+                            self.texture_preferred_axis_widgets,
+                            settings.get('hkl', [1, 1, 1]),
+                        ):
+                            widget.setValue(value)
+                    return
 
-                ell_max += 1
-                w = self.ui.texture_ell_max
-                with block_signals(w):
-                    w.setValue(ell_max)
+                model_kwargs[mat_name] = {
+                    'model_type': model_type,
+                    'hkl': hkl,
+                }
+            else:
+                ssym = self.ui.texture_sample_symmetry.currentText()
+                # Force ell_max to be an even number
+                ell_max = self.ui.texture_ell_max.value()
+                if ell_max % 2 != 0:
+                    msg = 'Spherical harmonic max must be an even number'
+                    QMessageBox.critical(self.ui, 'HEXRD', msg)
+                    print(msg, file=sys.stderr)
 
-            model_kwargs[mat_name] = {
-                'ssym': ssym,
-                'ell_max': ell_max,
-            }
+                    ell_max += 1
+                    w = self.ui.texture_ell_max
+                    with block_signals(w):
+                        w.setValue(ell_max)
+
+                model_kwargs[mat_name] = {
+                    'model_type': model_type,
+                    'ssym': ssym,
+                    'ell_max': ell_max,
+                }
 
         self.update_texture_model_enable_states()
 
@@ -2326,6 +2417,18 @@ class WppfOptionsDialog(QObject):
 
     @property
     def varying_texture_params(self) -> bool:
+        if self.varying_harmonic_texture_params:
+            return True
+
+        for mat_name in self.textured_materials_sanitized:
+            name = f'{mat_name}_p_md'
+            if name in self.params and self.params[name].vary:
+                return True
+
+        return False
+
+    @property
+    def varying_harmonic_texture_params(self) -> bool:
         for mat_name in self.textured_materials_sanitized:
             prefix = f'{mat_name}_c_'
             for param in self.params.values():
@@ -2336,7 +2439,7 @@ class WppfOptionsDialog(QObject):
 
     @property
     def varying_texture_and_non_texture_params(self) -> bool:
-        if not self.varying_texture_params:
+        if not self.varying_harmonic_texture_params:
             return False
 
         prefixes = [f'{mat_name}_c_' for mat_name in self.textured_materials_sanitized]
@@ -2360,7 +2463,7 @@ class WppfOptionsDialog(QObject):
 
         # If we find any non-zero parameters, we can plot pole figures
         for model in obj.texture_model.values():
-            if model is None:
+            if not isinstance(model, HarmonicModel):
                 continue
 
             for name in model.parameter_names:
@@ -2395,7 +2498,7 @@ class WppfOptionsDialog(QObject):
             return
 
         for model in obj.texture_model.values():
-            if model is None or not model.pfdata:
+            if not isinstance(model, HarmonicModel) or not model.pfdata:
                 continue
 
             # Clear it
@@ -2406,7 +2509,12 @@ class WppfOptionsDialog(QObject):
         if not isinstance(obj, Rietveld):
             raise Exception('Cannot make texture data without Rietveld object')
 
-        if obj.texture_models_have_pfdata:
+        harmonic_models = [
+            model
+            for model in obj.texture_model.values()
+            if isinstance(model, HarmonicModel)
+        ]
+        if all(model.pfdata for model in harmonic_models):
             # Nothing to do
             return
 
@@ -2419,7 +2527,7 @@ class WppfOptionsDialog(QObject):
         self.async_runner.progress_title = 'Generating texture data...'
         self.async_runner.error_callback = on_error
         self.async_runner.run(self.update_texture_data)
-        while not obj.texture_models_have_pfdata and not had_error:
+        while not all(model.pfdata for model in harmonic_models) and not had_error:
             # Process events until we have pfdata. This will allows the
             # progress dialog to animate.
             QCoreApplication.processEvents()
@@ -2467,16 +2575,28 @@ class WppfOptionsDialog(QObject):
         if not isinstance(obj, Rietveld):
             return
 
-        if len(self.textured_materials) > 1:
+        plottable_materials = [
+            name
+            for name, model in obj.texture_model.items()
+            if isinstance(model, HarmonicModel)
+        ]
+        if not plottable_materials:
+            return
+
+        if len(plottable_materials) > 1:
             # Get the user to pick a material
-            mat_items = self.textured_materials
             mat_name, ok = QInputDialog.getItem(
-                self.ui, 'Pole Figures', 'Select material', mat_items, 0, False
+                self.ui,
+                'Pole Figures',
+                'Select material',
+                plottable_materials,
+                0,
+                False,
             )
             if not ok:
                 return
         else:
-            mat_name = self.textured_materials[0]
+            mat_name = plottable_materials[0]
 
         mat = HexrdConfig().material(mat_name)
         assert mat is not None
@@ -2528,7 +2648,7 @@ class WppfOptionsDialog(QObject):
             return
 
         for model in obj.texture_model.values():
-            if model is None:
+            if not isinstance(model, HarmonicModel):
                 continue
 
             if model.new_pf_plots_visible:
@@ -2568,8 +2688,10 @@ class WppfOptionsDialog(QObject):
     @property
     def _default_texture_model_settings(self) -> dict:
         return {
+            'model_type': AXIS_DISTRIBUTION_MODEL,
             'ssym': 'axial',
             'ell_max': 16,
+            'hkl': [1, 1, 1],
         }
 
     @property
@@ -2592,7 +2714,16 @@ class WppfOptionsDialog(QObject):
         return self.texture_settings['model_kwargs']
 
     @property
-    def texture_model_dict(self) -> dict[str, HarmonicModel]:
+    def current_texture_model_type(self) -> str:
+        label = self.ui.texture_model_type.currentText()
+        return next(k for k, v in TEXTURE_MODEL_LABELS.items() if v == label)
+
+    def texture_model_type(self, mat_name: str) -> str:
+        settings = self.texture_model_kwargs.get(mat_name, {})
+        return settings.get('model_type', AXIS_DISTRIBUTION_MODEL)
+
+    @property
+    def texture_model_dict(self) -> dict[str, HarmonicModel | MarchDollaseModel]:
         if self.method != 'Rietveld':
             return {}
 
@@ -2600,15 +2731,22 @@ class WppfOptionsDialog(QObject):
         settings = self.texture_settings
         for k, kwargs in settings['model_kwargs'].items():
             mat = HexrdConfig().material(k)
-            ret[k] = HarmonicModel(
-                **{
-                    'material': Material_Rietveld(material_obj=mat),
-                    'bvec': HexrdConfig().beam_vector,
-                    'evec': ct.eta_vec,
-                    'sample_rmat': HexrdConfig().sample_rmat,
-                    **kwargs,
-                }
-            )
+            material = Material_Rietveld(material_obj=mat)
+            model_type = kwargs.get('model_type', AXIS_DISTRIBUTION_MODEL)
+            if model_type == MARCH_DOLLASE_MODEL:
+                ret[k] = MarchDollaseModel(
+                    material=material,
+                    HKL=kwargs.get('hkl', [1, 1, 1]),
+                )
+            else:
+                ret[k] = HarmonicModel(
+                    material=material,
+                    bvec=HexrdConfig().beam_vector,
+                    evec=ct.eta_vec,
+                    sample_rmat=HexrdConfig().sample_rmat,
+                    ssym=kwargs.get('ssym', 'axial'),
+                    ell_max=kwargs.get('ell_max', 16),
+                )
         return ret
 
     def update_texture_index_label(self) -> None:
@@ -2619,7 +2757,7 @@ class WppfOptionsDialog(QObject):
         if not isinstance(obj, Rietveld) or obj.texture_model.get(mat_name) is None:
             v = 'None'
         else:
-            j = obj.texture_model[mat_name].J(self.params)
+            j = obj.texture_model[mat_name].texture_index(self.params)
             v = f'{j:.2f}'
 
         w.setText(f'Texture index: {v}')

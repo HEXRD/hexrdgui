@@ -67,10 +67,19 @@ class WppfRunner:
         assert dialog is not None
         self.wppf_object = dialog.wppf_object
         varying_texture = dialog.varying_texture_params
+        varying_harmonic_texture = dialog.varying_harmonic_texture_params
 
         # Work around differences in WPPF objects
         if isinstance(self.wppf_object, Rietveld):
-            if varying_texture:
+            models = [
+                model
+                for model in self.wppf_object.texture_model.values()
+                if model is not None
+            ]
+            can_use_harmonic_refinement = varying_harmonic_texture and all(
+                hasattr(model, 'calculate_harmonic_coefficients') for model in models
+            )
+            if can_use_harmonic_refinement:
                 refine_func = self.wppf_object.RefineTexture
             else:
                 refine_func = self.wppf_object.Refine
