@@ -84,7 +84,7 @@ DEFAULT_PEAK_SHAPE = 'pvtch'
 AXIS_DISTRIBUTION_MODEL = 'axis_distribution'
 MARCH_DOLLASE_MODEL = 'march_dollase'
 TEXTURE_MODEL_LABELS = {
-    AXIS_DISTRIBUTION_MODEL: 'Axis Distribution Function',
+    AXIS_DISTRIBUTION_MODEL: 'General Axis Distribution Function',
     MARCH_DOLLASE_MODEL: 'March-Dollase',
 }
 

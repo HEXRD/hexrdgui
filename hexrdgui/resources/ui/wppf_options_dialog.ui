@@ -654,7 +654,7 @@
              <widget class="QComboBox" name="texture_model_type">
               <item>
                <property name="text">
-                <string>Axis Distribution Function</string>
+                <string>General Axis Distribution Function</string>
                </property>
               </item>
               <item>
