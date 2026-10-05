@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 
 import h5py
@@ -57,7 +58,7 @@ def test_statistical_weights_are_enabled_by_default(
 def test_statistical_weights_survive_state_file_round_trip(
     qtbot: QtBot,
     monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
+    tmp_path: Path,
     selected: bool,
 ) -> None:
     calibration = HexrdConfig().config['calibration']
@@ -95,7 +96,7 @@ def test_statistical_weights_survive_state_file_round_trip(
     assert second.use_statistical_weights is selected
 
 
-def test_legacy_state_file_defaults_statistical_weights_off(tmp_path) -> None:
+def test_legacy_state_file_defaults_statistical_weights_off(tmp_path: Path) -> None:
     state_file = tmp_path / 'legacy_state.h5'
     snapshot = {'config_calibration': {'wppf': {}}}
     with h5py.File(state_file, 'w') as f:
@@ -124,15 +125,15 @@ def test_statistical_weights_kwargs(
         property(lambda self: canvas),
     )
 
-    n_sampling = np.ma.array([10.0, 20.0, 30.0, 40.0])
+    num_pixels = np.ma.array([10.0, 20.0, 30.0, 40.0])
     monkeypatch.setattr(
         wppf_options_dialog,
-        'N_valid',
-        lambda image: n_sampling,
+        'num_valid_azimuthal_pixels',
+        lambda image: num_pixels,
     )
 
     kwargs = dialog._statistical_weights_kwargs
-    assert kwargs['N_sampling'] is n_sampling
+    assert kwargs['num_averaged_pixels'] is num_pixels
 
     monkeypatch.setattr(
         HexrdConfig(),
@@ -143,7 +144,7 @@ def test_statistical_weights_kwargs(
     dialog.min_tth = 2.0
     dialog.max_tth = 3.0
     np.testing.assert_array_equal(
-        dialog._statistical_weights_kwargs['N_sampling'],
+        dialog._statistical_weights_kwargs['num_averaged_pixels'],
         [20.0, 30.0],
     )
 

@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 from hexrd import constants as ct
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
-from hexrd.projections.polar import N_valid, bin_polar_view
+from hexrd.projections.polar import bin_polar_view, num_valid_azimuthal_pixels
 from hexrd.utils.hkl import hkl_to_str
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
@@ -1870,16 +1870,16 @@ class WppfOptionsDialog(QObject):
         canvas = HexrdConfig().active_canvas
         assert canvas is not None
         assert canvas.iviewer is not None
-        n_sampling = N_valid(canvas.iviewer.display_img)
+        num_pixels = num_valid_azimuthal_pixels(canvas.iviewer.display_img)
 
         if self.limit_tth:
             data = HexrdConfig().last_unscaled_azimuthal_integral_data
             assert data is not None
             tth = data[0]
             selected = (tth >= self.min_tth) & (tth <= self.max_tth)
-            n_sampling = n_sampling[selected]
+            num_pixels = num_pixels[selected]
 
-        return {'N_sampling': n_sampling}
+        return {'num_averaged_pixels': num_pixels}
 
     @property
     def _wppf_wavelength_arg(self) -> dict[str, list[float]]:
