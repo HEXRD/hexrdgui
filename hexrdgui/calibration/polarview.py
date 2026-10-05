@@ -19,6 +19,7 @@ from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane, _project_on_detector_cylinder
 from hexrd import instrument
 
+from hexrdgui.async_worker import check_cancelled
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
@@ -694,6 +695,7 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
+            check_cancelled()
             mask_arr = mask.get_masked_arrays(  # type: ignore[call-arg]
                 ViewType.polar, self.instr, polar_view=self
             )
@@ -763,7 +765,10 @@ class PolarView:
 
         # Create the warped image for each detector
         for det in self.detectors:
+            check_cancelled()
             self.create_warp_image(det)
+
+        check_cancelled()
 
         # Generate the final image
         self.generate_image()
