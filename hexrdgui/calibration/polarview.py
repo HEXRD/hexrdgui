@@ -19,6 +19,7 @@ from hexrd import constants as ct
 from hexrd.xrdutil import _project_on_detector_plane, _project_on_detector_cylinder
 from hexrd import instrument
 
+from hexrdgui.async_worker import check_cancelled
 from hexrdgui.constants import ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.masking.constants import MaskType
@@ -168,25 +169,36 @@ class PolarView:
         return np.degrees(eta - self.eta_min) / self.eta_pixel_size
 
     @property
-    def ntth(self) -> int:
-        return int(round(np.degrees(self.tth_range) / self.tth_pixel_size))
-
-    @property
-    def neta(self) -> int:
-        return int(round(np.degrees(self.eta_range) / self.eta_pixel_size))
+    def config_shape(self) -> tuple[int, int]:
+        """The polar shape the current config calls for"""
+        neta = int(round(np.degrees(self.eta_range) / self.eta_pixel_size))
+        ntth = int(round(np.degrees(self.tth_range) / self.tth_pixel_size))
+        return (neta, ntth)
 
     @property
     def shape(self) -> tuple[int, int]:
-        return (self.neta, self.ntth)
+        # Taken from the angular grid rather than the config, so that a warp
+        # running in a background thread stays self-consistent if the polar
+        # config changes while it runs.
+        return self._angular_grid[0].shape  # type: ignore[return-value]
+
+    @property
+    def ntth(self) -> int:
+        return self.shape[1]
+
+    @property
+    def neta(self) -> int:
+        return self.shape[0]
 
     def update_angular_grid(self) -> None:
+        neta, ntth = self.config_shape
         tth_vec = (
-            np.radians(self.tth_pixel_size * (np.arange(self.ntth)))
+            np.radians(self.tth_pixel_size * (np.arange(ntth)))
             + self.tth_min
             + 0.5 * np.radians(self.tth_pixel_size)
         )
         eta_vec = (
-            np.radians(self.eta_pixel_size * (np.arange(self.neta)))
+            np.radians(self.eta_pixel_size * (np.arange(neta)))
             + self.eta_min
             + 0.5 * np.radians(self.eta_pixel_size)
         )
@@ -683,6 +695,7 @@ class PolarView:
         for mask in MaskManager().masks.values():
             if mask.type == MaskType.threshold or not mask.visible:
                 continue
+            check_cancelled()
             mask_arr = mask.get_masked_arrays(  # type: ignore[call-arg]
                 ViewType.polar, self.instr, polar_view=self
             )
@@ -721,7 +734,7 @@ class PolarView:
         if self.snipped_img is None:
             return
 
-        if self.snipped_img.shape != self.shape:
+        if self.snipped_img.shape != self.config_shape:
             # The polar view settings changed since the last warp.
             # A full re-warp is needed; skip the stale cached images.
             return
@@ -752,7 +765,10 @@ class PolarView:
 
         # Create the warped image for each detector
         for det in self.detectors:
+            check_cancelled()
             self.create_warp_image(det)
+
+        check_cancelled()
 
         # Generate the final image
         self.generate_image()

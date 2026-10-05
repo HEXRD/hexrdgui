@@ -4,9 +4,27 @@
 from PySide6.QtCore import QObject, QRunnable, Signal, Slot
 
 import inspect
+import threading
 import traceback
 import sys
 from typing import Any, Callable
+
+# The worker running in the current thread, if any
+_current = threading.local()
+
+
+class AsyncWorkerCancelled(Exception):
+    pass
+
+
+def check_cancelled() -> None:
+    """Stop the current worker's function if the worker was cancelled
+
+    This does nothing when called outside of an AsyncWorker.
+    """
+    worker = getattr(_current, 'worker', None)
+    if worker is not None and worker.cancelled:
+        raise AsyncWorkerCancelled
 
 
 class AsyncWorkerSignals(QObject):
@@ -59,6 +77,7 @@ class AsyncWorker(QRunnable):
         self.kwargs = kwargs
         self.signals = AsyncWorkerSignals()
         self.print_error_traceback = True
+        self.cancelled = False
 
         # If the function signature accepts an 'update_progress'
         # function, set it to emit the progress signal.
@@ -72,8 +91,12 @@ class AsyncWorker(QRunnable):
         """
 
         # Retrieve args/kwargs here; and fire processing using them
+        _current.worker = self
         try:
             result = self.fn(*self.args, **self.kwargs)
+        except AsyncWorkerCancelled:
+            # The result is no longer wanted
+            pass
         except Exception:
             if self.print_error_traceback:
                 traceback.print_exc()
@@ -84,4 +107,9 @@ class AsyncWorker(QRunnable):
             # Return the result of the processing
             self.signals.result.emit(result)
         finally:
+            _current.worker = None
             self.signals.finished.emit()
+
+    def cancel(self) -> None:
+        """Ask the function to stop at its next `check_cancelled()` call"""
+        self.cancelled = True

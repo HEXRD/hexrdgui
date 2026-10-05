@@ -1270,6 +1270,10 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
 
         self.polar_res_config = polar_res_config.copy()
 
+        # A previous polar view that is still being generated is outdated now
+        if self._latest_compute_view_worker is not None:
+            self._latest_compute_view_worker.cancel()
+
         # Run the view generation in a background thread
         worker = AsyncWorker(polar_viewer)
         worker.print_error_traceback = False
