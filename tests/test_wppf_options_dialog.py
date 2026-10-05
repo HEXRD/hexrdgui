@@ -147,5 +147,9 @@ def test_statistical_weights_kwargs(
         [20.0, 30.0],
     )
 
+    dialog.use_experiment_file = True
+    assert dialog._statistical_weights_kwargs == {}
+
+    dialog.use_experiment_file = False
     dialog.use_statistical_weights = False
     assert dialog._statistical_weights_kwargs == {}

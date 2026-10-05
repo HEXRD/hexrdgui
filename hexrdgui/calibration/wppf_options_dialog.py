@@ -1862,7 +1862,9 @@ class WppfOptionsDialog(QObject):
 
     @property
     def _statistical_weights_kwargs(self) -> dict[str, Any]:
-        if not self.use_statistical_weights:
+        # The pixel counts come from the polar view, which does not match
+        # the grid of an experiment file
+        if not self.use_statistical_weights or self.use_experiment_file:
             return {}
 
         canvas = HexrdConfig().active_canvas
