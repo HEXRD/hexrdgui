@@ -167,25 +167,29 @@ class RegionMask(Mask):
         view: str = ViewType.raw,
         instr: HEDMInstrument | None = None,
         polar_view: Any = None,
-    ) -> None:
+    ) -> Any:
         self.masked_arrays_view_mode = view
         assert self._raw is not None
+        masked_arrays: Any
         if view == ViewType.raw:
-            self.masked_arrays = create_raw_mask(self._raw)
+            masked_arrays = create_raw_mask(self._raw)
         elif polar_view is not None:
             apply_tth_distortion = self.type != MaskType.pinhole
-            self.masked_arrays = polar_view.create_polar_mask_from_raw_data(
+            masked_arrays = polar_view.create_polar_mask_from_raw_data(
                 self._raw,
                 apply_tth_distortion=apply_tth_distortion,
             )
         else:
             # Do not apply tth distortion for pinhole mask types
             apply_tth_distortion = self.type != MaskType.pinhole
-            self.masked_arrays = create_polar_mask_from_raw(
+            masked_arrays = create_polar_mask_from_raw(
                 self._raw,
                 instr,
                 apply_tth_distortion=apply_tth_distortion,
             )
+
+        self.masked_arrays = masked_arrays
+        return masked_arrays
 
     def get_masked_arrays(
         self,
@@ -193,10 +197,20 @@ class RegionMask(Mask):
         instr: HEDMInstrument | None = None,
         polar_view: Any = None,
     ) -> Any:
-        if self.masked_arrays is None or self.masked_arrays_view_mode != image_mode:
-            self.update_masked_arrays(image_mode, instr, polar_view=polar_view)
+        # Polar warps run in a background thread, so the cached arrays may
+        # have been made for a different polar resolution. Return what we
+        # compute here rather than re-reading the shared cache.
+        masked_arrays = self.masked_arrays
+        if (
+            masked_arrays is None
+            or self.masked_arrays_view_mode != image_mode
+            or (polar_view is not None and masked_arrays.shape != polar_view.shape)
+        ):
+            masked_arrays = self.update_masked_arrays(
+                image_mode, instr, polar_view=polar_view
+            )
 
-        return self.masked_arrays
+        return masked_arrays
 
     def update_border_visibility(self, visibility: bool) -> None:
         can_have_border = [MaskType.region, MaskType.polygon, MaskType.pinhole]

@@ -34,3 +34,25 @@ def test_shape_follows_angular_grid_not_config(qtbot) -> None:
         np.ones(pv.ntth * pv.neta).reshape(pv.shape)
     finally:
         polar_config['tth_max'] = old_tth_max
+
+
+def test_polar_mask_cache_follows_polar_view_shape(qtbot) -> None:
+    from hexrdgui.constants import ViewType
+    from hexrdgui.masking.constants import MaskType
+    from hexrdgui.masking.mask_manager import RegionMask
+
+    class FakePolarView:
+        def __init__(self, shape: tuple[int, int]) -> None:
+            self.shape = shape
+
+        def create_polar_mask_from_raw_data(self, raw, apply_tth_distortion=True):
+            return np.ones(self.shape, dtype=bool)
+
+    mask = RegionMask(name='test', mtype=MaskType.region)
+    mask.data = [('panel', np.zeros((4, 2)))]
+
+    # A mask cached for one polar resolution must not be reused for another,
+    # e.g. when the resolution changes while a polar warp is running.
+    for shape in [(360, 72), (3600, 722), (360, 72)]:
+        arr = mask.get_masked_arrays(ViewType.polar, polar_view=FakePolarView(shape))
+        assert arr.shape == shape
