@@ -7,7 +7,7 @@ import time
 import types
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any
 
 import h5py
 import lmfit
@@ -28,13 +28,11 @@ from PySide6.QtWidgets import (
 if TYPE_CHECKING:
     from hexrd.material import Material
 
-    from hexrdgui.calibration.polar_plot import InstrumentViewer as PolarViewer
-
 from hexrd import constants as ct
 from hexrd.core.fitting import stick_breaking
 from hexrd.instrument import unwrap_dict_to_h5, unwrap_h5_to_dict
 from hexrd.material import _angstroms
-from hexrd.projections.polar import bin_polar_view, num_valid_azimuthal_pixels
+from hexrd.projections.polar import bin_polar_view
 from hexrd.utils.hkl import hkl_to_str
 from hexrd.wppf import LeBail, Rietveld
 from hexrd.wppf.amorphous import AMORPHOUS_MODEL_TYPES, Amorphous
@@ -1910,9 +1908,7 @@ class WppfOptionsDialog(QObject):
 
         canvas = HexrdConfig().active_canvas
         assert canvas is not None
-        assert canvas.iviewer is not None
-        iviewer = cast('PolarViewer', canvas.iviewer)
-        num_pixels = num_valid_azimuthal_pixels(iviewer.display_img)
+        num_pixels = canvas.azimuthal_integral_num_pixels()
 
         if self.limit_tth:
             data = HexrdConfig().last_unscaled_azimuthal_integral_data

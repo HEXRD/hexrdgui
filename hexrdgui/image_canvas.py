@@ -25,6 +25,7 @@ import numpy as np
 from skimage import measure
 
 from hexrd import distortion as distortion_pkg
+from hexrd.projections.polar import num_valid_azimuthal_pixels
 
 from hexrdgui import utils
 from hexrdgui.async_worker import AsyncWorker
@@ -1828,6 +1829,12 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
 
         pimg = self._invalidate_skipped_detectors(pimg)
         return self._compute_azimuthal_integral_sum(pimg)
+
+    def azimuthal_integral_num_pixels(self) -> np.ma.MaskedArray:
+        # The number of pixels averaged into each point of the unscaled
+        # azimuthal lineout
+        pimg = self._invalidate_skipped_detectors(self.unscaled_images[0])
+        return num_valid_azimuthal_pixels(pimg)
 
     def _invalidate_skipped_detectors(self, pimg: np.ndarray) -> np.ndarray:
         # If the user has selected a subset of detectors to use for the

@@ -8,9 +8,9 @@ import pytest
 from pytestqt.qtbot import QtBot
 
 from hexrdgui import state
-import hexrdgui.calibration.wppf_options_dialog as wppf_options_dialog
 from hexrdgui.calibration.wppf_options_dialog import WppfOptionsDialog
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.image_canvas import ImageCanvas
 
 
 def test_amorphous_parameters_survive_settings_reload(
@@ -118,19 +118,12 @@ def test_statistical_weights_kwargs(
     dialog = WppfOptionsDialog()
     qtbot.addWidget(dialog.ui)
 
-    display_img = np.zeros((2, 4))
-    canvas = SimpleNamespace(iviewer=SimpleNamespace(display_img=display_img))
+    num_pixels = np.ma.array([10.0, 20.0, 30.0, 40.0])
+    canvas = SimpleNamespace(azimuthal_integral_num_pixels=lambda: num_pixels)
     monkeypatch.setattr(
         HexrdConfig,
         'active_canvas',
         property(lambda self: canvas),
-    )
-
-    num_pixels = np.ma.array([10.0, 20.0, 30.0, 40.0])
-    monkeypatch.setattr(
-        wppf_options_dialog,
-        'num_valid_azimuthal_pixels',
-        lambda image: num_pixels,
     )
 
     kwargs = dialog._statistical_weights_kwargs
@@ -155,6 +148,19 @@ def test_statistical_weights_kwargs(
     dialog.use_experiment_file = False
     dialog.use_statistical_weights = False
     assert dialog._statistical_weights_kwargs == {}
+
+
+def test_azimuthal_integral_num_pixels() -> None:
+    # The pixel counts must match the pixels the lineout averaged over
+    pimg = np.array([[1.0, np.nan, 3.0], [5.0, np.nan, np.nan]])
+    canvas = SimpleNamespace(
+        unscaled_images=[pimg],
+        _invalidate_skipped_detectors=lambda img: img,
+    )
+    num_pixels = ImageCanvas.azimuthal_integral_num_pixels(canvas)
+    lineout = ImageCanvas._compute_azimuthal_integral_sum(canvas, pimg)
+    np.testing.assert_array_equal(num_pixels.filled(0), [2, 0, 1])
+    np.testing.assert_allclose((lineout * num_pixels)[~num_pixels.mask], [6.0, 3.0])
 
 
 def test_phase_fractions(qtbot: QtBot, monkeypatch: pytest.MonkeyPatch) -> None:
