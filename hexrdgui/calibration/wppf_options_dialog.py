@@ -1929,7 +1929,12 @@ class WppfOptionsDialog(QObject):
         obj = self._wppf_object
         kwargs = self.wppf_object_kwargs
 
-        skip_list = ['expt_spectrum', 'amorphous_model', 'texture_model']
+        skip_list = [
+            'expt_spectrum',
+            'num_averaged_pixels',
+            'amorphous_model',
+            'texture_model',
+        ]
 
         for key, val in kwargs.items():
             if key in skip_list:
