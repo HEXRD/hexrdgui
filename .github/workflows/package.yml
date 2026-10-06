@@ -139,6 +139,22 @@ jobs:
         name: HEXRDGUI-${{ matrix.config.name }}-${{ env.HEXRDGUI_GIT_DESCRIBE }}.tar.bz2
         path: ${{ github.workspace }}/hexrdgui/packaging/output/**/*.tar.bz2
 
+    - name: Unpack the MSI ( Windows only )
+      if: ${{ matrix.config.os == 'windows-latest' }}
+      working-directory: hexrdgui/packaging
+      shell: pwsh
+      timeout-minutes: 20
+      run: |
+          # An administrative install extracts exactly the files in the MSI,
+          # without registering anything or needing an uninstall
+          $msi = (Get-Item HEXRDGUI-*.msi).FullName
+          $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList `
+            '/a', "`"$msi`"", '/qn', "TARGETDIR=`"$PWD\msi`"", '/l*v', 'msi.log'
+          if ($p.ExitCode -ne 0) {
+            Get-Content msi.log -Tail 50
+            exit $p.ExitCode
+          }
+
     - name: Verify the packaged app
       working-directory: hexrdgui/packaging
       run: |
@@ -147,17 +163,21 @@ jobs:
             LAUNCHER=package/HEXRD.app/Contents/MacOS/hexrdgui
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
             PYTHON=package/python.exe
-            LAUNCHER=package/Scripts/hexrdgui.exe
-            export PATH="$PWD/package/Library/bin:$PATH"
+            # The real launcher adds this to PATH itself; bare python does not
+            PYTHON_PATH="$PWD/package/Library/bin:"
+            # Launch from the unpacked MSI, as a user's install would
+            LAUNCHER=$(find msi -path '*/Scripts/hexrdgui.exe' | head -1)
           else
             PYTHON=package/bin/python
             LAUNCHER=package/bin/hexrdgui
           fi
 
-          QT_QPA_PLATFORM=offscreen "$PYTHON" -I verify_package.py
+          PATH="${PYTHON_PATH:-}$PATH" QT_QPA_PLATFORM=offscreen \
+            "$PYTHON" -I verify_package.py
 
-          # macOS runners have a window server, so use the real platform there
-          if [[ "$RUNNER_OS" != "macOS" ]]; then
+          # Linux runners have no display. Elsewhere, use the real platform
+          # plugin, since failing to load it is a known way to break.
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
             export QT_QPA_PLATFORM=offscreen
           fi
           bash smoke_test_launcher.sh "$LAUNCHER"
