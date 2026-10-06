@@ -19,7 +19,11 @@ INFINITE_REGEX = re.compile(r'^([+-]?)(i(?:n|nf)?)$')
 NAN_REGEX = re.compile(r'^(n(?:a|an)?)$')
 
 
-class FloatValidator(QValidator):
+class FloatValidator:
+    # Deliberately not a QValidator. It is never installed on a widget, and
+    # every ScientificDoubleSpinBox making its own parentless QObject was the
+    # one consistent site of the intermittent CI segfaults on Windows/macOS.
+
     @staticmethod
     def valid_float_string(string: str) -> bool:
         match = FLOAT_REGEX.search(string)
@@ -31,12 +35,12 @@ class FloatValidator(QValidator):
 
     def validate(self, string: str, position: int) -> QValidator.State:
         if FloatValidator.valid_float_string(string):
-            return self.State.Acceptable
+            return QValidator.State.Acceptable
 
         if string == '' or string[position - 1] in 'e.-+':
-            return self.State.Intermediate
+            return QValidator.State.Intermediate
 
-        return self.State.Invalid
+        return QValidator.State.Invalid
 
     def fixup(self, text: str) -> str:
         match = FLOAT_REGEX.search(text)
