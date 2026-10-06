@@ -44,7 +44,7 @@ setup(
     ],
     packages=find_packages(),
     package_data={'hexrdgui': ['resources/**/*']},
-    python_requires='>=3.10',
+    python_requires='>=3.11',
     install_requires=install_reqs,
     entry_points={'gui_scripts': ['hexrdgui = hexrdgui.main:main']},
 )
