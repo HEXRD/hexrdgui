@@ -11,6 +11,7 @@ from pytestqt.qtbot import QtBot
 from hexrdgui import state
 from hexrdgui.calibration import wppf_options_dialog
 from hexrdgui.calibration.wppf_options_dialog import WppfOptionsDialog
+from hexrdgui.calibration.wppf_runner import WppfRunner
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_canvas import ImageCanvas
 
@@ -259,7 +260,9 @@ def test_march_dollase_settings_and_parameter_files(
         def __init__(self, **kwargs):
             constructed.update(kwargs)
 
-    monkeypatch.setattr(wppf_options_dialog, 'MarchDollaseModel', DummyMarchDollaseModel)
+    monkeypatch.setattr(
+        wppf_options_dialog, 'MarchDollaseModel', DummyMarchDollaseModel
+    )
     monkeypatch.setattr(
         wppf_options_dialog,
         'Material_Rietveld',
@@ -323,3 +326,52 @@ def test_saved_plot_contains_march_dollase_parameter(
 
     with h5py.File(output, 'r') as f:
         assert f['params/Ni_p_md/value'][()] == pytest.approx(1.25)
+
+
+def test_march_dollase_refinement(
+    qtbot: QtBot,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Refine P_MD on a pattern simulated with P_MD = 1.5
+    monkeypatch.setitem(HexrdConfig().config['calibration'], 'wppf', {})
+    tth = np.linspace(2, 30, 1400)
+
+    def set_lineout(y: np.ndarray) -> None:
+        data = (tth, np.ma.array(y))
+        monkeypatch.setattr(
+            HexrdConfig(), 'last_unscaled_azimuthal_integral_data', data
+        )
+
+    set_lineout(np.full_like(tth, 100.0))
+    dialog = WppfOptionsDialog()
+    qtbot.addWidget(dialog.ui)
+    dialog.use_statistical_weights = False
+    dialog.spline_points = [[3.0, 100.0], [29.0, 100.0]]
+    dialog.selected_materials = ['CeO2']
+    dialog.method = 'Rietveld'
+    dialog.ui.include_texture_model.setChecked(True)
+    dialog.ui.texture_model_type.setCurrentText('March-Dollase')
+    dialog.ui.texture_preferred_axis_k.setValue(0)
+    dialog.ui.texture_preferred_axis_l.setValue(0)
+    for param in dialog.params.values():
+        param.vary = False
+
+    dialog.params['CeO2_p_md'].value = 1.5
+    obj = dialog.wppf_object
+    assert obj.texture_model['CeO2'].HKL.tolist() == [1, 0, 0]
+    obj._set_params_vals_to_class(obj.params, force=True)
+    obj.computespectrum()
+    sim = obj.spectrum_sim
+    set_lineout(np.interp(tth, sim.x, np.nan_to_num(sim.y)))
+    dialog.reset_object()
+
+    dialog.params['CeO2_p_md'].set(value=1.0, vary=True)
+    runner = WppfRunner()
+    runner.wppf_options_dialog = dialog
+    dialog.run.connect(runner.run_wppf)
+    dialog.begin_run()
+    assert dialog.params['CeO2_p_md'].value == pytest.approx(1.5, abs=1e-3)
+    assert dialog.ui.texture_index_label.text() == 'Texture index: 1.50'
+
+    dialog.pop_undo_stack()
+    assert dialog.params['CeO2_p_md'].value == 1.0

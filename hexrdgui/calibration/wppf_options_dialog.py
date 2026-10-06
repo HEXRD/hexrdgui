@@ -522,8 +522,8 @@ class WppfOptionsDialog(QObject):
 
         if self.varying_texture_and_non_texture_params:
             msg = (
-                'Texture parameters cannot be varied at the same time as '
-                'non-texture parameters.'
+                'Harmonic texture parameters cannot be varied at the same '
+                'time as other parameters.'
             )
             raise Exception(msg)
 
