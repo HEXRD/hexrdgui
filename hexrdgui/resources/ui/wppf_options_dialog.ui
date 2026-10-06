@@ -322,6 +322,19 @@
            </property>
           </widget>
          </item>
+         <item row="6" column="0" colspan="4">
+          <widget class="QCheckBox" name="use_statistical_weights">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;χ² is only a meaningful goodness-of-fit statistic when the weights are true inverse variances. For an azimuthally averaged lineout, each point is the mean of many pixels, so averaging reduces its scatter far below √Iobs; detector values are also analog-to-digital units rather than photon counts. Without statistical weights, χ² can be artificially much less than 1 and a poor fit to the Bragg peaks may appear deceptively good. Rwp and the background-adjusted Rwpb remain useful statistics, particularly when a large experimental background enters the Rwp denominator.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Use statistical weights</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="background_tab">
@@ -1005,6 +1018,7 @@
   <tabstop>use_experiment_file</tabstop>
   <tabstop>experiment_file</tabstop>
   <tabstop>select_experiment_file_button</tabstop>
+  <tabstop>use_statistical_weights</tabstop>
   <tabstop>limit_tth</tabstop>
   <tabstop>min_tth</tabstop>
   <tabstop>max_tth</tabstop>

@@ -237,6 +237,7 @@ class WppfOptionsDialog(QObject):
             'method',
             'method_label',
             'use_experiment_file',
+            'use_statistical_weights',
             'experiment_file',
             'select_experiment_file_button',
             'limit_tth',
@@ -868,6 +869,14 @@ class WppfOptionsDialog(QObject):
         self.ui.use_experiment_file.setChecked(b)
 
     @property
+    def use_statistical_weights(self) -> bool:
+        return self.ui.use_statistical_weights.isChecked()
+
+    @use_statistical_weights.setter
+    def use_statistical_weights(self, b: bool) -> None:
+        self.ui.use_statistical_weights.setChecked(b)
+
+    @property
     def experiment_file(self) -> str:
         return self.ui.experiment_file.text()
 
@@ -994,6 +1003,7 @@ class WppfOptionsDialog(QObject):
             'peak_shape',
             'background_method_dict',
             'use_experiment_file',
+            'use_statistical_weights',
             'experiment_file',
             'display_wppf_plot',
             'plot_background',
@@ -1776,6 +1786,7 @@ class WppfOptionsDialog(QObject):
             'peak_shape',
             'background_method',
             'experiment_file',
+            'use_statistical_weights',
             'display_wppf_plot',
             'show_difference_curve',
             'show_difference_as_percent',
@@ -1863,7 +1874,7 @@ class WppfOptionsDialog(QObject):
                 **self.amorphous_kwargs,  # type: ignore[arg-type]
             )
 
-        extra_kwargs: dict[str, Any] = {}
+        extra_kwargs = self._statistical_weights_kwargs
         if self.includes_texture:
             extra_kwargs = {
                 **extra_kwargs,
@@ -1889,6 +1900,26 @@ class WppfOptionsDialog(QObject):
         }
 
     @property
+    def _statistical_weights_kwargs(self) -> dict[str, Any]:
+        # The pixel counts come from the polar view, which does not match
+        # the grid of an experiment file
+        if not self.use_statistical_weights or self.use_experiment_file:
+            return {}
+
+        canvas = HexrdConfig().active_canvas
+        assert canvas is not None
+        num_pixels = canvas.azimuthal_integral_num_pixels()
+
+        if self.limit_tth:
+            data = HexrdConfig().last_unscaled_azimuthal_integral_data
+            assert data is not None
+            tth = data[0]
+            selected = (tth >= self.min_tth) & (tth <= self.max_tth)
+            num_pixels = num_pixels[selected]
+
+        return {'num_averaged_pixels': num_pixels}
+
+    @property
     def _wppf_wavelength_arg(self) -> dict[str, list[float]]:
         # We only support one wavelength currently
         # For the value, the first is the wavelength, the second is the weight
@@ -1898,7 +1929,12 @@ class WppfOptionsDialog(QObject):
         obj = self._wppf_object
         kwargs = self.wppf_object_kwargs
 
-        skip_list = ['expt_spectrum', 'amorphous_model', 'texture_model']
+        skip_list = [
+            'expt_spectrum',
+            'num_averaged_pixels',
+            'amorphous_model',
+            'texture_model',
+        ]
 
         for key, val in kwargs.items():
             if key in skip_list:

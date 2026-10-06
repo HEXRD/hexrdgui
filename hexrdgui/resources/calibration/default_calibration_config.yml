@@ -39,3 +39,6 @@ crystal:
   inv_stretch: [1.0, 1.0, 1.0, 0.0, 0.0, 0.0]
   orientation: [0.0, 0.0, 0.0]
   position: [0.0, 0.0, 0.0]
+wppf:
+  # Older state files without this key load with it off (see state.py)
+  use_statistical_weights: true
