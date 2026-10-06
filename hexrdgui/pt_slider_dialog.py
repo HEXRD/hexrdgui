@@ -71,7 +71,15 @@ class PTSliderDialog(HexrdConfigDisconnectMixin):
         )
 
     def on_pt_param_widget_changed(self) -> None:
+        previous = {name: getattr(self.material, name) for name in self.pt_param_names}
         self.update_material_from_gui()
+        if self.lparms_at_pt() is None:
+            # Restore the parameters that made the current state invalid
+            for name, value in previous.items():
+                setattr(self.material, name, value)
+            self.update_gui()
+            return
+
         self.on_pt_change()
 
     @property
@@ -178,11 +186,24 @@ class PTSliderDialog(HexrdConfigDisconnectMixin):
     def temperature(self, v: float) -> None:
         self.ui.temperature.setValue(v)
 
+    def lparms_at_pt(self) -> np.ndarray | None:
+        try:
+            return self.material.calc_lp_at_PT(self.pressure, self.temperature)
+        except ValueError as e:
+            # The equation of state has no solution at this P and T
+            QMessageBox.warning(self.ui, 'HEXRD', str(e))
+            return None
+
     def on_pt_change(self) -> None:
         mat = self.material
 
         # Compute the lp factor
-        lparms = mat.calc_lp_at_PT(self.pressure, self.temperature)
+        lparms = self.lparms_at_pt()
+        if lparms is None:
+            # Go back to the last pressure and temperature that worked
+            self.update_gui()
+            return
+
         if np.any(np.isnan(lparms)):
             raise Exception(f'lparms contains nan: {lparms}')
 
