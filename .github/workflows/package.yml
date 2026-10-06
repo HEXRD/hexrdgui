@@ -139,6 +139,29 @@ jobs:
         name: HEXRDGUI-${{ matrix.config.name }}-${{ env.HEXRDGUI_GIT_DESCRIBE }}.tar.bz2
         path: ${{ github.workspace }}/hexrdgui/packaging/output/**/*.tar.bz2
 
+    - name: Verify the packaged app
+      working-directory: hexrdgui/packaging
+      run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            PYTHON=package/HEXRD.app/Contents/Resources/bin/python
+            LAUNCHER=package/HEXRD.app/Contents/MacOS/hexrdgui
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            PYTHON=package/python.exe
+            LAUNCHER=package/Scripts/hexrdgui.exe
+            export PATH="$PWD/package/Library/bin:$PATH"
+          else
+            PYTHON=package/bin/python
+            LAUNCHER=package/bin/hexrdgui
+          fi
+
+          QT_QPA_PLATFORM=offscreen "$PYTHON" -I verify_package.py
+
+          # macOS runners have a window server, so use the real platform there
+          if [[ "$RUNNER_OS" != "macOS" ]]; then
+            export QT_QPA_PLATFORM=offscreen
+          fi
+          bash smoke_test_launcher.sh "$LAUNCHER"
+
     - name: Set label ( main or prerelease )
       run: |
           [[ ${{ github.event_name }} = 'push' && ${{ github.ref }} = 'refs/heads/master' ]] && echo "HEXRDGUI_PACKAGE_LABEL=prerelease" >> $GITHUB_ENV || echo "HEXRDGUI_PACKAGE_LABEL=main" >> $GITHUB_ENV
