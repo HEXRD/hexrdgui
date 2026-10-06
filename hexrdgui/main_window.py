@@ -52,6 +52,9 @@ from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.config_dialog import ConfigDialog
 from hexrdgui.constants import DOCUMENTATION_URL, ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
+from hexrdgui.diffraction_angle_contour_dialog import (
+    DiffractionAngleContourDialog,
+)
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_calculator_dialog import ImageCalculatorDialog
@@ -320,6 +323,9 @@ class MainWindow(QObject):
             HexrdConfig().set_show_detector_borders
         )
         self.ui.action_show_beam_marker.toggled.connect(self.show_beam_marker_toggled)
+        self.ui.action_diffraction_angle_contour.toggled.connect(
+            self.diffraction_angle_contour_toggled
+        )
         self.ui.action_view_indexing_config.triggered.connect(self.view_indexing_config)
         self.ui.action_view_fit_grains_config.triggered.connect(
             self.view_fit_grains_config
@@ -517,6 +523,9 @@ class MainWindow(QObject):
             'action_show_live_updates': 'live_update',
             'action_show_detector_borders': 'show_detector_borders',
             'action_show_beam_marker': 'show_beam_marker',
+            'action_diffraction_angle_contour': (
+                'show_diffraction_angle_contour'
+            ),
             'action_show_all_colormaps': 'show_all_colormaps',
             'action_apply_absorption_correction': 'apply_absorption_correction',
             'action_include_physics_package': 'has_physics_package',
@@ -1384,6 +1393,25 @@ class MainWindow(QObject):
                 self._beam_marker_style_editor = BeamMarkerStyleEditor(self.ui)
 
             self._beam_marker_style_editor.show()
+
+    def diffraction_angle_contour_toggled(self, enabled: bool) -> None:
+        config = HexrdConfig()
+        if not enabled:
+            config.show_diffraction_angle_contour = False
+            return
+
+        dialog = DiffractionAngleContourDialog(
+            config.diffraction_angle_contour_overlay,
+            self.ui,
+        )
+        if not dialog.exec():
+            with block_signals(self.ui.action_diffraction_angle_contour):
+                self.ui.action_diffraction_angle_contour.setChecked(False)
+            return
+
+        dialog.apply()
+        config.save_diffraction_angle_contour()
+        config.show_diffraction_angle_contour = True
 
     def view_indexing_config(self) -> None:
         if self._indexing_config_view is not None:

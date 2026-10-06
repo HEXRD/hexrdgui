@@ -12,6 +12,7 @@ from .const_chi_overlay import ConstChiOverlay
 from .laue_overlay import LaueOverlay
 from .overlay import Overlay
 from .powder_overlay import PowderOverlay
+from .diffraction_angle_overlay import DiffractionAngleOverlay
 from .rotation_series_overlay import RotationSeriesOverlay
 
 type_dict = {
@@ -125,20 +126,21 @@ def update_overlay_data(instr: HEDMInstrument, display_mode: Any) -> None:
     if overlay:
         flag_update(overlay)
 
-    if not HexrdConfig().show_overlays:
-        # Nothing to do
-        return
+    if HexrdConfig().show_overlays:
+        for overlay in HexrdConfig().overlays:
+            if not overlay.visible:
+                # Skip over invisible overlays
+                continue
 
-    for overlay in HexrdConfig().overlays:
-        if not overlay.visible:
-            # Skip over invisible overlays
-            continue
+            flag_update(overlay)
 
-        flag_update(overlay)
+    if HexrdConfig().show_diffraction_angle_contour:
+        flag_update(HexrdConfig().diffraction_angle_contour_overlay)
 
 
 __all__ = [
     'ConstChiOverlay',
+    'DiffractionAngleOverlay',
     'LaueOverlay',
     'Overlay',
     'PowderOverlay',
