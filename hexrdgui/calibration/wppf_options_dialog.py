@@ -1397,7 +1397,7 @@ class WppfOptionsDialog(QObject):
                         if v == 'zero_error':
                             units = '°'
                         elif v in ('U', 'V', 'W'):
-                            units = ' × 10⁻⁴ °²'
+                            units = ' × 10⁻⁴ deg²'
 
                         this_config[k] = create_param_item(params[v], units=units)
                         param_set = True
