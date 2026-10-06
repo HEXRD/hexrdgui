@@ -494,10 +494,17 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
     def remove_overlay_artists(self, key: str) -> None:
         self.blit_manager.remove_artists('overlays', key)
 
+    @property
+    def displayed_overlays(self) -> list[Overlay]:
+        overlays = list(HexrdConfig().overlays) if HexrdConfig().show_overlays else []
+        if HexrdConfig().show_diffraction_angle_contour:
+            overlays.append(HexrdConfig().diffraction_angle_contour_overlay)
+        return overlays
+
     def prune_overlay_artists(self) -> None:
         # Remove overlay artists that no longer have an overlay associated
         # with them
-        overlay_names = [x.name for x in HexrdConfig().overlays]
+        overlay_names = [x.name for x in self.displayed_overlays]
         for key in list(self.overlay_artists):
             if key not in overlay_names:
                 self.remove_overlay_artists(key)
@@ -879,7 +886,8 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
             return
 
         self.remove_all_overlay_artists()
-        if not HexrdConfig().show_overlays or not HexrdConfig().overlays:
+        overlays = self.displayed_overlays
+        if not overlays:
             # Avoid proceeding if possible, as updating the blit manager
             # can be time consuming.
             self.remove_all_overlay_artists()
@@ -891,14 +899,14 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
         # 2. Are not visible
         # 3. Need updating
         self.prune_overlay_artists()
-        for overlay in HexrdConfig().overlays:
+        for overlay in overlays:
             if overlay.update_needed or not overlay.visible:
                 self.remove_overlay_artists(overlay.name)
 
         if not skip_data_update:
             self.iviewer.update_overlay_data()
 
-        for overlay in HexrdConfig().overlays:
+        for overlay in overlays:
             self.draw_overlay(overlay)
 
         self.blit_manager.update()

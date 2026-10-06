@@ -30,6 +30,11 @@ beam_marker_style:
   marker: 'x'
   markersize: 10
   linestyle: 'None'
+show_diffraction_angle_contour: false
+diffraction_angle_contour:
+  tth_start: 10.0
+  tth_max: 70.0
+  tth_step: 10.0
 apply_pixel_solid_angle_correction: false
 apply_polarization_correction: false
 apply_lorentz_correction: false
