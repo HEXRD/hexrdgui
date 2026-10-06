@@ -2930,6 +2930,38 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.config['image']['beam_marker_style'] = v
             self.beam_marker_modified.emit()
 
+    @property
+    def show_diffraction_angle_contour(self) -> bool:
+        return self.config['image']['show_diffraction_angle_contour']
+
+    @show_diffraction_angle_contour.setter
+    def show_diffraction_angle_contour(self, v: bool) -> None:
+        if self.show_diffraction_angle_contour != v:
+            self.config['image']['show_diffraction_angle_contour'] = v
+            self.overlay_config_changed.emit()
+
+    @property
+    def diffraction_angle_contour_overlay(self) -> Any:
+        if not hasattr(self, '_diffraction_angle_contour_overlay'):
+            from hexrdgui.overlays.diffraction_angle_overlay import (
+                DiffractionAngleOverlay,
+            )
+
+            config = self.config['image']['diffraction_angle_contour']
+            self._diffraction_angle_contour_overlay = DiffractionAngleOverlay(**config)
+
+        return self._diffraction_angle_contour_overlay
+
+    def save_diffraction_angle_contour(self) -> None:
+        overlay = self.diffraction_angle_contour_overlay
+        self.config['image']['diffraction_angle_contour'] = {
+            'tth_start': overlay.tth_start,
+            'tth_max': overlay.tth_max,
+            'tth_step': overlay.tth_step,
+            'style': copy.deepcopy(overlay.style),
+        }
+        self.overlay_config_changed.emit()
+
     @staticmethod
     def num_distortion_parameters(func_name: str) -> int:
         if func_name == 'None':
@@ -3228,7 +3260,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     # Property with same name as settings key, used for persistence
     @config_image.setter
     def config_image(self, image: dict) -> None:
+        defaults = self.default_config['image']
+        for key in (
+            'show_diffraction_angle_contour',
+            'diffraction_angle_contour',
+        ):
+            image.setdefault(key, copy.deepcopy(defaults[key]))
+
         self.config['image'] = image
+        if hasattr(self, '_diffraction_angle_contour_overlay'):
+            del self._diffraction_angle_contour_overlay
 
     @property
     def recent_images(self) -> dict:

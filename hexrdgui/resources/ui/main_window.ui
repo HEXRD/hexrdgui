@@ -186,6 +186,7 @@
     <addaction name="action_show_live_updates"/>
     <addaction name="action_show_detector_borders"/>
     <addaction name="action_show_beam_marker"/>
+    <addaction name="action_diffraction_angle_contour"/>
     <addaction name="action_view_indexing_config"/>
     <addaction name="action_view_fit_grains_config"/>
     <addaction name="action_view_overlay_picks"/>
@@ -917,6 +918,17 @@
    </property>
    <property name="toolTip">
     <string>Draw a marker where the beam intersects with any detectors</string>
+   </property>
+  </action>
+  <action name="action_diffraction_angle_contour">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Diffraction Angle Contour</string>
+   </property>
+   <property name="toolTip">
+    <string>Draw contours at specified two-theta angles</string>
    </property>
   </action>
   <action name="action_image_calculator">

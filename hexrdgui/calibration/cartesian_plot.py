@@ -152,7 +152,10 @@ class InstrumentViewer:
         self.max = max(x.max() for x in v.values())
 
     def update_overlay_data(self) -> None:
-        if not HexrdConfig().show_overlays:
+        if not (
+            HexrdConfig().show_overlays
+            or HexrdConfig().show_diffraction_angle_contour
+        ):
             # Nothing to do
             return
 

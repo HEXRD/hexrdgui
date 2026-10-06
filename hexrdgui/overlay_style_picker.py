@@ -19,7 +19,13 @@ from hexrdgui.utils import block_signals
 
 
 class OverlayStylePicker(QObject):
-    def __init__(self, overlay: Overlay, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        overlay: Overlay,
+        parent: QWidget | None = None,
+        *,
+        include_ranges: bool | None = None,
+    ) -> None:
         super().__init__(parent)
 
         loader = UiLoader()
@@ -27,6 +33,7 @@ class OverlayStylePicker(QObject):
 
         self.original_style = copy.deepcopy(overlay.style)
         self.overlay = overlay
+        self._include_ranges = include_ranges
         self.ui.material_name.setText(overlay.material_name)
 
         self.ui.range_style_group.setVisible(self.include_ranges)
@@ -270,6 +277,9 @@ class OverlayStylePicker(QObject):
 
     @property
     def include_ranges(self) -> bool:
+        if self._include_ranges is not None:
+            return self._include_ranges
+
         return not self.overlay.is_const_chi
 
     @property
