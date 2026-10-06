@@ -587,7 +587,7 @@
             <string/>
            </property>
            <layout class="QGridLayout" name="gridLayout_9">
-            <item row="0" column="2">
+            <item row="1" column="2">
              <widget class="QComboBox" name="texture_sample_symmetry">
               <property name="currentText">
                <string>monoclinic</string>
@@ -644,6 +644,27 @@
              </widget>
             </item>
             <item row="0" column="1">
+             <widget class="QLabel" name="texture_model_type_label">
+              <property name="text">
+               <string>Texture model:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QComboBox" name="texture_model_type">
+              <item>
+               <property name="text">
+                <string>General Axis Distribution Function</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>March-Dollase</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item row="1" column="1">
              <widget class="QLabel" name="texture_sample_symmetry_label">
               <property name="text">
                <string>Sample symmetry:</string>
@@ -663,6 +684,86 @@
                <string>Texture Index: None</string>
               </property>
              </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QLabel" name="texture_preferred_axis_label">
+              <property name="text">
+               <string>Preferred axis:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="2">
+             <layout class="QHBoxLayout" name="texture_preferred_axis_layout">
+              <item>
+               <widget class="QLabel" name="texture_preferred_axis_h_label">
+                <property name="text">
+                 <string>h:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="texture_preferred_axis_h">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <number>-1000</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="texture_preferred_axis_k_label">
+                <property name="text">
+                 <string>k:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="texture_preferred_axis_k">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <number>-1000</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLabel" name="texture_preferred_axis_l_label">
+                <property name="text">
+                 <string>l:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="texture_preferred_axis_l">
+                <property name="keyboardTracking">
+                 <bool>false</bool>
+                </property>
+                <property name="minimum">
+                 <number>-1000</number>
+                </property>
+                <property name="maximum">
+                 <number>1000</number>
+                </property>
+                <property name="value">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </widget>
@@ -1037,8 +1138,12 @@
   <tabstop>amorphous_expt_smoothing</tabstop>
   <tabstop>selected_texture_material</tabstop>
   <tabstop>include_texture_model</tabstop>
+  <tabstop>texture_model_type</tabstop>
   <tabstop>texture_sample_symmetry</tabstop>
   <tabstop>texture_ell_max</tabstop>
+  <tabstop>texture_preferred_axis_h</tabstop>
+  <tabstop>texture_preferred_axis_k</tabstop>
+  <tabstop>texture_preferred_axis_l</tabstop>
   <tabstop>texture_azimuthal_interval</tabstop>
   <tabstop>texture_integration_range</tabstop>
   <tabstop>texture_show_simulated_spectrum</tabstop>
