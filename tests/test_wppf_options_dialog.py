@@ -9,6 +9,7 @@ import pytest
 from pytestqt.qtbot import QtBot
 
 from hexrdgui import state
+from hexrdgui.calibration import wppf_options_dialog
 from hexrdgui.calibration.wppf_options_dialog import WppfOptionsDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_canvas import ImageCanvas
@@ -240,10 +241,11 @@ def test_march_dollase_settings_and_parameter_files(
     dialog.ui.texture_preferred_axis_l.setValue(-1)
 
     expected_settings = {
-        'model_type': wppf_options_dialog.MARCH_DOLLASE_MODEL,
-        'hkl': [1, 0, -1],
+        'model_types': {'Ni': wppf_options_dialog.MARCH_DOLLASE_MODEL},
+        'preferred_axes': {'Ni': [1, 0, -1]},
     }
-    assert dialog.texture_model_kwargs['Ni'] == expected_settings
+    settings = dialog.texture_settings
+    assert {k: settings[k] for k in expected_settings} == expected_settings
     assert dialog.ui.texture_sample_symmetry.isHidden()
     assert not dialog.ui.texture_preferred_axis_h.isHidden()
     assert not dialog.ui.texture_preferred_axis_k.isHidden()
@@ -287,7 +289,8 @@ def test_march_dollase_settings_and_parameter_files(
         loaded = state._load_config(f)
 
     loaded_wppf = loaded['config_calibration']['wppf']
-    assert loaded_wppf['texture_settings']['model_kwargs']['Ni'] == expected_settings
+    settings = loaded_wppf['texture_settings']
+    assert {k: settings[k] for k in expected_settings} == expected_settings
     assert loaded_wppf['params_dict']['Ni_p_md']['value'] == pytest.approx(1.25)
 
 

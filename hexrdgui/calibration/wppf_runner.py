@@ -71,15 +71,7 @@ class WppfRunner:
 
         # Work around differences in WPPF objects
         if isinstance(self.wppf_object, Rietveld):
-            models = [
-                model
-                for model in self.wppf_object.texture_model.values()
-                if model is not None
-            ]
-            can_use_harmonic_refinement = varying_harmonic_texture and all(
-                hasattr(model, 'calculate_harmonic_coefficients') for model in models
-            )
-            if can_use_harmonic_refinement:
+            if varying_harmonic_texture:
                 refine_func = self.wppf_object.RefineTexture
             else:
                 refine_func = self.wppf_object.Refine

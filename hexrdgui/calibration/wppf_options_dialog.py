@@ -480,7 +480,7 @@ class WppfOptionsDialog(QObject):
                 # If there was some exception, remove the last undo stack entry
                 self.remove_last_undo_stack_entry()
                 raise
-        elif not self.varying_texture_params:
+        else:
             # If there are any non-texture refinements, we ought
             # to clear the texture data.
             self.clear_texture_data()
@@ -1584,20 +1584,20 @@ class WppfOptionsDialog(QObject):
             for mat_name in self.textured_materials:
                 # Look for param names that match
                 mat_name_sanitized = mat_name.replace('-', '_')
-                mat_config = texture_dict.setdefault(mat_name, {})
                 model_type = self.texture_model_type(mat_name)
                 if model_type == MARCH_DOLLASE_MODEL:
                     name = f'{mat_name_sanitized}_p_md'
                     if name in params:
+                        mat_config = texture_dict.setdefault(mat_name, {})
                         mat_config['P_md'] = create_param_item(params[name])
                     continue
 
                 prefix = f'{mat_name_sanitized}_c_'
                 matching_names = [k for k in params if k.startswith(prefix)]
                 if not matching_names:
-                    texture_dict.pop(mat_name)
                     continue
 
+                mat_config = texture_dict.setdefault(mat_name, {})
                 for name in matching_names:
                     suffix = name[len(prefix) :]
                     ell, i, j = [int(k) for k in suffix.split('_')]
