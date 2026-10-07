@@ -527,6 +527,10 @@ class OmeMapsViewerDialog(QObject):
         # Set the initial max as 20
         self.color_map_editor.ui.maximum.setValue(20)
 
+        # Eta bins the panel buffer excludes (and bins off the detector)
+        # are NaN in the maps. Show them as masked by default.
+        self.color_map_editor.enable_show_invalid()
+
     def setup_hkls_table(self) -> None:
         selected = self.config['find_orientations']['seed_search']['hkl_seeds']
         hkls = self.hkls

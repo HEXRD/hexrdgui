@@ -60,6 +60,9 @@ class PolarXAxisType:
 
 DEFAULT_EULER_ANGLE_CONVENTION = {'axes_order': 'xyz', 'extrinsic': True}
 
+# Default color for displaying invalid (NaN) pixels
+DEFAULT_INVALID_COLOR = (0.5, 0.5, 0.5, 1.0)
+
 DEFAULT_WPPF_PLOT_STYLE = {
     'marker': 'x',
     's': 30,

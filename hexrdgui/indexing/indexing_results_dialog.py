@@ -214,6 +214,10 @@ class IndexingResultsDialog(QObject):
         # Set the initial max as 20
         self.color_map_editor.ui.maximum.setValue(20)
 
+        # Eta bins the panel buffer excludes (and bins off the detector)
+        # are NaN in the maps. Show them as masked by default.
+        self.color_map_editor.enable_show_invalid()
+
     @property
     def scaled_image_data(self) -> np.ndarray:
         return self.transform(self.image_data)
