@@ -44,7 +44,8 @@ window = MainWindow()
 window.confirm_application_close = False
 window.show()
 
-with tempfile.TemporaryDirectory() as tmp:
+# The loaded image keeps image.h5 open, and Windows can't delete open files
+with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
     # An image for the default instrument, using an hdf5plugin filter
     (det,) = HexrdConfig().detectors.values()
     shape = (1, det['pixels']['rows'], det['pixels']['columns'])
@@ -57,8 +58,8 @@ with tempfile.TemporaryDirectory() as tmp:
     ImageFileManager().path = ['images', 'data']
     ImageLoadManager().read_data([[image_path]], ui_parent=window.ui)
 
-# Stop writing output to the closed progress dialog
-sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
+    # Stop writing output to the closed progress dialog
+    sys.stdout, sys.stderr = sys.__stdout__, sys.__stderr__
 
 window.image_mode_widget.set_image_mode_widget_tab(ViewType.polar)
 canvas = window.ui.image_tab_widget.image_canvases[0]
