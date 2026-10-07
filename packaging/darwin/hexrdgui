@@ -2,4 +2,4 @@
 SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 echo $SCRIPT_DIR
 export QT_PLUGIN_PATH=$SCRIPT_DIR/../Resources/plugins
-$SCRIPT_DIR/../Resources/bin/python $SCRIPT_DIR/../Resources/bin/hexrdgui $@
+exec "$SCRIPT_DIR/../Resources/bin/python" "$SCRIPT_DIR/../Resources/bin/hexrdgui" "$@"
