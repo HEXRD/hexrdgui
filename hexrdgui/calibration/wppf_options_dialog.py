@@ -1842,6 +1842,7 @@ class WppfOptionsDialog(QObject):
         if self.method == 'Rietveld':
             # Add the TDS model to it, if applicable
             self.set_tds_model(obj)
+            self.bind_texture_models_to_phases(obj)
 
         return obj
 
@@ -1964,6 +1965,9 @@ class WppfOptionsDialog(QObject):
 
         # Update the Rietveld TDS model, if applicable
         self.update_rietveld_tds_model()
+
+        if isinstance(obj, Rietveld):
+            self.bind_texture_models_to_phases(obj)
 
     def export_params(self) -> None:
         selected_file, selected_filter = QFileDialog.getSaveFileName(
@@ -3040,6 +3044,20 @@ class WppfOptionsDialog(QObject):
 
         # Update the TDS model on the Rietveld object
         self.set_tds_model(self._wppf_object)
+
+    def bind_texture_models_to_phases(self, obj: Rietveld) -> None:
+        # The phases are rebuilt from the materials on every update, and
+        # writing refined lattice parameters back to a material can change
+        # its hkls. Point each texture model at its phase so that the hkls
+        # and lattice parameters always match.
+        for name, model in obj.texture_model.items():
+            if model is None:
+                continue
+
+            model.material = obj.phases[name]['synchrotron']
+            if isinstance(model, MarchDollaseModel):
+                # Recompute the cached HKL length and texture factors
+                model.HKL = model.HKL
 
     def set_tds_model(self, obj: Rietveld) -> None:
         if not self.any_tds_models_enabled:

@@ -375,3 +375,48 @@ def test_march_dollase_refinement(
 
     dialog.pop_undo_stack()
     assert dialog.params['CeO2_p_md'].value == 1.0
+
+
+
+@pytest.mark.parametrize(
+    'model_type', ['March-Dollase', 'General Axis Distribution Function']
+)
+def test_texture_model_follows_lattice_updates(
+    qtbot: QtBot,
+    monkeypatch: pytest.MonkeyPatch,
+    model_type: str,
+) -> None:
+    # Writing refined lattice parameters back to a monoclinic material
+    # reorders its hkls. The texture model must follow on the next update.
+    monkeypatch.setitem(HexrdConfig().config['calibration'], 'wppf', {})
+    tth = np.linspace(2, 30, 1400)
+    data = (tth, np.ma.array(np.full_like(tth, 100.0)))
+    monkeypatch.setattr(HexrdConfig(), 'last_unscaled_azimuthal_integral_data', data)
+
+    name = 'U6Nb'
+    HexrdConfig().load_default_material(name)
+    try:
+        dialog = WppfOptionsDialog()
+        qtbot.addWidget(dialog.ui)
+        dialog.use_statistical_weights = False
+        dialog.spline_points = [[3.0, 100.0], [29.0, 100.0]]
+        dialog.selected_materials = [name]
+        dialog.method = 'Rietveld'
+        dialog.ui.include_texture_model.setChecked(True)
+        dialog.ui.texture_model_type.setCurrentText(model_type)
+
+        old_hkls = dialog.wppf_object.texture_model[name].material.hkls
+        mat = HexrdConfig().material(name)
+        mat.lparms = mat.lparms * [0.99, 1, 1, 1, 1, 1]
+
+        obj = dialog.wppf_object
+        model = obj.texture_model[name]
+        phase = obj.phases[name]['synchrotron']
+        assert not np.array_equal(phase.hkls, old_hkls)
+        assert model.material is phase
+        if model_type == 'March-Dollase':
+            assert len(model.texture_factors) == len(phase.hkls)
+
+        obj.computespectrum()
+    finally:
+        HexrdConfig().remove_materials([name])
