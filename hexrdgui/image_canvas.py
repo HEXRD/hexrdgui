@@ -2052,9 +2052,15 @@ class ImageCanvas(InteractiveCanvasMixin, FigureCanvas):
                 # Express `y` as a percentage instead
                 y *= 100 / last_lineout[1].filled(np.nan)
             else:
-                denom = np.sqrt(last_lineout[1].filled(np.nan))
-                denom[denom == 0] = np.nan
-                y /= denom
+                weights = HexrdConfig().wppf_weights
+                if weights is not None and len(weights) == len(y):
+                    # Divide by the sigma the fit used, 1 / sqrt(w), which
+                    # includes the pixel counts when statistical weights are on
+                    y *= np.sqrt(np.where(weights > 0, weights, np.nan))
+                else:
+                    denom = np.sqrt(last_lineout[1].filled(np.nan))
+                    denom[denom == 0] = np.nan
+                    y /= denom
 
             (self.wppf_difference_plot,) = diff_axis.plot(x, y, **style)
 

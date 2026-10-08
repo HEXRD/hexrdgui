@@ -326,6 +326,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         self.backup_tth_maxes: dict[str, float] = {}
         self.overlays: list[Any] = []
         self.wppf_data: list[Any] | None = None
+        self.wppf_weights: np.ndarray | None = None
         self.wppf_background_lineout: list[Any] | None = None
         self.wppf_amorphous_lineout: list[Any] | None = None
         self.wppf_tds_lineout: list[Any] | None = None

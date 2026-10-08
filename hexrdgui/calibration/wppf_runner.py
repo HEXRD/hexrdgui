@@ -29,6 +29,7 @@ class WppfRunner:
 
     def clear_wppf_plots(self) -> None:
         HexrdConfig().wppf_data = None
+        HexrdConfig().wppf_weights = None
         HexrdConfig().wppf_background_lineout = None
         HexrdConfig().wppf_amorphous_lineout = None
         HexrdConfig().wppf_tds_lineout = None
@@ -100,6 +101,7 @@ class WppfRunner:
             return
 
         HexrdConfig().wppf_data = list(obj.spectrum_sim.data)
+        HexrdConfig().wppf_weights = obj.weights.y
 
         background = []
         if obj.background:
