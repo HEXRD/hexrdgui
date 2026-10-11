@@ -1,7 +1,9 @@
-"""Tests for blosc-zstd compression of state-file image data.
+"""Tests for blosc-zstd compression of dense image data in state files.
 
-The on-disk layout matches hexrd's 'hdf5' imageseries writer, so it round-trips
-through ``imageseries.open(..., 'hdf5', ...)`` and stays backward compatible.
+Data that is not eligible for the sparse fch5 format (signed dtypes, dense
+frames) keeps the 'hdf5' imageseries layout with a blosc-zstd filter, so it
+round-trips through ``imageseries.open(..., 'hdf5', ...)`` and stays backward
+compatible.
 """
 
 from pathlib import Path
@@ -15,9 +17,11 @@ from hexrdgui.state import write_imageseries
 
 
 def make_imageseries() -> tuple:
-    # A small, sparse, non-negative imageseries with omega metadata.
-    data = np.zeros((5, 64, 64), dtype=np.uint16)
+    # A small, sparse imageseries with omega metadata. The signed dtype (with
+    # negative values) keeps it on the dense hdf5 path.
+    data = np.zeros((5, 64, 64), dtype=np.int16)
     data[:, ::8, ::8] = 1000
+    data[:, 3, 3] = -5
     ims = imageseries.open(None, 'array', data=data)
     ims.metadata['omega'] = np.linspace(0, 180, 5).reshape(-1, 1)
     return ims, data
