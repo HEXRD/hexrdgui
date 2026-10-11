@@ -71,6 +71,7 @@ class PanelBufferDialog(QObject):
     def setup_connections(self) -> None:
         self.ui.config_mode.currentIndexChanged.connect(self.update_mode_tab)
         self.ui.file_name.editingFinished.connect(self.update_enable_states)
+        self.ui.invert_mask.toggled.connect(self.update_enable_states)
         self.ui.select_file_button.clicked.connect(self.select_file)
         self.ui.show_panel_buffer.clicked.connect(self.show_panel_buffer)
         self.ui.clear_panel_buffer.clicked.connect(self.clear_panel_buffer)
@@ -117,7 +118,11 @@ class PanelBufferDialog(QObject):
 
     def select_file(self) -> None:
         selected_file, selected_filter = QFileDialog.getOpenFileName(
-            self.ui, 'Load Panel Buffer', HexrdConfig().working_dir, 'NPY files (*.npy)'
+            self.ui,
+            'Load Panel Buffer',
+            HexrdConfig().working_dir,
+            'Mask files (*.npy *.tif *.tiff);;NumPy files (*.npy);;'
+            'TIFF files (*.tif *.tiff)',
         )
 
         if selected_file:
@@ -161,9 +166,9 @@ class PanelBufferDialog(QObject):
             return copy.deepcopy(self.current_saved_buffer_value)
 
         try:
-            array = np.load(self.file_name)
-        except FileNotFoundError:
-            msg = f'"{self.file_name}" does not exist'
+            array = self._load_mask_file(self.file_name)
+        except (FileNotFoundError, OSError):
+            msg = f'"{self.file_name}" does not exist or could not be read'
             print(msg)
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             self.show()
@@ -171,13 +176,32 @@ class PanelBufferDialog(QObject):
 
         # Must match the detector size
         if array.shape != self.detector_shape:
-            msg = 'The NumPy array shape must match the detector'
+            msg = 'The mask array shape must match the detector'
             print(msg)
             QMessageBox.critical(self.ui, 'HEXRD', msg)
             self.show()
             return None
 
+        if self.ui.invert_mask.isChecked():
+            # External masks mark the pixels to EXCLUDE; a panel buffer uses
+            # True = valid, so invert into the panel-buffer convention.
+            return ~array.astype(bool)
+
+        # Otherwise the file is already a panel buffer (True = valid).
         return array
+
+    def _load_mask_file(self, file_name: str) -> np.ndarray:
+        # Load a mask/panel-buffer file as a 2D array. Supports NumPy (.npy)
+        # and any single-image format fabio can read (e.g. TIFF).
+        ext = os.path.splitext(file_name)[1].lower()
+        if ext == '.npy':
+            return np.load(file_name)
+
+        # Defer the import to avoid a heavier import at module load.
+        from hexrdgui.image_file_manager import ImageFileManager
+
+        ims = ImageFileManager().open_file(file_name)
+        return np.asarray(ims[0])
 
     @property
     def current_saved_buffer_value(self) -> Any:

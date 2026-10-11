@@ -74,7 +74,7 @@ class ImageFileManager(metaclass=Singleton):
                 s = load_panel_state
                 # Need this index for some load panel state items
                 ims_idx = list(ims_dict).index(det_key)
-                for list_key in ('trans', 'dark', 'dark_files'):
+                for list_key in ('trans', 'dark', 'dark_files', 'dark_paths'):
                     if len(s.get(list_key, [])) > ims_idx:
                         s[list_key].pop(ims_idx)
                         load_panel_modified = True
@@ -132,8 +132,13 @@ class ImageFileManager(metaclass=Singleton):
         if self.remember:
             HexrdConfig().hdf5_path = self.path
 
-    def open_file(self, f: Any, options: Any = None) -> Any:
+    def open_file(self, f: Any, options: Any = None, path: Any = None) -> Any:
         # f could be either a file or numpy array
+        # `path` optionally overrides self.path (a [group, dataname] list) for
+        # this call only, without mutating self.path. This is needed when the
+        # data and dark frames live at different dataset paths (e.g. the dark
+        # is in the same HDF5 file as the data, but a different dataset).
+        hdf5_path = self.path if path is None else path
         ext = os.path.splitext(f)[1] if isinstance(f, str) else None
         if ext is None:
             ims = imageseries.open(None, 'array', data=f)
@@ -141,7 +146,7 @@ class ImageFileManager(metaclass=Singleton):
             from pyhdf.SD import SD, SDC
 
             hdf = SD(f, SDC.READ)
-            dset = hdf.select(self.path[1])
+            dset = hdf.select(hdf5_path[1])
             ims = imageseries.open(None, 'array', data=dset)
         elif ext in self.HDF5_FILE_EXTS:
             regular_hdf5 = True
@@ -165,7 +170,7 @@ class ImageFileManager(metaclass=Singleton):
                     ims = imageseries.open(f, eiger_stream_format)
                     regular_hdf5 = False
                 else:
-                    dset = data['/'.join(self.path)]
+                    dset = data['/'.join(hdf5_path)]
                     ndim = dset.ndim
                     if ndim < 3:
                         # Handle raw two dimesional data
@@ -173,7 +178,7 @@ class ImageFileManager(metaclass=Singleton):
 
             if regular_hdf5 and ndim >= 3:
                 ims = imageseries.open(
-                    f, 'hdf5', path=self.path[0], dataname=self.path[1]
+                    f, 'hdf5', path=hdf5_path[0], dataname=hdf5_path[1]
                 )
         elif ext == '.npz':
             ims = imageseries.open(f, 'frame-cache', style='npz')
