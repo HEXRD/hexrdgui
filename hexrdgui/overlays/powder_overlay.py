@@ -763,8 +763,8 @@ class PowderOverlay(Overlay, PolarDistortionObject):
 
         kwargs = self.tth_distortion_kwargs.copy()
         if self.pinhole_distortion_type == 'PinholeDistortion':
-            # Add our absorption length
-            kwargs['absorption_length'] = HexrdConfig().absorption_length() * 1e-3
+            # Add our absorption length, in microns as phutil expects
+            kwargs['absorption_length'] = HexrdConfig().absorption_length()
         return kwargs
 
     @pinhole_distortion_kwargs.setter
