@@ -15,6 +15,7 @@ import click
 import coloredlogs
 
 import conda
+from conda.models.version import VersionOrder
 from conda_build import api as CondaBuild
 from conda_build.config import Config
 from conda_pack import core as CondaPack
@@ -145,7 +146,11 @@ def build_conda_pack(base_path, tmp, hexrd_package_channel, hexrdgui_output_fold
     ]
     output = run_command(cmd)
     results = json.loads(output)
-    hexrd_version = results['hexrd'][-1]['version']
+    # conda search no longer sorts its results, and the channel's repodata
+    # order varies between requests, so pick the newest version explicitly.
+    versions = [x['version'] for x in results['hexrd']]
+    hexrd_version = max(versions, key=VersionOrder)
+    logger.info(f'Building against hexrd {hexrd_version}.')
     config.variant['hexrd_version'] = hexrd_version
 
     config.CONDA_SOLVER = 'libmamba'
