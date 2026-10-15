@@ -1640,12 +1640,13 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             self.beam_energy_modified.emit()
             return
 
-        if path[:2] == beam_path + ['vector']:
+        n = len(beam_path) + 1
+        if path[:n] == beam_path + ['vector']:
             # Beam vector has been modified. Indicate so.
             self.beam_vector_changed.emit()
             return
 
-        if path[:2] == beam_path + ['energy_correction']:
+        if path[:n] == beam_path + ['energy_correction']:
             self.beam_energy_correction_changed.emit()
             return
 
@@ -1695,18 +1696,21 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         """
         cur_val = self.config['instrument']
 
+        beam_path = ['beam']
         if path[0] == 'beam' and self.has_multi_xrs:
             if path[1] not in self.beam_names:
                 # There's going to be one more layer to the path
                 path = path.copy()
                 path.insert(1, self.active_beam_name)
+            beam_path = path[:2]
 
-        if (
-            path[:2] == ['beam', 'energy_correction']
-            and cur_val.get('beam', {}).get('energy_correction') is None
-        ):
-            defaults = HEDMInstrument.create_default_energy_correction()
-            return defaults[path[2]]
+        # The energy correction is only in the beam dict when it is set
+        ec_path = beam_path + ['energy_correction']
+        if path[: len(ec_path)] == ec_path:
+            beam = self.beam_dict(beam_path[1] if len(beam_path) > 1 else None)
+            if beam.get('energy_correction') is None:
+                defaults = HEDMInstrument.create_default_energy_correction()
+                return defaults[path[len(ec_path)]]
 
         # Special case for distortion:
         # If no distortion is specified, return 'None'
