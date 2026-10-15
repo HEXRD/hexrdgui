@@ -180,10 +180,12 @@ class LaueOverlay(Overlay):
                     # Skip the runtime warning...
                     picks[det_key][hkl_str] = [np.nan, np.nan]
                 else:
+                    # The polar view is relative to the sample position
                     angles = cart_to_angles(
                         hkl_picks,
                         panel,
                         eta_period,
+                        tvec_s=instr.tvec,
                     )
                     picks[det_key][hkl_str] = apply_tth_distortion_if_needed(
                         angles, in_degrees=True
@@ -208,7 +210,9 @@ class LaueOverlay(Overlay):
                         np.array([hkl_picks]), in_degrees=True, reverse=True
                     )
                     picks[det_key][hkl_str] = angles_to_cart(
-                        cast(Sequence[float], angles), panel
+                        cast(Sequence[float], angles),
+                        panel,
+                        tvec_s=instr.tvec,
                     )[0].tolist()
 
         self.calibration_picks = picks
