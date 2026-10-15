@@ -376,6 +376,10 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def invalidate_detector_masks(self, det_keys: list[str]) -> None:
         for mask in self.masks.values():
+            if mask.type == MaskType.threshold:
+                # Threshold masks hold [min, max], not per-detector data
+                continue
+
             if any(v[0] in det_keys for v in mask.data):
                 mask.invalidate_masked_arrays()
 
