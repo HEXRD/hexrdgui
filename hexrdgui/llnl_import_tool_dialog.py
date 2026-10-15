@@ -1015,7 +1015,10 @@ class LLNLImportToolDialog(QObject):
             if self.image_plate == 'IMAGE-PLATE-3':
                 self.swap_bounds_for_cropped()
         self.finalize()
-        self.completed.append(self.current_image_selection)
+        # Re-selecting a completed plate completes it again. Only record it
+        # once so that its tilt is not applied twice in `import_complete()`.
+        if self.current_image_selection not in self.completed:
+            self.completed.append(self.current_image_selection)
         self.enable_widgets(
             self.ui.file_selection,
             self.ui.add_transform,
