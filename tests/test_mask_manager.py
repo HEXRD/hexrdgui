@@ -36,3 +36,13 @@ def test_write_selected_masks(mask_manager, tmp_path):
         # Without a selection (e.g. the state file) all of them are written
         mask_manager.write_masks(f.create_group('all'))
         assert {'region', 'threshold'} <= set(f['all'])
+
+
+def test_invalidate_detector_masks_with_threshold(mask_manager):
+    add_masks(mask_manager)
+    region = mask_manager.masks['region']
+    region.masked_arrays = 'stale'
+
+    # This used to raise on the threshold mask's [min, max] data
+    mask_manager.invalidate_detector_masks(['ge1'])
+    assert region.masked_arrays is None
