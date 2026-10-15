@@ -50,6 +50,10 @@ class H5StateLoader(yaml.SafeLoader):
 
         return tuple(value)
 
+    def enum_value(self, node: Any) -> Any:
+        # Keep only the value of an enum stored as a python object
+        return self.construct_sequence(node)[0]
+
 
 H5StateLoader.add_constructor('!include', H5StateLoader.include)
 H5StateLoader.add_constructor(
@@ -59,6 +63,13 @@ H5StateLoader.add_constructor(
 H5StateLoader.add_constructor(
     'tag:yaml.org,2002:python/tuple', H5StateLoader.python_tuple
 )
+
+# Older state files stored the Laue overlay enums as python objects
+for _name in ('LaueRangeShape', 'LaueLabelType'):
+    H5StateLoader.add_constructor(
+        f'tag:yaml.org,2002:python/object/apply:hexrdgui.overlays.laue_overlay.{_name}',
+        H5StateLoader.enum_value,
+    )
 
 
 def _dict_path_by_id(
