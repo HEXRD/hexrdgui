@@ -2572,6 +2572,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         if obj and active:
             self.polar_tth_distortion_object = obj
         else:
+            # Do not keep using an object from before this was set
+            self.custom_polar_tth_distortion_object = None
             self.saved_custom_polar_tth_distortion_object = obj
 
     @property
