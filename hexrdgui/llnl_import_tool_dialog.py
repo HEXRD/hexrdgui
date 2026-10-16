@@ -491,6 +491,10 @@ class LLNLImportToolDialog(QObject):
 
             self.import_in_progress = True
 
+            # ROIs from previously loaded images (e.g. Dexela subpanels)
+            # do not apply to the imported images.
+            HexrdConfig().load_panel_state.pop('rect', None)
+
             # We need to disable all intensity corrections during import.
             # Users can just re-enable them if they are needed.
             HexrdConfig().disable_all_intensity_corrections()
