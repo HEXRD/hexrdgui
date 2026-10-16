@@ -1560,7 +1560,7 @@ class WppfOptionsDialog(QObject):
                     elif v in [f'{prefix}_{k}' for k in ('α', 'β', 'γ')]:
                         units = '°'
                     elif re.search(rf'^{prefix}_s\d\d\d$', v):
-                        # It is a stacking parameter
+                        # It is an anisotropic broadening parameter
                         conversion_funcs = shkl_to_angstroms_minus_4_funcs
                         units = ' Å⁻⁴'
 
@@ -3227,9 +3227,10 @@ fraction_to_percent_funcs = {
 }
 
 
+# hexrd uses nm⁻⁴, and 1 nm⁻⁴ is 1e-4 Å⁻⁴
 shkl_to_angstroms_minus_4_funcs = {
-    'to_display': lambda x: x / 1000,
-    'from_display': lambda x: x * 1000,
+    'to_display': lambda x: x / 10000,
+    'from_display': lambda x: x * 10000,
 }
 
 
