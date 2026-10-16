@@ -1,0 +1,16 @@
+{
+    "upload_type": "software",
+    "license": "bsd-3-clause",
+    "creators": [
+        {"name": "Avery, Patrick", "affiliation": "Kitware, Inc.", "orcid": "0000-0003-2254-1345"},
+        {"name": "Major, Brianna", "affiliation": "Kitware, Inc.", "orcid": "0000-0003-4968-5701"},
+        {"name": "Harris, Chris", "affiliation": "Kitware, Inc."},
+        {"name": "Tourtellott, John", "affiliation": "Kitware, Inc."},
+        {"name": "Gustafson, Sven", "affiliation": "Cornell University", "orcid": "0000-0003-3031-4169"},
+        {"name": "Budrow, Chris", "affiliation": "Budrow Consulting LLC"},
+        {"name": "Nygren, Kelly", "affiliation": "Cornell University", "orcid": "0000-0002-9210-0556"},
+        {"name": "Shade, Paul", "affiliation": "Air Force Research Laboratory", "orcid": "0000-0002-7516-4275"},
+        {"name": "Bernier, Joel V.", "affiliation": "Lawrence Livermore National Laboratory", "orcid": "0000-0001-5418-8094"},
+        {"name": "Singh, Saransh", "affiliation": "Lawrence Livermore National Laboratory", "orcid": "0000-0002-0286-9549"}
+    ]
+}
