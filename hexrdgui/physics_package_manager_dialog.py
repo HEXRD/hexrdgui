@@ -28,6 +28,12 @@ from hexrd.instrument import calc_beam_vec
 from hexrd.instrument.constants import FILTER_DEFAULTS, PINHOLE_DEFAULTS
 from hexrd.rotations import rotMatOfExpMap
 
+# We use a larger PXRDIP pinhole diameter than hexrd's default
+PXRDIP_PINHOLE_DEFAULTS = {
+    **PINHOLE_DEFAULTS.PXRDIP,
+    'pinhole_diameter': 300,
+}
+
 
 class PhysicsPackageManagerDialog(HexrdConfigDisconnectMixin):
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -199,7 +205,7 @@ class PhysicsPackageManagerDialog(HexrdConfigDisconnectMixin):
             for det in HexrdConfig().detector_names:
                 HexrdConfig().update_detector_filter(det, **FILTER_DEFAULTS.TARDIS)
         elif new_instr_type == 'PXRDIP':
-            HexrdConfig().update_physics_package(**PINHOLE_DEFAULTS.PXRDIP)
+            HexrdConfig().update_physics_package(**PXRDIP_PINHOLE_DEFAULTS)
             for det in HexrdConfig().detector_names:
                 HexrdConfig().update_detector_filter(det, **FILTER_DEFAULTS.PXRDIP)
         else:
@@ -227,12 +233,8 @@ class PhysicsPackageManagerDialog(HexrdConfigDisconnectMixin):
         # PINHOLE
         self.ui.pinhole_material.setCurrentText(physics.pinhole_material)
         self.ui.pinhole_density.setValue(physics.pinhole_density)
-        if self.instrument_type == 'PXRDIP':
-            self.ui.pinhole_thickness.setValue(70)
-            self.ui.pinhole_diameter.setValue(300)
-        else:
-            self.ui.pinhole_thickness.setValue(physics.pinhole_thickness)
-            self.ui.pinhole_diameter.setValue(physics.pinhole_diameter)
+        self.ui.pinhole_thickness.setValue(physics.pinhole_thickness)
+        self.ui.pinhole_diameter.setValue(physics.pinhole_diameter)
 
         # THE REST
         layer_names = self.layer_names
