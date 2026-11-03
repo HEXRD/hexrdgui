@@ -149,8 +149,6 @@ class MainWindow(QObject):
         self._pinhole_cutoff_config: dict = PinholeCutoffEditor.default_config()
         self._fiddle_axes_editor: FiddleAxesEditor | None = None
         self._fiddle_axes_config: dict = FiddleAxesEditor.default_config()
-        self._fiddle_axes_rotation_angle: float = 0.0  # Track delta Z-rotation in degrees
-        self._fiddle_axes_initial_rotation: float | None = None  # Initial Z-rotation when axes shown
 
         loader = UiLoader()
         self.ui = loader.load_file('main_window.ui', parent)
@@ -438,9 +436,6 @@ class MainWindow(QObject):
         HexrdConfig().update_status_bar.connect(self.ui.status_bar.showMessage)
         HexrdConfig().detectors_changed.connect(self.on_detectors_changed)
         HexrdConfig().detector_shape_changed.connect(self.on_detector_shape_changed)
-        HexrdConfig().detector_transforms_modified.connect(
-            self.on_detector_transforms_modified
-        )
         HexrdConfig().deep_rerender_needed.connect(self.deep_rerender)
         HexrdConfig().rerender_needed.connect(self.on_rerender_needed)
         MaskManager().raw_masks_changed.connect(self.update_all)
@@ -656,41 +651,6 @@ class MainWindow(QObject):
         # Otherwise, the HexrdConfig().images_dict object will not have images
         # with the correct shape.
         self.load_dummy_images()
-
-    def on_detector_transforms_modified(self, det_keys: list[str]) -> None:
-        """Handle detector transform changes for FIDDLE axes rotation."""
-        # Only update FIDDLE axes if they're visible and this is a group/instrument transformation
-        if not self.ui.action_draw_fiddle_axes.isChecked():
-            return
-
-        # Group/instrument transformations affect multiple detectors
-        if len(det_keys) <= 1:
-            return
-
-        # Get the first detector's tilt to extract Z-rotation
-        # For group rotations, all detectors have the same rotation applied
-        if len(det_keys) > 0:
-            det_name = det_keys[0]
-            det = HexrdConfig().detector(det_name)
-            tilt = det['transform']['tilt']
-
-            # Extract Z-rotation angle (tilt[2] is the Z-axis rotation)
-            # Convert from radians to degrees
-            z_rotation_rad = tilt[2] if len(tilt) > 2 else 0.0
-            z_rotation_deg = np.degrees(z_rotation_rad)
-
-            # Compute the delta rotation
-            # _fiddle_axes_initial_rotation is set in _show_fiddle_axes based on stored rotation
-            if self._fiddle_axes_initial_rotation is not None:
-                self._fiddle_axes_rotation_angle = z_rotation_deg - self._fiddle_axes_initial_rotation
-            else:
-                # Fallback: if no initial rotation stored, start from current position
-                self._fiddle_axes_initial_rotation = z_rotation_deg
-                self._fiddle_axes_rotation_angle = 0.0
-
-            # Redraw the FIDDLE axes with the new rotation
-            self._remove_fiddle_axes_from_cartesian()
-            self._plot_fiddle_axes()
 
     def load_dummy_images(self) -> None:
         if HexrdConfig().loading_state:
@@ -2072,23 +2032,6 @@ class MainWindow(QObject):
 
     def _show_fiddle_axes(self) -> None:
         """Show the FIDDLE axes on the cartesian view."""
-        # Reset initial rotation tracking when showing axes (to re-establish baseline)
-        # But keep the rotation angle from previous state (memory)
-        self._fiddle_axes_initial_rotation = None
-
-        # Get current detector rotation to set up the baseline
-        # This will be used as the reference point for future rotations
-        det_names = HexrdConfig().detector_names
-        if det_names:
-            det = HexrdConfig().detector(det_names[0])
-            tilt = det['transform']['tilt']
-            z_rotation_rad = tilt[2] if len(tilt) > 2 else 0.0
-            z_rotation_deg = np.degrees(z_rotation_rad)
-
-            # Set initial rotation to current detector rotation minus our stored rotation angle
-            # This way, when detector is at current position, axes show at stored rotation angle
-            self._fiddle_axes_initial_rotation = z_rotation_deg - self._fiddle_axes_rotation_angle
-
         # Open editor if it doesn't exist
         if self._fiddle_axes_editor is None:
             self._fiddle_axes_editor = FiddleAxesEditor(self.ui)
@@ -2106,9 +2049,6 @@ class MainWindow(QObject):
     def _hide_fiddle_axes(self) -> None:
         """Hide the FIDDLE axes from the cartesian view."""
         self._remove_fiddle_axes_from_cartesian()
-        # Keep rotation angle as memory (don't reset)
-        # Only reset initial rotation so it re-establishes baseline when shown again
-        self._fiddle_axes_initial_rotation = None
 
     def _on_fiddle_axes_config_changed(self, config: dict) -> None:
         """
@@ -2137,13 +2077,9 @@ class MainWindow(QObject):
         # Get axes length from config
         axes_length = config['axes_length']
 
-        # FIDDLE coordinate system angles (base angles)
-        x_angle_base = 16.55  # degrees
-        y_angle_base = 106.55  # degrees
-
-        # Apply the Z-rotation to the base angles
-        x_angle = x_angle_base + self._fiddle_axes_rotation_angle
-        y_angle = y_angle_base + self._fiddle_axes_rotation_angle
+        # FIDDLE axes are fixed in the laboratory frame, independent of detectors.
+        x_angle = 16.55  # degrees
+        y_angle = 106.55  # degrees
 
         # Calculate end points for X-axis
         x_angle_rad = np.radians(x_angle)
