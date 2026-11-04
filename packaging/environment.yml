@@ -13,3 +13,5 @@ dependencies:
   - conda-build
   - conda-pack
   - click
+  # To build the offline docs that the packages bundle
+  - mkdocs-material

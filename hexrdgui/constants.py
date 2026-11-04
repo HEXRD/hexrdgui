@@ -97,8 +97,6 @@ BUFFER_KEY = 'buffer'
 ZOOM = 'zoom rect'
 PAN = 'pan/zoom'
 
-DOCUMENTATION_URL = 'https://hexrdgui.readthedocs.io/'
-
 FIDDLE_HDF5_PATH = [
     'ATTRIBUTES/SHOT_IMAGE/ATTRIBUTES/FRAME_IMAGESFRAME_IMAGES/0/DATA',
     'DATA',

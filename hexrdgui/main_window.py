@@ -12,8 +12,7 @@ import h5py
 import numpy as np
 from hexrd.powder.cake import CakeOperatorSummary, export_cake_matrix
 from hexrd.resources import instrument_templates
-from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, QUrl, Signal
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import QEvent, QObject, Qt, QThreadPool, QTimer, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QDockWidget,
@@ -46,7 +45,7 @@ from hexrdgui.calibration.wppf_runner import WppfRunner
 from hexrdgui.calibration_slider_widget import CalibrationSliderWidget
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.config_dialog import ConfigDialog
-from hexrdgui.constants import DOCUMENTATION_URL, ViewType
+from hexrdgui.constants import ViewType
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.edit_colormap_list_dialog import EditColormapListDialog
 from hexrdgui.hexrd_config import HexrdConfig
@@ -88,6 +87,7 @@ from hexrdgui.ui_loader import UiLoader
 from hexrdgui.utils import block_signals
 from hexrdgui.utils.coverage_plot import CoveragePlotDialog
 from hexrdgui.utils.dialog import add_help_url
+from hexrdgui.utils.docs import open_docs
 from hexrdgui.utils.physics_package import (
     ask_to_create_physics_package_if_missing,
 )
@@ -1838,7 +1838,7 @@ class MainWindow(QObject):
         dialog.ui.exec()
 
     def on_action_documentation_triggered(self) -> None:
-        QDesktopServices.openUrl(QUrl(DOCUMENTATION_URL))
+        open_docs()
 
     def on_action_show_all_colormaps_toggled(self, checked: bool) -> None:
         HexrdConfig().show_all_colormaps = checked

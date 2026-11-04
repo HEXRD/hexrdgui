@@ -84,6 +84,20 @@ jobs:
       # command works.
       shell: bash -l {0}
 
+    - name: Checkout the HEXRDGUI docs
+      uses: actions/checkout@v4
+      with:
+        repository: HEXRD/hexrdgui-docs
+        path: hexrdgui-docs
+
+    - name: Build the offline docs for the package to bundle
+      working-directory: hexrdgui-docs
+      run: |
+          conda activate hexrdgui-package
+          mkdocs build -f mkdocs.offline.yml -d "$GITHUB_WORKSPACE/offline-docs"
+          echo "HEXRDGUI_OFFLINE_DOCS=$GITHUB_WORKSPACE/offline-docs" >> $GITHUB_ENV
+      shell: bash -l {0}
+
     - name: Build the package using CPack
       working-directory: hexrdgui/packaging
       # force tar.bz2 files with '--set conda_build.pkg_format 1'
