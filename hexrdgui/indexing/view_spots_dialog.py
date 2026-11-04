@@ -25,7 +25,7 @@ class ViewSpotsDialog:
         loader = UiLoader()
         self.ui = loader.load_file('view_spots_dialog.ui', parent)
 
-        url = 'hedm/fit_grains/#visualize-spots'
+        url = 'workflows/hedm/fit_grains/#visualize-spots'
         add_help_url(self.ui.button_box, url)
 
         self.setup_canvas()

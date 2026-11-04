@@ -40,7 +40,7 @@ class IndexingResultsDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('indexing_results_dialog.ui', parent)
 
-        add_help_url(self.ui.button_box, 'hedm/indexing/#results')
+        add_help_url(self.ui.button_box, 'workflows/hedm/indexing/#results')
 
         self.ome_maps = ome_maps
         self.grains_table = grains_table

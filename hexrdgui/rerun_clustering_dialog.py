@@ -19,7 +19,7 @@ class RerunClusteringDialog(QDialog):
         loader = UiLoader()
         self.ui = loader.load_file('rerun_clustering_dialog.ui', parent)
 
-        add_help_url(self.ui.button_box, 'hedm/indexing/#rerun-clustering')
+        add_help_url(self.ui.button_box, 'workflows/hedm/indexing/#rerun-clustering')
 
         self.indexing_runner = indexing_runner
         self.qfib = None

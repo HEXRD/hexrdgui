@@ -57,7 +57,7 @@ class PanelBufferDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
-        add_help_url(self.ui.button_box, 'configuration/instrument/#panel-buffer')
+        add_help_url(self.ui.button_box, 'configuration/instrument/#panel-buffers')
 
         # Hide the tab bar. It gets selected by changes to the combo box.
         self.ui.tab_widget.tabBar().hide()
