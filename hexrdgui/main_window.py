@@ -748,8 +748,7 @@ class MainWindow(QObject):
 
     def on_action_export_cake_matrix_triggered(self) -> None:
         iviewer = getattr(self.active_canvas, 'iviewer', None)
-        polar_view = getattr(iviewer, 'pv', None)
-        if polar_view is None:
+        if getattr(iviewer, 'pv', None) is None:
             QMessageBox.warning(
                 self.ui,
                 'HEXRD',
@@ -780,8 +779,13 @@ class MainWindow(QObject):
                 if response != QMessageBox.StandardButton.Yes:
                     return
 
+        # The matrix applies to frames as they are on disk, so flips and
+        # dark subtraction from image loading must be repeated by the user.
+        load_state = config.load_panel_state
         if any(
             (
+                any(load_state.get('trans', [])),
+                any(load_state.get('dark', [])),
                 config.polar_tth_distortion,
                 config.polar_apply_snip1d,
                 config.any_intensity_corrections,
@@ -792,8 +796,9 @@ class MainWindow(QObject):
                 self.ui,
                 'Cake Matrix Export',
                 'The matrix includes detector geometry and static panel buffers. '
-                'Polar distortion, SNIP, intensity corrections, and display masks '
-                'are not included.',
+                'Image flips, dark subtraction, polar distortion, SNIP, intensity '
+                'corrections, and display masks are not included. Apply any flips '
+                'and dark subtraction to raw frames before using the matrix.',
             )
 
         config.working_dir = os.path.dirname(selected_file)
@@ -802,13 +807,15 @@ class MainWindow(QObject):
         runner = self._cake_matrix_async_runner
         runner.progress_title = 'Exporting Cake Matrix'
         runner.success_callback = self.on_cake_matrix_exported
+        # Read the grid from one place, and give the worker its own
+        # instrument, since the polar view updates its instrument in place.
         runner.run(
             export_cake_matrix,
             selected_file,
-            polar_view.instr,
-            tth_range=tuple(np.degrees([polar_view.tth_min, polar_view.tth_max])),
-            eta_range=tuple(np.degrees([polar_view.eta_min, polar_view.eta_max])),
-            pixel_size=(polar_view.tth_pixel_size, polar_view.eta_pixel_size),
+            create_hedm_instrument(),
+            tth_range=(config.polar_res_tth_min, config.polar_res_tth_max),
+            eta_range=(config.polar_res_eta_min, config.polar_res_eta_max),
+            pixel_size=(config.polar_pixel_size_tth, config.polar_pixel_size_eta),
             overwrite=True,
         )
 

@@ -11,7 +11,7 @@ from hexrd.core.projections.polar import PolarView
 from hexrd.core.utils.panel_buffer import panel_buffer_as_2d_array
 
 from hexrdgui.calibration.polar_plot import polar_viewer
-from hexrdgui.constants import ViewType
+from hexrdgui.constants import UI_TRANS_INDEX_ROTATE_90, ViewType
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.main_window import MainWindow
 
@@ -62,13 +62,15 @@ def test_gui_export_matches_ceria_polar_view(
     assert str(path) in question.call_args.args[2]
     assert question.call_args.args[-1] == QMessageBox.StandardButton.No
     assert path.read_bytes() == b'previous matrix'
-    assert not hasattr(main_window, '_cake_matrix_async_runner')
 
+    # A flip applied while loading is not in the matrix, so warn about it
     question.reset_mock()
     question.return_value = QMessageBox.StandardButton.Yes
+    monkeypatch.setitem(config.load_panel_state, 'trans', [UI_TRANS_INDEX_ROTATE_90])
     action.trigger()
     question.assert_called_once()
-    assert any('Wrote ceria.hexrdcake' in message for message in message_boxes)
+    assert 'Image flips' in message_boxes[0]
+    assert 'Wrote ceria.hexrdcake' in message_boxes[1]
     message_boxes.clear()
 
     matrix = CakeMatrix(path)
