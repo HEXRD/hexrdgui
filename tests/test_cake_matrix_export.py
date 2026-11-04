@@ -44,7 +44,8 @@ def test_gui_export_matches_ceria_polar_view(
     # The hidden test window does not render a new viewer when changing modes.
     viewer = polar_viewer()
     monkeypatch.setattr(main_window.active_canvas, 'iviewer', viewer)
-    main_window.image_mode = ViewType.polar
+    # Restore raw mode afterward, since HexrdConfig outlives this window
+    monkeypatch.setattr(config, 'image_mode', ViewType.polar)
     main_window.update_image_mode_enable_states()
 
     path = tmp_path / 'ceria.hexrdcake'
