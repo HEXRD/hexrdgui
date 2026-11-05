@@ -88,7 +88,7 @@ class FitGrainsResultsDialog(QObject):
             parent,  # type: ignore[arg-type]
         )
 
-        url = 'hedm/fit_grains/#fit-grains-results'
+        url = 'workflows/hedm/fit_grains/#fit-grains-results'
         add_help_url(self.ui.button_box, url)
 
         self.ui.splitter.setStretchFactor(0, 1)

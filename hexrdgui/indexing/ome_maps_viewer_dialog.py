@@ -73,7 +73,7 @@ class OmeMapsViewerDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('ome_maps_viewer_dialog.ui', parent)
 
-        url = 'hedm/indexing/#find-orientations'
+        url = 'workflows/hedm/indexing/#find-orientations'
         add_help_url(self.ui.button_box, url)
 
         self._data: Any = None

@@ -38,6 +38,7 @@ from hexrdgui.argument_parser import ArgumentParser
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.macos_fix_app_name import macos_fix_app_name
 from hexrdgui.main_window import MainWindow
+from hexrdgui.utils.docs import start_online_check
 import hexrdgui.resources.icons
 
 
@@ -79,6 +80,9 @@ def main() -> None:
     pixmap.loadFromData(data, 'ico')  # type: ignore[call-overload]
     icon = QIcon(pixmap)
     app.setWindowIcon(icon)
+
+    # So the first help button does not wait for it
+    start_online_check()
 
     window = MainWindow()
     window.set_icon(icon)

@@ -59,6 +59,21 @@ jobs:
         repository: HEXRD/examples
         path: examples
 
+    - name: Checkout the HEXRDGUI docs ( Linux only )
+      if: ${{ matrix.config.name == 'Linux' }}
+      uses: actions/checkout@v4
+      with:
+        repository: HEXRD/hexrdgui-docs
+        path: hexrdgui-docs
+
+    - name: Build the docs, to check the help buttons' pages ( Linux only )
+      if: ${{ matrix.config.name == 'Linux' }}
+      run: |
+          pip install -r requirements.txt
+          mkdocs build -d "$GITHUB_WORKSPACE/docs-site"
+          echo "HEXRDGUI_DOCS_DIR=$GITHUB_WORKSPACE/docs-site" >> $GITHUB_ENV
+      working-directory: hexrdgui-docs
+
     - name: Install EGL on Linux (PySide6 needs it)
       if: ${{ matrix.config.name == 'Linux' }}
       run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev

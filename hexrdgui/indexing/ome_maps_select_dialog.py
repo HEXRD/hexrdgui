@@ -22,7 +22,7 @@ class OmeMapsSelectDialog(QObject):
         self.ui = loader.load_file('ome_maps_select_dialog.ui', parent)
         self.ui.setWindowTitle('Load/Generate Eta Omega Maps')
 
-        url = 'hedm/indexing/#generating-eta-omega-maps'
+        url = 'workflows/hedm/indexing/#generating-eta-omega-maps'
         add_help_url(self.ui.button_box, url)
 
         # Hide the tab bar. It gets selected by changes to the combo box.

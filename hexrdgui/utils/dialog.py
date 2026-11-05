@@ -2,6 +2,8 @@ from PySide6.QtCore import QByteArray, QPoint, QRect, QSettings, QSize
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication, QDialogButtonBox, QWidget
 
+from hexrdgui.utils.docs import open_docs
+
 
 def fit_geometry_to_available(
     geom: QRect, frame: QRect, available: QRect, margin: int = 0
@@ -86,7 +88,7 @@ def open_url(url: str) -> bool:
     # Open the specified URL in a web browser
     if not url.startswith('http'):
         # Assume that this is a relative path for the HEXRDGUI docs
-        url = f'https://hexrdgui.readthedocs.io/en/latest/{url}'
+        return open_docs(url)
 
     return QDesktopServices.openUrl(url)
 

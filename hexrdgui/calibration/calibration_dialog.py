@@ -66,7 +66,7 @@ class CalibrationDialog(QObject):
         relative_constraints: RelativeConstraintsType | None = None,
         engineering_constraints: str | None = None,
         window_title: str = 'Calibration Dialog',
-        help_url: str = 'calibration/',
+        help_url: str = 'calibration/general_calibration/',
     ) -> None:
         super().__init__(parent)
 

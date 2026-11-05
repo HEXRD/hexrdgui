@@ -50,7 +50,7 @@ class FitGrainsOptionsDialog(QObject):
         flags = self.ui.windowFlags()
         self.ui.setWindowFlags(flags | Qt.WindowType.Tool)
 
-        url = 'hedm/fit_grains/#fit-grains-options'
+        url = 'workflows/hedm/fit_grains/#fit-grains-options'
         add_help_url(self.ui.button_box, url)
 
         self.update_materials()

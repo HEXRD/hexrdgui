@@ -253,6 +253,16 @@ def build_windows_package_dir(base_path, archive_path):
     install_windows_script(base_path, package_path)
 
 
+def install_offline_docs(prefix_path: Path, offline_docs: str | None) -> None:
+    if offline_docs is None:
+        logger.warning('No offline docs given, so they will not be bundled.')
+        return
+
+    logger.info('Copying the offline docs into the package.')
+    # hexrdgui/utils/docs.py looks for them here
+    shutil.copytree(offline_docs, prefix_path / 'share' / 'hexrdgui' / 'docs')
+
+
 @click.command()
 @click.option('-h', '--hexrd-package-channel', help='the channel to use for HEXRD.')
 @click.option(
@@ -261,7 +271,18 @@ def build_windows_package_dir(base_path, archive_path):
     type=click.Path(exists=True),
     help='the path to generate the package into.',
 )
-def build_package(hexrd_package_channel, hexrdgui_output_folder):
+@click.option(
+    '-d',
+    '--offline-docs',
+    envvar='HEXRDGUI_OFFLINE_DOCS',
+    type=click.Path(exists=True, file_okay=False),
+    help='an offline build of the hexrdgui-docs to bundle.',
+)
+def build_package(
+    hexrd_package_channel: str | None,
+    hexrdgui_output_folder: str | None,
+    offline_docs: str | None,
+) -> None:
     tmpdir = None
     try:
         tmp_dir = tempfile.mkdtemp()
@@ -277,12 +298,17 @@ def build_package(hexrd_package_channel, hexrdgui_output_folder):
 
         if platform.system() == 'Darwin':
             build_mac_app_bundle(base_path, tar_path)
+            prefix_path = package_path / 'HEXRD.app' / 'Contents' / 'Resources'
         elif platform.system() == 'Linux':
             build_linux_package_dir(base_path, tar_path)
+            prefix_path = package_path
         elif platform.system() == 'Windows':
             build_windows_package_dir(base_path, tar_path)
+            prefix_path = package_path
         else:
             raise Exception('Unsupported platform: %s' % platform.system())
+
+        install_offline_docs(prefix_path, offline_docs)
     finally:
         if tmp_dir is not None:
             # We run into "Access is denied" when running on Windows in
