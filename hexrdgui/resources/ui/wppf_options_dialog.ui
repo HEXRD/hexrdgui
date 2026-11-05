@@ -662,6 +662,11 @@
                 <string>March-Dollase</string>
                </property>
               </item>
+              <item>
+               <property name="text">
+                <string>De la Vallée Poussin Kernels (Radial Basis Functions)</string>
+               </property>
+              </item>
              </widget>
             </item>
             <item row="1" column="1">
@@ -764,6 +769,76 @@
                </widget>
               </item>
              </layout>
+            </item>
+            <item row="4" column="1">
+             <widget class="QLabel" name="texture_kernel_halfwidth_label">
+              <property name="text">
+               <string>Kernel halfwidth:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="2">
+             <widget class="QDoubleSpinBox" name="texture_kernel_halfwidth">
+              <property name="toolTip">
+               <string>Angle at which each kernel falls to half its maximum. Sets the sharpest texture feature the model can represent.</string>
+              </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>2</number>
+              </property>
+              <property name="minimum">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>45.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="1">
+             <widget class="QLabel" name="texture_kernel_grid_spacing_label">
+              <property name="text">
+               <string>Kernel grid spacing:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="5" column="2">
+             <widget class="QDoubleSpinBox" name="texture_kernel_grid_spacing">
+              <property name="toolTip">
+               <string>Average spacing of the kernel centres in the fundamental zone. A spacing of 2/3 to 1 times the halfwidth is a good choice.</string>
+              </property>
+              <property name="keyboardTracking">
+               <bool>false</bool>
+              </property>
+              <property name="suffix">
+               <string>°</string>
+              </property>
+              <property name="decimals">
+               <number>2</number>
+              </property>
+              <property name="minimum">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="maximum">
+               <double>45.000000000000000</double>
+              </property>
+              <property name="singleStep">
+               <double>0.500000000000000</double>
+              </property>
+              <property name="value">
+               <double>10.000000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1144,6 +1219,8 @@
   <tabstop>texture_preferred_axis_h</tabstop>
   <tabstop>texture_preferred_axis_k</tabstop>
   <tabstop>texture_preferred_axis_l</tabstop>
+  <tabstop>texture_kernel_halfwidth</tabstop>
+  <tabstop>texture_kernel_grid_spacing</tabstop>
   <tabstop>texture_azimuthal_interval</tabstop>
   <tabstop>texture_integration_range</tabstop>
   <tabstop>texture_show_simulated_spectrum</tabstop>

@@ -46,6 +46,11 @@ from hexrd.wppf.tds import (
     VALID_SGNUMS as VALID_TDS_SGNUMS,
 )
 from hexrd.wppf.texture import HarmonicModel, MarchDollaseModel
+
+try:
+    from hexrd.wppf.texture import DeLaValleePoussinModel
+except ImportError:  # hexrd without the kernel texture model
+    DeLaValleePoussinModel = None
 from hexrd.wppf.WPPF import peakshape_dict
 from hexrd.wppf.wppfsupport import (
     _generate_default_parameters_LeBail,
@@ -83,10 +88,14 @@ DEFAULT_PEAK_SHAPE = 'pvtch'
 
 AXIS_DISTRIBUTION_MODEL = 'axis_distribution'
 MARCH_DOLLASE_MODEL = 'march_dollase'
+KERNEL_MODEL = 'dlvp_kernel'
 TEXTURE_MODEL_LABELS = {
     AXIS_DISTRIBUTION_MODEL: 'General Axis Distribution Function',
     MARCH_DOLLASE_MODEL: 'March-Dollase',
+    KERNEL_MODEL: 'De la Vallée Poussin Kernels (Radial Basis Functions)',
 }
+if DeLaValleePoussinModel is None:
+    TEXTURE_MODEL_LABELS.pop(KERNEL_MODEL)
 
 
 class WppfOptionsDialog(QObject):
@@ -101,6 +110,11 @@ class WppfOptionsDialog(QObject):
         loader = UiLoader()
         self.ui = loader.load_file('wppf_options_dialog.ui', parent)
         self.ui.setWindowTitle('WPPF Options Dialog')
+
+        if DeLaValleePoussinModel is None:
+            w = self.ui.texture_model_type
+            label = 'De la Vallée Poussin Kernels (Radial Basis Functions)'
+            w.removeItem(w.findText(label))
 
         self.populate_background_methods()
         self.populate_peakshape_methods()
@@ -469,7 +483,7 @@ class WppfOptionsDialog(QObject):
         self.save_settings()
         self.push_undo_stack()
 
-        if self.varying_harmonic_texture_params:
+        if self.refining_texture_only:
             # Ensure texture data is set on the WPPF object.
             # This might be time-consuming.
             # We also have to ensure there is a WPPF object
@@ -522,8 +536,8 @@ class WppfOptionsDialog(QObject):
 
         if self.varying_texture_and_non_texture_params:
             msg = (
-                'Harmonic texture parameters cannot be varied at the same '
-                'time as other parameters.'
+                'Harmonic texture parameters and kernel texture weights '
+                'cannot be refined at the same time as other parameters.'
             )
             raise Exception(msg)
 
@@ -1585,6 +1599,13 @@ class WppfOptionsDialog(QObject):
                 # Look for param names that match
                 mat_name_sanitized = mat_name.replace('-', '_')
                 model_type = self.texture_model_type(mat_name)
+                if model_type == KERNEL_MODEL:
+                    name = f'{mat_name_sanitized}_kernel_coefficients'
+                    if name in params:
+                        mat_config = texture_dict.setdefault(mat_name, {})
+                        mat_config['Coefficients'] = create_param_item(params[name])
+                    continue
+
                 if model_type == MARCH_DOLLASE_MODEL:
                     name = f'{mat_name_sanitized}_p_md'
                     if name in params:
@@ -1671,6 +1692,7 @@ class WppfOptionsDialog(QObject):
         # Those will be disabled.
         results = []
         locked_bounds = []
+        summaries = []
         cur_path = []
         fractions = fraction_names(self.params)
 
@@ -1685,6 +1707,8 @@ class WppfOptionsDialog(QObject):
             # Should be a dict
             if '_param' in d:
                 param = d['_param']
+                if param.name.endswith('_kernel_coefficients'):
+                    summaries.append(cur_path.copy())
                 if param.expr is not None:
                     results.append(cur_path.copy())
                 if param.expr is not None or param.name in fractions:
@@ -1707,6 +1731,12 @@ class WppfOptionsDialog(QObject):
             disabled_paths.append(tuple(path) + (vary_idx,))
 
             # The value is uneditable
+            uneditable_paths.append(tuple(path) + (value_idx,))
+
+        # The value of a kernel "Coefficients" parameter is the mean of the
+        # fitted coefficients: it is shown, not set
+        for path in summaries:
+            value_idx = self.tree_view_model_class.VALUE_IDX
             uneditable_paths.append(tuple(path) + (value_idx,))
 
         # The bounds are uneditable too: lmfit clamps an expression's result
@@ -1748,6 +1778,10 @@ class WppfOptionsDialog(QObject):
                         # Their bounds are locked (see update_disabled_paths)
                         continue
 
+                    if param.name.endswith('_kernel_coefficients'):
+                        # min/max bound every coefficient, not the value
+                        continue
+
                     # There should be a delta.
                     # We want an exception if it is missing.
                     param.min = param.value - param.delta
@@ -1763,17 +1797,36 @@ class WppfOptionsDialog(QObject):
         if obj is None:
             return {}
 
+        ret = {}
         res = getattr(obj, 'res', None)
-        if res is None:
-            return {}
+        if res is not None:
+            # Expressions, like the remainder phase fraction, have propagated
+            # uncertainties
+            ret = {
+                k: v.stderr
+                for k, v in res.params.items()
+                if (v.vary or v.expr is not None) and v.stderr
+            }
 
-        # Expressions, like the remainder phase fraction, have propagated
-        # uncertainties
-        return {
-            k: v.stderr
-            for k, v in res.params.items()
-            if (v.vary or v.expr is not None) and v.stderr
-        }
+        # Kernel coefficients are fitted outside lmfit. Their parameter
+        # carries the mean standard error of the coefficients of the last fit.
+        for model in getattr(obj, 'texture_model', {}).values():
+            if not _is_kernel_model(model) or not model.fit_result:
+                continue
+
+            name = model.coefficients_parameter_name
+            stderr = model.fit_result.get('mean_stderr')
+            if stderr:
+                ret[name] = stderr
+
+        # A rebuilt WPPF object has no fit result, but the parameter still
+        # carries the uncertainty of the last fit
+        for name in self.kernel_coefficient_param_names:
+            param = self.params.get(name)
+            if name not in ret and param is not None and param.stderr:
+                ret[name] = param.stderr
+
+        return ret
 
     def on_param_vary_modified(self, param: lmfit.Parameter) -> None:
         # If it is a texture parameter, mark all other texture
@@ -2137,6 +2190,14 @@ class WppfOptionsDialog(QObject):
             self.ui.texture_ell_max,
             self.ui.texture_sample_symmetry,
             *self.texture_preferred_axis_widgets,
+            *self.texture_kernel_widgets,
+        ]
+
+    @property
+    def texture_kernel_widgets(self) -> list:
+        return [
+            self.ui.texture_kernel_halfwidth,
+            self.ui.texture_kernel_grid_spacing,
         ]
 
     @property
@@ -2202,6 +2263,10 @@ class WppfOptionsDialog(QObject):
             for widget, value in zip(self.texture_preferred_axis_widgets, hkl):
                 widget.setValue(value)
 
+            kernel = self.kernel_settings(mat_name)
+            self.ui.texture_kernel_halfwidth.setValue(kernel['halfwidth'])
+            self.ui.texture_kernel_grid_spacing.setValue(kernel['grid_spacing'])
+
         self.update_texture_model_enable_states()
         self.update_texture_index_label()
 
@@ -2225,12 +2290,22 @@ class WppfOptionsDialog(QObject):
         ]:
             child.setEnabled(enable)
 
-        is_march_dollase = self.current_texture_model_type == MARCH_DOLLASE_MODEL
-        harmonic_widgets = [
+        model_type = self.current_texture_model_type
+        is_march_dollase = model_type == MARCH_DOLLASE_MODEL
+        is_kernel = model_type == KERNEL_MODEL
+        sample_symmetry_widgets = [
             self.ui.texture_sample_symmetry_label,
             self.ui.texture_sample_symmetry,
+        ]
+        harmonic_widgets = [
             self.ui.texture_ell_max_label,
             self.ui.texture_ell_max,
+        ]
+        kernel_widgets = [
+            self.ui.texture_kernel_halfwidth_label,
+            self.ui.texture_kernel_halfwidth,
+            self.ui.texture_kernel_grid_spacing_label,
+            self.ui.texture_kernel_grid_spacing,
         ]
         march_dollase_widgets = [
             self.ui.texture_preferred_axis_label,
@@ -2240,8 +2315,16 @@ class WppfOptionsDialog(QObject):
             *self.texture_preferred_axis_widgets,
         ]
 
-        for child in harmonic_widgets:
+        for child in sample_symmetry_widgets:
             child.setVisible(not is_march_dollase)
+            child.setEnabled(enable)
+
+        for child in harmonic_widgets:
+            child.setVisible(not is_march_dollase and not is_kernel)
+            child.setEnabled(enable)
+
+        for child in kernel_widgets:
+            child.setVisible(is_kernel)
             child.setEnabled(enable)
 
         for child in march_dollase_widgets:
@@ -2270,6 +2353,7 @@ class WppfOptionsDialog(QObject):
             model_kwargs.pop(mat_name, None)
             model_types.pop(mat_name, None)
             preferred_axes.pop(mat_name, None)
+            self.texture_kernel_settings.pop(mat_name, None)
         else:
             model_type = self.current_texture_model_type
             model_types[mat_name] = model_type
@@ -2297,6 +2381,35 @@ class WppfOptionsDialog(QObject):
                         'ell_max': self._default_texture_model_settings['ell_max'],
                     },
                 )
+            elif model_type == KERNEL_MODEL:
+                defaults = self._default_texture_model_settings
+                ell_max = model_kwargs.get(mat_name, {}).get(
+                    'ell_max', defaults['ell_max']
+                )
+                ssym = self.ui.texture_sample_symmetry.currentText()
+                model_kwargs[mat_name] = {'ssym': ssym, 'ell_max': ell_max}
+
+                kernel = self.texture_kernel_settings.setdefault(
+                    mat_name, self._default_kernel_settings
+                )
+                new = {
+                    'halfwidth': self.ui.texture_kernel_halfwidth.value(),
+                    'grid_spacing': self.ui.texture_kernel_grid_spacing.value(),
+                }
+                stored = kernel.get('weights')
+                if stored is not None and any(
+                    stored.get(k) != v
+                    for k, v in (
+                        ('halfwidth', new['halfwidth']),
+                        ('grid_spacing', new['grid_spacing']),
+                        ('ssym', ssym),
+                    )
+                ):
+                    # The fitted weights belong to another grid or kernel
+                    kernel.pop('weights')
+                kernel.update(new)
+                # Fitting is the "vary" flag of the Coefficients parameter now
+                kernel.pop('fit', None)
             else:
                 ssym = self.ui.texture_sample_symmetry.currentText()
                 # Force ell_max to be an even number
@@ -2425,7 +2538,7 @@ class WppfOptionsDialog(QObject):
 
     @property
     def varying_texture_params(self) -> bool:
-        if self.varying_harmonic_texture_params:
+        if self.varying_harmonic_texture_params or self.varying_kernel_texture:
             return True
 
         for mat_name in self.textured_materials_sanitized:
@@ -2446,19 +2559,84 @@ class WppfOptionsDialog(QObject):
         return False
 
     @property
+    def kernel_coefficient_param_names(self) -> list[str]:
+        # One parameter stands for all coefficients of a kernel model: its
+        # vary flag fits them, its min/max bound them
+        return [
+            f'{name.replace("-", "_")}_kernel_coefficients'
+            for name in self.textured_materials
+            if self.texture_model_type(name) == KERNEL_MODEL
+        ]
+
+    @property
+    def varying_kernel_texture(self) -> bool:
+        params = self.params
+        return any(
+            name in params and params[name].vary
+            for name in self.kernel_coefficient_param_names
+        )
+
+    @property
+    def refining_texture_only(self) -> bool:
+        # A run that only refines texture (Rietveld.RefineTexture)
+        return self.varying_harmonic_texture_params or self.varying_kernel_texture
+
+    @property
     def varying_texture_and_non_texture_params(self) -> bool:
-        if not self.varying_harmonic_texture_params:
+        if not self.refining_texture_only:
             return False
 
         prefixes = [f'{mat_name}_c_' for mat_name in self.textured_materials_sanitized]
+        kernel_names = self.kernel_coefficient_param_names
         for name, param in self.params.items():
+            if name in kernel_names:
+                continue
             if param.vary and not any(name.startswith(x) for x in prefixes):
                 return True
 
         return False
 
     @property
+    def pole_figure_materials(self) -> list[str]:
+        # Kernel models can always show their current ODF (the random
+        # texture before any fit); harmonic models need a Rietveld object
+        names = [
+            name
+            for name in self.textured_materials
+            if self.texture_model_type(name) == KERNEL_MODEL
+            and DeLaValleePoussinModel is not None
+        ]
+        obj = self._wppf_object
+        if isinstance(obj, Rietveld):
+            for name, model in obj.texture_model.items():
+                if isinstance(model, HarmonicModel) and name not in names:
+                    names.append(name)
+        return names
+
+    def pole_figure_model(self, mat_name: str) -> Any:
+        # The model of the Rietveld object if there is one; otherwise a
+        # kernel model built from the settings, with the stored weights
+        obj = self._wppf_object
+        if isinstance(obj, Rietveld) and obj.texture_model.get(mat_name) is not None:
+            return obj.texture_model[mat_name]
+
+        cache = self.__dict__.setdefault('_standalone_texture_models', {})
+        model = self.texture_model_dict[mat_name]
+        old = cache.get(mat_name)
+        if old is not None and hasattr(old, 'fig_new'):
+            # Reuse the open window
+            model.fig_new, model.ax_new = old.fig_new, old.ax_new
+        cache[mat_name] = model
+        return model
+
+    @property
     def can_plot_pole_figures(self) -> bool:
+        if any(
+            self.texture_model_type(name) == KERNEL_MODEL
+            for name in self.pole_figure_materials
+        ):
+            return True
+
         obj = self._wppf_object
         if not isinstance(obj, Rietveld):
             # Nothing to do
@@ -2498,6 +2676,10 @@ class WppfOptionsDialog(QObject):
             if hasattr(model1, 'fig_new'):
                 model2.fig_new = model1.fig_new
                 model2.ax_new = model1.ax_new
+
+            if _is_kernel_model(model1) and hasattr(model1, 'fig'):
+                model2.fig = model1.fig
+                model2.ax = model1.ax
 
     def clear_texture_data(self) -> None:
         obj = self._wppf_object
@@ -2579,15 +2761,7 @@ class WppfOptionsDialog(QObject):
         d.ui.show()
 
     def on_texture_plot_pole_figures_clicked(self) -> None:
-        obj = self._wppf_object
-        if not isinstance(obj, Rietveld):
-            return
-
-        plottable_materials = [
-            name
-            for name, model in obj.texture_model.items()
-            if isinstance(model, HarmonicModel)
-        ]
+        plottable_materials = self.pole_figure_materials
         if not plottable_materials:
             return
 
@@ -2627,7 +2801,7 @@ class WppfOptionsDialog(QObject):
         if selected_hkls.size == 0:
             return
 
-        model = obj.texture_model[mat_name]
+        model = self.pole_figure_model(mat_name)
 
         if hasattr(model, 'fig_new'):
             # Hide the old plot for this harmonic model
@@ -2635,7 +2809,29 @@ class WppfOptionsDialog(QObject):
 
         model.calc_new_pole_figure(self.params, selected_hkls, plot=True)
 
+        if _is_kernel_model(model):
+            self.plot_kernel_pole_figure_data(model)
+
+    def plot_kernel_pole_figure_data(self, model: Any) -> None:
+        # The extracted pole figure intensities, with the fitted model
+        # pole figures behind them on the same color scale
+        if not model.pfdata:
+            return
+
+        old = getattr(model, 'fig', None)
+        if old is not None:
+            plt.close(old)
+
+        model.plot_pf(filled=True, recalculated=True)
+        manager = model.fig.canvas.manager
+        if manager is not None:
+            manager.set_window_title(
+                f'Measured vs. Model Pole Figures for {model.material.name}'
+            )
+
     def on_texture_params_modified(self) -> None:
+        self.store_kernel_weights()
+        self.ui.texture_plot_pole_figures.setEnabled(self.can_plot_pole_figures)
         self.update_simulated_polar_dialog()
         self.update_pole_figure_plots()
         self.update_texture_index_label()
@@ -2662,6 +2858,59 @@ class WppfOptionsDialog(QObject):
             if model.new_pf_plots_visible:
                 model.update_new_pf_plot_data(self.params)
 
+            if _is_kernel_model(model) and _figure_visible(getattr(model, 'fig', None)):
+                self.plot_kernel_pole_figure_data(model)
+
+    def store_kernel_weights(self) -> None:
+        # Kernel weights are not lmfit parameters, so keep them in the
+        # texture settings. That way they survive a new WPPF object and are
+        # saved in state files.
+        obj = self._wppf_object
+        if not isinstance(obj, Rietveld):
+            return
+
+        for name, model in obj.texture_model.items():
+            settings = self.texture_kernel_settings.get(name)
+            if not _is_kernel_model(model) or settings is None:
+                continue
+
+            active = model.active
+            if len(active) == 0:
+                settings.pop('weights', None)
+                continue
+
+            settings['weights'] = {
+                'indices': active.tolist(),
+                'values': model.kernel_weights[active].tolist(),
+                'uniform': float(model.uniform),
+                'n_grid': len(model.orientations),
+                'halfwidth': settings['halfwidth'],
+                'grid_spacing': settings['grid_spacing'],
+                'ssym': model.ssym,
+            }
+
+    def restore_kernel_weights(self, name: str, model: Any) -> None:
+        stored = self.kernel_settings(name).get('weights')
+        if not stored:
+            return
+
+        n = len(model.orientations)
+        matches = (
+            int(stored.get('n_grid', -1)) == n
+            and stored.get('ssym') == model.ssym
+            and np.isclose(stored.get('halfwidth', np.nan), np.degrees(model.halfwidth))
+            and np.isclose(
+                stored.get('grid_spacing', np.nan), np.degrees(model.grid_spacing)
+            )
+        )
+        if not matches:
+            return
+
+        weights = np.zeros(n)
+        indices = np.asarray(stored['indices'], dtype=int)
+        weights[indices] = np.asarray(stored['values'], dtype=float)
+        model.set_odf(weights, float(stored['uniform']))
+
     def update_texture_gui(self) -> None:
         self.update_texture_model_gui()
         self.update_texture_binning_settings_gui()
@@ -2677,6 +2926,7 @@ class WppfOptionsDialog(QObject):
         # shape and state files remain usable by older HEXRDGUI versions.
         v.setdefault('model_types', {})
         v.setdefault('preferred_axes', {})
+        v.setdefault('kernel_settings', {})
         for name, kwargs in v.setdefault('model_kwargs', {}).items():
             model_type = kwargs.pop('model_type', None)
             if model_type is not None:
@@ -2704,6 +2954,7 @@ class WppfOptionsDialog(QObject):
             self.texture_model_kwargs,
             self.texture_model_types,
             self.texture_preferred_axes,
+            self.texture_kernel_settings,
         ]
         for settings in settings_maps:
             for name in list(settings):
@@ -2716,6 +2967,7 @@ class WppfOptionsDialog(QObject):
             'model_kwargs': {},
             'model_types': {},
             'preferred_axes': {},
+            'kernel_settings': {},
             'azimuthal_interval': 5,
             'integration_range': 1,
         }
@@ -2725,6 +2977,14 @@ class WppfOptionsDialog(QObject):
         return {
             'ssym': 'axial',
             'ell_max': 16,
+        }
+
+    @property
+    def _default_kernel_settings(self) -> dict:
+        # Angles in degrees
+        return {
+            'halfwidth': 10.0,
+            'grid_spacing': 10.0,
         }
 
     @property
@@ -2755,6 +3015,16 @@ class WppfOptionsDialog(QObject):
         return self.texture_settings.setdefault('preferred_axes', {})
 
     @property
+    def texture_kernel_settings(self) -> dict[str, dict]:
+        return self.texture_settings.setdefault('kernel_settings', {})
+
+    def kernel_settings(self, mat_name: str) -> dict:
+        return {
+            **self._default_kernel_settings,
+            **self.texture_kernel_settings.get(mat_name, {}),
+        }
+
+    @property
     def current_texture_model_type(self) -> str:
         label = self.ui.texture_model_type.currentText()
         return next(k for k, v in TEXTURE_MODEL_LABELS.items() if v == label)
@@ -2763,7 +3033,7 @@ class WppfOptionsDialog(QObject):
         return self.texture_model_types.get(mat_name, AXIS_DISTRIBUTION_MODEL)
 
     @property
-    def texture_model_dict(self) -> dict[str, HarmonicModel | MarchDollaseModel]:
+    def texture_model_dict(self) -> dict[str, Any]:
         if self.method != 'Rietveld':
             return {}
 
@@ -2778,6 +3048,19 @@ class WppfOptionsDialog(QObject):
                     material=material,
                     HKL=self.texture_preferred_axes.get(k, [1, 1, 1]),
                 )
+            elif model_type == KERNEL_MODEL and DeLaValleePoussinModel is not None:
+                kernel = self.kernel_settings(k)
+                model = DeLaValleePoussinModel(
+                    material=material,
+                    bvec=HexrdConfig().beam_vector,
+                    evec=ct.eta_vec,
+                    sample_rmat=HexrdConfig().sample_rmat,
+                    ssym=kwargs.get('ssym', 'axial'),
+                    halfwidth=np.radians(kernel['halfwidth']),
+                    grid_spacing=np.radians(kernel['grid_spacing']),
+                )
+                self.restore_kernel_weights(k, model)
+                ret[k] = model
             else:
                 ret[k] = HarmonicModel(
                     material=material,
@@ -3204,6 +3487,20 @@ class DeltaWPPFTreeItemModel(DeltaCalibrationTreeItemModel):
 
     def on_boolean_toggled(self, b: bool, path: tuple[str, ...]) -> None:
         pass
+
+
+def _figure_visible(fig: Any) -> bool:
+    if fig is None or fig.canvas.manager is None:
+        return False
+
+    is_visible = getattr(fig.canvas, 'isVisible', None)
+    return bool(is_visible()) if is_visible is not None else False
+
+
+def _is_kernel_model(model: Any) -> bool:
+    return DeLaValleePoussinModel is not None and isinstance(
+        model, DeLaValleePoussinModel
+    )
 
 
 def changed_signal(w: QWidget) -> SignalInstance:

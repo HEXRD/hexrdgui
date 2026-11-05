@@ -377,7 +377,6 @@ def test_march_dollase_refinement(
     assert dialog.params['CeO2_p_md'].value == 1.0
 
 
-
 @pytest.mark.parametrize(
     'model_type', ['March-Dollase', 'General Axis Distribution Function']
 )
@@ -420,3 +419,321 @@ def test_texture_model_follows_lattice_updates(
         obj.computespectrum()
     finally:
         HexrdConfig().remove_materials([name])
+
+
+KERNEL_LABEL = 'De la Vallée Poussin Kernels (Radial Basis Functions)'
+
+
+def test_kernel_texture_settings_and_state_round_trip(
+    qtbot: QtBot,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+) -> None:
+    calibration = HexrdConfig().config['calibration']
+    monkeypatch.setitem(calibration, 'wppf', {})
+
+    dialog = WppfOptionsDialog()
+    qtbot.addWidget(dialog.ui)
+    monkeypatch.setattr(dialog, 'update_params', lambda *args, **kwargs: None)
+    dialog.method = 'Rietveld'
+    dialog.ui.selected_texture_material.clear()
+    dialog.ui.selected_texture_material.addItem('Ni')
+    dialog.ui.include_texture_model.setChecked(True)
+    dialog.ui.texture_model_type.setCurrentText(KERNEL_LABEL)
+    dialog.ui.texture_sample_symmetry.setCurrentText('orthorhombic')
+    dialog.ui.texture_kernel_halfwidth.setValue(7.5)
+    dialog.ui.texture_kernel_grid_spacing.setValue(5.0)
+
+    settings = dialog.texture_settings
+    assert settings['model_types'] == {'Ni': wppf_options_dialog.KERNEL_MODEL}
+    # model_kwargs keeps its legacy, HarmonicModel-safe shape
+    assert settings['model_kwargs']['Ni'] == {'ssym': 'orthorhombic', 'ell_max': 16}
+    assert settings['kernel_settings']['Ni'] == {
+        'halfwidth': 7.5,
+        'grid_spacing': 5.0,
+    }
+
+    # Kernel widgets replace the harmonic degree; sample symmetry is shared
+    assert not dialog.ui.texture_kernel_halfwidth.isHidden()
+    assert not dialog.ui.texture_kernel_grid_spacing.isHidden()
+    # Fitting is controlled from the parameter tree, not the texture tab
+    assert not hasattr(dialog.ui, 'texture_kernel_fit')
+    assert not dialog.ui.texture_sample_symmetry.isHidden()
+    assert dialog.ui.texture_ell_max.isHidden()
+    assert dialog.ui.texture_preferred_axis_h.isHidden()
+    assert dialog.ui.texture_azimuthal_interval.isEnabled()
+
+    assert dialog.kernel_coefficient_param_names == ['Ni_kernel_coefficients']
+
+    constructed = {}
+
+    class DummyKernelModel:
+        def __init__(self, **kwargs):
+            constructed.update(kwargs)
+
+    monkeypatch.setattr(wppf_options_dialog, 'DeLaValleePoussinModel', DummyKernelModel)
+    monkeypatch.setattr(dialog, 'restore_kernel_weights', lambda name, model: None)
+    monkeypatch.setattr(
+        wppf_options_dialog,
+        'Material_Rietveld',
+        lambda material_obj: f'rietveld-{material_obj}',
+    )
+    monkeypatch.setattr(HexrdConfig, 'material', lambda self, name: name)
+    assert isinstance(dialog.texture_model_dict['Ni'], DummyKernelModel)
+    assert constructed['material'] == 'rietveld-Ni'
+    assert constructed['ssym'] == 'orthorhombic'
+    assert constructed['halfwidth'] == pytest.approx(np.radians(7.5))
+    assert constructed['grid_spacing'] == pytest.approx(np.radians(5.0))
+
+    # Fitted weights are stored with the settings, and dropped when the
+    # kernel or grid they belong to changes
+    settings['kernel_settings']['Ni']['weights'] = {
+        'indices': [3, 8],
+        'values': [0.25, 0.5],
+        'uniform': 0.25,
+        'n_grid': 100,
+        'halfwidth': 7.5,
+        'grid_spacing': 5.0,
+        'ssym': 'orthorhombic',
+    }
+    dialog.save_settings()
+    state_file = tmp_path / 'state.h5'
+    snapshot = {'config_calibration': {'wppf': calibration['wppf']}}
+    with h5py.File(state_file, 'w') as f:
+        state._save_config(f, snapshot)
+    with h5py.File(state_file, 'r') as f:
+        loaded = state._load_config(f)
+    kernel = loaded['config_calibration']['wppf']['texture_settings']['kernel_settings']
+    assert list(kernel['Ni']['weights']['indices']) == [3, 8]
+    assert kernel['Ni']['weights']['uniform'] == pytest.approx(0.25)
+
+    dialog.ui.texture_kernel_halfwidth.setValue(10.0)
+    assert 'weights' not in settings['kernel_settings']['Ni']
+
+
+def _ceo2_kernel_dialog(qtbot, monkeypatch, fit=True):
+    monkeypatch.setitem(HexrdConfig().config['calibration'], 'wppf', {})
+    tth = np.linspace(2, 30, 1400)
+    data = (tth, np.ma.array(np.full_like(tth, 100.0)))
+    monkeypatch.setattr(HexrdConfig(), 'last_unscaled_azimuthal_integral_data', data)
+
+    dialog = WppfOptionsDialog()
+    qtbot.addWidget(dialog.ui)
+    dialog.use_statistical_weights = False
+    dialog.spline_points = [[3.0, 100.0], [29.0, 100.0]]
+    dialog.selected_materials = ['CeO2']
+    dialog.method = 'Rietveld'
+    dialog.ui.include_texture_model.setChecked(True)
+    dialog.ui.texture_model_type.setCurrentText(KERNEL_LABEL)
+    dialog.ui.texture_sample_symmetry.setCurrentText('triclinic')
+    dialog.ui.texture_kernel_halfwidth.setValue(10.0)
+    dialog.ui.texture_kernel_grid_spacing.setValue(10.0)
+    for param in dialog.params.values():
+        param.vary = False
+    dialog.params['CeO2_kernel_coefficients'].vary = fit
+    return dialog
+
+
+def test_kernel_texture_refinement(
+    qtbot: QtBot, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import hexrd.phase_transition.texture as hx
+    from hexrd.transforms.xfcapi import angles_to_gvec
+    from hexrd.wppf.texture import DeLaValleePoussinModel
+    from scipy.spatial.transform import Rotation
+
+    dialog = _ceo2_kernel_dialog(qtbot, monkeypatch)
+    obj = dialog.wppf_object
+    model = obj.texture_model['CeO2']
+    assert isinstance(model, DeLaValleePoussinModel)
+    assert model.texture_index() == 1.0  # random texture before fitting
+    assert dialog.can_plot_pole_figures  # ...which can already be plotted
+
+    # Pole figure data on single rings, from a known texture
+    truth = hx.UnimodalODF(
+        Rotation.from_euler('ZXZ', [35, 45, 10], degrees=True).as_matrix(),
+        hx.DeLaValleePoussinKernel(np.radians(12), crystal_symmetry='oh'),
+    )
+    tths = dict(
+        zip(
+            map(tuple, model.material.hkls),
+            np.radians(model.material.getTTh(model.material.wavelength)),
+        )
+    )
+    eta = np.radians(np.arange(-180, 180, 5) + 2.5)
+    pfdata = {}
+    for hkl in list(tths)[:4]:
+        angs = np.vstack((np.full(eta.size, tths[hkl]), eta, np.zeros(eta.size))).T
+        g = angles_to_gvec(angs, beam_vec=model.bvec, eta_vec=model.etavec)
+        intensity = hx.pole_density(
+            truth, model._crystal_direction(hkl), model._sample_frame(g)
+        )
+        pfdata[hkl] = np.column_stack((g, intensity))
+
+    def fake_texture_data():
+        model.pfdata = pfdata
+
+    monkeypatch.setattr(dialog, 'ensure_texture_data', fake_texture_data)
+
+    # Texture -> CeO2 -> Coefficients in the parameter tree, bounded to
+    # [0, inf), with its vary box switching the fit on
+    param = dialog.params['CeO2_kernel_coefficients']
+    assert (param.min, param.max, param.vary) == (0, np.inf, True)
+    assert dialog.varying_kernel_texture and dialog.refining_texture_only
+    item = dialog.tree_view_dict_of_params['Texture']['CeO2']['Coefficients']
+    assert item['_param'] is param
+    dialog.update_tree_view()
+    tree_model = dialog.tree_view.model()
+    path = ('Texture', 'CeO2', 'Coefficients', tree_model.VALUE_IDX)
+    assert path in tree_model.uneditable_paths
+
+    runner = WppfRunner()
+    runner.wppf_options_dialog = dialog
+    dialog.run.connect(runner.run_wppf)
+    dialog.begin_run()
+
+    model = dialog.wppf_object.texture_model['CeO2']
+    assert 0 < len(model.active) < len(model.orientations)
+    assert model.fit_result['relative_residual'] < 0.1
+
+    # The value is the mean coefficient, the uncertainty their mean
+    # standard error from the linear least squares fit
+    mean_stderr = model.fit_result['mean_stderr']
+    assert mean_stderr > 0
+    assert param.value == pytest.approx(model.kernel_weights[model.active].mean())
+    item = dialog.tree_view_dict_of_params['Texture']['CeO2']['Coefficients']
+    assert item['_stderr'] == pytest.approx(mean_stderr)
+    assert dialog.can_plot_pole_figures
+    assert dialog.ui.texture_plot_pole_figures.isEnabled()
+
+    # Plot Pole Figures: model pole figures for the chosen hkls, plus the
+    # measured ring data against the model
+    class SelectAll:
+        def __init__(self, items, title):
+            self.items = [[name, i < 2] for i, (name, _) in enumerate(items)]
+
+        def exec(self):
+            return True
+
+    monkeypatch.setattr(wppf_options_dialog, 'SelectItemsDialog', SelectAll)
+    dialog.on_texture_plot_pole_figures_clicked()
+    assert len(model.intensities_new) == 2
+    assert all(np.all(v >= 0) for v in model.intensities_new.values())
+    assert len(model.fig.axes) >= len(pfdata)
+
+    # A second fit (which deep copies the object into the undo stack)
+    # keeps the plots working
+    dialog.begin_run()
+    model = dialog.wppf_object.texture_model['CeO2']
+    dialog.on_texture_plot_pole_figures_clicked()
+    assert hasattr(model, 'fig_new') and hasattr(model, 'fig')
+    assert float(dialog.ui.texture_index_label.text().split(': ')[1]) > 2
+
+    # The weights live in the settings, so a new WPPF object keeps them
+    stored = dialog.texture_kernel_settings['CeO2']['weights']
+    assert stored['indices'] == model.active.tolist()
+    weights = model.kernel_weights
+    dialog.reset_object()
+    restored = dialog.wppf_object.texture_model['CeO2']
+    np.testing.assert_allclose(restored.kernel_weights, weights)
+
+    # Undo twice returns to the random texture
+    dialog.pop_undo_stack()
+    dialog.pop_undo_stack()
+    assert len(dialog._wppf_object.texture_model['CeO2'].active) == 0
+
+    # Other parameters cannot vary while the weights are fitted
+    dialog.params['scale'].vary = True
+    with pytest.raises(Exception, match='kernel texture weights'):
+        dialog.validate()
+
+    import matplotlib.pyplot as plt
+
+    plt.close('all')
+
+
+def test_kernel_pole_figures_show_current_texture(
+    qtbot: QtBot, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import hexrd.phase_transition.texture as hx
+    import matplotlib.pyplot as plt
+    from hexrd.transforms.xfcapi import angles_to_gvec
+    from scipy.spatial.transform import Rotation
+
+    class SelectFirst:
+        def __init__(self, items, title):
+            self.items = [[name, i == 0] for i, (name, _) in enumerate(items)]
+
+        def exec(self):
+            return True
+
+    monkeypatch.setattr(wppf_options_dialog, 'SelectItemsDialog', SelectFirst)
+    dialog = _ceo2_kernel_dialog(qtbot, monkeypatch, fit=False)
+
+    # Before any WPPF object or fit: the random texture can be plotted
+    assert dialog._wppf_object is None
+    assert dialog.ui.texture_plot_pole_figures.isEnabled()
+    dialog.on_texture_plot_pole_figures_clicked()
+    standalone = dialog._standalone_texture_models['CeO2']
+    assert all(np.allclose(v, 1.0) for v in standalone.intensities_new.values())
+
+    # A normal refinement does not disable plotting
+    runner = WppfRunner()
+    runner.wppf_options_dialog = dialog
+    dialog.run.connect(runner.run_wppf)
+    dialog.params['scale'].vary = True
+    dialog.begin_run()
+    assert dialog.ui.texture_plot_pole_figures.isEnabled()
+
+    # Fit the kernel weights
+    model = dialog.wppf_object.texture_model['CeO2']
+    truth = hx.UnimodalODF(
+        Rotation.from_euler('ZXZ', [35, 45, 10], degrees=True).as_matrix(),
+        hx.DeLaValleePoussinKernel(np.radians(12), crystal_symmetry='oh'),
+    )
+    tths = dict(
+        zip(
+            map(tuple, model.material.hkls),
+            np.radians(model.material.getTTh(model.material.wavelength)),
+        )
+    )
+    eta = np.radians(np.arange(-180, 180, 5) + 2.5)
+    pfdata = {}
+    for hkl in list(tths)[:4]:
+        angs = np.vstack((np.full(eta.size, tths[hkl]), eta, np.zeros(eta.size))).T
+        g = angles_to_gvec(angs, beam_vec=model.bvec, eta_vec=model.etavec)
+        sample = model._sample_frame(g)
+        intensity = hx.pole_density(truth, model._crystal_direction(hkl), sample)
+        pfdata[hkl] = np.column_stack((g, intensity))
+
+    def fake_texture_data():
+        dialog.wppf_object.texture_model['CeO2'].pfdata = pfdata
+
+    monkeypatch.setattr(dialog, 'ensure_texture_data', fake_texture_data)
+    for param in dialog.params.values():
+        param.vary = False
+    dialog.params['CeO2_kernel_coefficients'].vary = True
+    dialog.begin_run()
+    fitted = dialog.wppf_object.texture_model['CeO2'].kernel_weights
+    assert np.count_nonzero(fitted) > 0
+
+    # Another normal refinement (which clears the extracted pole figure
+    # data) keeps the fitted texture, and the plot shows it
+    dialog.params['CeO2_kernel_coefficients'].vary = False
+    dialog.params['scale'].vary = True
+    dialog.begin_run()
+    model = dialog.wppf_object.texture_model['CeO2']
+    assert not model.pfdata
+    np.testing.assert_allclose(model.kernel_weights, fitted)
+    assert dialog.ui.texture_plot_pole_figures.isEnabled()
+    dialog.on_texture_plot_pole_figures_clicked()
+    assert dialog.pole_figure_model('CeO2') is model
+    assert max(np.ptp(v) for v in model.intensities_new.values()) > 0.5
+
+    # Without a WPPF object, the stored weights are plotted
+    dialog.reset_object()
+    dialog.on_texture_plot_pole_figures_clicked()
+    standalone = dialog._standalone_texture_models['CeO2']
+    np.testing.assert_allclose(standalone.kernel_weights, fitted)
+    assert max(np.ptp(v) for v in standalone.intensities_new.values()) > 0.5
+    plt.close('all')
