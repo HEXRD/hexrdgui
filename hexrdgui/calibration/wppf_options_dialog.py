@@ -1499,7 +1499,7 @@ class WppfOptionsDialog(QObject):
             for k, v in this_template.items():
                 if k == 'Atomic Site: {site_id}':
                     # Identify all site IDs by regular expression
-                    expr = re.compile(f'^{sanitized_mat}_(.*)_x$')
+                    expr = re.compile(f'^{sanitized_mat}_([^_]+)_x$')
                     site_ids = []
                     for name in params:
                         m = expr.match(name)
