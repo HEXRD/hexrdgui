@@ -200,14 +200,17 @@ def test_experiment_preserves_processed_frames_and_angle_units(
     np.testing.assert_array_equal(snapshot.exclusions, exclusions)
 
 
+@pytest.mark.parametrize('new_file_placement', [False, True])
 def test_quaternion_grid_scoring_export_and_reclustering(
     main_window: MainWindow,
     experiment_inputs: ExperimentInputs,
     map_data: MapData,
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
+    new_file_placement: bool,
 ) -> None:
     experiment = experiment_inputs[0]
+    experiment.config['new_file_placement'] = new_file_placement
     quaternions = np.array(
         [
             [1, np.cos(0.15), np.cos(0.5)],

@@ -199,6 +199,19 @@ def test_hedm_full_workflow(
     # ── Step L: export full workflow ───────────────────────────────────
     workflow_dir = tmp_path / 'workflow'
     workflow_dir.mkdir()
+    estimate = workflow_dir / 'initial-grains.out'
+    estimate.write_text('existing grain estimates\n')
+    with select_files_when_asked(str(workflow_dir)):
+        # The message-box fixture declines overwrites. This newly exported
+        # file must receive the same protection as the existing workflow files.
+        results_dialog.on_export_workflow_clicked()
+    (overwrite_warning,) = message_boxes
+    assert str(estimate) in overwrite_warning
+    message_boxes.clear()
+    assert estimate.read_text() == 'existing grain estimates\n'
+    assert not (workflow_dir / 'workflow.yml').exists()
+    estimate.unlink()
+
     with select_files_when_asked(str(workflow_dir)):
         results_dialog.on_export_workflow_clicked()
 

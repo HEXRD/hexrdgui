@@ -850,6 +850,7 @@ class FitGrainsResultsDialog(QObject):
             'workflow.yml',
             'materials.h5',
             'instrument.hexrd',
+            'initial-grains.out',
         ] + [f'{name}.npz' for name in image_names]
 
         overwrite_files = []

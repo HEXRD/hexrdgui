@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -303,6 +304,7 @@ class IndexingRunner(Runner):
             # Write out the scored orientations
             filename = config.scored_orientations_file
             print(f'Writing scored orientations to {filename} ...')
+            Path(filename).parent.mkdir(parents=True, exist_ok=True)
             np.savez_compressed(
                 filename, test_quaternions=self.qfib, score=self.completeness
             )
