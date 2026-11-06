@@ -25,20 +25,26 @@ import yaml
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
+from pytestqt.qtbot import QtBot
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.main_window import MainWindow
 
 from utils import select_files_when_asked
 
 
 @pytest.fixture
-def dexelas_hedm_path(example_repo_path):
+def dexelas_hedm_path(example_repo_path: Path) -> Path:
     return example_repo_path / 'state_examples' / 'Dexelas_HEDM'
 
 
 def test_hedm_full_workflow(
-    qtbot, main_window, message_boxes, dexelas_hedm_path, tmp_path
-):
+    qtbot: QtBot,
+    main_window: MainWindow,
+    message_boxes: list[str],
+    dexelas_hedm_path: Path,
+    tmp_path: Path,
+) -> None:
     # ── paths ──────────────────────────────────────────────────────────
     state_file = dexelas_hedm_path / 'roi_dexelas_hedm.h5'
     npz1 = dexelas_hedm_path / 'mruby-0129_000004_ff1_000012-cachefile.npz'
@@ -60,7 +66,7 @@ def test_hedm_full_workflow(
     HexrdConfig().indexing_config['working_dir'] = str(tmp_path)
 
     # ── Step B: load NPZ images ────────────────────────────────────────
-    def is_dummy_data():
+    def is_dummy_data() -> bool:
         for ims in HexrdConfig().imageseries_dict.values():
             if len(ims) != 1 or not np.all(ims[0] == 1):
                 return False

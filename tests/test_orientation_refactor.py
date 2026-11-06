@@ -1,10 +1,13 @@
 """Regression coverage for the GUI boundary with HEXRD's staged workflow."""
 
 import copy
+from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
 from scipy import ndimage
+from PySide6.QtWidgets import QApplication
 
 from hexrd.core import imageseries
 from hexrd.core.imageseries.omega import OmegaImageSeries
@@ -12,16 +15,24 @@ from hexrd.core.imageseries.process import ProcessedImageSeries
 from hexrd.core.instrument import HEDMInstrument
 from hexrd.core.material import Material
 from hexrd.core.material.material_data import PlaneData
+from hexrd.hedm.experiment import HedmExperiment
 from hexrd.hedm.find_orientations import EtaOmegaMaps
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing import create_config
 from hexrdgui.indexing.eta_omega_maps import EtaOmeMaps, filter_maps
 from hexrdgui.indexing import run as indexing_run
+from hexrdgui.main_window import MainWindow
+
+
+MapData = tuple[EtaOmeMaps, EtaOmegaMaps]
+ExperimentInputs = tuple[
+    HedmExperiment, Material, np.ndarray, np.ndarray, dict[str, Any], np.ndarray
+]
 
 
 @pytest.fixture
-def map_data():
+def map_data() -> MapData:
     pd = Material('test').planeData
     pd.tThWidth = np.radians(0.25)
     exclusions = pd.exclusions.copy()
@@ -46,7 +57,9 @@ def map_data():
     return EtaOmeMaps.from_maps(maps, pd), maps
 
 
-def test_map_snapshot_preserves_reflection_order_and_exclusions(map_data):
+def test_map_snapshot_preserves_reflection_order_and_exclusions(
+    map_data: MapData,
+) -> None:
     gui_maps, original = map_data
     converted = gui_maps.to_maps()
     np.testing.assert_array_equal(converted.ring_ids, original.ring_ids)
@@ -58,7 +71,7 @@ def test_map_snapshot_preserves_reflection_order_and_exclusions(map_data):
     )
 
 
-def test_existing_map_archive_round_trip(map_data, tmp_path):
+def test_existing_map_archive_round_trip(map_data: MapData, tmp_path: Path) -> None:
     gui_maps, original = map_data
     filename = tmp_path / 'maps.npz'
     gui_maps.save_eta_ome_maps(filename)
@@ -74,7 +87,9 @@ def test_existing_map_archive_round_trip(map_data, tmp_path):
 
 
 @pytest.mark.parametrize('setting', [False, True, 1.5])
-def test_filter_preserves_saved_sigma_and_nan_gaps(map_data, setting):
+def test_filter_preserves_saved_sigma_and_nan_gaps(
+    map_data: MapData, setting: bool | float
+) -> None:
     gui_maps, original = map_data
     preview = copy.deepcopy(gui_maps)
     expected = original.ring_maps.copy()
@@ -92,7 +107,9 @@ def test_filter_preserves_saved_sigma_and_nan_gaps(map_data, setting):
 
 
 @pytest.fixture
-def experiment_inputs(qapp, monkeypatch, tmp_path):
+def experiment_inputs(
+    qapp: QApplication, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> ExperimentInputs:
     material = Material('test')
     material.planeData.tThWidth = np.radians(0.5)
     exclusions = material.planeData.exclusions.copy()
@@ -138,7 +155,9 @@ def experiment_inputs(qapp, monkeypatch, tmp_path):
     return experiment, material, frames, omega, gui_config, exclusions
 
 
-def test_experiment_preserves_processed_frames_and_angle_units(experiment_inputs):
+def test_experiment_preserves_processed_frames_and_angle_units(
+    experiment_inputs: ExperimentInputs,
+) -> None:
     experiment, material, frames, omega, gui_config, exclusions = experiment_inputs
 
     np.testing.assert_array_equal(
@@ -175,8 +194,12 @@ def test_experiment_preserves_processed_frames_and_angle_units(experiment_inputs
 
 
 def test_quaternion_grid_scoring_export_and_reclustering(
-    main_window, experiment_inputs, map_data, monkeypatch, tmp_path
-):
+    main_window: MainWindow,
+    experiment_inputs: ExperimentInputs,
+    map_data: MapData,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
     experiment = experiment_inputs[0]
     quaternions = np.array(
         [

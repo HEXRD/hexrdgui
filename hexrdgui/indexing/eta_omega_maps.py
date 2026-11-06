@@ -1,6 +1,7 @@
 """Bridge the map viewers and saved archives to HEXRD's numeric map model."""
 
 import copy
+from os import PathLike
 
 import numpy as np
 
@@ -33,7 +34,7 @@ class EtaOmeMaps:
     etas: np.ndarray
     omegas: np.ndarray
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str | PathLike[str]) -> None:
         with np.load(filename, allow_pickle=True) as archive:
             self.planeData = LegacyPlaneData(
                 archive['planeData_hkls'], *archive['planeData_args']
@@ -50,7 +51,7 @@ class EtaOmeMaps:
                 setattr(self, name, archive[name])
 
     @classmethod
-    def from_maps(cls, maps: EtaOmegaMaps, plane_data: LegacyPlaneData):
+    def from_maps(cls, maps: EtaOmegaMaps, plane_data: LegacyPlaneData) -> 'EtaOmeMaps':
         result = cls.__new__(cls)
         result.planeData = copy.deepcopy(plane_data)
         result.dataStore = maps.ring_maps
@@ -81,7 +82,7 @@ class EtaOmeMaps:
             plane_data,
         )
 
-    def save_eta_ome_maps(self, filename: str) -> None:
+    def save_eta_ome_maps(self, filename: str | PathLike[str]) -> None:
         args = np.array(self.planeData.getParams(), dtype=object)[:4]
         args[2] = valWUnit('wavelength', 'length', args[2], 'angstrom')
         np.savez_compressed(

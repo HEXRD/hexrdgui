@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QMessageBox, QWidget
 
 from hexrd import instrument
 from hexrd.hedm.cli.fit_grains import write_results as write_fit_grains_results
+from hexrd.hedm.experiment import HedmExperiment
 from hexrd.hedm.find_orientations import (
     EtaOmegaMaps,
     build_eta_omega_maps,
@@ -195,7 +196,7 @@ class IndexingRunner(Runner):
         HexrdConfig().flag_overlay_updates_for_material(material.name)
         HexrdConfig().overlay_config_changed.emit()
 
-    def run_eta_ome_maps(self, config: Any) -> None:
+    def run_eta_ome_maps(self, config: HedmExperiment) -> None:
         self.update_progress_text('Generating eta omega maps')
         maps = build_eta_omega_maps(config, load_plane_data(config))
         self.ome_maps = EtaOmeMaps.from_maps(
@@ -255,7 +256,7 @@ class IndexingRunner(Runner):
 
         self.progress_dialog.exec()
 
-    def generate_orientation_fibers(self, config: Any) -> None:
+    def generate_orientation_fibers(self, config: HedmExperiment) -> None:
         # Generate the orientation fibers
         self.update_progress_text('Generating orientation fibers')
         assert self.orientation_maps is not None
@@ -659,7 +660,7 @@ def create_fit_grains_results_dialog(
     allow_export_workflow: bool = True,
     spots_data: dict | None = None,
     initial_grains_table: np.ndarray | None = None,
-) -> Any:
+) -> FitGrainsResultsDialog:
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
     name: str | None = indexing_config.get('_selected_material')
