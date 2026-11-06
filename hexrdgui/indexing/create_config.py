@@ -14,7 +14,6 @@ from hexrd.hedm.experiment import HedmExperiment
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.indexing.eta_omega_maps import normalize_filter_config
 
 
 def get_indexing_material() -> Any:
@@ -53,8 +52,9 @@ def create_indexing_config() -> HedmExperiment:
     if tth_width is not None:
         material_config['tth_width'] = np.degrees(tth_width)
 
-    maps_config = indexing_config['find_orientations']['orientation_maps']
-    normalize_filter_config(maps_config)
+    direct_search = indexing_config['find_orientations'].get('direct_search')
+    if direct_search is not None:
+        direct_search.setdefault('point_group_number', material.pgnum)
 
     omega_series = HexrdConfig().omega_imageseries_dict
     if omega_series is None:

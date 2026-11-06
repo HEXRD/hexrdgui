@@ -773,15 +773,13 @@ class FitGrainsResultsDialog(QObject):
 
         HexrdConfig().working_dir = selected_directory
 
-        # Reproduce the fit from the same starting grains, including any
-        # edits made after indexing and before fitting.
+        # Save starting grains for an optional fit_grains.estimate. The
+        # default exported workflow still runs indexing before fitting.
         estimate_file = 'initial-grains.out'
         GrainData.from_array(self.initial_grains_table).write_grains_out(
             full_path(estimate_file)
         )
-        HexrdConfig().save_indexing_config(
-            full_path('workflow.yml'), fit_grains_estimate=estimate_file
-        )
+        HexrdConfig().save_indexing_config(full_path('workflow.yml'))
         HexrdConfig().save_materials_hdf5(full_path('materials.h5'))
         HexrdConfig().save_instrument_config(
             full_path('instrument.hexrd'),

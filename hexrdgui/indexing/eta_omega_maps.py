@@ -5,19 +5,11 @@ from os import PathLike
 
 import numpy as np
 
-from hexrd.core.constants import sigma_to_fwhm
 from hexrd.core.material.crystallography import PlaneData as LegacyPlaneData
 from hexrd.core.material.material_data import PlaneData
 from hexrd.core.valunits import valWUnit
+from hexrd.hedm.experiment import OrientationMaps
 from hexrd.hedm.find_orientations import EtaOmegaMaps, _filter_maps
-
-
-def normalize_filter_config(config: dict) -> None:
-    """Translate the GUI's saved Gaussian sigma to the library's FWHM."""
-    value = config.get('filter_maps', False)
-    if value is not None and not isinstance(value, bool):
-        config['filter_maps'] = bool(value)
-        config['filter_fwhm'] = float(value) * sigma_to_fwhm if value else None
 
 
 class EtaOmeMaps:
@@ -70,6 +62,9 @@ class EtaOmeMaps:
     def to_maps(self) -> EtaOmegaMaps:
         plane_data = PlaneData.from_plane_data(self.planeData)
         ring_of_hkl = {h: i for i, h in enumerate(plane_data.master_hkl_ids)}
+        missing = sorted(set(self.iHKLList) - ring_of_hkl.keys())
+        if missing:
+            raise ValueError(f'Map HKL IDs are excluded or missing: {missing}')
         ring_ids = np.array([ring_of_hkl[h] for h in self.iHKLList], dtype=np.intp)
         tths = plane_data.two_thetas[~plane_data.exclusions][ring_ids]
         width = self.planeData.tThWidth
@@ -106,10 +101,7 @@ class EtaOmeMaps:
 
 
 def filter_maps(maps: EtaOmeMaps, config: dict) -> None:
-    config = config.copy()
-    normalize_filter_config(config)
+    settings = OrientationMaps.from_dict(config)
     numeric_maps = maps.to_maps()
-    _filter_maps(
-        numeric_maps, bool(config.get('filter_maps')), config.get('filter_fwhm')
-    )
+    _filter_maps(numeric_maps, settings.filter_maps, settings.filter_fwhm)
     maps.dataStore = numeric_maps.ring_maps

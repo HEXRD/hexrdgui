@@ -264,13 +264,14 @@ class OmeMapsViewerDialog(QObject):
         elif self.quaternion_method_name == 'grid_search':
             # Make sure the file exists.
             q_file = self.config['find_orientations']['use_quaternion_grid']
-            if not q_file or not Path(q_file).exists():
+            path = Path(self.working_dir) / q_file if q_file else None
+            if path is None or not path.is_file():
                 msg = f'Quaternion file "{q_file}" does not exist!'
                 raise ValidationException(msg)
 
             # Load the file and validate the shape
             try:
-                quats = np.load(q_file)
+                quats = np.load(path)
             except ValueError:
                 msg = f'Failed to load quaternion file "{q_file}" with numpy'
                 raise ValidationException(msg)
@@ -429,7 +430,7 @@ class OmeMapsViewerDialog(QObject):
             return True
 
         # Keep this as a native type...
-        return float(self.ui.filtering_fwhm.value() / sigma_to_fwhm)
+        return float(self.ui.filtering_fwhm.value())
 
     @filter_maps.setter
     def filter_maps(self, v: bool | float) -> None:
@@ -440,7 +441,7 @@ class OmeMapsViewerDialog(QObject):
         else:
             filtering = True
             apply_gl = True
-            fwhm = v * sigma_to_fwhm
+            fwhm = v
 
         self.ui.apply_filtering.setChecked(filtering)
         self.ui.filtering_apply_gaussian_laplace.setChecked(apply_gl)
@@ -809,7 +810,7 @@ class OmeMapsViewerDialog(QObject):
             filtering = orientation_maps['filter_maps']
             fwhm = orientation_maps.get('filter_fwhm')
             if filtering is True and fwhm is not None:
-                filtering = fwhm / sigma_to_fwhm
+                filtering = fwhm
             self.filter_maps = filtering
 
             key = '_write_scored_orientations'
@@ -871,7 +872,7 @@ class OmeMapsViewerDialog(QObject):
         find_orientations['threshold'] = self.threshold
         find_orientations['seed_search']['hkl_seeds'] = self.selected_hkls
         find_orientations['orientation_maps']['filter_maps'] = self.filter_maps
-        # The GUI stores the LoG width as a numeric sigma. Drop any imported
+        # The GUI stores the LoG width as a numeric FWHM. Drop any imported
         # FWHM so disabling LoG cannot leave a second, stale width behind.
         find_orientations['orientation_maps'].pop('filter_fwhm', None)
 

@@ -242,8 +242,8 @@ class IndexingRunner(Runner):
         # Create a full indexing config
         config = create_indexing_config()
 
-        # The preview has already applied the selected filters. Snapshot it
-        # so revisiting the viewer always starts from the unfiltered maps.
+        # Index the filtered preview while retaining the original maps for
+        # revisiting the viewer.
         self.orientation_maps = copy.deepcopy(dialog.data.to_maps())
 
         # Setup to run indexing in background
@@ -264,6 +264,9 @@ class IndexingRunner(Runner):
         self.qfib = generate_trial_orientations(
             config, load_plane_data(config), self.orientation_maps
         )
+        if isinstance(self.qfib, np.memmap):
+            # Release the user's grid file, including its Windows file lock.
+            self.qfib = np.array(self.qfib)
 
     def orientation_fibers_generated(self) -> None:
         # Perform some validation

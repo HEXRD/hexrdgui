@@ -30,7 +30,7 @@ def _pick_to_fiber(
         The (2, ) list/vector containing the pick coordinates as (eta, omega)
         in DEGREES.  This corresponds to the (column, row) or (x, y) dimensions
         on the map.
-    eta_ome_maps : hexrd.xrdutil.utils.EtaOmeMaps
+    eta_ome_maps : hexrdgui.indexing.eta_omega_maps.EtaOmeMaps
         The eta-omega maps.
     map_index : int
         The index of the current map.

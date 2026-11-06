@@ -1400,8 +1400,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def save_indexing_config(
         self, output_file: str | Path, *, fit_grains_estimate: str | None = None
     ) -> None:
-        from hexrdgui.indexing.eta_omega_maps import normalize_filter_config
-
         cfg: dict[str, Any] = {}
 
         def recursive_key_check(d: dict[str, Any], c: dict[str, Any]) -> None:
@@ -1468,7 +1466,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         )
 
         omaps = cfg['find_orientations']['orientation_maps']
-        normalize_filter_config(omaps)
 
         if quaternion_method == 'seed_search':
             # There must be some active hkls
@@ -1484,7 +1481,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             omaps['active_hkls'] = active_hkls
         else:
             # Do not need active hkls
-            omaps['active_hkls'] = []
+            omaps['active_hkls'] = None
             # Seed search settings are not needed
             cfg['find_orientations'].pop('seed_search', None)
 
