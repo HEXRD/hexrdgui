@@ -12,6 +12,7 @@ import html
 import os
 from pathlib import Path
 import shutil
+import ssl
 import sys
 import tempfile
 import threading
@@ -109,8 +110,16 @@ def _check_online() -> None:
     request = urllib.request.Request(
         ONLINE_DOCS_URL, method='HEAD', headers={'User-Agent': 'hexrdgui'}
     )
+    # The Python in the macOS and Linux installers cannot find its
+    # certificates, so skip checking them. This only checks that the site
+    # answers, and the browser that opens the docs checks them itself.
+    context = ssl.create_default_context()
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
     try:
-        urllib.request.urlopen(request, timeout=ONLINE_CHECK_TIMEOUT).close()
+        urllib.request.urlopen(
+            request, timeout=ONLINE_CHECK_TIMEOUT, context=context
+        ).close()
     except urllib.error.HTTPError:
         # The site answered over HTTPS, even if it refused the request
         pass
