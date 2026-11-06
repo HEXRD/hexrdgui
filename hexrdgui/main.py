@@ -69,6 +69,8 @@ def main() -> None:
         # Fix some osx-specific stuff
         macos_fix_app_name()
 
+    fix_windows11_style(app)
+
     # Apply parsed arguments to the HexrdConfig() object
     apply_parsed_args_to_hexrd_config(parsed_args)
 
@@ -93,6 +95,15 @@ def main() -> None:
         window.load_entrypoint_file(parsed_args.state_file)
 
     sys.exit(app.exec())
+
+
+def fix_windows11_style(app: QApplication) -> None:
+    # Qt's windows11 style (the default on Windows 11 since Qt 6.7) draws
+    # selected items in a focused view as black text on the accent color,
+    # which is very hard to read. Use the windowsvista style instead,
+    # unless the user picked a style with QT_STYLE_OVERRIDE.
+    if app.style().name() == 'windows11' and not os.environ.get('QT_STYLE_OVERRIDE'):
+        app.setStyle('windowsvista')
 
 
 def apply_parsed_args_to_hexrd_config(parsed_args: argparse.Namespace) -> None:
