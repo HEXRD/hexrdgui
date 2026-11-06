@@ -6,10 +6,6 @@
 
 See [the installing documentation](https://hexrdgui.readthedocs.io/en/latest/installing/).
 
-This branch requires HEXRD's `find-orientations-refactor` branch
-([HEXRD PR #1000](https://github.com/HEXRD/hexrd/pull/1000)). Install that
-library branch before installing this GUI from source.
-
 # Citing
 
 We are very glad you found our software helpful for your research! In order
