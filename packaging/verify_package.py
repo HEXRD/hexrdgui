@@ -4,10 +4,10 @@ Run it with the bundled Python after CPack, for example:
 
     QT_QPA_PLATFORM=offscreen package/bin/python -I verify_package.py
 
-It checks that the offline docs are bundled, then loads an image through
-the GUI and renders the polar view. If anything hangs (including an error
-dialog nobody can click), a watchdog prints every thread's stack and fails
-the run.
+It checks that the offline docs are bundled and the docs website can be
+reached, then loads an image through the GUI and renders the polar view.
+If anything hangs (including an error dialog nobody can click), a watchdog
+prints every thread's stack and fails the run.
 """
 
 import faulthandler
@@ -35,12 +35,14 @@ from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.image_file_manager import ImageFileManager
 from hexrdgui.image_load_manager import ImageLoadManager
 from hexrdgui.main_window import MainWindow
-from hexrdgui.utils.docs import local_docs_dir
+from hexrdgui.utils.docs import docs_online, local_docs_dir
 
 faulthandler.dump_traceback_later(300, exit=True)
 
 # The help buttons use these when there is no internet
 assert local_docs_dir() is not None, 'the offline docs are not bundled'
+# And the website when there is (this runs with internet)
+assert docs_online(), 'the docs website could not be reached'
 
 # Keep these settings separate from a real install's
 QCoreApplication.setApplicationName('hexrd-verify-package')
