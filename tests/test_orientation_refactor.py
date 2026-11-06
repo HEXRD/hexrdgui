@@ -15,13 +15,18 @@ from hexrd.core.imageseries.process import ProcessedImageSeries
 from hexrd.core.instrument import HEDMInstrument
 from hexrd.core.material import Material
 from hexrd.core.material.material_data import PlaneData
-from hexrd.hedm.experiment import HedmExperiment
-from hexrd.hedm.find_orientations import EtaOmegaMaps
+from hexrd.hedm.experiment import HedmExperiment, OrientationMaps
+from hexrd.hedm.find_orientations import EtaOmegaMaps, generate_orientation_grid
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.indexing import create_config
-from hexrdgui.indexing.eta_omega_maps import EtaOmeMaps, filter_maps
+from hexrdgui.indexing.eta_omega_maps import (
+    EtaOmeMaps,
+    filter_maps,
+    normalize_filter_config,
+)
 from hexrdgui.indexing import run as indexing_run
+from hexrdgui.indexing.ome_maps_viewer_dialog import OmeMapsViewerDialog
 from hexrdgui.main_window import MainWindow
 
 
@@ -43,15 +48,16 @@ def map_data() -> MapData:
     # either map indices or indices among the non-excluded reflections.
     rings = np.array([2, 0])
     tths = numeric_pd.two_thetas[~numeric_pd.exclusions][rings]
+    eta_step = np.radians(0.25)
     maps = EtaOmegaMaps(
         np.arange(64, dtype=float).reshape(2, 4, 8),
-        np.linspace(-np.pi, np.pi, 9),
+        -np.pi + np.arange(9) * eta_step,
         np.linspace(0, np.pi, 5),
         np.linspace(np.pi / 8, 7 * np.pi / 8, 4),
         np.array([0, 2 * np.pi]),
         np.column_stack((tths - pd.tThWidth / 2, tths + pd.tThWidth / 2)),
         rings,
-        np.pi / 4,
+        eta_step,
     )
     maps.ring_maps[0, 0, 0] = np.nan
     return EtaOmeMaps.from_maps(maps, pd), maps
@@ -64,6 +70,7 @@ def test_map_snapshot_preserves_reflection_order_and_exclusions(
     converted = gui_maps.to_maps()
     np.testing.assert_array_equal(converted.ring_ids, original.ring_ids)
     np.testing.assert_array_equal(converted.ring_maps, original.ring_maps)
+    assert converted.eta_step == original.eta_step
     np.testing.assert_allclose(converted.two_theta_ranges, original.two_theta_ranges)
     np.testing.assert_array_equal(
         converted.plane_data.unexcluded_hkls[converted.ring_ids],
@@ -243,3 +250,52 @@ def test_quaternion_grid_scoring_export_and_reclustering(
     settings['clustering']['completeness'] = 1.0
     runner.run_cluster()
     assert runner.grains_table is None
+
+
+def test_viewer_preserves_new_filter_settings_and_user_edits(
+    main_window: MainWindow,
+    map_data: MapData,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = HexrdConfig().indexing_config['find_orientations']
+    monkeypatch.setitem(settings['seed_search'], 'hkl_seeds', [0])
+    monkeypatch.setitem(settings['orientation_maps'], 'filter_maps', True)
+    monkeypatch.setitem(settings['orientation_maps'], 'filter_fwhm', 3.5)
+    dialog = OmeMapsViewerDialog(map_data[0], main_window.ui)
+
+    assert dialog.ui.filtering_apply_gaussian_laplace.isChecked()
+    assert dialog.ui.filtering_fwhm.value() == pytest.approx(3.5)
+    expected = copy.deepcopy(map_data[0])
+    filter_maps(expected, settings['orientation_maps'])
+    np.testing.assert_allclose(dialog.data.dataStore, expected.dataStore)
+
+    # Disabling LoG or all filtering must also clear the saved width, so
+    # the exported workflow and the preview continue to use the same filter.
+    dialog.ui.filtering_apply_gaussian_laplace.setChecked(False)
+    for enabled in (True, False):
+        dialog.ui.apply_filtering.setChecked(enabled)
+        dialog.update_config()
+        exported = dialog.config['find_orientations']['orientation_maps'].copy()
+        normalize_filter_config(exported)
+        parsed = OrientationMaps.from_dict(exported)
+        assert parsed.filter_maps is enabled
+        assert parsed.filter_fwhm is None
+
+
+def test_direct_search_uses_material_point_group(
+    main_window: MainWindow,
+    experiment_inputs: ExperimentInputs,
+    map_data: MapData,
+) -> None:
+    experiment = experiment_inputs[0]
+    settings = experiment.config['find_orientations']
+    settings['use_quaternion_grid'] = None
+    settings['direct_search'] = {'average_angular_spacing': 30.0}
+    settings.pop('seed_search', None)
+    runner = indexing_run.IndexingRunner(main_window.ui)
+    runner.orientation_maps = map_data[0].to_maps()
+    runner.generate_orientation_fibers(experiment)
+    expected = generate_orientation_grid(
+        experiment, experiment.get_active_material().plane_data
+    )
+    np.testing.assert_array_equal(runner.qfib, expected)

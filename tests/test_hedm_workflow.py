@@ -27,7 +27,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 from pytestqt.qtbot import QtBot
 
+from hexrd.hedm.find_orientations import find_orientations
+
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.create_config import create_indexing_config
 from hexrdgui.main_window import MainWindow
 
 from utils import select_files_when_asked
@@ -115,6 +118,13 @@ def test_hedm_full_workflow(
     num_grains = runner.grains_table.shape[0]
     print(f'\nIndexing found {num_grains} grains')
     assert num_grains == 3, f'Expected 3 grains, got {num_grains}'
+
+    # Compare the staged GUI pipeline with the library's complete workflow
+    # using the same in-memory inputs, before fitting changes exclusions.
+    reference = find_orientations(create_indexing_config(), clean=True)
+    np.testing.assert_array_equal(runner.qfib, reference.test_orientations)
+    np.testing.assert_array_equal(runner.completeness, reference.completeness)
+    np.testing.assert_array_equal(runner.qbar, reference.grain_orientations)
 
     # Print grain orientations for reference
     for grain in runner.grains_table:

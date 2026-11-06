@@ -806,7 +806,11 @@ class OmeMapsViewerDialog(QObject):
             self.threshold = find_orientations['threshold']
 
             orientation_maps = find_orientations['orientation_maps']
-            self.filter_maps = orientation_maps['filter_maps']
+            filtering = orientation_maps['filter_maps']
+            fwhm = orientation_maps.get('filter_fwhm')
+            if filtering is True and fwhm is not None:
+                filtering = fwhm / sigma_to_fwhm
+            self.filter_maps = filtering
 
             key = '_write_scored_orientations'
             self.write_scored_orientations = find_orientations.get(key, False)
@@ -867,6 +871,9 @@ class OmeMapsViewerDialog(QObject):
         find_orientations['threshold'] = self.threshold
         find_orientations['seed_search']['hkl_seeds'] = self.selected_hkls
         find_orientations['orientation_maps']['filter_maps'] = self.filter_maps
+        # The GUI stores the LoG width as a numeric sigma. Drop any imported
+        # FWHM so disabling LoG cannot leave a second, stale width behind.
+        find_orientations['orientation_maps'].pop('filter_fwhm', None)
 
         key = '_write_scored_orientations'
         find_orientations[key] = self.write_scored_orientations

@@ -49,6 +49,7 @@ class EtaOmeMaps:
                 'omegas',
             ):
                 setattr(self, name, archive[name])
+        self._eta_step = float(self.etas[1] - self.etas[0])
 
     @classmethod
     def from_maps(cls, maps: EtaOmegaMaps, plane_data: LegacyPlaneData) -> 'EtaOmeMaps':
@@ -60,6 +61,9 @@ class EtaOmeMaps:
         result.etaEdges = maps.eta_edges
         result.omeEdges = maps.omega_edges
         result.etas = maps.eta_edges[:-1] + 0.5 * maps.eta_step
+        # Subtracting adjacent centers loses precision and can change which
+        # generated trial orientations are considered duplicates.
+        result._eta_step = maps.eta_step
         result.omegas = maps.omegas
         return result
 
@@ -78,7 +82,7 @@ class EtaOmeMaps:
             self.omeEdges[0] + np.array([0.0, 2 * np.pi]),
             np.column_stack((tths - half_width, tths + half_width)),
             ring_ids,
-            float(self.etas[1] - self.etas[0]),
+            self._eta_step,
             plane_data,
         )
 

@@ -261,7 +261,7 @@ class IndexingRunner(Runner):
         self.update_progress_text('Generating orientation fibers')
         assert self.orientation_maps is not None
         self.qfib = generate_trial_orientations(
-            config, self.orientation_maps.plane_data, self.orientation_maps
+            config, load_plane_data(config), self.orientation_maps
         )
 
     def orientation_fibers_generated(self) -> None:
