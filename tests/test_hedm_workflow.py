@@ -99,7 +99,7 @@ def test_hedm_full_workflow(
     assert dialog is not None
     dialog.ui.accept()
 
-    # This triggers fiber generation, paintGrid, clustering via
+    # This triggers fiber generation, scoring, and clustering via
     # progress_dialog.exec().  When done, confirm_indexing_results()
     # creates IndexingResultsDialog.
     QApplication.processEvents()
@@ -189,7 +189,12 @@ def test_hedm_full_workflow(
     QApplication.processEvents()
 
     # Verify expected workflow files exist
-    expected_files = ['workflow.yml', 'materials.h5', 'instrument.hexrd']
+    expected_files = [
+        'workflow.yml',
+        'materials.h5',
+        'instrument.hexrd',
+        'initial-grains.out',
+    ]
     for f in expected_files:
         assert (workflow_dir / f).exists(), f'Missing workflow file: {f}'
 
@@ -203,6 +208,13 @@ def test_hedm_full_workflow(
     # file paths from the exported NPZs to the original monolith files.
     with open(workflow_dir / 'workflow.yml') as f:
         config = yaml.safe_load(f)
+
+    assert config['fit_grains']['estimate'] == 'initial-grains.out'
+    np.testing.assert_allclose(
+        np.loadtxt(workflow_dir / 'initial-grains.out', ndmin=2),
+        fit_runner.grains_table,
+        atol=1e-6,
+    )
 
     group_to_npz = {
         'ff1': str(npz1),

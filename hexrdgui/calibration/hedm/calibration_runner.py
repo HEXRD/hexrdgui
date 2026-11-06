@@ -1,3 +1,4 @@
+import copy
 from functools import partial
 from typing import Any
 
@@ -22,7 +23,11 @@ from hexrdgui.calibration.material_calibration_dialog_callbacks import (
     format_material_params_func,
 )
 from hexrdgui.hexrd_config import HexrdConfig
-from hexrdgui.indexing.create_config import create_indexing_config, OmegasNotFoundError
+from hexrdgui.indexing.create_config import (
+    create_indexing_config,
+    get_indexing_material,
+    OmegasNotFoundError,
+)
 
 
 class HEDMCalibrationRunner(QObject):
@@ -89,7 +94,7 @@ class HEDMCalibrationRunner(QObject):
         cfg = create_indexing_config()
 
         # grab instrument
-        instr = cfg.instrument.hedm
+        instr = cfg.instrument
 
         # Save to self
         self.instr = instr
@@ -112,7 +117,7 @@ class HEDMCalibrationRunner(QObject):
         spots_data = list(spots_data_dict.values())
 
         # plane data
-        material = cfg.material.materials[cfg.material.active]
+        material = copy.deepcopy(get_indexing_material())
 
         ome_period = self.ome_period
 
@@ -238,7 +243,7 @@ class HEDMCalibrationRunner(QObject):
     def run_pull_spots(self) -> dict[int, Any]:
         cfg = create_indexing_config()
 
-        instr = cfg.instrument.hedm
+        instr = cfg.instrument
         imsd = cfg.image_series
 
         outputs = {}

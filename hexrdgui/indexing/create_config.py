@@ -7,12 +7,14 @@ import numpy as np
 
 from typing import Any
 
-from hexrd.config.root import RootConfig
-from hexrd.config.material import MaterialConfig
-from hexrd.config.instrument import Instrument as InstrumentConfig
+from hexrd.core.imageseries import ImageSeries
+from hexrd.core.imageseries.omega import OmegaImageSeries
+from hexrd.core.imageseries.process import ProcessedImageSeries
+from hexrd.hedm.experiment import HedmExperiment
 
 from hexrdgui.create_hedm_instrument import create_hedm_instrument
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.eta_omega_maps import normalize_filter_config
 
 
 def get_indexing_material() -> Any:
@@ -26,8 +28,8 @@ def get_indexing_material() -> Any:
     return HexrdConfig().material(selected_material)
 
 
-def create_indexing_config() -> Any:
-    # Creates a hexrd.config class from the indexing configuration
+def create_indexing_config() -> HedmExperiment:
+    """Snapshot the GUI's in-memory inputs as an HEDM experiment."""
 
     material = get_indexing_material()
 
@@ -47,47 +49,51 @@ def create_indexing_config() -> Any:
     material_config['active'] = material.name
     disable_exclusions_reset(material_config)
 
-    # Create the root config from the indexing config dict
-    config = RootConfig(indexing_config)
-
-    # Create and set instrument config
-    iconfig = InstrumentConfig(config)
-    iconfig._hedm = create_hedm_instrument()
-    config.instrument = iconfig
-
-    # Create and set material config
-    mconfig = MaterialConfig(config)
-    mconfig.materials = copy.deepcopy(HexrdConfig().materials)
-    config.material = mconfig
-
     tth_width = material.planeData.tThWidth
     if tth_width is not None:
-        # Set this so it will be used in HEXRD
-        config.set('material:tth_width', np.degrees(tth_width))
+        material_config['tth_width'] = np.degrees(tth_width)
 
-    ims_dict = HexrdConfig().omega_imageseries_dict
-    if ims_dict is None:
+    maps_config = indexing_config['find_orientations']['orientation_maps']
+    normalize_filter_config(maps_config)
+
+    omega_series = HexrdConfig().omega_imageseries_dict
+    if omega_series is None:
         # Add an early error that is easier to understand...
         raise OmegasNotFoundError('Omegas not found!')
 
-    config.image_series = ims_dict
+    # HEXRD's streaming adapter expects a base ImageSeries. The GUI also
+    # supplies ProcessedImageSeries (ROI crops, flips, dark subtraction).
+    # Wrap those without discarding their processing or copying the frames.
+    ims_dict = {}
+    for panel, series in omega_series.items():
+        source = series
+        while isinstance(source, OmegaImageSeries):
+            source = source._adapter
+        ims_dict[panel] = (
+            ImageSeries(series) if isinstance(source, ProcessedImageSeries) else series
+        )
 
-    validate_config(config)
+    validate_config(indexing_config)
+    return HedmExperiment.from_objects(
+        create_hedm_instrument(),
+        ims_dict,
+        copy.deepcopy(material.planeData),
+        indexing_config,
+    )
 
-    return config
 
-
-def validate_config(config: Any) -> None:
+def validate_config(config: dict) -> None:
     # Perform any modifications to make sure this is a valid config
-    try:
-        config.working_dir
-    except IOError:
+    working_dir = config.get('working_dir')
+    if working_dir is None:
+        config['working_dir'] = os.getcwd()
+    elif not os.path.isdir(working_dir):
         # This working directory does not exist. Set it to the cwd.
         print(
             f'Warning: {config.get("working_dir")} does not exist.',
             f'Changing working directory to {os.getcwd()}',
         )
-        config.set('working_dir', os.getcwd())
+        config['working_dir'] = os.getcwd()
 
         # Make sure future configs use the new working dir as well...
         HexrdConfig().indexing_config['working_dir'] = os.getcwd()

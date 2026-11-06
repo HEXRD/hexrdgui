@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
 from hexrd.matrixutil import vecMVToSymm
 from hexrd.rotations import rotMatOfExpMap
+from hexrd.hedm.cli.fit_grains import GrainData
 
 from hexrdgui import constants
 from hexrdgui.async_runner import AsyncRunner
@@ -57,6 +58,7 @@ class FitGrainsResultsDialog(QObject):
         parent: QObject | None = None,
         allow_export_workflow: bool = True,
         spots_data: dict | None = None,
+        initial_grains_table: np.ndarray | None = None,
     ) -> None:
         super().__init__(parent)
 
@@ -76,6 +78,11 @@ class FitGrainsResultsDialog(QObject):
         self.data_model = GrainsTableModel(data)
         self.material = material
         self.spots_data = spots_data
+        self.initial_grains_table = (
+            copy.deepcopy(initial_grains_table)
+            if initial_grains_table is not None
+            else data[:, :21].copy()
+        )
         self.canvas: FigureCanvas | None = None
         self.fig: Figure | None = None
         self.scatter_artist: Any = None
@@ -733,7 +740,7 @@ class FitGrainsResultsDialog(QObject):
         from hexrdgui.indexing.create_config import create_indexing_config
 
         cfg = create_indexing_config()
-        instr = cfg.instrument.hedm
+        instr = cfg.instrument
         grain_ids = sorted(self.spots_data.keys())
 
         # Close any previously-opened dialog so we don't leak duplicate
@@ -766,7 +773,15 @@ class FitGrainsResultsDialog(QObject):
 
         HexrdConfig().working_dir = selected_directory
 
-        HexrdConfig().save_indexing_config(full_path('workflow.yml'))
+        # Reproduce the fit from the same starting grains, including any
+        # edits made after indexing and before fitting.
+        estimate_file = 'initial-grains.out'
+        GrainData.from_array(self.initial_grains_table).write_grains_out(
+            full_path(estimate_file)
+        )
+        HexrdConfig().save_indexing_config(
+            full_path('workflow.yml'), fit_grains_estimate=estimate_file
+        )
         HexrdConfig().save_materials_hdf5(full_path('materials.h5'))
         HexrdConfig().save_instrument_config(
             full_path('instrument.hexrd'),

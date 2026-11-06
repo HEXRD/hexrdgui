@@ -8,18 +8,18 @@ import numpy as np
 from PySide6.QtCore import QObject, QThreadPool, Qt, Signal
 from PySide6.QtWidgets import QMessageBox, QWidget
 
-from hexrd import indexer, instrument
-from hexrd.cli.find_orientations import write_scored_orientations
-from hexrd.cli.fit_grains import write_results as write_fit_grains_results
-from hexrd.findorientations import (
-    create_clustering_parameters,
-    filter_maps_if_requested,
-    generate_eta_ome_maps,
-    generate_orientation_fibers,
-    run_cluster,
+from hexrd import instrument
+from hexrd.hedm.cli.fit_grains import write_results as write_fit_grains_results
+from hexrd.hedm.find_orientations import (
+    EtaOmegaMaps,
+    build_eta_omega_maps,
+    cluster_grains,
+    generate_trial_orientations,
+    load_plane_data,
+    score_orientations,
+    select_min_samples,
 )
-from hexrd.fitgrains import fit_grains
-from hexrd.xrdutil import EtaOmeMaps
+from hexrd.hedm.fitgrains import fit_grains
 
 from hexrdgui.async_worker import AsyncWorker
 from hexrdgui.hexrd_config import HexrdConfig
@@ -27,6 +27,7 @@ from hexrdgui.indexing.create_config import (
     create_indexing_config,
     get_indexing_material,
 )
+from hexrdgui.indexing.eta_omega_maps import EtaOmeMaps
 from hexrdgui.indexing.fit_grains_options_dialog import FitGrainsOptionsDialog
 from hexrdgui.indexing.fit_grains_results_dialog import FitGrainsResultsDialog
 from hexrdgui.indexing.fit_grains_select_dialog import FitGrainsSelectDialog
@@ -75,8 +76,7 @@ class Runner(QObject):
 
         exctype, value, traceback = t
         msg = f'An ERROR occurred: {exctype}: {value}.'
-        msg_box = QMessageBox(QMessageBox.Icon.Critical, 'Error', msg)
-        msg_box.exec()
+        QMessageBox.critical(self._parent, 'Error', msg)
 
     def reset_cancel_tracker(self) -> None:
         self.cancel_tracker = CancelTracker()
@@ -106,6 +106,7 @@ class IndexingRunner(Runner):
         self.ome_maps_viewer_dialog: OmeMapsViewerDialog | None = None
         self.indexing_results_dialog: IndexingResultsDialog | None = None
         self.ome_maps: EtaOmeMaps | None = None
+        self.orientation_maps: EtaOmegaMaps | None = None
         self.grains_table: np.ndarray | None = None
         self.is_rerunning_clustering = False
 
@@ -173,11 +174,10 @@ class IndexingRunner(Runner):
             self.progress_dialog.setRange(0, 0)  # no numerical updates
 
             worker = AsyncWorker(self.run_eta_ome_maps, config)
-            self.thread_pool.start(worker)
-
             worker.signals.result.connect(self.ome_maps_loaded)
             worker.signals.error.connect(self.on_async_error)
             worker.signals.finished.connect(self.accept_progress)
+            self.thread_pool.start(worker)
             self.progress_dialog.exec()
 
     @staticmethod
@@ -196,7 +196,11 @@ class IndexingRunner(Runner):
         HexrdConfig().overlay_config_changed.emit()
 
     def run_eta_ome_maps(self, config: Any) -> None:
-        self.ome_maps = generate_eta_ome_maps(config, save=False)
+        self.update_progress_text('Generating eta omega maps')
+        maps = build_eta_omega_maps(config, load_plane_data(config))
+        self.ome_maps = EtaOmeMaps.from_maps(
+            maps, config.get_active_material()._material.planeData
+        )
 
     def ome_maps_loaded(self) -> None:
         self.view_ome_maps()
@@ -236,31 +240,28 @@ class IndexingRunner(Runner):
         # Create a full indexing config
         config = create_indexing_config()
 
-        # Hexrd normally applies filtering immediately after eta omega
-        # maps are loaded. We will perform the user-selected filtering now.
-        filter_maps_if_requested(self.ome_maps, config)
+        # The preview has already applied the selected filters. Snapshot it
+        # so revisiting the viewer always starts from the unfiltered maps.
+        self.orientation_maps = copy.deepcopy(dialog.data.to_maps())
 
         # Setup to run indexing in background
         self.progress_dialog.setWindowTitle('Find Orientations')
         self.progress_dialog.setRange(0, 0)  # no numerical updates
 
-        if find_orientations['use_quaternion_grid']:
-            # Load qfib from a numpy file
-            self.qfib = np.load(find_orientations['use_quaternion_grid'])
-            self.orientation_fibers_generated()
-        else:
-            worker = AsyncWorker(self.generate_orientation_fibers, config)
-            self.thread_pool.start(worker)
-
-            worker.signals.result.connect(self.orientation_fibers_generated)
-            worker.signals.error.connect(self.on_async_error)
+        worker = AsyncWorker(self.generate_orientation_fibers, config)
+        worker.signals.result.connect(self.orientation_fibers_generated)
+        worker.signals.error.connect(self.on_async_error)
+        self.thread_pool.start(worker)
 
         self.progress_dialog.exec()
 
     def generate_orientation_fibers(self, config: Any) -> None:
         # Generate the orientation fibers
         self.update_progress_text('Generating orientation fibers')
-        self.qfib = generate_orientation_fibers(config, self.ome_maps)
+        assert self.orientation_maps is not None
+        self.qfib = generate_trial_orientations(
+            config, self.orientation_maps.plane_data, self.orientation_maps
+        )
 
     def orientation_fibers_generated(self) -> None:
         # Perform some validation
@@ -281,40 +282,29 @@ class IndexingRunner(Runner):
                 return
 
         worker = AsyncWorker(self.run_indexer)
-        self.thread_pool.start(worker)
-
         worker.signals.result.connect(self.indexer_finished)
         worker.signals.error.connect(self.on_async_error)
+        self.thread_pool.start(worker)
 
     def run_indexer(self) -> None:
         config = create_indexing_config()
+        assert self.orientation_maps is not None
 
         # Find orientations
-        self.update_progress_text('Running indexer (paintGrid)')
-        ncpus = config.multiprocessing
-        self.completeness = indexer.paintGrid(
-            self.qfib,
-            self.ome_maps,
-            etaRange=np.radians(config.find_orientations.eta.range),
-            omeTol=np.radians(config.find_orientations.omega.tolerance),
-            etaTol=np.radians(config.find_orientations.eta.tolerance),
-            omePeriod=np.radians(config.find_orientations.omega.period),
-            threshold=config.find_orientations.threshold,
-            doMultiProc=ncpus > 1,
-            nCPUs=ncpus,
+        self.update_progress_text('Scoring orientations')
+        self.completeness = score_orientations(
+            config, self.orientation_maps.plane_data, self.orientation_maps, self.qfib
         )
-        print('paintGrid complete')
+        print('Scoring complete')
 
         orientations_cfg = HexrdConfig().indexing_config['find_orientations']
         if orientations_cfg.get('_write_scored_orientations'):
             # Write out the scored orientations
-            results = {}
-            results['scored_orientations'] = {
-                'test_quaternions': self.qfib,
-                'score': self.completeness,
-            }
-            print(f'Writing scored orientations in {config.working_dir} ...')
-            write_scored_orientations(results, config)
+            filename = config.scored_orientations_file
+            print(f'Writing scored orientations to {filename} ...')
+            np.savez_compressed(
+                filename, test_quaternions=self.qfib, score=self.completeness
+            )
 
     def indexer_finished(self) -> None:
         # Compute number of orientations run_cluster() will use
@@ -340,12 +330,11 @@ class IndexingRunner(Runner):
                 return
 
         worker = AsyncWorker(self.run_cluster_functions)
-        self.thread_pool.start(worker)
-
         worker.signals.result.connect(
             self._on_run_cluster_functions_finished, Qt.ConnectionType.QueuedConnection
         )
         worker.signals.error.connect(self.on_async_error)
+        self.thread_pool.start(worker)
 
     def _on_run_cluster_functions_finished(self) -> None:
         # This function was previously a nested function, but for some reason,
@@ -365,6 +354,7 @@ class IndexingRunner(Runner):
         return all(
             (
                 find_orientations['use_quaternion_grid'] is None,
+                find_orientations.get('direct_search') is None,
                 find_orientations['clustering']['algorithm'] != 'fclusterdata',
             )
         )
@@ -381,22 +371,27 @@ class IndexingRunner(Runner):
         print('Creating cluster parameters...')
         self.update_progress_text('Creating cluster parameters')
         config = create_indexing_config()
-        self.min_samples, mean_rpg = create_clustering_parameters(config, self.ome_maps)
+        assert self.orientation_maps is not None
+        self.min_samples = select_min_samples(
+            config, self.orientation_maps.plane_data, self.orientation_maps, self.qfib
+        )
 
     def run_cluster(self) -> None:
         print('Running cluster...')
         self.update_progress_text('Running cluster')
         config = create_indexing_config()
-        kwargs = {
-            'compl': self.completeness,
-            'qfib': self.qfib,
-            'qsym': config.material.plane_data.q_sym,
-            'cfg': config,
-            'min_samples': self.min_samples,
-            'compl_thresh': config.find_orientations.clustering.completeness,
-            'radius': config.find_orientations.clustering.radius,
-        }
-        self.qbar, cl = run_cluster(**kwargs)
+        plane_data = (
+            self.orientation_maps.plane_data
+            if self.orientation_maps is not None
+            else load_plane_data(config)
+        )
+        self.qbar = cluster_grains(
+            config,
+            plane_data,
+            self.qfib,
+            np.asarray(self.completeness),
+            min_samples=self.min_samples,
+        )
 
         print('Clustering complete...')
         self.clustering_ran.emit(True)
@@ -565,7 +560,7 @@ class FitGrainsRunner(Runner):
         num_grains = self.grains_table.shape[0]
         self.update_progress_text(f'Running fit grains on {num_grains} grains')
         kwargs = {
-            'cfg': cfg,
+            'experiment': cfg,
             'grains_table': self.grains_table,
             'write_spots_files': write_spots,
         }
@@ -626,6 +621,7 @@ class FitGrainsRunner(Runner):
             grains_table=self.result_grains_table,
             allow_export_workflow=allow_export_workflow,
             spots_data=spots_data,
+            initial_grains_table=self.grains_table,
             parent=self._parent,
         )
         self.fit_grains_results_dialog = dialog
@@ -662,6 +658,7 @@ def create_fit_grains_results_dialog(
     parent: QWidget | None = None,
     allow_export_workflow: bool = True,
     spots_data: dict | None = None,
+    initial_grains_table: np.ndarray | None = None,
 ) -> Any:
     # Use the material to compute stress from strain
     indexing_config = HexrdConfig().indexing_config
@@ -678,6 +675,7 @@ def create_fit_grains_results_dialog(
         parent=parent,
         allow_export_workflow=allow_export_workflow,
         spots_data=spots_data,
+        initial_grains_table=initial_grains_table,
     )
     dialog.ui.resize(1200, 800)
 

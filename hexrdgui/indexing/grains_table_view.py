@@ -227,7 +227,7 @@ class GrainsTableView(QTableView):
 
         cfg = create_indexing_config()
 
-        instr = cfg.instrument.hedm
+        instr = cfg.instrument
         imsd = cfg.image_series
 
         tol_id = self.selected_tol_id
@@ -256,7 +256,7 @@ class GrainsTableView(QTableView):
             'imgser_dict': imsd,
             'npdiv': cfg.fit_grains.npdiv,
             'threshold': cfg.fit_grains.threshold,
-            'eta_ranges': np.radians(cfg.find_orientations.eta.range),
+            'eta_ranges': cfg.eta_ranges,
             'ome_period': ome_period,
             'dirname': cfg.analysis_dir,
             'filename': None,

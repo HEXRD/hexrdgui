@@ -22,18 +22,15 @@ from PySide6.QtWidgets import (
 )
 
 from hexrd.constants import sigma_to_fwhm
-from hexrd.findorientations import (
-    clean_map,
-    filter_maps_if_requested,
-    filter_stdev_DFLT,
-)
-from hexrd.imageutil import find_peaks_2d
+from hexrd.hedm.experiment import SeedSearch
+from hexrd.hedm.find_orientations import _find_peaks
 
 from hexrdgui import resource_loader
 
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.hand_picked_fibers_widget import HandPickedFibersWidget
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.eta_omega_maps import filter_maps
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.select_items_widget import SelectItemsWidget
@@ -60,7 +57,7 @@ if TYPE_CHECKING:
     import matplotlib as mpl
 
 
-DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
+DEFAULT_FWHM = sigma_to_fwhm
 
 
 class OmeMapsViewerDialog(QObject):
@@ -682,13 +679,10 @@ class OmeMapsViewerDialog(QObject):
     def create_spots(self) -> None:
         # We will clean the data for spot labeling, so make a deep copy
         data = copy.deepcopy(self.image_data)
-        clean_map(data)
-
-        method_name = self.seed_search_method_name
-        method_dict = self.config['find_orientations']['seed_search']['method']
-        method_kwargs = method_dict[method_name]
-
-        _, spots = find_peaks_2d(data, method_name, method_kwargs)
+        seed_search = SeedSearch.from_dict(
+            self.config['find_orientations']['seed_search'], 0.5
+        )
+        _, spots = _find_peaks(data, seed_search)
 
         if spots.size:
             # Rescale the points to match the extents
@@ -883,28 +877,8 @@ class OmeMapsViewerDialog(QObject):
         HexrdConfig().config['indexing'] = copy.deepcopy(self.config)
 
     def reset_filters(self) -> None:
-        # Reset the data store
-        if hasattr(self.data, '_dataStore'):
-            name = '_dataStore'
-        else:
-            name = 'dataStore'
-        setattr(self.data, name, copy.deepcopy(self.raw_data.dataStore))
-
-        # Make a fake config to pass to hexrd
-        class Cfg:
-            pass
-
-        path = ['find_orientations', 'orientation_maps', 'filter_maps']
-        cfg = Cfg()
-        cur = cfg
-        for name in path[:-1]:
-            setattr(cur, name, Cfg())
-            cur = getattr(cur, name)
-
-        setattr(cur, path[-1], self.filter_maps)
-
-        # Perform the filtering
-        filter_maps_if_requested(self.data, cfg)
+        self.data.dataStore = self.raw_data.dataStore.copy()
+        filter_maps(self.data, {'filter_maps': self.filter_maps})
 
     def synchronize_fiber_step_boxes(self, v: float) -> None:
         self.ui.fiber_step.setValue(v)

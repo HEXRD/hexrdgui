@@ -46,6 +46,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         repository: HEXRD/hexrd
+        ref: find-orientations-refactor
         path: hexrd
 
     - name: Checkout HEXRDGUI
