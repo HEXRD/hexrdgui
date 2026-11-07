@@ -45,8 +45,10 @@ class RerunClusteringDialog(QDialog):
 
     def update_min_samples_enable_state(self) -> None:
         indexing_config = HexrdConfig().indexing_config
+        find_orientations = indexing_config['find_orientations']
         visible = (
-            indexing_config['find_orientations']['use_quaternion_grid'] is None
+            find_orientations['use_quaternion_grid'] is None
+            and find_orientations.get('direct_search') is None
             and self.ui.algorithms.currentText() != 'fclusterdata'
         )
 

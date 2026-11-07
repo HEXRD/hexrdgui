@@ -303,7 +303,7 @@ def test_direct_search_uses_material_point_group(
     settings = experiment_inputs[4]['find_orientations']
     monkeypatch.setitem(settings, 'use_quaternion_grid', None)
     monkeypatch.setitem(settings, 'direct_search', {'average_angular_spacing': 30.0})
-    monkeypatch.delitem(settings, 'seed_search')
+    # The GUI's seed search settings stay in place and must not conflict.
     experiment = create_config.create_indexing_config()
     assert experiment.find_orientations.direct_search.point_group_number == 1
     runner = indexing_run.IndexingRunner(main_window.ui)

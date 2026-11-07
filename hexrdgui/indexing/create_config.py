@@ -52,9 +52,14 @@ def create_indexing_config() -> HedmExperiment:
     if tth_width is not None:
         material_config['tth_width'] = np.degrees(tth_width)
 
-    direct_search = indexing_config['find_orientations'].get('direct_search')
+    find_orientations = indexing_config['find_orientations']
+    direct_search = find_orientations.get('direct_search')
     if direct_search is not None:
-        direct_search.setdefault('point_group_number', material.pgnum)
+        if direct_search.get('point_group_number') is None:
+            direct_search['point_group_number'] = material.pgnum
+        # The GUI always keeps seed search settings, but HEXRD rejects
+        # them alongside a direct search.
+        find_orientations.pop('seed_search', None)
 
     omega_series = HexrdConfig().omega_imageseries_dict
     if omega_series is None:

@@ -1397,9 +1397,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         return name
 
-    def save_indexing_config(
-        self, output_file: str | Path, *, fit_grains_estimate: str | None = None
-    ) -> None:
+    def save_indexing_config(self, output_file: str | Path) -> None:
         cfg: dict[str, Any] = {}
 
         def recursive_key_check(d: dict[str, Any], c: dict[str, Any]) -> None:
@@ -1417,8 +1415,6 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
         # Make sure the exclusions do not get reset in fit-grains
         cfg['fit_grains']['reset_exclusions'] = False
-        if fit_grains_estimate is not None:
-            cfg['fit_grains']['estimate'] = fit_grains_estimate
 
         current_material = self.indexing_config['_selected_material']
         selected_material = self.material(current_material)
