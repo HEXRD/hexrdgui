@@ -9,8 +9,21 @@ import pytest
 from PySide6.QtCore import QEvent, QSettings
 from PySide6.QtWidgets import QApplication, QMessageBox
 
+import hexrd.hedm.find_orientations as orientation_workflow
+
 from hexrdgui.main_window import MainWindow
 from hexrdgui.messages_widget import MessagesWidget
+
+
+@pytest.fixture(autouse=True)
+def isolated_indexing_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Isolate both in-process workflows and CLI subprocesses from user caches.
+    monkeypatch.setenv('XDG_CACHE_HOME', str(tmp_path / 'cache'))
+    monkeypatch.setattr(
+        orientation_workflow,
+        '_cache_dir',
+        lambda experiment: str(tmp_path / 'indexing'),
+    )
 
 
 @pytest.fixture

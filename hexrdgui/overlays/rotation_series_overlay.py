@@ -4,7 +4,6 @@ from typing import Any
 
 import numpy as np
 
-from hexrd.findorientations import _process_omegas
 from hexrd.rotations import mapAngle
 
 from hexrdgui.constants import OverlayType, ViewType
@@ -365,7 +364,11 @@ class RotationSeriesOverlay(Overlay):
             ome_period = None
             ome_ranges = None
         else:
-            ome_period, ome_ranges = _process_omegas(ims_dict)
+            series = next(iter(ims_dict.values()))
+            ome_period = series.omega[0, 0] + np.array([0.0, 360.0])
+            ome_ranges = [
+                [wedge['ostart'], wedge['ostop']] for wedge in series.omegawedges.wedges
+            ]
 
         if self.sync_ome_period and ome_period is not None:
             self.ome_period = np.radians(ome_period)

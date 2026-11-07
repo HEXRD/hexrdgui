@@ -2,9 +2,8 @@ from typing import Any
 
 from PySide6.QtWidgets import QFileDialog, QWidget
 
-from hexrd.xrdutil import EtaOmeMaps
-
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.eta_omega_maps import EtaOmeMaps
 
 
 def plot_grains(
