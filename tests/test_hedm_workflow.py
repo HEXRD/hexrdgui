@@ -225,7 +225,8 @@ def test_hedm_full_workflow(
         # file must receive the same protection as the existing workflow files.
         results_dialog.on_export_workflow_clicked()
     (overwrite_warning,) = message_boxes
-    assert str(estimate) in overwrite_warning
+    # The recorded text is a repr, so Windows backslashes are doubled
+    assert repr(str(estimate))[1:-1] in overwrite_warning
     message_boxes.clear()
     assert estimate.read_text() == 'existing grain estimates\n'
     assert not (workflow_dir / 'workflow.yml').exists()
