@@ -68,7 +68,7 @@ class HEDMCalibrationResultsDialog:
             self.ui.grain_id.addItem(str(grain_id), grain_id)
 
         self.ui.detector.clear()
-        for det_key in self.cfg.instrument.hedm.detectors:
+        for det_key in self.cfg.instrument.detectors:
             self.ui.detector.addItem(det_key)
 
         self.update_enable_states()
@@ -155,7 +155,7 @@ class HEDMCalibrationResultsDialog:
     def update_canvas(self) -> None:
         self.clear_artists()
 
-        instr = self.cfg.instrument.hedm
+        instr = self.cfg.instrument
         ome_period = self.ome_period
 
         grain_ids = self.grain_ids_to_plot

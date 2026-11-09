@@ -22,18 +22,15 @@ from PySide6.QtWidgets import (
 )
 
 from hexrd.constants import sigma_to_fwhm
-from hexrd.findorientations import (
-    clean_map,
-    filter_maps_if_requested,
-    filter_stdev_DFLT,
-)
-from hexrd.imageutil import find_peaks_2d
+from hexrd.hedm.experiment import SeedSearch
+from hexrd.hedm.find_orientations import _find_peaks
 
 from hexrdgui import resource_loader
 
 from hexrdgui.color_map_editor import ColorMapEditor
 from hexrdgui.hand_picked_fibers_widget import HandPickedFibersWidget
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.eta_omega_maps import filter_maps
 from hexrdgui.navigation_toolbar import NavigationToolbar
 from hexrdgui.scaling import SCALING_OPTIONS
 from hexrdgui.select_items_widget import SelectItemsWidget
@@ -60,7 +57,7 @@ if TYPE_CHECKING:
     import matplotlib as mpl
 
 
-DEFAULT_FWHM = filter_stdev_DFLT * sigma_to_fwhm
+DEFAULT_FWHM = sigma_to_fwhm
 
 
 class OmeMapsViewerDialog(QObject):
@@ -267,13 +264,14 @@ class OmeMapsViewerDialog(QObject):
         elif self.quaternion_method_name == 'grid_search':
             # Make sure the file exists.
             q_file = self.config['find_orientations']['use_quaternion_grid']
-            if not q_file or not Path(q_file).exists():
+            path = Path(self.working_dir) / q_file if q_file else None
+            if path is None or not path.is_file():
                 msg = f'Quaternion file "{q_file}" does not exist!'
                 raise ValidationException(msg)
 
             # Load the file and validate the shape
             try:
-                quats = np.load(q_file)
+                quats = np.load(path)
             except ValueError:
                 msg = f'Failed to load quaternion file "{q_file}" with numpy'
                 raise ValidationException(msg)
@@ -432,7 +430,7 @@ class OmeMapsViewerDialog(QObject):
             return True
 
         # Keep this as a native type...
-        return float(self.ui.filtering_fwhm.value() / sigma_to_fwhm)
+        return float(self.ui.filtering_fwhm.value())
 
     @filter_maps.setter
     def filter_maps(self, v: bool | float) -> None:
@@ -443,7 +441,7 @@ class OmeMapsViewerDialog(QObject):
         else:
             filtering = True
             apply_gl = True
-            fwhm = v * sigma_to_fwhm
+            fwhm = v
 
         self.ui.apply_filtering.setChecked(filtering)
         self.ui.filtering_apply_gaussian_laplace.setChecked(apply_gl)
@@ -682,13 +680,10 @@ class OmeMapsViewerDialog(QObject):
     def create_spots(self) -> None:
         # We will clean the data for spot labeling, so make a deep copy
         data = copy.deepcopy(self.image_data)
-        clean_map(data)
-
-        method_name = self.seed_search_method_name
-        method_dict = self.config['find_orientations']['seed_search']['method']
-        method_kwargs = method_dict[method_name]
-
-        _, spots = find_peaks_2d(data, method_name, method_kwargs)
+        seed_search = SeedSearch.from_dict(
+            self.config['find_orientations']['seed_search'], 0.5
+        )
+        _, spots = _find_peaks(data, seed_search)
 
         if spots.size:
             # Rescale the points to match the extents
@@ -812,7 +807,11 @@ class OmeMapsViewerDialog(QObject):
             self.threshold = find_orientations['threshold']
 
             orientation_maps = find_orientations['orientation_maps']
-            self.filter_maps = orientation_maps['filter_maps']
+            filtering = orientation_maps['filter_maps']
+            fwhm = orientation_maps.get('filter_fwhm')
+            if filtering is True and fwhm is not None:
+                filtering = fwhm
+            self.filter_maps = filtering
 
             key = '_write_scored_orientations'
             self.write_scored_orientations = find_orientations.get(key, False)
@@ -873,6 +872,9 @@ class OmeMapsViewerDialog(QObject):
         find_orientations['threshold'] = self.threshold
         find_orientations['seed_search']['hkl_seeds'] = self.selected_hkls
         find_orientations['orientation_maps']['filter_maps'] = self.filter_maps
+        # The GUI stores the LoG width as a numeric FWHM. Drop any imported
+        # FWHM so disabling LoG cannot leave a second, stale width behind.
+        find_orientations['orientation_maps'].pop('filter_fwhm', None)
 
         key = '_write_scored_orientations'
         find_orientations[key] = self.write_scored_orientations
@@ -883,28 +885,8 @@ class OmeMapsViewerDialog(QObject):
         HexrdConfig().config['indexing'] = copy.deepcopy(self.config)
 
     def reset_filters(self) -> None:
-        # Reset the data store
-        if hasattr(self.data, '_dataStore'):
-            name = '_dataStore'
-        else:
-            name = 'dataStore'
-        setattr(self.data, name, copy.deepcopy(self.raw_data.dataStore))
-
-        # Make a fake config to pass to hexrd
-        class Cfg:
-            pass
-
-        path = ['find_orientations', 'orientation_maps', 'filter_maps']
-        cfg = Cfg()
-        cur = cfg
-        for name in path[:-1]:
-            setattr(cur, name, Cfg())
-            cur = getattr(cur, name)
-
-        setattr(cur, path[-1], self.filter_maps)
-
-        # Perform the filtering
-        filter_maps_if_requested(self.data, cfg)
+        self.data.dataStore = self.raw_data.dataStore.copy()
+        filter_maps(self.data, {'filter_maps': self.filter_maps})
 
     def synchronize_fiber_step_boxes(self, v: float) -> None:
         self.ui.fiber_step.setValue(v)

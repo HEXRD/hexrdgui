@@ -17,10 +17,8 @@ import numpy as np
 from scipy.signal import medfilt2d
 import yaml
 
-import hexrd.hedm.config  # FIXME: remove this after we fix all paths to new workflows
-
 import hexrd.imageseries.save
-from hexrd.config.loader import NumPyIncludeLoader
+from hexrd.core.config.loader import NumPyIncludeLoader
 from hexrd.instrument import calc_beam_vec, HEDMInstrument
 from hexrd.instrument.constants import PHYSICS_PACKAGE_DEFAULTS, PINHOLE_DEFAULTS
 from hexrd.instrument.detector_coatings import Coating, Filter, Phosphor
@@ -1479,7 +1477,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             omaps['active_hkls'] = active_hkls
         else:
             # Do not need active hkls
-            omaps['active_hkls'] = []
+            omaps['active_hkls'] = None
             # Seed search settings are not needed
             cfg['find_orientations'].pop('seed_search', None)
 

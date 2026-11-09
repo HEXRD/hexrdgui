@@ -22,7 +22,7 @@ import pytest
 
 from PySide6.QtWidgets import QApplication
 
-from hexrd.hedm import config
+from hexrd.hedm.experiment import HedmExperiment
 from hexrd.hedm.fitgrains import fit_grains
 
 from hexrdgui.calibration.hedm.spot_diagnostics_dialog import (
@@ -46,8 +46,7 @@ def fit_grains_with_spots(single_ge_path: Path) -> tuple[Any, list, dict]:
 
     os.chdir(str(include_path))
 
-    cfg = config.open(config_path)[0]
-    cfg.working_dir = str(include_path)
+    cfg = HedmExperiment(str(config_path), working_dir=str(include_path))
     grains_table = np.loadtxt(str(grains_path), ndmin=2)
 
     fit_results, spots_data = fit_grains(
@@ -57,7 +56,7 @@ def fit_grains_with_spots(single_ge_path: Path) -> tuple[Any, list, dict]:
         return_pull_spots_data=True,
     )
 
-    instr = cfg.instrument.hedm
+    instr = cfg.instrument
     return instr, fit_results, spots_data
 
 

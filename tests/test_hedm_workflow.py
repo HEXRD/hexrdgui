@@ -25,20 +25,36 @@ import yaml
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
+from pytestqt.qtbot import QtBot
+
+from hexrd.hedm.find_orientations import find_orientations
+import hexrd.hedm.find_orientations as orientation_workflow
 
 from hexrdgui.hexrd_config import HexrdConfig
+from hexrdgui.indexing.create_config import create_indexing_config
+from hexrdgui.main_window import MainWindow
 
 from utils import select_files_when_asked
 
 
 @pytest.fixture
-def dexelas_hedm_path(example_repo_path):
+def dexelas_hedm_path(example_repo_path: Path) -> Path:
     return example_repo_path / 'state_examples' / 'Dexelas_HEDM'
 
 
+@pytest.mark.parametrize(
+    'use_estimate,filter_setting', [(False, False), (False, 1.5), (True, False)]
+)
 def test_hedm_full_workflow(
-    qtbot, main_window, message_boxes, dexelas_hedm_path, tmp_path
-):
+    qtbot: QtBot,
+    main_window: MainWindow,
+    message_boxes: list[str],
+    dexelas_hedm_path: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    use_estimate: bool,
+    filter_setting: bool | float,
+) -> None:
     # ── paths ──────────────────────────────────────────────────────────
     state_file = dexelas_hedm_path / 'roi_dexelas_hedm.h5'
     npz1 = dexelas_hedm_path / 'mruby-0129_000004_ff1_000012-cachefile.npz'
@@ -60,7 +76,7 @@ def test_hedm_full_workflow(
     HexrdConfig().indexing_config['working_dir'] = str(tmp_path)
 
     # ── Step B: load NPZ images ────────────────────────────────────────
-    def is_dummy_data():
+    def is_dummy_data() -> bool:
         for ims in HexrdConfig().imageseries_dict.values():
             if len(ims) != 1 or not np.all(ims[0] == 1):
                 return False
@@ -97,9 +113,11 @@ def test_hedm_full_workflow(
     # ── Step E: accept OmeMapsViewerDialog (run find-orientations) ─────
     dialog = runner.ome_maps_viewer_dialog
     assert dialog is not None
+    dialog.filter_maps = filter_setting
+    dialog.filter_modified()
     dialog.ui.accept()
 
-    # This triggers fiber generation, paintGrid, clustering via
+    # This triggers fiber generation, scoring, and clustering via
     # progress_dialog.exec().  When done, confirm_indexing_results()
     # creates IndexingResultsDialog.
     QApplication.processEvents()
@@ -109,6 +127,23 @@ def test_hedm_full_workflow(
     num_grains = runner.grains_table.shape[0]
     print(f'\nIndexing found {num_grains} grains')
     assert num_grains == 3, f'Expected 3 grains, got {num_grains}'
+
+    # Compare the staged GUI pipeline with the library's complete workflow
+    # using the same in-memory inputs, before fitting changes exclusions.
+    experiment = create_indexing_config()
+    experiment.config['find_orientations']['orientation_maps']['file'] = str(
+        tmp_path / 'reference-maps.npz'
+    )
+    with monkeypatch.context() as patch:
+        patch.setattr(
+            orientation_workflow,
+            '_cache_dir',
+            lambda experiment: str(tmp_path / 'reference-cache'),
+        )
+        reference = find_orientations(experiment)
+    np.testing.assert_array_equal(runner.qfib, reference.test_orientations)
+    np.testing.assert_array_equal(runner.completeness, reference.completeness)
+    np.testing.assert_array_equal(runner.qbar, reference.grain_orientations)
 
     # Print grain orientations for reference
     for grain in runner.grains_table:
@@ -183,13 +218,32 @@ def test_hedm_full_workflow(
     # ── Step L: export full workflow ───────────────────────────────────
     workflow_dir = tmp_path / 'workflow'
     workflow_dir.mkdir()
+    estimate = workflow_dir / 'initial-grains.out'
+    estimate.write_text('existing grain estimates\n')
+    with select_files_when_asked(str(workflow_dir)):
+        # The message-box fixture declines overwrites. This newly exported
+        # file must receive the same protection as the existing workflow files.
+        results_dialog.on_export_workflow_clicked()
+    (overwrite_warning,) = message_boxes
+    # The recorded text is a repr, so Windows backslashes are doubled
+    assert repr(str(estimate))[1:-1] in overwrite_warning
+    message_boxes.clear()
+    assert estimate.read_text() == 'existing grain estimates\n'
+    assert not (workflow_dir / 'workflow.yml').exists()
+    estimate.unlink()
+
     with select_files_when_asked(str(workflow_dir)):
         results_dialog.on_export_workflow_clicked()
 
     QApplication.processEvents()
 
     # Verify expected workflow files exist
-    expected_files = ['workflow.yml', 'materials.h5', 'instrument.hexrd']
+    expected_files = [
+        'workflow.yml',
+        'materials.h5',
+        'instrument.hexrd',
+        'initial-grains.out',
+    ]
     for f in expected_files:
         assert (workflow_dir / f).exists(), f'Missing workflow file: {f}'
 
@@ -203,6 +257,15 @@ def test_hedm_full_workflow(
     # file paths from the exported NPZs to the original monolith files.
     with open(workflow_dir / 'workflow.yml') as f:
         config = yaml.safe_load(f)
+
+    assert config['fit_grains'].get('estimate') is None
+    if use_estimate:
+        config['fit_grains']['estimate'] = 'initial-grains.out'
+    np.testing.assert_allclose(
+        np.loadtxt(workflow_dir / 'initial-grains.out', ndmin=2),
+        fit_runner.grains_table,
+        atol=1e-6,
+    )
 
     group_to_npz = {
         'ff1': str(npz1),
@@ -232,6 +295,8 @@ def test_hedm_full_workflow(
     assert result.returncode == 0, (
         f'hexrd fit-grains failed with return code {result.returncode}'
     )
+    assert '=== end fit-grains ===' in result.stderr
+    assert ('running find-orientations' in result.stderr) is not use_estimate
 
     # ── Step O: parse CLI output and compare with GUI export ───────────
     # Find the grains.out produced by the CLI
