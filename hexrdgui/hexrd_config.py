@@ -528,7 +528,16 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if name in skip:
                 continue
 
-            state[name] = settings.value(self._attribute_to_settings_key(name), default)
+            value = settings.value(self._attribute_to_settings_key(name), default)
+            if isinstance(default, list):
+                # QSettings returns a list with a single item as a str,
+                # and an empty list as None
+                if value is None:
+                    value = copy.deepcopy(default)
+                elif isinstance(value, str):
+                    value = [value]
+
+            state[name] = value
 
         return state
 
