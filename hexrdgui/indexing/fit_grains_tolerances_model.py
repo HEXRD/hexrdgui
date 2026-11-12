@@ -136,11 +136,12 @@ class FitGrainsToleranceModel(QAbstractTableModel):
         first = rows[0]
         last = rows[-1]
         destination = first + delta
-        # Qt's destination depends on the direction of the move
-        offset = 1 if delta > 0 else 0
-        self.beginMoveRows(
+        # Qt counts the destination before removing the moving rows.
+        offset = last - first + 1 if delta > 0 else 0
+        if not self.beginMoveRows(
             QModelIndex(), first, last, QModelIndex(), destination + offset
-        )
+        ):
+            return
         for data in self.data_columns:
             moving_section = data[first : last + 1]
             remaining_list = data[:first] + data[last + 1 :]
