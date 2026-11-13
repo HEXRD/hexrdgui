@@ -596,8 +596,8 @@ class HEDMCalibrationCallbacks(MaterialCalibrationDialogCallbacks):
                 'pick_xys': {},
             }
             for det_key in instr.detectors:
-                data_dict['hkls'][det_key] = hkls[det_key][i]
-                data_dict['pick_xys'][det_key] = xyo_det[det_key][i]
+                data_dict['hkls'][det_key] = hkls_refit[det_key][i]
+                data_dict['pick_xys'][det_key] = xyo_det_refit[det_key][i]
 
             calibrator.data_dict = data_dict
 
