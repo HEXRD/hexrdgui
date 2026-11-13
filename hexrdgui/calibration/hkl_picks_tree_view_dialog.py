@@ -211,6 +211,8 @@ class HKLPicksTreeViewDialog(HexrdConfigDisconnectMixin):
 
 
 def convert_picks(picks: dict, conversion_function: Any) -> dict:
+    # The conversion function is called with the data, the panel, and the
+    # stage translation, which is the origin of the polar view.
     instr = create_hedm_instrument()
     ret = copy.deepcopy(picks)
     for name, detectors in ret.items():
@@ -223,20 +225,20 @@ def convert_picks(picks: dict, conversion_function: Any) -> dict:
                         # Avoid the runtime warning
                         hkls[hkl] = [np.nan, np.nan]
                     else:
-                        hkls[hkl] = conversion_function([spot], panel)[0]
+                        hkls[hkl] = conversion_function([spot], panel, instr.tvec)[0]
                 continue
 
             # Must be powder
             for hkl, line in hkls.items():
                 if len(line) != 0:
-                    hkls[hkl] = conversion_function(line, panel)
+                    hkls[hkl] = conversion_function(line, panel, instr.tvec)
 
     return ret
 
 
 def picks_angles_to_cartesian(picks: dict) -> dict:
     # Create the conversion function
-    def func(angs: Any, panel: Any) -> np.ndarray:
+    def func(angs: Any, panel: Any, tvec_s: np.ndarray) -> np.ndarray:
         # Reverse the tth distortion first
         angs = apply_tth_distortion_if_needed(
             angs,
@@ -244,7 +246,7 @@ def picks_angles_to_cartesian(picks: dict) -> dict:
             reverse=True,
         )
         # Now convert to cart
-        return angles_to_cart(angs, panel)
+        return angles_to_cart(angs, panel, tvec_s=tvec_s)
 
     return convert_picks(picks, func)
 
@@ -253,8 +255,8 @@ def picks_cartesian_to_angles(picks: dict) -> dict:
     # Create the conversion function
     eta_period = HexrdConfig().polar_res_eta_period
 
-    def func(xys: Any, panel: Any) -> np.ndarray:
-        angs = cart_to_angles(xys, panel, eta_period=eta_period)
+    def func(xys: Any, panel: Any, tvec_s: np.ndarray) -> np.ndarray:
+        angs = cart_to_angles(xys, panel, eta_period=eta_period, tvec_s=tvec_s)
 
         # Apply tth distortion now as well
         return apply_tth_distortion_if_needed(angs, in_degrees=True)
