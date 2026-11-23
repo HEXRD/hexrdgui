@@ -9,6 +9,7 @@ import numpy as np
 
 from hexrd.material import spacegroup
 from hexrd.material import _angstroms
+from hexrd.material.material import get_default_sgsetting
 
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.ui_loader import UiLoader
@@ -32,12 +33,6 @@ class MaterialEditorWidget(QObject):
 
         self._material = material
         self.update_gui_from_material()
-
-        # Hide the space group setting stuff, because right now, it is not
-        # actually used for anything. We can bring it back if we start to
-        # use it for something.
-        self.ui.space_group_setting_label.hide()
-        self.ui.space_group_setting.hide()
 
         self.setup_connections()
 
@@ -134,7 +129,16 @@ class MaterialEditorWidget(QObject):
 
     def set_space_group_number(self, sgnum: int) -> None:
         match = _space_groups_without_settings == sgnum
-        sgid = np.where(match)[0][0]
+        indices = np.where(match)[0]
+        sgid = indices[0]
+        # If this space group has origin choices, pick the variant that
+        # matches the material's current setting.
+        if len(indices) > 1:
+            wanted = ':2' if self.material.sgsetting == 1 else ':1'
+            for idx in indices:
+                if _all_space_groups[idx].endswith(wanted):
+                    sgid = idx
+                    break
         self.set_space_group(sgid)
 
     def set_space_group(self, val: int) -> None:
@@ -155,7 +159,9 @@ class MaterialEditorWidget(QObject):
             self.ui.hall_symbol.setCurrentIndex(val)
             self.ui.hermann_mauguin.setCurrentIndex(val)
 
-            self.set_material_space_group(sgid)
+            key = _all_space_groups[val]
+            suffix = key.split(':')[1] if ':' in key else None
+            self.set_material_space_group(sgid, suffix)
 
         self.update_c_to_a_enable_state()
 
@@ -314,14 +320,28 @@ class MaterialEditorWidget(QObject):
 
         self.material_modified.emit()
 
-    def set_material_space_group(self, sgid: int) -> None:
+    def set_material_space_group(
+        self, sgid: int, setting_suffix: str | None = None
+    ) -> None:
+        # Origin choice 1 is sgsetting 0, and origin choice 2 is
+        # sgsetting 1.  The other suffixes (:H, :R) are axis choices,
+        # for which hexrd always uses its default.
+        if setting_suffix == '1':
+            sgsetting = 0
+        elif setting_suffix == '2':
+            sgsetting = 1
+        else:
+            sgsetting = get_default_sgsetting(sgid)
+
         # This can be an expensive operation, so make sure it isn't
         # already equal before setting.
-        if self.material.sgnum != sgid:
+        if self.material.sgnum != sgid or self.material.sgsetting != sgsetting:
             if isinstance(sgid, np.integer):
                 # Convert to native type
                 sgid = sgid.item()
 
+            self.material.sgsetting = sgsetting
+            # Setting sgnum rebuilds the unit cell with the new setting
             self.material.sgnum = sgid
             self.material_modified.emit()
 
