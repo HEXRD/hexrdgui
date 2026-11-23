@@ -179,6 +179,19 @@
         </widget>
        </item>
        <item row="1" column="1" colspan="2">
+        <widget class="QCheckBox" name="invert_mask">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Check this if the file marks the pixels to EXCLUDE (the common convention for external mask files, where True/nonzero means &quot;masked out&quot;). The array will be inverted into the panel-buffer convention (True = valid).&lt;/p&gt;&lt;p&gt;Leave unchecked if the file is already a panel buffer (True = valid pixel).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>File marks excluded (masked) pixels</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="2">
         <widget class="QPushButton" name="show_panel_buffer">
          <property name="text">
           <string>Show Panel Buffer</string>
