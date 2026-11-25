@@ -5,7 +5,7 @@ import copy
 from typing import Any, TYPE_CHECKING
 
 from PySide6.QtCore import Signal
-from PySide6.QtWidgets import QFileDialog
+from PySide6.QtWidgets import QFileDialog, QPushButton
 
 import lmfit
 
@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from hexrdgui.calibration.calibration_dialog import CalibrationDialog
     from hexrdgui.image_canvas import ImageCanvas
 
+from hexrdgui.calibration.fit_report_dialog import FitReportDialog
 from hexrdgui.hexrd_config import HexrdConfig
 from hexrdgui.utils import instr_to_internal_dict
 from hexrdgui.utils.abc_qobject import ABCQObject
@@ -48,6 +49,11 @@ class CalibrationDialogCallbacks(ABCQObject):
         async_runner: AsyncRunner,
     ) -> None:
         super().__init__(dialog.ui)
+
+        # This must be set before anything that may update the fit report,
+        # such as constraint changes from `set_instrument_defaults()`.
+        self.fit_report_dialog: FitReportDialog | None = None
+
         self.dialog = dialog
         self.calibrator = calibrator
         self.instr = instr
@@ -219,6 +225,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.dialog.advanced_options = stack_item['advanced_options']
 
         self.update_undo_enable_state()
+        self.update_fit_report()
 
     def update_undo_enable_state(self) -> None:
         self.dialog.undo_enabled = bool(self.undo_stack)
@@ -307,6 +314,7 @@ class CalibrationDialogCallbacks(ABCQObject):
                     setattr(current, attr, getattr(param, attr))
 
         self.dialog.params_dict = self.calibrator.params
+        self.update_fit_report()
 
     @property
     def has_tardis_constraints(self) -> bool:
@@ -320,6 +328,8 @@ class CalibrationDialogCallbacks(ABCQObject):
 
         if self.calibrator_is_structureless:
             self.redraw_picks()
+
+        self.update_fit_report()
 
     def on_run_clicked(self) -> None:
         self.async_runner.progress_title = 'Running calibration...'
@@ -384,6 +394,7 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.save_constraint_params()
         self.update_config_from_instrument()
         self.dialog.params_dict = self.calibrator.params
+        self.update_fit_report()
 
     def update_config_from_instrument(self) -> None:
         output_dict = instr_to_internal_dict(self.instr)
@@ -441,6 +452,39 @@ class CalibrationDialogCallbacks(ABCQObject):
         self.draw_picks(False)
         # Ensure focus mode is off (even if it wasn't set)
         self.set_focus_mode(False)
+
+        if self.fit_report_dialog is not None:
+            self.fit_report_dialog.hide()
+
+    def add_fit_report_button(self) -> None:
+        button = QPushButton('Show Fit Report', self.dialog.ui)
+        button.setToolTip(
+            'View plots of the residuals of each Debye-Scherrer ring, '
+            'optionally compared to the hkls of a material'
+        )
+        button.clicked.connect(self.show_fit_report)
+        self.dialog.ui.extra_widgets_layout.addWidget(button)
+
+    def show_fit_report(self) -> None:
+        # Use the distortion settings that a run would use
+        self.update_tth_distortion_from_dialog()
+
+        # Reuse the dialog if we already created one
+        if self.fit_report_dialog is None:
+            self.fit_report_dialog = FitReportDialog(
+                self.calibrator,
+                self.dialog.ui,
+            )
+        else:
+            self.fit_report_dialog.update_data()
+
+        self.fit_report_dialog.show()
+
+    def update_fit_report(self) -> None:
+        # Call this whenever anything that the fit report shows changes
+        dialog = self.fit_report_dialog
+        if dialog is not None and dialog.is_visible:
+            dialog.update_data()
 
 
 def _create_instr_params(instr: HEDMInstrument) -> lmfit.Parameters:

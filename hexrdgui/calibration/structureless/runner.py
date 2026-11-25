@@ -329,6 +329,8 @@ class StructurelessCalibrationRunner(QObject):
         self._dialog_callback_handler.instrument_updated.connect(
             self.instrument_updated.emit
         )
+        self._dialog_callback_handler.add_fit_report_button()
+
         dialog.show()
 
         self._calibration_dialog = dialog
@@ -585,6 +587,7 @@ class StructurelessCalibrationCallbacks(CalibrationDialogCallbacks):
         self.dialog.params_dict = self.calibrator.params
 
         self.redraw_picks()
+        self.update_fit_report()
 
     def validate_picks(self, picks: dict[str, Any]) -> None:
         return validate_picks(picks, self.instr)
