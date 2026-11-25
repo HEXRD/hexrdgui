@@ -95,12 +95,6 @@
           <property name="keyboardTracking">
            <bool>false</bool>
           </property>
-          <property name="minimum">
-           <number>-999999999</number>
-          </property>
-          <property name="maximum">
-           <number>999999999</number>
-          </property>
           <property name="displayIntegerBase">
            <number>10</number>
           </property>
@@ -126,12 +120,6 @@
          <widget class="ScientificDoubleSpinBox" name="maximum">
           <property name="keyboardTracking">
            <bool>false</bool>
-          </property>
-          <property name="minimum">
-           <number>-999999999</number>
-          </property>
-          <property name="maximum">
-           <number>999999999</number>
           </property>
           <property name="value">
            <number>429</number>
