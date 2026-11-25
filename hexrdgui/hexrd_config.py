@@ -2545,6 +2545,14 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         v: dict[str, Any] | None,
     ) -> None:
         obj = None
+        distortion_type = (
+            None if v is None else v['serialized'].get('pinhole_distortion_type')
+        )
+        if distortion_type == 'JHEPinholeDistortion':
+            # That model was removed. Its settings cannot be converted,
+            # since they do not have an absorption length, so drop it.
+            v = None
+
         if v is not None:
             if not self.has_physics_package:
                 # This requires a physics package to deserialize
@@ -2555,6 +2563,11 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if d.get('pinhole_distortion_type') == 'SampleLayerDistortion':
                 # Change this to the new 'LayerDistortion'
                 d['pinhole_distortion_type'] = 'LayerDistortion'
+
+            if d.get('pinhole_distortion_type') == 'RyggPinholeDistortion':
+                # Renamed back to 'PinholeDistortion' when the JHE model
+                # was removed
+                d['pinhole_distortion_type'] = 'PinholeDistortion'
 
             if d.get('pinhole_distortion_type') == 'LayerDistortion':
                 # We added pinhole_radius later. Set a default if it is missing.
