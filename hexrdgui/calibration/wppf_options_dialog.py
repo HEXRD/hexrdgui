@@ -111,6 +111,7 @@ class WppfOptionsDialog(QObject):
 
         self.spline_points: list[Any] = []
         self._wppf_object: LeBail | Rietveld | None = None
+        self._lebail_intensities: dict | None = None
         self._prev_background_method: str | None = None
         self._undo_stack: list[Any] = []
         self._texture_simulated_polar_dialog: WppfSimulatedPolarDialog | None = None
@@ -223,7 +224,7 @@ class WppfOptionsDialog(QObject):
         self.ui.undo_last_run.clicked.connect(self.pop_undo_stack)
 
         self.ui.save_plot.pressed.connect(self.save_plot)
-        self.ui.reset_object.pressed.connect(self.reset_object)
+        self.ui.reset_object.pressed.connect(self.on_reset_object_pressed)
         self.ui.preview_spectrum.pressed.connect(self.preview_spectrum)
         self.ui.run_button.pressed.connect(self.begin_run)
         self.ui.finished.connect(self.finish)
@@ -412,6 +413,14 @@ class WppfOptionsDialog(QObject):
                 group = params_group.create_group(name)
                 for item in to_save:
                     group.create_dataset(item, data=getattr(param, item))
+
+    def on_reset_object_pressed(self) -> None:
+        # An explicit reset starts the LeBail intensities from scratch
+        self._lebail_intensities = None
+        HexrdConfig().config['calibration'].get('wppf', {}).pop(
+            'lebail_intensities', None
+        )
+        self.reset_object()
 
     def reset_object(self) -> None:
         self._wppf_object = None
@@ -928,6 +937,60 @@ class WppfOptionsDialog(QObject):
         self.ui.plot_tds.setChecked(b)
 
     @property
+    def lebail_intensities(self) -> dict | None:
+        # LeBail intensities per phase and wavelength, saved with the hkls
+        # so they can be matched by hkl when loaded.
+        obj = self._wppf_object
+        if isinstance(obj, LeBail):
+            iobs = getattr(obj, 'Iobs', None)
+            self._lebail_intensities = {
+                p: {
+                    k: {
+                        'hkls': np.asarray(obj.hkls[p][k]).tolist(),
+                        'Icalc': np.asarray(obj.Icalc[p][k]).tolist(),
+                        'Iobs': (
+                            None if iobs is None else np.asarray(iobs[p][k]).tolist()
+                        ),
+                    }
+                    for k in obj.Icalc[p]
+                }
+                for p in obj.Icalc
+            }
+
+        return self._lebail_intensities
+
+    @lebail_intensities.setter
+    def lebail_intensities(self, v: dict | None) -> None:
+        self._lebail_intensities = v
+
+    def _seed_lebail_intensities(self, obj: LeBail) -> None:
+        # Initialize Icalc from the saved intensities, matched by hkl.
+        # Unmatched reflections keep the LeBail default; saved
+        # reflections that are no longer present are discarded.
+        saved = self._lebail_intensities
+        if not saved:
+            return
+
+        intensity_init: dict = {}
+        for p, hkls_dict in obj.hkls.items():
+            intensity_init[p] = {}
+            for k, hkls in hkls_dict.items():
+                init = np.array(obj.Icalc[p][k], dtype=float)
+                d = saved.get(p, {}).get(k)
+                if d is not None:
+                    lookup = {
+                        tuple(h): v for h, v in zip(d['hkls'], d['Icalc'])
+                    }
+                    for i, hkl in enumerate(hkls):
+                        init[i] = lookup.get(tuple(hkl), init[i])
+
+                intensity_init[p][k] = init
+
+        obj.intensity_init = intensity_init
+        obj.initialize_Icalc()
+        obj.computespectrum()
+
+    @property
     def params_dict(self) -> dict:
         ret = {}
         for key, param in self.params.items():
@@ -1031,6 +1094,7 @@ class WppfOptionsDialog(QObject):
             'max_tth',
             'texture_settings',
             'tds_settings',
+            'lebail_intensities',
         ]
         for key in keys:
             settings[key] = getattr(self, key)
@@ -1847,6 +1911,8 @@ class WppfOptionsDialog(QObject):
             # Add the TDS model to it, if applicable
             self.set_tds_model(obj)
             self.bind_texture_models_to_phases(obj)
+        else:
+            self._seed_lebail_intensities(obj)
 
         return obj
 
