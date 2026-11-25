@@ -499,7 +499,7 @@ class HexrdConfig(QObject, metaclass=QSingleton):
         settings: QSettings,
     ) -> None:
         for name, value in state.items():
-            settings.setValue(name, value)
+            settings.setValue(name, utils.to_settings_value(value))
 
     # Load the state from QSettings
     def _load_state_from_settings(
@@ -528,7 +528,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
             if name in skip:
                 continue
 
-            state[name] = settings.value(self._attribute_to_settings_key(name), default)
+            value = settings.value(self._attribute_to_settings_key(name), default)
+            state[name] = utils.from_settings_value(value)
 
         return state
 
@@ -689,7 +690,8 @@ class HexrdConfig(QObject, metaclass=QSingleton):
     def _q_settings_version(self) -> int:
         # Keep track of a QSettings version so we can ignore versions
         # that we might not be able to load.
-        return 1
+        # Version 2 stores numpy arrays as bytes (see to_settings_value()).
+        return 2
 
     def save_settings(self) -> None:
         settings = QSettings()
@@ -700,14 +702,30 @@ class HexrdConfig(QObject, metaclass=QSingleton):
 
     def load_settings(self) -> None:
         settings = QSettings()
-        current_version = int(settings.value('settings_version', -1))  # type: ignore[call-overload]
-        if current_version != self._q_settings_version:
-            # The QSettings version is different (probably PySide6 is
-            # trying to load a PySide2 QSettings, which has issues)
-            # Ignore the settings, as there may be compatibility issues.
+        try:
+            current_version = int(settings.value('settings_version', -1))  # type: ignore[call-overload]
+            # Version 1 pickled numpy arrays, which still load with
+            # PySide6 < 6.12.
+            if current_version not in (1, self._q_settings_version):
+                # The QSettings version is different (probably PySide6 is
+                # trying to load a PySide2 QSettings, which has issues)
+                # Ignore the settings, as there may be compatibility issues.
+                return
+
+            state = self._load_state_from_settings(settings)
+        except Exception as e:
+            # For example, PySide6 >= 6.12 cannot load the numpy arrays
+            # that version 1 pickled. Ignore the settings. They will be
+            # overwritten the next time we save.
+            msg = (
+                'Settings could not be loaded, so the default settings are '
+                f'being used. ({type(e).__name__}: {e})'
+            )
+            # Print once the event loop starts, so the messages widget
+            # (created later in the main window) shows it.
+            QTimer.singleShot(0, lambda: print(msg))
             return
 
-        state = self._load_state_from_settings(settings)
         self.load_from_state(state)
 
     @property

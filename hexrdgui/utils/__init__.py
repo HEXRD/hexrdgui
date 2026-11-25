@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import copy
 from enum import IntEnum
 from functools import reduce
+import io
 import math
 import sys
 from typing import Any, Callable, Generator, Sequence, TYPE_CHECKING, cast
@@ -16,7 +17,7 @@ import matplotlib.image
 import matplotlib.transforms as mtransforms
 import numpy as np
 
-from PySide6.QtCore import QObject, QSignalBlocker
+from PySide6.QtCore import QByteArray, QObject, QSignalBlocker
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import QComboBox, QLayout
 
@@ -463,6 +464,47 @@ def array_index_in_list(
             return i
 
     return -1
+
+
+# Numpy arrays are stored in QSettings as a dict with only this key
+NDARRAY_SETTINGS_KEY = '__ndarray__'
+
+
+def to_settings_value(value: Any) -> Any:
+    """Recursively convert numpy types so QSettings can store them
+
+    PySide6 >= 6.12 cannot load pickled numpy objects from QSettings.
+    Arrays are stored as .npy data in a QByteArray, which is compact,
+    and numpy scalars become python scalars.
+    """
+    if isinstance(value, np.ndarray) and not value.dtype.hasobject:
+        with io.BytesIO() as f:
+            np.save(f, value, allow_pickle=False)
+            return {NDARRAY_SETTINGS_KEY: QByteArray(f.getvalue())}
+    elif isinstance(value, (np.ndarray, np.generic)):
+        return to_settings_value(value.tolist())
+    elif isinstance(value, dict):
+        return {to_settings_value(k): to_settings_value(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [to_settings_value(x) for x in value]
+    elif isinstance(value, tuple):
+        return tuple(to_settings_value(x) for x in value)
+
+    return value
+
+
+def from_settings_value(value: Any) -> Any:
+    """Reverse to_settings_value(), restoring the numpy arrays"""
+    if isinstance(value, dict):
+        if len(value) == 1 and NDARRAY_SETTINGS_KEY in value:
+            with io.BytesIO(bytes(value[NDARRAY_SETTINGS_KEY])) as f:
+                return np.load(f, allow_pickle=False)
+
+        return {k: from_settings_value(v) for k, v in value.items()}
+    elif isinstance(value, (list, tuple)):
+        return type(value)(from_settings_value(x) for x in value)
+
+    return value
 
 
 def unique_array_list(
