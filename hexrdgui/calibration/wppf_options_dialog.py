@@ -224,7 +224,7 @@ class WppfOptionsDialog(QObject):
         self.ui.undo_last_run.clicked.connect(self.pop_undo_stack)
 
         self.ui.save_plot.pressed.connect(self.save_plot)
-        self.ui.reset_object.pressed.connect(self.on_reset_object_pressed)
+        self.ui.reset_object.pressed.connect(self.reset_object)
         self.ui.preview_spectrum.pressed.connect(self.preview_spectrum)
         self.ui.run_button.pressed.connect(self.begin_run)
         self.ui.finished.connect(self.finish)
@@ -413,14 +413,6 @@ class WppfOptionsDialog(QObject):
                 group = params_group.create_group(name)
                 for item in to_save:
                     group.create_dataset(item, data=getattr(param, item))
-
-    def on_reset_object_pressed(self) -> None:
-        # An explicit reset starts the LeBail intensities from scratch
-        self._lebail_intensities = None
-        HexrdConfig().config['calibration'].get('wppf', {}).pop(
-            'lebail_intensities', None
-        )
-        self.reset_object()
 
     def reset_object(self) -> None:
         self._wppf_object = None
