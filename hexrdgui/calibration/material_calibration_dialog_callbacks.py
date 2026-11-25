@@ -39,6 +39,11 @@ class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
     def calibrators(self) -> list[Any]:
         return self.calibrator.calibrators
 
+    @property
+    def calibrator_names(self) -> list[str] | None:
+        # The calibrators are in the same order as the overlays
+        return [x.name for x in self.overlays]
+
     def create_hkl_picks_tree_view_dialog(self) -> HKLPicksTreeViewDialog:
         canvas = self.canvas
         assert canvas is not None
@@ -79,6 +84,7 @@ class MaterialCalibrationDialogCallbacks(CalibrationDialogCallbacks):
 
         # Update the dialog
         self.redraw_picks()
+        self.update_fit_report()
 
     def on_edit_picks_accepted(self) -> None:
         # Write the modified picks to the overlays

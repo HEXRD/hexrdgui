@@ -159,6 +159,8 @@ class PowderRunner(QObject):
         self._dialog_callback_handler.instrument_updated.connect(
             self.on_calibration_finished
         )
+        self._dialog_callback_handler.add_fit_report_button()
+
         dialog.show()
 
         self._calibration_dialog = dialog

@@ -456,12 +456,21 @@ class CalibrationDialogCallbacks(ABCQObject):
         if self.fit_report_dialog is not None:
             self.fit_report_dialog.hide()
 
+    @property
+    def calibrator_names(self) -> list[str] | None:
+        # Names for each calibrator of an instrument calibrator.
+        # Subclasses can override this.
+        return None
+
     def add_fit_report_button(self) -> None:
+        if not self.calibrator_is_structureless and not any(
+            x.type == 'powder' for x in self.calibrator.calibrators
+        ):
+            # The fit report only shows powder rings
+            return
+
         button = QPushButton('Show Fit Report', self.dialog.ui)
-        button.setToolTip(
-            'View plots of the residuals of each Debye-Scherrer ring, '
-            'optionally compared to the hkls of a material'
-        )
+        button.setToolTip('View plots of the 2θ residuals of each Debye-Scherrer ring')
         button.clicked.connect(self.show_fit_report)
         self.dialog.ui.extra_widgets_layout.addWidget(button)
 
@@ -474,6 +483,7 @@ class CalibrationDialogCallbacks(ABCQObject):
             self.fit_report_dialog = FitReportDialog(
                 self.calibrator,
                 self.dialog.ui,
+                self.calibrator_names,
             )
         else:
             self.fit_report_dialog.update_data()
