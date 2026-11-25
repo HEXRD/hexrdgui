@@ -363,10 +363,10 @@ class WppfOptionsDialog(QObject):
             'background': bkg,
         }
         # loop over phases and sum over wavelengths
-        for p in self.phases:
+        for p in obj.phases:
             key = f'intensity_{p}'
             phase_sum = None
-            for k in self.phases.wavelength:
+            for k in obj.phases.wavelength:
                 if phase_sum is None:
                     phase_sum = obj.phase_spectrum[p][k].y.copy()
                 else:
