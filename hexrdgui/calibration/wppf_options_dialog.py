@@ -934,15 +934,11 @@ class WppfOptionsDialog(QObject):
         # so they can be matched by hkl when loaded.
         obj = self._wppf_object
         if isinstance(obj, LeBail):
-            iobs = getattr(obj, 'Iobs', None)
             self._lebail_intensities = {
                 p: {
                     k: {
                         'hkls': np.asarray(obj.hkls[p][k]).tolist(),
                         'Icalc': np.asarray(obj.Icalc[p][k]).tolist(),
-                        'Iobs': (
-                            None if iobs is None else np.asarray(iobs[p][k]).tolist()
-                        ),
                     }
                     for k in obj.Icalc[p]
                 }
@@ -970,9 +966,7 @@ class WppfOptionsDialog(QObject):
                 init = np.array(obj.Icalc[p][k], dtype=float)
                 d = saved.get(p, {}).get(k)
                 if d is not None:
-                    lookup = {
-                        tuple(h): v for h, v in zip(d['hkls'], d['Icalc'])
-                    }
+                    lookup = {tuple(h): v for h, v in zip(d['hkls'], d['Icalc'])}
                     for i, hkl in enumerate(hkls):
                         init[i] = lookup.get(tuple(hkl), init[i])
 
