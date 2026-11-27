@@ -637,6 +637,8 @@ class OmeMapsViewerDialog(QObject):
             im = self.im
             im.set_data(data)
 
+        self.color_map_editor.data = data
+
         im.set_cmap(self.cmap)
         im.set_norm(self.norm)
 
