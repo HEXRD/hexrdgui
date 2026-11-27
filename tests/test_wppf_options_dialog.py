@@ -314,6 +314,12 @@ def test_saved_plot_contains_march_dollase_parameter(
         weights=SimpleNamespace(y=np.ones(3)),
         background=SimpleNamespace(y=np.zeros(3)),
         amorphous_model=None,
+        phase_spectrum={
+            'Ni': {
+                'kalpha1': SimpleNamespace(y=np.ones(3)),
+                'kalpha2': SimpleNamespace(y=np.full(3, 0.5)),
+            },
+        },
     )
     monkeypatch.setattr(
         HexrdConfig(),
@@ -326,6 +332,7 @@ def test_saved_plot_contains_march_dollase_parameter(
 
     with h5py.File(output, 'r') as f:
         assert f['params/Ni_p_md/value'][()] == pytest.approx(1.25)
+        np.testing.assert_allclose(f['intensity_Ni'][()], 1.5)
 
 
 def test_march_dollase_refinement(
