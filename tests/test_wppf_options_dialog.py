@@ -384,6 +384,48 @@ def test_march_dollase_refinement(
     assert dialog.params['CeO2_p_md'].value == 1.0
 
 
+def test_lebail_intensities_seed_and_reset(
+    qtbot: QtBot,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(HexrdConfig().config['calibration'], 'wppf', {})
+    tth = np.linspace(2, 30, 1400)
+    data = (tth, np.ma.array(np.full_like(tth, 200.0)))
+    monkeypatch.setattr(HexrdConfig(), 'last_unscaled_azimuthal_integral_data', data)
+
+    def create_dialog() -> WppfOptionsDialog:
+        dialog = WppfOptionsDialog()
+        qtbot.addWidget(dialog.ui)
+        dialog.use_statistical_weights = False
+        dialog.spline_points = [[3.0, 100.0], [29.0, 100.0]]
+        dialog.selected_materials = ['CeO2']
+        dialog.method = 'LeBail'
+        dialog.update_params()
+        for param in dialog.params.values():
+            param.vary = False
+        return dialog
+
+    def intensities(dialog: WppfOptionsDialog) -> np.ndarray:
+        icalc = dialog.wppf_object.Icalc['CeO2']
+        return np.concatenate([np.asarray(icalc[k]) for k in sorted(icalc)])
+
+    dialog = create_dialog()
+    default = intensities(dialog)
+    runner = WppfRunner()
+    runner.wppf_options_dialog = dialog
+    dialog.run.connect(runner.run_wppf)
+    dialog.begin_run()
+    fitted = intensities(dialog)
+    assert not np.allclose(fitted, default)
+
+    # A new dialog starts from the saved intensities
+    dialog = create_dialog()
+    np.testing.assert_allclose(intensities(dialog), fitted)
+
+    # Pressing reset starts over from the defaults
+    dialog.ui.reset_object.click()
+    np.testing.assert_allclose(intensities(dialog), default)
+
 
 @pytest.mark.parametrize(
     'model_type', ['March-Dollase', 'General Axis Distribution Function']
