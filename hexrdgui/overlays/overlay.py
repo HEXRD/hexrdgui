@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import copy
+from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -145,6 +146,11 @@ class Overlay(ABC):
 
     def to_dict(self) -> dict[str, Any]:
         d = {k: getattr(self, k) for k in self.attributes_to_save}
+        for k, v in d.items():
+            if isinstance(v, Enum):
+                # Store the plain value so the safe state loader can read it
+                d[k] = v.value
+
         d['type'] = self.type.value
         return d
 

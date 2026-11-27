@@ -251,10 +251,12 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 if len(hkl_picks) == 0:
                     continue
 
+                # The polar view is relative to the sample position
                 angles = cart_to_angles(
                     hkl_picks,
                     panel,
                     self.eta_period,
+                    tvec_s=instr.tvec,
                 )
                 angles = apply_tth_distortion_if_needed(angles, in_degrees=True)
                 hkl_dict[hkl_str] = angles.tolist()
@@ -282,6 +284,7 @@ class PowderOverlay(Overlay, PolarDistortionObject):
                 hkl_dict[hkl_str] = angles_to_cart(
                     angles,  # type: ignore[arg-type]
                     panel,  # type: ignore[arg-type]
+                    tvec_s=instr.tvec,
                 ).tolist()
 
         self.calibration_picks = picks

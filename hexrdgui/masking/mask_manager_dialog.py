@@ -305,7 +305,7 @@ class MaskManagerDialog(QObject):
             action = menu.exec(QCursor.pos())
             if action == export:
                 selections = self.ui.masks_tree.selectedItems()
-                MaskManager().write_masks([i.text(0) for i in selections])
+                MaskManager().write_masks(names=[i.text(0) for i in selections])
 
     def export_masks_to_file(self, data: Any) -> None:
         output_file, _ = QFileDialog.getSaveFileName(
@@ -516,7 +516,7 @@ class MaskManagerDialog(QObject):
 
     def export_selected(self) -> None:
         mask_names = [i.text(0) for i in self.ui.masks_tree.selectedItems()]
-        MaskManager().write_masks(mask_names)
+        MaskManager().write_masks(names=mask_names)
 
     def remove_selected_masks(self) -> None:
         with block_signals(self.ui.masks_tree):

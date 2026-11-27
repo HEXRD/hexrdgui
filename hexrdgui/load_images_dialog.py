@@ -57,7 +57,9 @@ class LoadImagesDialog:
                 results = self.results()
                 matches = [Path(v).name for f in results.values() for v in f]
                 image_files = [Path(f).name for f in self.image_files]
-                if Counter(results.keys()) != Counter(self.detectors):
+                # self.detectors has one entry per expected file
+                counts = {k: len(v) for k, v in results.items()}
+                if Counter(counts) != Counter(self.detectors):
                     msg = 'Detectors do not match the current detectors'
                     QMessageBox.warning(self.ui, 'HEXRD', msg)
                     continue
@@ -191,8 +193,8 @@ class LoadImagesDialog:
             idx = table.cellWidget(i, 1).currentIndex()
             det_idx = i
             if not self.using_roi:
-                imgs_per_det = len(self.image_files) / len(self.detectors)
-                det_idx = int(i / imgs_per_det)
+                # Several rows may belong to the same detector
+                det_idx = HexrdConfig().detector_names.index(detector)
             HexrdConfig().load_panel_state['trans'][det_idx] = idx
 
         return results

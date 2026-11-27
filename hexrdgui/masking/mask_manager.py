@@ -376,6 +376,10 @@ class MaskManager(QObject, metaclass=QSingleton):
 
     def invalidate_detector_masks(self, det_keys: list[str]) -> None:
         for mask in self.masks.values():
+            if mask.type == MaskType.threshold:
+                # Threshold masks hold [min, max], not per-detector data
+                continue
+
             if any(v[0] in det_keys for v in mask.data):
                 mask.invalidate_masked_arrays()
 
@@ -501,7 +505,11 @@ class MaskManager(QObject, metaclass=QSingleton):
         }
         self.export_masks_to_file.emit(d)
 
-    def write_masks(self, h5py_group: h5py.Group | None = None) -> None:
+    def write_masks(
+        self,
+        h5py_group: h5py.Group | None = None,
+        names: list[str] | None = None,
+    ) -> None:
         d: dict[str, Any] = {
             '__boundary_color': self.boundary_color,
             '__boundary_style': self.boundary_style,
@@ -510,6 +518,8 @@ class MaskManager(QObject, metaclass=QSingleton):
             '__highlight_opacity': self.highlight_opacity,
         }
         for name, mask_info in self.masks.items():
+            if names is not None and name not in names:
+                continue
             d[name] = self.serialize_mask(mask_info)
         if h5py_group:
             self.write_masks_to_group(d, h5py_group)
