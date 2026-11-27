@@ -362,16 +362,9 @@ class WppfOptionsDialog(QObject):
             'difference_curve': (intensity - lineout_intensity) * np.sqrt(weights),
             'background': bkg,
         }
-        # loop over phases and sum over wavelengths
-        for p in obj.phases:
-            key = f'intensity_{p}'
-            phase_sum = None
-            for k in obj.phases.wavelength:
-                if phase_sum is None:
-                    phase_sum = obj.phase_spectrum[p][k].y.copy()
-                else:
-                    phase_sum += obj.phase_spectrum[p][k].y
-            data.update({key: phase_sum})
+        # Per-phase intensities, summed over wavelengths
+        for p, spectra in obj.phase_spectrum.items():
+            data[f'intensity_{p}'] = sum(s.y for s in spectra.values())
 
         if obj.amorphous_model is not None:
             data['amorphous'] = obj.amorphous_model.amorphous_lineout
